@@ -12,7 +12,7 @@ $addProductPermission = user()->permission('add_product');
 
 <div class="row">
     <div class="col-sm-12">
-        <x-form id="save-lead-data-form" method="PUT">
+        <x-form id="save-lead-data-form" method="put">
             <div class="add-client bg-white rounded">
                 <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
                     @lang('modules.lead.leadDetails')</h4>
@@ -23,7 +23,7 @@ $addProductPermission = user()->permission('add_product');
                             fieldName="salutation">
                             <option value="">--</option>
                             @foreach ($salutations as $salutation)
-                                <option value="{{ $salutation->value }}" @selected($lead->salutation == $salutation)>{{ $salutation->label() }}</option>
+                                <option value="{{ $salutation }}" @if ($lead->salutation == $salutation) selected @endif>@lang('app.'.$salutation)</option>
                             @endforeach
                         </x-forms.select>
                     </div>
@@ -100,7 +100,7 @@ $addProductPermission = user()->permission('add_product');
                                     data-live-search="true">
                                     <option value="">--</option>
                                     @forelse($categories as $category)
-                                        <option value="{{ $category->id }}" @if ($lead->category_id == $category->id) selected @endif>{{ $category->category_name }}</option>
+                                        <option value="{{ $category->id }}" @if ($lead->category_id == $category->id) selected @endif>{{ mb_ucwords($category->category_name) }}</option>
                                     @empty
                                         <option value="">@lang('messages.noCategoryAdded')</option>
                                     @endforelse
@@ -150,7 +150,7 @@ $addProductPermission = user()->permission('add_product');
                                 data-size="8">
                                 @forelse($status as $sts)
                                     <option @if ($lead->status_id == $sts->id) selected @endif value="{{ $sts->id }}">
-                                        {{ $sts->type }}</option>
+                                        {{ ucfirst($sts->type) }}</option>
                                 @empty
                                     <option value="">--</option>
                                 @endforelse
@@ -223,24 +223,24 @@ $addProductPermission = user()->permission('add_product');
 
                     <div class="col-lg-3 col-md-6">
                         <x-forms.text :fieldLabel="__('modules.stripeCustomerAddress.state')" fieldName="state"
-                            fieldId="state" :fieldPlaceholder="__('placeholders.state')" :fieldValue="$lead->state" />
+                            fieldId="state" fieldPlaceholder="" :fieldValue="$lead->state" />
                     </div>
 
                     <div class="col-lg-3 col-md-6">
-                        <x-forms.text :fieldLabel="__('modules.stripeCustomerAddress.city')" fieldName="city" :fieldValue="$lead->city"
-                            fieldId="city" :fieldPlaceholder="__('placeholders.city')" />
+                        <x-forms.text :fieldLabel="__('modules.stripeCustomerAddress.city')" fieldName="city"
+                            fieldId="city" fieldPlaceholder="" :fieldValue="$lead->city" />
                     </div>
 
                     <div class="col-lg-3 col-md-6">
                         <x-forms.text :fieldLabel="__('modules.stripeCustomerAddress.postalCode')"
-                            fieldName="postal_code" fieldId="postal_code" :fieldPlaceholder="__('placeholders.postalCode')"
+                            fieldName="postal_code" fieldId="postal_code" fieldPlaceholder=""
                             :fieldValue="$lead->postal_code" />
                     </div>
 
                     <div class="col-md-12">
                         <div class="form-group my-3">
                             <x-forms.textarea class="mr-0 mr-lg-2 mr-md-2" :fieldLabel="__('app.address')"
-                                fieldName="address" fieldId="address" :fieldPlaceholder="__('placeholders.address')"
+                                fieldName="address" fieldId="address" fieldPlaceholder="e.g. Rocket Road"
                                 :fieldValue="$lead->address">
                             </x-forms.textarea>
                         </div>
@@ -263,6 +263,7 @@ $addProductPermission = user()->permission('add_product');
 </div>
 
 
+<script src="{{ asset('vendor/jquery/dropzone.min.js') }}"></script>
 <script>
     $(document).ready(function() {
 

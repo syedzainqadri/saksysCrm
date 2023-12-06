@@ -31,7 +31,7 @@ $showAppreciationPermission = user()->permission('view_appreciation');
                         <td>
                             <x-award-icon :award="$appreciation->award" />
                             <a class="openRightModal text-dark-grey" href="{{ route('appreciations.show', $appreciation->id) }}">
-                                <span class="align-self-center ml-2">{{ $appreciation->award->title }}</span>
+                                <span class="align-self-center ml-2">{{ mb_ucwords($appreciation->award->title) }}</span>
                             </a>
                         </td>
                         <td>{{ $appreciation->award_date->translatedFormat($company->date_format) }}</td>

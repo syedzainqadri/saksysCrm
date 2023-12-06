@@ -48,7 +48,7 @@ class DiscussionReplyObserver
 
                 } else {
                     if (!isRunningInConsoleOrSeeding()) {
-                        $discussion->last_reply_at = now()->timezone('UTC')->toDateTimeString();
+                        $discussion->last_reply_at = now()->toDateTimeString();
                         $discussion->last_reply_by_id = user()->id;
                         $discussion->save();
 

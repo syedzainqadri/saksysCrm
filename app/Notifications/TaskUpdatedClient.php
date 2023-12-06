@@ -54,7 +54,7 @@ class TaskUpdatedClient extends BaseNotification
         $url = route('tasks.show', $this->task->id);
         $url = getDomainSpecificUrl($url, $this->company);
 
-        $content = $this->task->heading . ' ' . __('email.taskUpdate.subject') . '.';
+        $content = ucfirst($this->task->heading) . ' ' . __('email.taskUpdate.subject') . '.';
 
         return $build
             ->subject(__('email.taskUpdate.subject') . ' - ' . config('app.name') . '.')

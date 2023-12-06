@@ -26,7 +26,7 @@
                                 <option value="">--</option>
                                 @foreach ($icons as $item)
                                     <option data-icon="{{ $item->icon }}" data-content="<i class='bi bi-{{ $item->icon }}'></i> {{ $item->title }}" value="{{ $item->id }}">
-                                        {{ $item->title }}
+                                        {{ mb_ucwords($item->title) }}
                                     </option>
                                 @endforeach
                             </select>

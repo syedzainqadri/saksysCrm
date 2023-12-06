@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Helper\Reply;
 use App\Http\Requests\EmployeeShift\StoreEmployeeShift;
 use App\Models\AttendanceSetting;
-use App\Models\Company;
 use App\Models\EmployeeShift;
 use App\Models\Holiday;
 use Carbon\Carbon;
@@ -90,9 +89,6 @@ class EmployeeShiftController extends AccountBaseController
     {
         $this->weekMap = Holiday::weekMap();
         $this->employeeShifts = EmployeeShift::where('shift_name', '<>', 'Day Off')->get();
-        $generalShift = Company::with(['attendanceSetting', 'attendanceSetting.shift'])->first();
-        $this->defaultShift = ($generalShift && $generalShift->attendanceSetting && $generalShift->attendanceSetting->shift) ? $generalShift->attendanceSetting->shift : '--';
-
         return view('employee-shifts.index', $this->data);
     }
 

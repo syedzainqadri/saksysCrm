@@ -5,7 +5,6 @@ namespace App\Notifications;
 use App\Models\EmailNotificationSetting;
 use App\Models\Order;
 use NotificationChannels\OneSignal\OneSignalChannel;
-use NotificationChannels\OneSignal\OneSignalMessage;
 
 class OrderUpdated extends BaseNotification
 {
@@ -84,14 +83,6 @@ class OrderUpdated extends BaseNotification
             'id' => $this->order->id,
             'order_number' => $this->order->order_number
         ];
-    }
-
-    // phpcs:ignore
-    public function toOneSignal($notifiable)
-    {
-        return OneSignalMessage::create()
-            ->setSubject(__('email.order.updateSubject'))
-            ->setBody(__('email.order.updateText'));
     }
 
 }

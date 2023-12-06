@@ -11,7 +11,7 @@
                 <div class="form-group my-3">
                     <x-forms.textarea class="mr-0 mr-lg-2 mr-md-2"
                         :fieldLabel="__('app.shippingAddress')" fieldName="shipping_address"
-                        fieldId="shipping_address" :fieldPlaceholder="__('placeholders.address')"
+                        fieldId="shipping_address" fieldPlaceholder="e.g. Rocket Road"
                         fieldValue="" fieldRequired="true">
                     </x-forms.textarea>
                 </div>

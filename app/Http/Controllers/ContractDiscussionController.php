@@ -72,7 +72,7 @@ class ContractDiscussionController extends AccountBaseController
     {
         $comment = ContractDiscussion::findOrFail($id);
         $this->deletePermission = user()->permission('delete_contract_discussion');
-        abort_403(!($this->deletePermission == 'all' || ($this->deletePermission == 'added' && $comment->added_by == user()->id)));
+        abort_403(!(in_array($this->deletePermission, ['all', 'added']) && $comment->added_by == user()->id));
 
         $comment_contract_id = $comment->contract_id;
         $comment->delete();

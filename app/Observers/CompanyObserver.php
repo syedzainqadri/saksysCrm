@@ -6,22 +6,35 @@ use App\Events\NewCompanyCreatedEvent;
 use App\Http\Controllers\AppSettingController;
 use App\Http\Controllers\RolePermissionController;
 use App\Models\AttendanceSetting;
+use App\Models\ClientDetails;
+use App\Models\Contract;
 use App\Models\Company;
 use App\Models\Currency;
 use App\Models\EmailNotificationSetting;
+use App\Models\EmployeeDetails;
+use App\Models\Estimate;
+use App\Models\Expense;
 use App\Models\GlobalSetting;
 use App\Models\GoogleCalendarModule;
+use App\Models\Invoice;
 use App\Models\InvoiceSetting;
+use App\Models\Lead;
 use App\Models\LogTimeFor;
 use App\Models\ModuleSetting;
 use App\Models\Permission;
+use App\Models\Product;
+use App\Models\Project;
 use App\Models\ProjectSetting;
+use App\Models\ProjectTimeLog;
 use App\Models\Role;
 use App\Models\SlackSetting;
+use App\Models\Task;
 use App\Models\ThemeSetting;
+use App\Models\Ticket;
 use App\Models\TicketEmailSetting;
 use App\Models\TicketType;
 use App\Models\User;
+use App\Models\CurrencyFormatSetting;
 use App\Models\CustomFieldGroup;
 use App\Models\DashboardWidget;
 use App\Models\DiscussionCategory;
@@ -95,7 +108,6 @@ class CompanyObserver
         // for the case of running company migration before having global_settings table
         if ($company->id === 1 && isWorksuite() && !isRunningInConsoleOrSeeding()) {
             $global = GlobalSetting::first();
-            $global->email = $company->company_email;
             $global->global_app_name = $company->app_name;
             $global->logo_background_color = $company->logo_background_color;
             $global->header_color = $company->header_color;
@@ -350,12 +362,12 @@ class CompanyObserver
     public function leadSources($company)
     {
         $sources = [
-            ['type' => __('app.email'), 'company_id' => $company->id],
-            ['type' => __('app.google'), 'company_id' => $company->id],
-            ['type' => __('app.facebook'), 'company_id' => $company->id],
-            ['type' => __('app.friend'), 'company_id' => $company->id],
-            ['type' => __('app.direct'), 'company_id' => $company->id],
-            ['type' => __('app.tv'), 'company_id' => $company->id]
+            ['type' => 'email', 'company_id' => $company->id],
+            ['type' => 'google', 'company_id' => $company->id],
+            ['type' => 'facebook', 'company_id' => $company->id],
+            ['type' => 'friend', 'company_id' => $company->id],
+            ['type' => 'direct visit', 'company_id' => $company->id],
+            ['type' => 'tv ad', 'company_id' => $company->id]
         ];
 
         LeadSource::insert($sources);

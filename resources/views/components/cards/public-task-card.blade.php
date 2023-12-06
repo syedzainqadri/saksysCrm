@@ -12,7 +12,7 @@ $moveClass = '';
     <div class="card-body p-2">
         <div class="d-flex justify-content-between mb-2">
             <a href="javascript:;" data-task-id="{{ $task->hash }}"
-                class="f-12 f-w-500 text-dark mb-0 text-wrap taskDetail">{{ $task->heading }}</a>
+                class="f-12 f-w-500 text-dark mb-0 text-wrap taskDetail">{{ ucfirst($task->heading) }}</a>
             <p class="f-12 font-weight-bold text-dark-grey mb-0">
                 @if ($task->is_private)
                     <span class='badge badge-secondary mr-1'><i class='fa fa-lock'></i>
@@ -26,7 +26,7 @@ $moveClass = '';
             <div class="mb-2 d-flex">
                 @foreach ($task->labels as $key => $label)
                     <span class='badge badge-secondary mr-1'
-                        style="background:{{ $label->label_color }}">{{ $label->label_name }}
+                        style="background:{{ $label->label_color }}">{{ mb_ucwords($label->label_name) }}
                     </span>
                 @endforeach
             </div>
@@ -35,7 +35,7 @@ $moveClass = '';
         @if ($task->project_id)
             <div class="d-flex mb-3 align-items-center">
                 <i class="fa fa-layer-group f-11 text-lightest"></i><span
-                    class="ml-2 f-11 text-lightest">{{ $task->project->project_name }}</span>
+                    class="ml-2 f-11 text-lightest">{{ ucfirst($task->project->project_name) }}</span>
             </div>
         @endif
 
@@ -43,8 +43,8 @@ $moveClass = '';
             <div class="d-flex flex-wrap">
                 @foreach ($task->users as $item)
                     <div class="avatar-img mr-1 rounded-circle">
-                        <a href="javascript:;" alt="{{ $item->name }}"
-                            data-toggle="tooltip" data-original-title="{{ $item->name }}"
+                        <a href="javascript:;" alt="{{ mb_ucwords($item->name) }}"
+                            data-toggle="tooltip" data-original-title="{{ mb_ucwords($item->name) }}"
                             data-placement="right"><img src="{{ $item->image_url }}"></a>
                     </div>
                 @endforeach

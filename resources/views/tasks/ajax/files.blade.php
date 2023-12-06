@@ -100,6 +100,7 @@
 </div>
 <!-- TAB CONTENT END -->
 
+<script src="{{ asset('vendor/jquery/dropzone.min.js') }}"></script>
 <script>
     $(document).ready(function () {
         var add_task_files = "{{ $addTaskFilePermission }}";
@@ -131,7 +132,7 @@
             taskDropzone.on('uploadprogress', function () {
                 $.easyBlockUI();
             });
-            taskDropzone.on('completemultiple', function (file) {
+            taskDropzone.on('queuecomplete', function (file) {
                 var response = JSON.parse(file[0].xhr.response);
 
                 if (response?.error?.message) {

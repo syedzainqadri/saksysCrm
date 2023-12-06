@@ -9,22 +9,22 @@
     <link rel="icon" type="image/png" sizes="16x16" href="{{ companyOrGlobalSetting()->favicon_url }}">
 
     <!-- Font Awesome Icons -->
-    <link rel="stylesheet" href="{{ asset('vendor/css/all.min.css') }}" defer="defer">
+    <link rel="stylesheet" href="{{ asset('vendor/css/all.min.css') }}">
 
     <!-- Simple Line Icons -->
-    <link rel="stylesheet" href="{{ asset('vendor/css/simple-line-icons.css') }}" defer="defer">
+    <link rel="stylesheet" href="{{ asset('vendor/css/simple-line-icons.css') }}">
 
     <!-- Datepicker -->
-    <link rel="stylesheet" href="{{ asset('vendor/css/datepicker.min.css') }}" defer="defer">
+    <link rel="stylesheet" href="{{ asset('vendor/css/datepicker.min.css') }}">
 
     <!-- TimePicker -->
-    <link rel="stylesheet" href="{{ asset('vendor/css/bootstrap-timepicker.min.css') }}" defer="defer">
+    <link rel="stylesheet" href="{{ asset('vendor/css/bootstrap-timepicker.min.css') }}">
 
     <!-- Select Plugin -->
-    <link rel="stylesheet" href="{{ asset('vendor/css/select2.min.css') }}" defer="defer">
+    <link rel="stylesheet" href="{{ asset('vendor/css/select2.min.css') }}">
 
     <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="{{ asset('vendor/css/bootstrap-icons.css') }}" defer="defer">
+    <link rel="stylesheet" href="{{ asset('vendor/css/bootstrap-icons.css') }}">
 
     @stack('datatable-styles')
 
@@ -53,6 +53,7 @@
                 margin-right: 4px;
             }
 
+
         </style>
     @endisset
 
@@ -71,30 +72,8 @@
         .fc a[data-navlink] {
             color: #99a5b5;
         }
-
-        .ql-editor p {
+        .ql-editor p{
             line-height: 1.42;
-        }
-
-        .ql-container .ql-tooltip {
-            left: 8.5px !important;
-            top: -17px !important;
-        }
-
-        .table [contenteditable="true"] {
-            height: 55px;
-        }
-
-        .table [contenteditable="true"]:hover::after {
-            content: "{{ __('app.clickEdit') }}" !important;
-        }
-
-        .table [contenteditable="true"]:focus::after {
-            content: "{{ __('app.anywhereSave') }}" !important;
-        }
-
-        .table-bordered .displayName {
-            padding: 17px;
         }
     </style>
 
@@ -111,7 +90,7 @@
     <script src="{{ asset('vendor/jquery/modernizr.min.js') }}"></script>
 
     {{-- Timepicker --}}
-    <script src="{{ asset('vendor/jquery/bootstrap-timepicker.min.js') }}" defer="defer"></script>
+    <script src="{{ asset('vendor/jquery/bootstrap-timepicker.min.js') }}"></script>
 
     @includeif('sections.push-setting-include')
 
@@ -260,7 +239,7 @@
         $('#datatableRange, #datatableRange2').val(start.format('{{ companyOrGlobalSetting()->moment_date_format }}') +
             ' @lang("app.to") ' + end.format(
                 '{{ companyOrGlobalSetting()->moment_date_format }}'));
-        $('#reset-filters, #reset-filters-2').removeClass('d-none');
+            $('#reset-filters, #reset-filters-2').removeClass('d-none');
 
     }
 
@@ -353,7 +332,7 @@
                         'list': 'bullet'
                     }],
                     ['bold', 'italic', 'underline', 'strike'],
-                    ['image', 'code-block', 'link', 'video'],
+                    ['image', 'code-block', 'link','video'],
                     [{
                         'direction': 'rtl'
                     }],
@@ -375,29 +354,30 @@
 
 
     }
+        function destory_editor(selector){
+            if($(selector)[0])
+            {
+                var content = $(selector).find('.ql-editor').html();
+                $(selector).html(content);
 
-    function destory_editor(selector) {
-        if ($(selector)[0]) {
-            var content = $(selector).find('.ql-editor').html();
-            $(selector).html(content);
+                $(selector).siblings('.ql-toolbar').remove();
+                $(selector + " *[class*='ql-']").removeClass (function (index, class_name) {
+                return (class_name.match (/(^|\s)ql-\S+/g) || []).join(' ');
+                });
 
-            $(selector).siblings('.ql-toolbar').remove();
-            $(selector + " *[class*='ql-']").removeClass(function (index, class_name) {
-                return (class_name.match(/(^|\s)ql-\S+/g) || []).join(' ');
-            });
-
-            $(selector + "[class*='ql-']").removeClass(function (index, class_name) {
-                return (class_name.match(/(^|\s)ql-\S+/g) || []).join(' ');
-            });
-        } else {
-            console.error('editor not exists');
+                $(selector + "[class*='ql-']").removeClass (function (index, class_name) {
+                return (class_name.match (/(^|\s)ql-\S+/g) || []).join(' ');
+                });
+            }
+            else
+            {
+                console.error('editor not exists');
+            }
         }
-    }
-
-    function quillMention(atValues, ID) {
+    function quillMention(atValues,ID) {
         const mentionItemTemplate = '<div class="mention-item"> <img src="{image}" class="align-self-start mr-3 taskEmployeeImg rounded">{name}</div>';
 
-        const customRenderItem = function (item, searchTerm) {
+        const customRenderItem = function(item, searchTerm) {
             const html = mentionItemTemplate.replace('{image}', item.image).replace('{name}', item.value);
             return html;
         }
@@ -408,54 +388,38 @@
             placeholder = '';
         }
 
-        quillArray[ID] = new Quill(ID, {
+        var quillEditor = new Quill(ID, {
             placeholder: placeholder,
             modules: {
                 magicUrl: {
                     urlRegularExpression: /(https?:\/\/[\S]+)|(www.[\S]+)|(tel:[\S]+)/g,
                     globalRegularExpression: /(https?:\/\/|www\.|tel:)[\S]+/g,
                 },
-                toolbar: [
-                    [{
-                        header: [1, 2, 3, 4, 5, false]
-                    }],
-                    [{
-                        'list': 'ordered'
-                    }, {
-                        'list': 'bullet'
-                    }],
-                    ['bold', 'italic', 'underline', 'strike'],
-                    ['image', 'code-block', 'link', 'video'],
-                    [{
-                        'direction': 'rtl'
-                    }],
-                    ['clean']
-                ],
                 mention: {
                     allowedChars: /^[A-Za-z\sÅÄÖåäö]*$/,
                     mentionDenotationChars: ["@", "#"],
-                    source: function (searchTerm, renderList, mentionChar) {
-                        let values;
-                        if (mentionChar === "@") {
-                            values = atValues;
-                        } else {
-                            values = hashValues;
-                        }
+                    source: function(searchTerm, renderList, mentionChar) {
+                    let values;
+                    if (mentionChar === "@") {
+                        values = atValues;
+                    } else {
+                        values = hashValues;
+                    }
 
-                        if (searchTerm.length === 0) {
-                            renderList(values, searchTerm);
+                    if (searchTerm.length === 0) {
+                        renderList(values, searchTerm);
 
-                        } else {
-                            const matches = [];
-                            for (i = 0; i < values.length; i++)
-                                if (
-                                    ~values[i].value
-                                        .toLowerCase()
-                                        .indexOf(searchTerm.toLowerCase())
-                                )
-                                    matches.push(values[i]);
-                            renderList(matches, searchTerm);
-                        }
+                    } else {
+                        const matches = [];
+                        for (i = 0; i < values.length; i++)
+                        if (
+                            ~values[i].value
+                            .toLowerCase()
+                            .indexOf(searchTerm.toLowerCase())
+                        )
+                            matches.push(values[i]);
+                        renderList(matches, searchTerm);
+                    }
                     },
                     renderItem: customRenderItem,
 
@@ -464,20 +428,16 @@
             },
             theme: 'snow'
         });
-
-        quillArray[ID].getModule('toolbar').addHandler('image', selectLocalImage);
     }
-
-    /**
+     /**
      * click to open user profile
      *
      */
-    window.addEventListener('mention-clicked', function ({value}) {
-        if (value?.link) {
-            window.open(value.link, value?.target ?? '_blank');
-        }
+    window.addEventListener('mention-clicked', function ({ value }) {
+    if (value?.link) {
+        window.open(value.link, value?.target ?? '_blank');
+    }
     });
-
     /**
      * Step1. select local image
      *
@@ -542,9 +502,6 @@
         let url = "{{ route('timelogs.pause_timer', ':id') }}";
         url = url.replace(':id', id);
         const token = '{{ csrf_token() }}';
-
-        let currentUrl = $(this).data('url');
-
         $.easyAjax({
             url: url,
             blockUI: true,
@@ -553,7 +510,6 @@
             buttonSelector: "#pause-timer-btn",
             data: {
                 timeId: id,
-                currentUrl: currentUrl,
                 _token: token
             },
             success: function (response) {
@@ -570,11 +526,7 @@
                         window.LaravelDataTables["allTasks-table"].draw(false);
                     }
 
-                    if (response.reload === 'yes') {
-                        window.location.reload();
-                    } else {
-                        $('#timer-clock').html(response.clockHtml);
-                    }
+                    $('#timer-clock').html(response.clockHtml);
                 }
             }
         })
@@ -585,9 +537,6 @@
         let url = "{{ route('timelogs.resume_timer', ':id') }}";
         url = url.replace(':id', id);
         const token = '{{ csrf_token() }}';
-
-        let currentUrl = $(this).data('url');
-
         $.easyAjax({
             url: url,
             blockUI: true,
@@ -596,11 +545,9 @@
             buttonSelector: "#resume-timer-btn",
             data: {
                 timeId: id,
-                currentUrl: currentUrl,
                 _token: token
             },
             success: function (response) {
-
                 if (response.status === 'success') {
                     if ($('#myActiveTimer').length > 0) {
                         $(MODAL_XL + ' .modal-content').html(response.html);
@@ -609,10 +556,6 @@
                     $('#timer-clock').html(response.clockHtml);
                     if ($('#allTasks-table').length) {
                         window.LaravelDataTables["allTasks-table"].draw(false);
-                    }
-
-                    if (response.reload === 'yes') {
-                        window.location.reload();
                     }
                 }
             }
@@ -624,15 +567,11 @@
         let url = "{{ route('timelogs.stop_timer', ':id') }}";
         url = url.replace(':id', id);
         const token = '{{ csrf_token() }}';
-
-        let currentUrl = $(this).data('url');
-
         $.easyAjax({
             url: url,
             type: "POST",
             data: {
                 timeId: id,
-                currentUrl: currentUrl,
                 _token: token
             },
             success: function (response) {
@@ -651,10 +590,6 @@
                     window.LaravelDataTables["allTasks-table"].draw(false);
                 }
 
-                if (response.reload === 'yes') {
-                    window.location.reload();
-                }
-
             }
         })
 
@@ -663,53 +598,50 @@
 </script>
 
 @if (in_array('messages', user_modules()))
-    <script>
-        function newMessageNotificationPlay() {
-            var audio = new Audio("{{ asset('message-notification.mp3') }}");
-            audio.play();
-        }
+<script>
+    function newMessageNotificationPlay() { var audio = new Audio("{{ asset('message-notification.mp3') }}"); audio.play(); }
 
-        function checkNewMessage() {
-            var url = "{{ route('messages.check_new_message') }}";
-            var token = "{{ csrf_token() }}";
+    function checkNewMessage() {
+        var url = "{{ route('messages.check_new_message') }}";
+        var token = "{{ csrf_token() }}";
 
-            $.easyAjax({
-                url: url,
-                type: "POST",
-                data: {
-                    '_token': token,
-                },
-                success: function (response) {
-                    if (response.new_message_count > 0) {
-                        newMessageNotificationPlay();
-                        Swal.fire({
-                            icon: 'info',
-                            text: 'New message received.',
+        $.easyAjax({
+            url: url,
+            type: "POST",
+            data: {
+                '_token': token,
+            },
+            success: function (response) {
+                if (response.new_message_count > 0) {
+                    newMessageNotificationPlay();
+                    Swal.fire({
+                        icon: 'info',
+                        text: 'New message received.',
 
-                            toast: true,
-                            position: "top-end",
-                            timer: 3000,
-                            timerProgressBar: true,
-                            showConfirmButton: false,
+                        toast: true,
+                        position: "top-end",
+                        timer: 3000,
+                        timerProgressBar: true,
+                        showConfirmButton: false,
 
-                            customClass: {
-                                confirmButton: "btn btn-primary",
-                            },
-                            showClass: {
-                                popup: "swal2-noanimation",
-                                backdrop: "swal2-noanimation",
-                            },
-                        });
-                    }
+                        customClass: {
+                            confirmButton: "btn btn-primary",
+                        },
+                        showClass: {
+                            popup: "swal2-noanimation",
+                            backdrop: "swal2-noanimation",
+                        },
+                    });
                 }
-            });
-        }
+            }
+        });
+    }
 
-        if (message_setting.send_sound_notification == 1 && !(pusher_setting.status === 1 && pusher_setting.messages === 1)) {
-            window.setInterval(function () {
-                checkNewMessage()
-            }, 10000); // Check messages every 10 seconds
-        }
+    if (message_setting.send_sound_notification == 1 && !(pusher_setting.status === 1 && pusher_setting.messages === 1)) {
+        window.setInterval(function () {
+            checkNewMessage()
+        }, 10000); // Check messages every 10 seconds
+    }
 
     </script>
 @endif

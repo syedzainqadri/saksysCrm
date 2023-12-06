@@ -69,7 +69,7 @@
                             </div>
 
                             <div class="col-lg-12">
-                                <x-forms.file allowedFileExtensions="png jpg jpeg svg bmp" class="mr-0 mr-lg-2 mr-md-2 cropper"
+                                <x-forms.file allowedFileExtensions="png jpg jpeg svg" class="mr-0 mr-lg-2 mr-md-2 cropper"
                                               :fieldLabel="__('modules.appreciations.photo')" fieldName="photo" fieldId="photo"
                                               fieldHeight="119" :popover="__('messages.appreciationPhoto')" />
                             </div>

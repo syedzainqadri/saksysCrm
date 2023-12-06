@@ -28,7 +28,7 @@
             <tr id="label-{{ $item->id }}">
                 <td>{{ $key + 1 }}</td>
                 <td data-row-id="{{ $item->id }}" data-column="label_name" contenteditable="true">
-                    {{ $item->label_name }}
+                    {{ mb_ucwords($item->label_name) }}
                 </td>
                 <td data-row-id="{{ $item->id }}" data-column="description" contenteditable="true">{{ $item->description }}
                 </td>

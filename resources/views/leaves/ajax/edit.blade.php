@@ -7,7 +7,7 @@ $approveRejectPermission = user()->permission('approve_or_reject_leaves');
 
 <div class="row">
     <div class="col-sm-12">
-        <x-form id="save-lead-data-form" method="PUT">
+        <x-form id="save-lead-data-form" method="put">
             <div class="add-client bg-white rounded">
                 <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
                     @lang('app.menu.editLeaves')</h4>
@@ -52,7 +52,7 @@ $approveRejectPermission = user()->permission('approve_or_reject_leaves');
 
                                     @if($leaveType->leaveTypeCodition($leaveQuota, $userRole))
                                         <option @if ($leave->leave_type_id == $leaveQuota->id) selected @endif value="{{ $leaveQuota->id }}">
-                                            {{ $leaveQuota->type_name }}</option>
+                                            {{ mb_ucwords($leaveQuota->type_name) }}</option>
                                     @endif
                                 @endforeach
                             </select>
@@ -175,6 +175,7 @@ $approveRejectPermission = user()->permission('approve_or_reject_leaves');
     </div>
 </div>
 
+<script src="{{ asset('vendor/jquery/dropzone.min.js') }}"></script>
 <script>
     $(document).ready(function() {
 

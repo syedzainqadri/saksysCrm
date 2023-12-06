@@ -22,7 +22,7 @@ $deleteContractDiscussionPermission = user()->permission('delete_contract_discus
                 <div class="col-md-12 ">
                     <div class="media">
                         <img src="{{ user()->image_url }}" class="align-self-start mr-3 taskEmployeeImg rounded"
-                            alt="{{ user()->name }}">
+                            alt="{{ mb_ucfirst(user()->name) }}">
                         <div class="media-body bg-white">
                             <div class="form-group">
                                 <div id="task-comment"></div>
@@ -51,15 +51,15 @@ $deleteContractDiscussionPermission = user()->permission('delete_contract_discus
                             <div class="card-img my-1 ml-0">
                                 <a href="{{ route('employees.show', $discussion->user->id) }}">
                                     <img src="{{ $discussion->user->image_url }}"
-                                        alt="{{ $discussion->user->name }}"></a>
+                                        alt="{{ mb_ucwords($discussion->user->name) }}"></a>
                             </div>
                             <div class="card-body border-0 pl-0 py-1">
                                 <div class="d-flex flex-grow-1">
                                     <h4 class="card-title f-15 f-w-500 mr-3"><a class="text-dark"
-                                            href="{{ route('employees.show', $discussion->user->id) }}">{{ $discussion->user->name }}</a>
+                                            href="{{ route('employees.show', $discussion->user->id) }}">{{ mb_ucwords($discussion->user->name) }}</a>
                                     </h4>
                                     <p class="card-date f-11 text-lightest mb-0">
-                                        {{ $discussion->created_at->diffForHumans() }}
+                                        {{ ucfirst($discussion->created_at->diffForHumans()) }}
                                     </p>
                                     <div class="dropdown ml-auto comment-action">
                                         <button
@@ -85,7 +85,7 @@ $deleteContractDiscussionPermission = user()->permission('delete_contract_discus
                                         </div>
                                     </div>
                                 </div>
-                                <div class="card-text f-14 text-dark-grey text-justify">{!! $discussion->message !!}
+                                <div class="card-text f-14 text-dark-grey text-justify">{!! ucfirst($discussion->message) !!}
                                 </div>
                             </div>
                         </div>

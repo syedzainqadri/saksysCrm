@@ -2,9 +2,13 @@
 
 namespace App\DataTables;
 
-use App\Models\LeadFollowUp;
+use App\Models\LeadFollowup;
+use App\Models\CustomFieldGroup;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
+use Yajra\DataTables\Html\Editor\Editor;
+use Yajra\DataTables\Html\Editor\Fields;
+use Yajra\DataTables\Services\DataTable;
 
 class LeadFollowupDataTable extends BaseDataTable
 {
@@ -100,7 +104,7 @@ class LeadFollowupDataTable extends BaseDataTable
     /**
      * Get query source of dataTable.
      *
-     * @param LeadFollowup $model
+     * @param \App\Models\LeadFollowup $model
      * @return \Illuminate\Database\Eloquent\Builder
      */
 
@@ -122,7 +126,7 @@ class LeadFollowupDataTable extends BaseDataTable
      */
     public function html()
     {
-        $dataTable = $this->setBuilder('leadfollowup-table')
+        return $this->setBuilder('leadfollowup-table')
             ->parameters([
             'initComplete' => 'function () {
                 window.LaravelDataTables["leadfollowup-table"].buttons().container()
@@ -134,13 +138,10 @@ class LeadFollowupDataTable extends BaseDataTable
                 });
                 $(".statusChange").selectpicker();
             }',
-            ]);
+            ])
 
-        if (canDataTableExport()) {
-            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
-        }
+            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
 
-        return $dataTable;
     }
 
     /**

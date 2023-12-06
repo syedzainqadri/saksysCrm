@@ -18,8 +18,13 @@ $addClientPermission = user()->permission('add_clients');
                         <x-forms.label class="mb-12" fieldId="contract_number"
                             :fieldLabel="__('modules.contracts.contractNumber')" fieldRequired="true">
                         </x-forms.label>
-                        <input type="text" name="contract_number" id="contract_number" class="form-control height-35 f-15 readonly-background" readonly
-                                value="{{ $contract->contract_number }}">
+                        <x-forms.input-group>
+                            <x-slot name="prepend">
+                                <span class="input-group-text">{{ invoice_setting()->contract_prefix }}{{ invoice_setting()->contract_number_separator }}</span>
+                            </x-slot>
+                            <input type="number" name="contract_number" id="contract_number" class="form-control height-35 f-15"
+                                value="{{ $contract->original_contract_number }}">
+                        </x-forms.input-group>
                     </div>
                 </div>
                 <!-- CONTRACT NUMBER END -->
@@ -48,7 +53,7 @@ $addClientPermission = user()->permission('add_clients');
                             <x-forms.label fieldId="description" :fieldLabel="__('app.description')">
                             </x-forms.label>
                             <div id="description">{!! $contract->contract_detail !!}</div>
-                            <textarea name="description" id="description-text" class="d-none"></textarea>
+                            <textarea name="contract_detail" id="description-text" class="d-none"></textarea>
                         </div>
                     </div>
 

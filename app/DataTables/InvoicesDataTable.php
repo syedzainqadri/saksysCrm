@@ -208,7 +208,7 @@ class InvoicesDataTable extends BaseDataTable
                 || ($this->deleteInvoicePermission == 'owned' && $row->client_id == user()->id)
                 || ($this->deleteInvoicePermission == 'both' && ($row->client_id == user()->id || $row->added_by == user()->id))
             ) {
-                if ($firstInvoice->id == $row->id && ($row->status != 'paid' && $row->status != 'partial')) {
+                if ($firstInvoice->id == $row->id) {
                     $action .= '<a class="dropdown-item delete-table-row" href="javascript:;" data-toggle="tooltip"  data-invoice-id="' . $row->id . '">
                         <i class="fa fa-trash mr-2"></i>
                         ' . trans('app.delete') . '
@@ -229,7 +229,7 @@ class InvoicesDataTable extends BaseDataTable
         });
         $datatables->editColumn('project_name', function ($row) {
             if ($row->project_id != null) {
-                return '<a href="' . route('projects.show', $row->project_id) . '" class="text-darkest-grey">' . $row->project->project_name . '</a>';
+                return '<a href="' . route('projects.show', $row->project_id) . '" class="text-darkest-grey">' . ucfirst($row->project->project_name) . '</a>';
             }
 
             return '--';
@@ -244,13 +244,13 @@ class InvoicesDataTable extends BaseDataTable
         });
         $datatables->addColumn('client_name', function ($row) {
             if ($row->client) {
-                return $row->client->name;
+                return ucfirst($row->client->name);
             }
             else if ($row->project && $row->project->client) {
-                return $row->project->client->name;
+                return ucfirst($row->project->client->name);
             }
             else if ($row->estimate && $row->estimate->client) {
-                return $row->estimate->client->name;
+                return ucfirst($row->estimate->client->name);
             }
             else {
                 return '--';
@@ -258,13 +258,13 @@ class InvoicesDataTable extends BaseDataTable
         });
         $datatables->addColumn('client_email', function ($row) {
             if ($row->project && $row->project->client) {
-                return $row->project->client->email;
+                return ucfirst($row->project->client->email);
             }
             else if ($row->client) {
-                return $row->client->email;
+                return ucfirst($row->client->email);
             }
             else if ($row->estimate && $row->estimate->client) {
-                return $row->estimate->client->email;
+                return ucfirst($row->estimate->client->email);
             }
             else {
                 return '--';
@@ -302,7 +302,7 @@ class InvoicesDataTable extends BaseDataTable
 
             return '<div class="media align-items-center">
                         <div class="media-body">
-                    <h5 class="mb-0 f-13 text-darkest-grey"><a href="' . route('invoices.show', [$row->id]) . '">' . $row->invoice_number . '</a></h5>
+                    <h5 class="mb-0 f-13 text-darkest-grey"><a href="' . route('invoices.show', [$row->id]) . '">' . ucfirst($row->invoice_number) . '</a></h5>
                     <p class="mb-0">' . $recurring . '</p>
                     </div>
                   </div>';
@@ -481,7 +481,7 @@ class InvoicesDataTable extends BaseDataTable
      */
     public function html()
     {
-        $dataTable = $this->setBuilder('invoices-table', 0)
+        return $this->setBuilder('invoices-table', 0)
             ->parameters([
                 'initComplete' => 'function () {
                     window.LaravelDataTables["invoices-table"].buttons().container()
@@ -492,13 +492,8 @@ class InvoicesDataTable extends BaseDataTable
                         selector: \'[data-toggle="tooltip"]\'
                     })
                 }',
-            ]);
-
-        if (canDataTableExport()) {
-            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
-        }
-
-        return $dataTable;
+            ])
+            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
     }
 
     /**

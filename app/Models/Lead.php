@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Enums\Salutation;
 use App\Traits\CustomFieldsTrait;
 use App\Traits\HasCompany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -99,8 +98,13 @@ use Illuminate\Notifications\Notifiable;
  * @method static \Illuminate\Database\Eloquent\Builder|Lead whereCompanyId($value)
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Product> $products
  * @property-read int|null $products_count
- * @property-read int|null $follow_up_date_next
- * @property-read int|null $follow_up_date_past
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Product> $products
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Product> $products
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Product> $products
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Product> $products
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Product> $products
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Product> $products
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Product> $products
  * @mixin \Eloquent
  */
 class Lead extends BaseModel
@@ -115,10 +119,6 @@ class Lead extends BaseModel
     const CUSTOM_FIELD_MODEL = 'App\Models\Lead';
 
     protected $appends = ['image_url'];
-
-    protected $casts = [
-        'salutation' => Salutation::class,
-    ];
 
     public function getImageUrlAttribute()
     {

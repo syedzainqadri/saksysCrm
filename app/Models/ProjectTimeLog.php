@@ -204,7 +204,7 @@ class ProjectTimeLog extends BaseModel
         if ($secs < 10) {
             $secs = '0' . $secs;
         }
-
+        
         $hours = floor((int)$minutes / 60);
         $minutes = ((int)$minutes % 60);
 

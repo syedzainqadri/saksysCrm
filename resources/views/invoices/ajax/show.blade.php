@@ -69,7 +69,7 @@
         <div class="invoice-table-wrapper">
             <table width="100%">
                 <tr class="inv-logo-heading">
-                    <td><img src="{{ invoice_setting()->logo_url }}" alt="{{ company()->company_name }}"
+                    <td><img src="{{ invoice_setting()->logo_url }}" alt="{{ mb_ucwords(company()->company_name) }}"
                             id="logo" /></td>
                     <td align="right" class="font-weight-bold f-21 text-dark text-uppercase mt-4 mt-lg-0 mt-md-0">
                         @lang('app.invoice')</td>
@@ -77,13 +77,13 @@
                 <tr class="inv-num">
                     <td class="f-14 text-dark">
                         <p class="mt-3 mb-0">
-                            {{ company()->company_name }}<br>
+                            {{ mb_ucwords(company()->company_name) }}<br>
                             @if (!is_null($settings) && $invoice->address)
                                 {!! nl2br($invoice->address->address) !!}<br>
                             @endif
                             {{ company()->company_phone }}
                             @if ($invoiceSetting->show_gst == 'yes' && $invoice->address)
-                                <br>{{ $invoice->address->tax_name }}: {{ $invoice->address->tax_number }}
+                                <br>{{ strtoupper($invoice->address->tax_name) }}: {{ $invoice->address->tax_number }}
                             @endif
                         </p><br>
                     </td>
@@ -140,7 +140,7 @@
                                 <span class="text-dark-grey text-capitalize">@lang('modules.invoices.billedTo')</span><br>
 
                                 @if ($invoice->client && $invoice->client->name && invoice_setting()->show_client_name == 'yes')
-                                    {{ $invoice->client->name }}<br>
+                                    {{ mb_ucwords($invoice->client->name) }}<br>
                                 @endif
 
                                 @if ($invoice->client && $invoice->client->email && invoice_setting()->show_client_email == 'yes')
@@ -155,7 +155,7 @@
                                     $invoice->clientDetails &&
                                         $invoice->clientDetails->company_name &&
                                         invoice_setting()->show_client_company_name == 'yes')
-                                    {{ $invoice->clientDetails->company_name }}<br>
+                                    {{ mb_ucwords($invoice->clientDetails->company_name) }}<br>
                                 @endif
 
                                 @if (
@@ -189,7 +189,7 @@
                     <td align="right" class="mt-2 mt-lg-0 mt-md-0">
                         @if ($invoice->clientDetails->company_logo)
                             <img src="{{ $invoice->clientDetails->image_url }}"
-                                alt="{{ $invoice->clientDetails->company_name }}" class="logo"
+                                alt="{{ mb_ucwords($invoice->clientDetails->company_name) }}" class="logo"
                                 style="height:50px;" />
                             <br><br><br>
                         @endif
@@ -229,14 +229,14 @@
                             @foreach ($invoice->items as $item)
                                 @if ($item->type == 'item')
                                     <tr class="text-dark font-weight-semibold f-13">
-                                        <td>{{ $item->item_name }}</td>
+                                        <td>{{ ucfirst($item->item_name) }}</td>
                                         @if ($invoiceSetting->hsn_sac_code_show)
                                             <td align="right">{{ $item->hsn_sac_code }}</td>
                                         @endif
                                         <td align="right">{{ $item->quantity }} @if($item->unit)<br><span class="f-11 text-dark-grey">{{ $item->unit->unit_type }}</span>@endif</td>
                                         <td align="right">
                                             {{ currency_format($item->unit_price, $invoice->currency_id, false) }}</td>
-                                        <td align="right">{{ $item->tax_list }}</td>
+                                        <td align="right">{{ strtoupper($item->tax_list) }}</td>
                                         <td align="right">
                                             {{ currency_format($item->amount, $invoice->currency_id, false) }}
                                         </td>
@@ -279,7 +279,7 @@
                                         @foreach ($taxes as $key => $tax)
                                             <tr class="text-dark-grey" align="right">
                                                 <td class="w-50 border-top-0 border-left-0">
-                                                    {{ $key }}</td>
+                                                    {{ mb_strtoupper($key) }}</td>
                                             </tr>
                                         @endforeach
                                         <tr class=" text-dark-grey font-weight-bold" align="right">
@@ -341,12 +341,12 @@
                                 <table>
                                     <tr width="100%" class="font-weight-semibold f-13">
                                         <td class="border-left-0 border-right-0 border-top-0">
-                                            {{ $item->item_name }}</td>
+                                            {{ ucfirst($item->item_name) }}</td>
                                     </tr>
                                     @if ($item->item_summary != '' || $item->invoiceItemImage)
                                         <tr>
                                             <td class="border-left-0 border-right-0 border-bottom-0 f-12">
-                                                {!! nl2br(pdfStripTags($item->item_summary)) !!}
+                                                {!! nl2br(strip_tags($item->item_summary, ['p', 'b', 'strong', 'a'])) !!}
                                                 @if ($item->invoiceItemImage)
                                                     <p class="mt-2">
                                                         <a href="javascript:;" class="img-lightbox"
@@ -403,7 +403,7 @@
 
                 @foreach ($taxes as $key => $tax)
                     <tr>
-                        <th width="50%" class="text-dark-grey font-weight-normal">{{ $key }}</th>
+                        <th width="50%" class="text-dark-grey font-weight-normal">{{ mb_strtoupper($key) }}</th>
                         <td width="50%" class="text-dark-grey font-weight-normal">
                             {{ currency_format($tax, $invoice->currency_id, false) }}</td>
                     </tr>
@@ -440,7 +440,7 @@
                 </tr>
 
                 <tr>
-                    <td colspan="2" align="right">
+                    <td align="right">
                         <table>
 
                             @if ($invoiceSetting->authorised_signatory && $invoiceSetting->authorised_signatory_signature && $invoice->status == 'paid')

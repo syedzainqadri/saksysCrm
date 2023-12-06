@@ -39,12 +39,6 @@ use Illuminate\Notifications\Notifiable;
  * @method static \Illuminate\Database\Eloquent\Builder|MentionUser whereProjectNoteId($value)
  * @method static \Illuminate\Database\Eloquent\Builder|MentionUser whereTaskCommentId($value)
  * @method static \Illuminate\Database\Eloquent\Builder|MentionUser whereTaskNoteId($value)
- * @property int|null $ticket_id
- * @property int|null $event_id
- * @property int|null $user_chat_id
- * @method static \Illuminate\Database\Eloquent\Builder|MentionUser whereEventId($value)
- * @method static \Illuminate\Database\Eloquent\Builder|MentionUser whereTicketId($value)
- * @method static \Illuminate\Database\Eloquent\Builder|MentionUser whereUserChatId($value)
  * @mixin \Eloquent
  */
 class MentionUser extends Pivot

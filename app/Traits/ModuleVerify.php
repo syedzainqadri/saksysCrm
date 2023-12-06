@@ -34,46 +34,38 @@ trait ModuleVerify
         $this->setSetting($module);
         $domain = \request()->getHost();
 
-        if (in_array($domain, ['localhost', '127.0.0.1', '::1'])) {
+        if ($domain == 'localhost' || $domain == '127.0.0.1' || $domain == '::1') {
             return true;
         }
 
-        // Return true if it's running on test domain of .test domain
-        if (str_contains($domain, '.test')) {
-            return true;
+        if (is_null($this->appSetting->purchase_code)) {
+            return false;
         }
 
-        return false;
+        $version = File::get(module_path($module).'/version.txt');
 
-    }
-    public function isLocalHost($module)
-    {
-        // Check if verification is required for this module or not
-        if (!config($module.'.verification_required')) {
-            return true;
-        }
+        $data = [
+            'purchaseCode' => $this->appSetting->purchase_code,
+            'domain' => $domain,
+            'itemId' => config($module.'.envato_item_id'),
+            'appUrl' => urlencode(url()->full()),
+            'version' => $version,
+        ];
 
-        $this->setSetting($module);
-        $domain = \request()->getHost();
+        $response = $this->curl($data);
 
-        if (in_array($domain, ['localhost', '127.0.0.1', '::1'])) {
-            return true;
-        }
-
-        // Return true if it's running on test domain of .test domain
-        if (str_contains($domain, '.test')) {
+        if ($response['status'] == 'success') {
             return true;
         }
 
         return false;
-
     }
 
     /**
      * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
      * Show verify page for verification
      */
-    // phpcs:ignore
+    // phpcs:ignore    
     public function verifyModulePurchase($module)
     {
         return view('custom-modules.ajax.verify', compact('module'));
@@ -88,11 +80,6 @@ trait ModuleVerify
     public function modulePurchaseVerified($module, $purchaseCode = null)
     {
         $this->setSetting($module);
-
-        if($this->isLocalHost($module)){
-            $this->saveToModuleSettings($purchaseCode, $module);
-            return Reply::successWithData('Module verified for localhost' . ' <a href="">Click to go back</a>',[]);
-        }
 
         if (!is_null($purchaseCode)) {
             return $this->getServerData($purchaseCode, $module);

@@ -65,7 +65,7 @@ class TaskReminder extends BaseNotification
 
         $url = getDomainSpecificUrl($url, $this->company);
 
-        $content = $this->task->heading . ' #' . $this->task->task_short_code . '<p>';
+        $content = ucfirst($this->task->heading) . ' #' . $this->task->task_short_code . '<p>';
 
         if ($this->task->due_date) {
             $content .= '<b style="color: green">' . __('app.dueDate') . ' : ' . $this->task->due_date->format($this->company->date_format) . '</b>
@@ -114,7 +114,7 @@ class TaskReminder extends BaseNotification
 
         if (count($notifiable->employee) > 0 && (!is_null($notifiable->employee[0]->slack_username) && ($notifiable->employee[0]->slack_username != ''))) {
             return $message->to('@' . $notifiable->employee[0]->slack_username)
-                ->content('*' . __('email.reminder.subject') . '*' . "\n" . $this->task->heading . "\n" . ' #' . $this->task->task_short_code . "\n" . __('app.dueDate') . ': ' . $dueDate);
+                ->content('*' . __('email.reminder.subject') . '*' . "\n" . ucfirst($this->task->heading) . "\n" . ' #' . $this->task->task_short_code . "\n" . __('app.dueDate') . ': ' . $dueDate);
         }
 
         return $message->content('*' . __('email.reminder.subject') . '*' . "\n" .'This is a redirected notification. Add slack username for *' . $notifiable->name . '*');

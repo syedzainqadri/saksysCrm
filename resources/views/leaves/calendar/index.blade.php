@@ -33,7 +33,7 @@
                     data-size="8">
                     <option value="all">@lang('app.all')</option>
                     @foreach ($leaveTypes as $leaveType)
-                        <option value="{{ $leaveType->id }}">{{ $leaveType->type_name }}</option>
+                        <option value="{{ $leaveType->id }}">{{ mb_ucwords($leaveType->type_name) }}</option>
                     @endforeach
                 </select>
             </div>
@@ -92,7 +92,7 @@ $addLeavePermission = user()->permission('add_leave');
     <!-- CONTENT WRAPPER START -->
     <div class="content-wrapper">
         <!-- Add Task Export Buttons Start -->
-        <div class="d-grid d-lg-flex d-md-flex action-bar">
+        <div class="d-flex">
             <div id="table-actions" class="flex-grow-1 align-items-center">
                 @if ($addLeavePermission == 'all' || $addLeavePermission == 'added')
                     <x-forms.link-primary :link="route('leaves.create')"
@@ -103,7 +103,7 @@ $addLeavePermission = user()->permission('add_leave');
                 @endif
             </div>
 
-            <div class="btn-group mt-2 mt-lg-0 mt-md-0 ml-0 ml-lg-3 ml-md-3" role="group" aria-label="Basic example">
+            <div class="btn-group" role="group" aria-label="Basic example">
                 <a href="{{ route('leaves.index') }}" class="btn btn-secondary f-14" data-toggle="tooltip"
                     data-original-title="@lang('modules.leaves.tableView')"><i class="side-icon bi bi-list-ul"></i></a>
 

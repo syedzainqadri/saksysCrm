@@ -21,6 +21,6 @@ $content = "<div class='d-flex align-items-center text-left'>
 
     @endphp
 
-    <option @selected($selected) data-content="{!! $content !!}" value="{{ $userID ?? $user->id }}">
-        {{ $user->name }}
+    <option {{ !$selected ?: 'selected' }} data-content="{!! $content !!}" value="{{ $userID ?? $user->id }}">
+        {{ mb_ucfirst($user->name) }}
     </option>

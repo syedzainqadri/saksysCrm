@@ -33,7 +33,7 @@ $approveExpensePermission = user()->permission('approve_expenses');
                     <div class="col-md-6 col-lg-3">
                         <x-forms.number fieldId="exchange_rate" :fieldLabel="__('modules.currencySettings.exchangeRate')"
                         fieldName="exchange_rate" fieldRequired="true" :fieldValue="$expense->exchange_rate" :fieldReadOnly="($companyCurrency->id == $expense->currency_id)"
-                        :fieldHelp="$expense->currency->currency_name != company()->currency->currency_name ? '( '.company()->currency->currency_name.' '.__('app.to').' '.$expense->currency->currency_name.' )' : ' '"/>
+                        :fieldHelp="'( '.company()->currency->currency_name.' '.__('app.to').' '.$expense->currency->currency_name.' )'"/>
                     </div>
 
                     <div class="col-md-6 col-lg-3">
@@ -58,7 +58,7 @@ $approveExpensePermission = user()->permission('approve_expenses');
                                 <option value="">--</option>
                                 @foreach ($projects as $project)
                                     <option data-currency-id="{{ $project->currency_id }}" @if ($project->id == $expense->project_id) selected @endif value="{{ $project->id }}">
-                                        {{ $project->project_name }}
+                                        {{ mb_ucwords($project->project_name) }}
                                     </option>
                                 @endforeach
                             </select>
@@ -93,7 +93,7 @@ $approveExpensePermission = user()->permission('approve_expenses');
                                 <option value="">--</option>
                                 @foreach ($categories as $category)
                                     <option @if ($category->id == $expense->category_id) selected @endif value="{{ $category->id }}">
-                                        {{ $category->category_name }}
+                                        {{ mb_ucwords($category->category_name) }}
                                     </option>
                                 @endforeach
                             </select>
@@ -143,7 +143,7 @@ $approveExpensePermission = user()->permission('approve_expenses');
                                     @foreach ($bankDetails as $bankDetail)
                                         <option value="{{ $bankDetail->id }}" @if($bankDetail->id == $expense->bank_account_id) selected @endif>@if($bankDetail->type == 'bank')
                                             {{ $bankDetail->bank_name }} | @endif
-                                            {{ $bankDetail->account_name }}
+                                            {{ mb_ucwords($bankDetail->account_name) }}
                                         </option>
                                     @endforeach
                                 @endif
@@ -366,7 +366,6 @@ $approveExpensePermission = user()->permission('approve_expenses');
                     $('#bank_account_id').html(response.data);
                     $('#bank_account_id').selectpicker('refresh');
                     $('#exchange_rate').val(response.exchangeRate);
-                    let currencyExchange = (companyCurrencyName != currentCurrencyName) ? '( '+companyCurrencyName+' @lang('app.to') '+currentCurrencyName+' )' : '';
                     $('#exchange_rateHelp').html('( '+companyCurrencyName+' @lang('app.to') '+currentCurrencyName+' )');
                 }
             }

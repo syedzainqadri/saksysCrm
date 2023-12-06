@@ -69,7 +69,7 @@ $addProductPermission = user()->permission('add_product');
                             <option value="">{{ __('app.menu.selectProductCategory')  }}</option>
                             @foreach ($categories as $category)
                                 <option value="{{ $category->id }}">
-                                    {{ $category->category_name }}</option>
+                                    {{ mb_ucwords($category->category_name) }}</option>
                             @endforeach
                         </select>
                     </x-forms.input-group>
@@ -177,9 +177,9 @@ $addProductPermission = user()->permission('add_product');
                                                     name="taxes[{{ $key }}][]" multiple="multiple"
                                                     class="select-picker type customSequence border-0" data-size="3">
                                                     @foreach ($taxes as $tax)
-                                                        <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ $tax->tax_name .':'. $tax->rate_percent }}%"
+                                                        <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ strtoupper($tax->tax_name) .':'. $tax->rate_percent }}%"
                                                             @if (isset($item->taxes) && array_search($tax->id, json_decode($item->taxes)) !== false) selected @endif value="{{ $tax->id }}">
-                                                            {{ $tax->tax_name }}:
+                                                            {{ strtoupper($tax->tax_name) }}:
                                                             {{ $tax->rate_percent }}%</option>
                                                     @endforeach
                                                 </select>
@@ -203,7 +203,7 @@ $addProductPermission = user()->permission('add_product');
                                             <input type="file"
                                             class="dropify"
                                             name="invoice_item_image[]"
-                                            data-allowed-file-extensions="png jpg jpeg bmp"
+                                            data-allowed-file-extensions="png jpg jpeg"
                                             data-messages-default="test"
                                             data-height="70"
                                             data-id="{{ $item->id }}"
@@ -213,7 +213,7 @@ $addProductPermission = user()->permission('add_product');
                                                 data-show-remove="false"
                                             @endif
                                             />
-                                            <input type="hidden" name="invoice_item_image_url[]" value="{{ $item->EstimateTemplateItemImage ? $item->EstimateTemplateItemImage->file : '' }}">
+                                            <input type="hidden" name="invoice_item_image_url[]" value="{{ $item->EstimateTemplateItemImage ? $item->EstimateTemplateItemImage->external_link : '' }}">
                                         </td>
                                     </tr>
                                 </tbody>
@@ -294,8 +294,8 @@ $addProductPermission = user()->permission('add_product');
                                             <select id="multiselect" name="taxes[0][]" multiple="multiple"
                                                 class="select-picker type customSequence border-0" data-size="3">
                                                 @foreach ($taxes as $tax)
-                                                    <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ $tax->tax_name .':'. $tax->rate_percent }}%"
-                                                        value="{{ $tax->id }}">{{ $tax->tax_name }}:
+                                                    <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ strtoupper($tax->tax_name) .':'. $tax->rate_percent }}%"
+                                                        value="{{ $tax->id }}">{{ strtoupper($tax->tax_name) }}:
                                                         {{ $tax->rate_percent }}%</option>
                                                 @endforeach
                                             </select>
@@ -588,10 +588,10 @@ $addProductPermission = user()->permission('add_product');
                 </tr>` +
                 '<tr>' +
                 '<td class="border-bottom-0 btrr-mbl btlr">' +
-                `<input type="text" class="form-control f-14 border-0 w-100 item_name" name="item_name[]" placeholder="@lang("modules.expenses.itemName")">` +
+                '<input type="text" class="form-control f-14 border-0 w-100 item_name" name="item_name[]" placeholder="@lang("modules.expenses.itemName")">' +
                 '</td>' +
                 '<td class="border-bottom-0 d-block d-lg-none d-md-none">' +
-                `<textarea class="f-14 border-0 w-100 mobile-description form-control" name="item_summary[]" placeholder="@lang("placeholders.invoices.description")"></textarea>` +
+                '<textarea class="f-14 border-0 w-100 mobile-description form-control" name="item_summary[]" placeholder="@lang("placeholders.invoices.description")"></textarea>' +
                 '</td>';
 
             if (hsn_status == 1) {
@@ -618,8 +618,8 @@ $addProductPermission = user()->permission('add_product');
                 '<select id="multiselect' + i + '" name="taxes[' + i +
                 '][]" multiple="multiple" class="select-picker type customSequence" data-size="3">'
             @foreach ($taxes as $tax)
-                +'<option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ $tax->tax_name .':'. $tax->rate_percent }}%" value="{{ $tax->id }}">'
-                    +'{{ $tax->tax_name }}:{{ $tax->rate_percent }}%</option>'
+                +'<option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ strtoupper($tax->tax_name) .':'. $tax->rate_percent }}%" value="{{ $tax->id }}">'
+                    +'{{ strtoupper($tax->tax_name) }}:{{ $tax->rate_percent }}%</option>'
             @endforeach
                 +
                 '</select>' +
@@ -635,7 +635,7 @@ $addProductPermission = user()->permission('add_product');
                 '<textarea class="f-14 border-0 w-100 desktop-description form-control" name="item_summary[]" placeholder="@lang("placeholders.invoices.description")"></textarea>' +
                 '</td>' +
                 '<td class="border-left-0">' +
-                '<input type="file" class="dropify" id="dropify'+i+'" name="invoice_item_image[]" data-allowed-file-extensions="png jpg jpeg bmp" data-messages-default="test" data-height="70" /><input type="hidden" name="invoice_item_image_url[]">' +
+                '<input type="file" class="dropify" id="dropify'+i+'" name="invoice_item_image[]" data-allowed-file-extensions="png jpg jpeg" data-messages-default="test" data-height="70" /><input type="hidden" name="invoice_item_image_url[]">' +
                 '</td>' +
                 '</tr>' +
                 '</tbody>' +

@@ -124,7 +124,7 @@
                                 @endif
 
                                 <p class="card-title f-14 mr-3 text-dark flex-grow-1" id="subTask">
-                                    {!! $subtask->status == 'complete' ? '<s>' . $subtask->title . '</s>' : '<a class="view-subtask text-dark-grey" href="javascript:;" data-row-id=' . $subtask->id . ' >' .  $subtask->title . '</a>' !!}
+                                    {!! $subtask->status == 'complete' ? '<s>' . ucfirst($subtask->title) . '</s>' : '<a class="view-subtask text-dark-grey" href="javascript:;" data-row-id=' . $subtask->id . ' >' .  ucfirst($subtask->title) . '</a>' !!}
                                     {!! $subtask->due_date ? '<span class="f-11 text-lightest"><br>'.__('modules.invoices.due') . ': ' . $subtask->due_date->translatedFormat(company()->date_format) . '</span>' : '' !!}
                                 </p>
                                 <div class="dropdown ml-auto subtask-action">
@@ -210,6 +210,7 @@
 
 </div>
 <!-- TAB CONTENT END -->
+<script src="{{ asset('vendor/jquery/dropzone.min.js') }}"></script>
 
 <script>
     $(document).ready(function () {

@@ -20,7 +20,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $slack_username
  * @property int|null $department_id
  * @property int|null $designation_id
- * @property int|null $data
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property \Illuminate\Support\Carbon $joining_date
@@ -72,8 +71,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $notice_period_end_date
  * @property string|null $notice_period_start_date
  * @property string|null $probation_end_date
- * @property string|null $name
- * @property string|null $occassion
  * @method static Builder|EmployeeDetails whereContractEndDate($value)
  * @method static Builder|EmployeeDetails whereEmploymentType($value)
  * @method static Builder|EmployeeDetails whereInternshipEndDate($value)

@@ -49,7 +49,7 @@ class InvoiceReminderAfter extends BaseNotification
         $invoice_number = $this->invoice->invoice_number;
         $url = route('front.invoice', $this->invoice->hash);
         $url = getDomainSpecificUrl($url, $this->company);
-        $content = __('email.invoiceReminderAfter.text') . ' ' . $this->invoice->due_date->toFormattedDateString() . '<br>' . new HtmlString($invoice_number) . '<br>' . __('email.messages.confirmMessage') . '<br>' . __('email.messages.referenceMessage');
+        $content = __('email.invoiceReminder.text') . ' ' . $this->invoice->due_date->toFormattedDateString() . '<br>' . new HtmlString($invoice_number) . '<br>' . __('email.messages.confirmMessage') . '<br>' . __('email.messages.referenceMessage');
 
         return $build
             ->subject(__('email.invoiceReminder.subject') . ' - ' . config('app.name'))

@@ -68,7 +68,7 @@ class NewTicketReply extends BaseNotification
         $content = new HtmlString($text);
 
         return $build
-            ->subject(__('email.ticketReply.subject') . ' - ' . $this->ticket->subject)
+            ->subject(__('email.ticketReply.subject') . ' - ' . ucfirst($this->ticket->subject))
             ->markdown('mail.email', [
                 'url' => $url,
                 'content' => $content,
@@ -90,7 +90,7 @@ class NewTicketReply extends BaseNotification
 
             return $message
                 ->to('@' . $notifiable->employee[0]->slack_username)
-                ->content('*' . __('email.ticketReply.subject') . '*' . "\n" . $this->ticket->subject . "\n" . __('modules.tickets.requesterName') . ' - ' . $this->ticket->requester->name . "\n" . '<' . route('tickets.show', $this->ticket->ticket_number) . '|' . __('modules.tickets.ticket') . ' #' . $this->ticket->id . '>' . "\n");
+                ->content('*' . __('email.ticketReply.subject') . '*' . "\n" . $this->ticket->subject . "\n" . __('modules.tickets.requesterName') . ' - ' . $this->ticket->requester->name . "\n" . '<' . route('tickets.show', $this->ticket->id) . '|' . __('modules.tickets.ticket') . ' #' . $this->ticket->id . '>' . "\n");
         }
 
         return $message->content('*' . __('email.ticketReply.subject') . '*' . "\n" .'This is a redirected notification. Add slack username for *' . $notifiable->name . '*');

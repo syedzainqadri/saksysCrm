@@ -103,11 +103,11 @@ class PaymentsDataTable extends BaseDataTable
                     return '--';
                 }
 
-                return '<a class="text-darkest-grey" href="' . route('projects.show', $row->project_id) . '">' . $row->project->project_name . '</a>';
+                return '<a class="text-darkest-grey" href="' . route('projects.show', $row->project_id) . '">' . ucfirst($row->project->project_name) . '</a>';
             })
             ->editColumn('invoice_number', function ($row) {
                 if (!is_null($row->invoice_id) && !is_null($row->invoice)) {
-                    return '<a class="text-darkest-grey" href="' . route('invoices.show', $row->invoice_id) . '">' . $row->invoice->invoice_number . '</a>';
+                    return '<a class="text-darkest-grey" href="' . route('invoices.show', $row->invoice_id) . '">' . ucfirst($row->invoice->invoice_number) . '</a>';
                 }
 
                 return '--';
@@ -144,22 +144,22 @@ class PaymentsDataTable extends BaseDataTable
             })
             ->editColumn('client_email', function ($row) {
                 if (!is_null($row->invoice_id) && isset($row->invoice->client->email)) {
-                    return '<a class="text-darkest-grey" href="' . route('clients.show', $row->invoice->client->id) . '">' . ucfirst($row->invoice->client->email) . '</a>'; /** @phpstan-ignore-line */
+                    return '<a class="text-darkest-grey" href="' . route('clients.show', $row->invoice->client->id) . '">' . ucfirst($row->invoice->client->email) . '</a>';
                 }
 
                 if (!is_null($row->project_id) && isset($row->project->client->email)) {
-                    return '<a class="text-darkest-grey" href="' . route('clients.show', $row->project->client->id) . '">' . ucfirst($row->project->client->email) . '</a>'; /** @phpstan-ignore-line */
+                    return '<a class="text-darkest-grey" href="' . route('clients.show', $row->project->client->id) . '">' . ucfirst($row->project->client->email) . '</a>';
                 }
 
                 if (!is_null($row->order_id) && isset($row->order->client->email)) {
-                    return '<a class="text-darkest-grey" href="' . route('clients.show', $row->order->client->id) . '">' . ucfirst($row->order->client->email) . '</a>'; /** @phpstan-ignore-line */
+                    return '<a class="text-darkest-grey" href="' . route('clients.show', $row->order->client->id) . '">' . ucfirst($row->order->client->email) . '</a>';
                 }
 
                 return '--';
             })
             ->editColumn('order_number', function ($row) {
                 if (!is_null($row->order_id) && !is_null($row->order)) {
-                    return '<a class="text-darkest-grey" href="' . route('orders.show', $row->order_id) . '">' . $row->order->order_number . '</a>';
+                    return '<a class="text-darkest-grey" href="' . route('orders.show', $row->order_id) . '">' . ucfirst($row->order->order_number) . '</a>';
                 }
 
                 return '--';
@@ -270,7 +270,7 @@ class PaymentsDataTable extends BaseDataTable
      */
     public function html()
     {
-        $dataTable = $this->setBuilder('payments-table', 2)
+        return $this->setBuilder('payments-table', 2)
             ->parameters([
                 'initComplete' => 'function () {
                    window.LaravelDataTables["payments-table"].buttons().container()
@@ -279,13 +279,8 @@ class PaymentsDataTable extends BaseDataTable
                 'fnDrawCallback' => 'function( oSettings ) {
                   //
                 }',
-            ]);
-
-        if (canDataTableExport()) {
-            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
-        }
-
-        return $dataTable;
+            ])
+            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
     }
 
     /**
@@ -303,7 +298,7 @@ class PaymentsDataTable extends BaseDataTable
                 'searchable' => false,
                 'visible' => !in_array('client', user_roles())
             ],
-            '#' => ['data' => 'DT_RowIndex', 'orderable' => false, 'searchable' => false, 'visible' => !showId(), 'title' => '#'],
+            '#' => ['data' => 'DT_RowIndex', 'orderable' => false, 'searchable' => false, 'visible' => !showId()],
             __('app.id') => ['data' => 'id', 'name' => 'payments.id', 'title' => __('app.id'), 'visible' => showId()],
             __('modules.taskCode') => ['data' => 'short_code', 'name' => 'project_short_code', 'title' => __('modules.taskCode')],
             __('app.project') => ['data' => 'project_id', 'name' => 'project_id', 'title' => __('app.project'), 'width' => '10%'],

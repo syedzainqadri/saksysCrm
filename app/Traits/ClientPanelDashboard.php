@@ -7,7 +7,6 @@ use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\Project;
 use App\Models\ProjectMilestone;
-use App\Models\ProjectStatusSetting;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
@@ -86,9 +85,9 @@ trait ClientPanelDashboard
 
     public function projectStatusChartData()
     {
-        $labels = ProjectStatusSetting::where('status', 'active')->pluck('status_name');
-        $data['labels'] = ProjectStatusSetting::where('status', 'active')->pluck('status_name');
-        $data['colors'] = ProjectStatusSetting::where('status', 'active')->pluck('color');
+        $labels = ['in progress', 'on hold', 'not started', 'canceled', 'finished'];
+        $data['labels'] = [__('app.inProgress'), __('app.onHold'), __('app.notStarted'), __('app.canceled'), __('app.finished')];
+        $data['colors'] = ['#1d82f5', '#FCBD01', '#616e80', '#D30000', '#2CB100'];
         $data['values'] = [];
 
         foreach ($labels as $label) {

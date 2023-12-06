@@ -80,12 +80,12 @@
                 <div class="row">
                     <div class="col-10">
                         <h4 class="card-title f-15 f-w-500 text-darkest-grey mb-0">
-                            {{ user()->name }}
+                            {{ mb_ucfirst(user()->name) }}
                         </h4>
                     </div>
                 </div>
                 <p class="f-13 font-weight-normal text-dark-grey mb-0">
-                    {{ user()->clientDetails->company_name }}
+                    {{ mb_ucwords(user()->clientDetails->company_name) }}
                 </p>
                 <p class="card-text f-12 text-lightest">@lang('app.lastLogin')
 
@@ -169,7 +169,7 @@
                                                     @foreach ($taxes as $tax)
                                                             <option data-rate="{{ $tax->rate_percent }}"
                                                                 @if (isset($item->product->taxes) && array_search($tax->id, json_decode($item->product->taxes)) !== false) selected @endif value="{{ $tax->id }}">
-                                                                {{ $tax->tax_name }}:
+                                                                {{ strtoupper($tax->tax_name) }}:
                                                                 {{ $tax->rate_percent }}%</option>
                                                     @endforeach
                                                 </select>
@@ -190,7 +190,7 @@
                                                 placeholder="@lang('placeholders.invoices.description')">{{ strip_tags($item->description) }}</textarea>
                                         </td>
                                         <td class="border-left-0">
-                                            <input type="file" class="dropify" disabled name="invoice_item_image[]" data-allowed-file-extensions="png jpg jpeg bmp" data-messages-default="test" data-height="70" data-default-file="{{ $item->product->image_url }}" data-show-remove="false" />
+                                            <input type="file" class="dropify" disabled name="invoice_item_image[]" data-allowed-file-extensions="png jpg jpeg" data-messages-default="test" data-height="70" data-default-file="{{ $item->product->image_url }}" data-show-remove="false" />
                                             <input type="hidden" name="invoice_item_image_url[]" value="{{ $item->product->image_url }}">
                                         </td>
                                     </tr>

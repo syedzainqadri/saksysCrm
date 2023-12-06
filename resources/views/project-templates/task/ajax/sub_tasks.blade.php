@@ -45,7 +45,7 @@
                 <tr id="row-{{ $subtask->id }}">
                     <td class="pl-20">{{ $key + 1 }}</td>
                     <td>
-                        {{$subtask->title}}
+                        {{ucfirst($subtask->title)}}
                     </td>
 
                     <td class="text-right pr-20">

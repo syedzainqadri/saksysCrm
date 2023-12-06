@@ -5,8 +5,6 @@ namespace App\Traits;
 trait IconTrait
 {
 
-    private $filename;
-
     protected $mimeType = [
         'txt' => 'fa-file-alt',
         'htm' => 'fa-file-code',
@@ -80,16 +78,14 @@ trait IconTrait
 
     public function getIconAttribute()
     {
-        $filename = $this->filename ?? $this->hashname;
-        $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
-
+        $ext = strtolower(pathinfo($this->filename, PATHINFO_EXTENSION));
         $imageFormats = ['png', 'jpe', 'jpeg', 'jpg', 'gif', 'bmp', 'ico', 'tif', 'svg', 'svgz', 'psd', 'csv'];
 
         if (in_array($ext, $imageFormats)) {
             return 'images';
         }
 
-        return $this->mimeType[$ext] ?? 'fa-file-alt';
+        return $this->mimeType[$ext] ?? 'doc';
     }
 
 }

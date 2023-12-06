@@ -8,7 +8,6 @@ use App\Helper\Reply;
 use App\Http\Requests\EmployeeShift\StoreBulkShift;
 use App\Mail\BulkShiftEmail;
 use App\Models\AttendanceSetting;
-use App\Models\EmailNotificationSetting;
 use App\Models\EmployeeShift;
 use App\Models\EmployeeShiftChangeRequest;
 use App\Models\EmployeeShiftSchedule;
@@ -370,8 +369,6 @@ class EmployeeShiftScheduleController extends AccountBaseController
 
     public function exportAllShift($year, $month, $id, $department, $startDate, $viewType)
     {
-        abort_403(!canDataTableExport());
-
         if($viewType == 'week'){
             $now = Carbon::parse($startDate, company()->timezone);
             $startDate = $now->copy()->startOfWeek(attendance_setting()->week_start_from);
@@ -411,7 +408,7 @@ class EmployeeShiftScheduleController extends AccountBaseController
                     'day' => $event->date->day,
                     'month' => $event->date->month,
                     'year' => $event->date->year,
-                    'title' => $event->shift->shift_name,
+                    'title' => ucfirst($event->shift->shift_name),
                     'start' => $startTime,
                     'end' => $endTime,
                     'color' => $event->shift->color
@@ -432,8 +429,6 @@ class EmployeeShiftScheduleController extends AccountBaseController
         $this->pageTitle = __('modules.attendance.bulkShiftAssign');
         $this->year = now()->format('Y');
         $this->month = now()->format('m');
-
-        $this->emailSetting = EmailNotificationSetting::where('company_id', $this->company->id)->where('slug', 'shift-assign-notification')->first();
 
         if (request()->ajax()) {
             $html = view('shift-rosters.ajax.create', $this->data)->render();
@@ -469,7 +464,7 @@ class EmployeeShiftScheduleController extends AccountBaseController
             $period = [];
             $holidays = [];
 
-            $period[] = $singleDate = Carbon::createFromFormat(company()->date_format, $request->single_date);
+            $singleDate = Carbon::createFromFormat(company()->date_format, $request->single_date);
 
             $isHoliday = Holiday::checkHolidayByDate(Carbon::parse($singleDate)->format('Y-m-d'));
 
@@ -505,7 +500,7 @@ class EmployeeShiftScheduleController extends AccountBaseController
         $dateRange = [];
 
         foreach ($period as $date) {
-            if ((is_null($officeOpenDays) || $officeOpenDays && in_array($date->dayOfWeek, $officeOpenDays))) {
+            if ($officeOpenDays && in_array($date->dayOfWeek, $officeOpenDays)) {
                 $dateRange[] = $date->format('Y-m-d');
             }
         }
@@ -547,10 +542,10 @@ class EmployeeShiftScheduleController extends AccountBaseController
                 })->first();
 
                 if (smtp_setting()->mail_connection == 'sync') {
-                    Mail::to($userData->email)->send(new BulkShiftEmail($dateRange, $userId, company()));
+                    Mail::to($userData->email)->send(new BulkShiftEmail($dateRange, $userId));
 
                 } else {
-                    Mail::to($userData->email)->queue(new BulkShiftEmail($dateRange, $userId, company()));
+                    Mail::to($userData->email)->queue(new BulkShiftEmail($dateRange, $userId));
                 }
             }
         }
@@ -564,7 +559,7 @@ class EmployeeShiftScheduleController extends AccountBaseController
         return Reply::redirect($redirectUrl, __('messages.employeeShiftAdded'));
     }
 
-    public function bulkData($request, $date, $userData, $userId, &$insertData, $holidays, $officeOpenDays)
+    public function bulkData($request, $date, $userData, $userId, $insertData, $holidays, $officeOpenDays)
     {
         if ($date->greaterThanOrEqualTo($userData->employeeDetail->joining_date) && !in_array($date->format('Y-m-d'), $holidays) && (is_null($officeOpenDays) || (is_array($officeOpenDays) && in_array($date->dayOfWeek, $officeOpenDays)))) {
             $insertData += 1;

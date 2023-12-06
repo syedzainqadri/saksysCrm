@@ -35,7 +35,7 @@ class SendInvoiceReminder extends Command
 
     public function handle()
     {
-        $companies = Company::select('id', 'timezone')-with('currency')->get();
+        $companies = Company::with('currency')->get();
 
         foreach ($companies as $company) {
             $invoice_setting = InvoiceSetting::where('company_id', $company->id)->first();
@@ -48,11 +48,11 @@ class SendInvoiceReminder extends Command
 
 
             if ($invoice_setting->send_reminder != 0) {
-                $invoicesBefore = $invoices
+                $invoices = $invoices
                     ->whereDate('due_date', Carbon::now($company->timezone)->addDays($invoice_setting->send_reminder))
                     ->get();
 
-                foreach ($invoicesBefore as $invoice) {
+                foreach ($invoices as $invoice) {
                     $notifyUser = $invoice->client;
 
                     if (!is_null($notifyUser)) {
@@ -62,11 +62,11 @@ class SendInvoiceReminder extends Command
             }
 
             if ($invoice_setting->reminder == 'after') {
-                $invoicesAfter = $invoices
+                $invoices_after = $invoices
                     ->whereDate('due_date', Carbon::now($company->timezone)->subDays($invoice_setting->send_reminder_after))
                     ->get();
 
-                foreach ($invoicesAfter as $invoice) {
+                foreach ($invoices_after as $invoice) {
                     $notifyUser = $invoice->client;
 
                     if (!is_null($notifyUser)) {
@@ -77,11 +77,11 @@ class SendInvoiceReminder extends Command
 
             }
             else {
-                $invoicesEvery = $invoices
+                $invoices_every = $invoices
                     ->whereDate('due_date', '<', now($company->timezone))
                     ->get();
 
-                foreach ($invoicesEvery as $invoice) {
+                foreach ($invoices_every as $invoice) {
                     $notifyUser = $invoice->client;
                     $date_diff = $invoice->due_date->diffInDays(now());
 

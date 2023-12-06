@@ -31,7 +31,7 @@
             </x-slot>
             <div class="col-lg-6 mr-5">
                 <x-forms.text class="mr-0 mr-lg-2 mr-md-2" :fieldLabel="__('modules.accountSettings.appName')"
-                              :fieldPlaceholder="__('placeholders.company')" fieldRequired="true" fieldName="app_name"
+                              fieldPlaceholder="e.g. Acme Corporation" fieldRequired="true" fieldName="app_name"
                               fieldId="app_name" :fieldValue="company()->app_name"
                               :popover="__('messages.appNameToolTip')"
                 />
@@ -59,31 +59,31 @@
 
 
                     <div class="col-lg-6">
-                        <x-forms.file allowedFileExtensions="png jpg jpeg svg bmp" class="mr-0 mr-lg-2 mr-md-2 cropper"
+                        <x-forms.file allowedFileExtensions="png jpg jpeg svg" class="mr-0 mr-lg-2 mr-md-2 cropper"
                                       :fieldLabel="__('modules.accountSettings.lightCompanyLogo')"
-                                      :fieldValue="company()->masked_light_logo_url" fieldName="light_logo"
+                                      :fieldValue="company()->light_logo_url" fieldName="light_logo"
                                       fieldId="light_logo"
                                       :popover="__('messages.lightThemeLogoTooltip')"/>
                     </div>
                     <div class="col-lg-6">
-                        <x-forms.file allowedFileExtensions="png jpg jpeg svg bmp" class="mr-0 mr-lg-2 mr-md-2 cropper"
+                        <x-forms.file allowedFileExtensions="png jpg jpeg svg" class="mr-0 mr-lg-2 mr-md-2 cropper"
                                       :fieldLabel="__('modules.accountSettings.darkCompanyLogo')"
-                                      :fieldValue="company()->masked_default_logo"
+                                      :fieldValue="company()->defaultLogo()"
                                       fieldName="logo" fieldId="logo" :popover="__('messages.darkThemeLogoTooltip')"/>
                     </div>
                     <div class="col-lg-6">
-                        <x-forms.file allowedFileExtensions="png jpg jpeg svg bmp" class="mr-0 mr-lg-2 mr-md-2 cropper"
+                        <x-forms.file allowedFileExtensions="png jpg jpeg svg" class="mr-0 mr-lg-2 mr-md-2 cropper"
                                       :fieldLabel="__('modules.themeSettings.loginScreenBackground')"
-                                      :fieldValue="company()->masked_login_background_url" fieldName="login_background"
+                                      :fieldValue="company()->login_background_url" fieldName="login_background"
                                       fieldId="login_background"
                                       :popover="__('modules.themeSettings.loginBackgroundSize')"
                                       :popover="__('messages.fileFormat.ImageFile')"/>
                     </div>
                     <div class="col-lg-6">
-                        <x-forms.file allowedFileExtensions="png jpg jpeg svg bmp" class="mr-0 mr-lg-2 mr-md-2"
+                        <x-forms.file allowedFileExtensions="png jpg jpeg svg" class="mr-0 mr-lg-2 mr-md-2"
                                       :fieldLabel="__('modules.accountSettings.faviconImage')"
                                       :popover="__('modules.themeSettings.faviconSize')"
-                                      :fieldValue="company()->masked_favicon_url"
+                                      :fieldValue="company()->favicon_url"
                                       fieldName="favicon" fieldId="favicon"
                                       :popover="__('messages.fileFormat.ImageFile')"/>
                     </div>

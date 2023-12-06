@@ -126,13 +126,13 @@
     <h4 class="f-16 text-capitalize f-w-500 text-dark-grey">@lang("modules.emailSettings.notificationTitle")</h4>
     <div class="mb-3 d-flex">
 
-        <x-forms.checkbox  :checked="$checkedAll==true"
+        <x-forms.checkbox :  :checked="$checkedAll==true"
                           :fieldLabel="__('modules.permission.selectAll')"
                           fieldName="select_all_checkbox" fieldId="select_all"
                           fieldValue="all"/>
     </div>
     @foreach ($emailSettings as $emailSetting)
-        <div class="mb-3 d-flex notification">
+        <div class="mb-3 d-flex">
             <x-forms.checkbox :checked="$emailSetting->send_email == 'yes'"
                               :fieldLabel="__('modules.emailNotification.'.str_slug($emailSetting->setting_name))"
                               fieldName="send_email[]" :fieldId="'send_email_'.$emailSetting->id"
@@ -154,7 +154,7 @@
 <!-- Buttons End -->
 
 <script>
-    var CHANGE_DETECTED = false;
+    let CHANGE_DETECTED = false;
     $('.field').each(function () {
         let elem = $(this);
         CHANGE_DETECTED = false
@@ -199,9 +199,9 @@
         })
     }
 
-    var checkboxes = document.querySelectorAll(".notification input[type=checkbox]");
+    var checkboxes = document.querySelectorAll("input[type = 'checkbox']");
 
-    $('body').on('click', '#select_all', function() {
+    $('#select_all').on('click', function(){
         var selectAll = $('#select_all').is(':checked');
 
         if(selectAll == true){

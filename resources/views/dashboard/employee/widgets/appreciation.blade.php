@@ -12,7 +12,7 @@
                             <div class="d-flex justify-content-end" data-toggle="tooltip" data-original-title="">
                                 @if(isset($appreciation->award))
                                     <div class="ml-1 f-12 mr-3">
-                                        <span class="font-weight-semibold">{{ $appreciation->award->title }}</span><br>
+                                        <span class="font-weight-semibold">{{ mb_ucwords($appreciation->award->title) }}</span><br>
                                         {{ $appreciation->award_date->translatedFormat($company->date_format) }}
                                     </div>
                                 @endif

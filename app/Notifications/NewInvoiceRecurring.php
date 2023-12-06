@@ -71,8 +71,7 @@ class NewInvoiceRecurring extends BaseNotification
                         'actionText' => __('email.invoice.action'),
                         'notifiableName' => $notifiable->name
                     ]);
-
-                $newInvoiceRecurring->attachData($pdf->output(), $filename . '.pdf');
+                $newInvoiceRecurring ->attachData($pdf->output(), $filename . '.pdf');
 
                 return $newInvoiceRecurring;
             }

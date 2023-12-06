@@ -59,7 +59,7 @@ class AutoFollowUpReminder extends BaseNotification
 
         $followUpTime = $this->leadFollowup?->next_follow_up_date->format($this->company->time_format);
 
-        $content = __('email.followUpReminder.followUpLeadText') .'<br><br>' .__('email.followUpReminder.followUpLead') . ' :- ' . $followUpLead . '<br>' . __('email.followUpReminder.nextFollowUpDate') . ' :- ' . $followUpDate . '<br>' . __('email.followUpReminder.nextFollowUpTime') . ' :- ' . $followUpTime . '<br>' . $this->leadFollowup->remark;
+        $content = __('email.followUpReminder.followUpLeadText') .'<br><br>' .__('email.followUpReminder.followUpLead') . ' :- ' . $followUpLead . '<br>' . __('email.followUpReminder.nextFollowUpDate') . ' :- ' . $followUpDate . '<br>' . __('email.followUpReminder.nextFollowUpTime') . ' :- ' . $followUpTime . '<br>' . ucfirst($this->leadFollowup->remark);
 
         return $build
             ->subject(__('email.followUpReminder.subject') . ' #' . $this->leadFollowup->lead->id . ' - ' . config('app.name') . '.')

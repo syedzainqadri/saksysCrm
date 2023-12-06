@@ -14,7 +14,7 @@
                     <div class="row">
                     <div class="col-md-6">
                         <b>@lang("messages.unmatchedColumns", ["unmatchCount" => (!empty($heading) ? collect($columns)->where('required','Yes')->whereNotIn('id', $heading)->count() : 0)])</b>
-                        <a href="javascript:void(0);"
+                        · <a href="javascript:void(0);"
                                 onclick="skipall()">@lang("app.skipAll")</a>
                     </div>
                     <div class="col-md-6">
@@ -73,7 +73,7 @@
                                                 <div class="form-group">
                                                     <button onclick="goBack({{ $key }})" class="btn btn-info btn-sm" type="button">@lang("app.btnBack")</button>
                                                     <button onclick="saveColumnBox({{ $key }})" class="btn btn-dark btn-sm"
-                                                        type="button">@lang("app.save")</button>
+                                                        type="button">@lang("app.btnSave")</button>
                                                     <a href="javascript:void(0);" onclick="skipColumnBox({{ $key }})">@lang("app.skip")</a>
                                                 </div>
                                             </div>
@@ -445,13 +445,13 @@
 
 
                         if(failedJobs > 0){
-                            var failedMsg = `@lang("app.importFailedJobs")`;
+                            var failedMsg = '@lang("app.importFailedJobs")';
                             failedMsg = failedMsg.replace(':failedJobs', failedJobs).replace(':totalJobs', totalJobs);
                             $('#failedJobsCount').html(failedMsg);
                             $('#failedJobsCount').show();
                         }
                         if(processedJobs > 0){
-                            var processedMsg = `@lang("app.importProcessedJobs")`;
+                            var processedMsg = '@lang("app.importProcessedJobs")';
                             processedMsg = processedMsg.replace(':processedJobs', processedJobs).replace(':totalJobs', totalJobs);
                             $('#progressSuccess').html(processedMsg);
                             $('#progressSuccess').show();
@@ -460,7 +460,7 @@
                         if (totalJobs != (failedJobs + processedJobs)) {
                             getProgress(batchId);
                         }else{
-                            $('#importSuccess').html(`@lang("app.importCompleted")`);
+                            $('#importSuccess').html('@lang("app.importCompleted")');
                             $('#process-warning').hide();
                             $('#importSuccess').show();
                             $('#progress').hide();

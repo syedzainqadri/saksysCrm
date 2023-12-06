@@ -41,12 +41,9 @@
 <div class="content-wrapper">
     <!-- Add Task Export Buttons Start -->
     <div class="d-flex" id="table-actions">
-        @if($addPermission == 'all')
         <x-forms.link-primary :link="route('estimate-template.create')" class="mr-3" icon="plus">
             @lang('modules.estimates.estimateTemplate')
         </x-forms.link-primary>
-        @endif
-
     </div>
     <div class="d-flex flex-column w-tables rounded mt-3 bg-white">
 

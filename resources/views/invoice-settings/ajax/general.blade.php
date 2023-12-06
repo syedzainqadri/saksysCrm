@@ -7,13 +7,13 @@
     <div class="row">
 
         <div class="col-lg-6">
-            <x-forms.file allowedFileExtensions="png jpg jpeg svg bmp" class="mr-0 mr-lg-2 mr-md-2"
+            <x-forms.file allowedFileExtensions="png jpg jpeg svg" class="mr-0 mr-lg-2 mr-md-2"
                             :fieldLabel="__('modules.invoiceSettings.logo')"
                             fieldName="logo" fieldId="logo" :fieldValue="$invoiceSetting->logo_url"
                             :popover="__('messages.invoiceLogoTooltip')"/>
         </div>
         <div class="col-lg-6">
-            <x-forms.file allowedFileExtensions="png jpg jpeg svg bmp" class="mr-0 mr-lg-2 mr-md-2"
+            <x-forms.file allowedFileExtensions="png jpg jpeg svg" class="mr-0 mr-lg-2 mr-md-2"
                             :fieldLabel="__('modules.invoiceSettings.authorisedSignatorySignature')"
                             fieldName="authorised_signatory_signature" fieldId="authorised_signatory_signature" :fieldValue="$invoiceSetting->authorised_signatory_signature_url"
                             :popover="__('messages.authorisedSignatorySignatureTooltip')"/>
@@ -25,7 +25,7 @@
                             fieldName="locale" search="true">
                 @foreach ($languageSettings as $language)
                     <option
-                            data-content="<span class='flag-icon flag-icon-{{ ($language->flag_code == 'en') ? 'gb' : $language->flag_code }} flag-icon-squared'></span> {{ $language->language_name }}"
+                            data-content="<span class='flag-icon flag-icon-{{ ($language->flag_code == 'en') ? 'gb' : strtolower($language->flag_code) }} flag-icon-squared'></span> {{ $language->language_name }}"
                             @if ($invoiceSetting->locale == $language->language_code) selected
                             @endif value="{{ $language->language_code }}">
                         {{ $language->language_name }}</option>

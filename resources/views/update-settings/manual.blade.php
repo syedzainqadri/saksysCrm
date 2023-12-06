@@ -158,6 +158,7 @@
 @endsection
 
 @push('scripts')
+    <script src="{{ asset('vendor/jquery/dropzone.min.js') }}"></script>
     <script type="text/javascript">
         // "myAwesomeDropzone" is the camelized version of the HTML element's ID
         Dropzone.options.fileUploadDropzone = {

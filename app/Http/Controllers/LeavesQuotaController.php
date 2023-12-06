@@ -47,13 +47,12 @@ class LeavesQuotaController extends AccountBaseController
                 ->join('users', 'users.id', 'employee_leave_quotas.user_id')
                 ->join('employee_details', 'employee_details.user_id', 'users.id')
                 ->where('users.id', $userId)->get();
-
+        
             $roles = User::with('roles')->findOrFail($userId);
 
             $userRole = [];
-            $userRoles = $roles->roles->count() > 1 ? $roles->roles->where('name', '!=', 'employee') : $roles->roles;
 
-            foreach($userRoles as $role){
+            foreach($roles->roles as $role){
                 $userRole[] = $role->id;
             }
 

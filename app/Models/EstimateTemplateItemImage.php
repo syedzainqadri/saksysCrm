@@ -40,21 +40,20 @@ class EstimateTemplateItemImage extends BaseModel
 
     const FILE_PATH = 'estimate-files';
 
-    protected $appends = ['file_url', 'icon', 'file'];
+    protected $appends = ['file_url', 'icon'];
     protected $fillable = ['estimate_template_item_id', 'filename', 'hashname', 'size', 'external_link'];
 
     public function getFileUrlAttribute()
     {
-        if($this->external_link){
-            return str($this->external_link)->contains('http') ? $this->external_link : asset_url_local_s3($this->external_link);
+        if (empty($this->external_link)) {
+            return asset_url_local_s3('estimate-files/' . $this->estimate_template_item_id . '/' . $this->hashname);
+        }
+        elseif (!empty($this->external_link)) {
+            return $this->external_link;
+        }
+        else {
+            return '';
         }
 
-        return asset_url_local_s3(EstimateTemplateItemImage::FILE_PATH . '/' . $this->estimate_template_item_id . '/' . $this->hashname);
     }
-
-    public function getFileAttribute()
-    {
-        return $this->external_link ?: (EstimateTemplateItemImage::FILE_PATH . '/' . $this->estimate_template_item_id . '/' . $this->hashname);
-    }
-
 }

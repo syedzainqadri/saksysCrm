@@ -98,12 +98,6 @@ class EstimateController extends AccountBaseController
 
         $this->client = isset(request()->default_client) ? User::findOrFail(request()->default_client) : null;
 
-        $isClient = User::isClient(user()->id);
-
-        if ($isClient) {
-            $this->client = User::findOrFail(user()->id);
-        }
-
         if (request()->ajax()) {
             $html = view('estimates.ajax.create', $this->data)->render();
             return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
@@ -116,6 +110,7 @@ class EstimateController extends AccountBaseController
 
     public function store(StoreEstimate $request)
     {
+
         $items = $request->item_name;
         $cost_per_item = $request->cost_per_item;
         $quantity = $request->quantity;
@@ -414,10 +409,10 @@ class EstimateController extends AccountBaseController
                             'estimate_item_id' => $estimateItem->id,
                         ],
                         [
-                            'filename' => isset($invoice_item_image[$key]) ? $invoice_item_image[$key]->getClientOriginalName() : null,
-                            'hashname' => isset($invoice_item_image[$key]) ? $filename : null,
-                            'size' => isset($invoice_item_image[$key]) ? $invoice_item_image[$key]->getSize() : null,
-                            'external_link' => isset($invoice_item_image[$key]) ? null : (isset($invoice_item_image_url[$key]) ? $invoice_item_image_url[$key] : null),
+                            'filename' => !isset($invoice_item_image_url[$key]) ? $invoice_item_image[$key]->getClientOriginalName() : '',
+                            'hashname' => !isset($invoice_item_image_url[$key]) ? $filename : '',
+                            'size' => !isset($invoice_item_image_url[$key]) ? $invoice_item_image[$key]->getSize() : '',
+                            'external_link' => isset($invoice_item_image_url[$key]) ? $invoice_item_image_url[$key] : ''
                         ]
                     );
                 }
@@ -552,7 +547,7 @@ class EstimateController extends AccountBaseController
 
         $dom_pdf = $pdf->getDomPDF();
         $canvas = $dom_pdf->getCanvas();
-        $canvas->page_text(530, 820, null, null, 10);
+        $canvas->page_text(530, 820, 'Page {PAGE_NUM} of {PAGE_COUNT}', null, 10);
         $filename = $this->estimate->estimate_number;
 
         return [
@@ -617,7 +612,7 @@ class EstimateController extends AccountBaseController
 
             File::put(public_path() . '/' . Files::UPLOAD_FOLDER . '/estimate/accept/' . $imageName, base64_decode($image));
             Files::uploadLocalFile($imageName, 'estimate/accept', $estimate->company_id);
-
+            
         }
         else {
             if ($request->hasFile('image')) {

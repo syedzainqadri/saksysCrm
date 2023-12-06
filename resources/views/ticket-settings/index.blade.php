@@ -42,7 +42,7 @@
                                 href="{{ route('ticket-settings.index') }}?tab=reply-template" role="tab"
                                 aria-controls="nav-replyTemplates" aria-selected="true">@lang('app.menu.replyTemplates')
                             </a>
-{{--
+{{-- 
                             <a class="nav-item nav-link f-15 email-sync"
                                 href="{{ route('ticket-settings.index') }}?tab=email-sync" role="tab"
                                 aria-controls="nav-emailSync" aria-selected="true">@lang('app.menu.emailSync')
@@ -108,10 +108,6 @@
             $('.actionBtn').addClass('d-none');
             $('.' + activeTab + '-btn').removeClass('d-none');
         }
-
-        $(document).on('show.bs.dropdown', '.table-responsive', function() {
-            $('.table-responsive').css( "overflow", "inherit" );
-        });
 
        $("body").on("click", "#editSettings .nav a", function(event) {
             event.preventDefault();

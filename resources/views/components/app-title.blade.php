@@ -17,12 +17,7 @@
                         @if (Request::segment($i) != 'account')
                             <a href="{{str_contains(url()->current(),'public')?'/public'.$link:$link }}" class="text-lightest">
                                 @php
-                                    $langKey = 'app.'.str(Request::segment($i))->camel();
-
-                                    if (!Lang::has($langKey)) {
-                                        $langKey = str($langKey)->replace('app.', 'app.menu.')->__toString();
-                                    }
-
+                                    $langKey = 'app.'.str_replace('-', ' ', Request::segment($i));
                                 @endphp
 
                                 {{ Lang::has($langKey) ? __($langKey) : ucwords(str_replace('-', ' ', Request::segment($i)))}}

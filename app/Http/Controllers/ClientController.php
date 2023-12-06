@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Lead;
-use App\Models\ProjectStatusSetting;
 use App\Models\Role;
 use App\Models\User;
 use App\Helper\Files;
@@ -38,7 +37,6 @@ use App\DataTables\ClientGDPRDataTable;
 use App\DataTables\ClientNotesDataTable;
 use App\DataTables\CreditNotesDataTable;
 use App\DataTables\ClientContactsDataTable;
-use App\Enums\Salutation;
 use App\Http\Requests\Admin\Employee\ImportRequest;
 use App\Http\Requests\Admin\Client\StoreClientRequest;
 use App\Http\Requests\Gdpr\SaveConsentUserDataRequest;
@@ -113,7 +111,7 @@ class ClientController extends AccountBaseController
         $this->pageTitle = __('app.addClient');
         $this->countries = countries();
         $this->categories = ClientCategory::all();
-        $this->salutations = Salutation::cases();
+        $this->salutations = ['mr', 'mrs', 'miss', 'dr', 'sir', 'madam'];
         $this->languages = LanguageSetting::where('status', 'enabled')->get();
 
         $client = new ClientDetails();
@@ -242,14 +240,14 @@ class ClientController extends AccountBaseController
 
                 $teamData .= '<div class=\'position-relative\'><img src='.$team->image_url.' class=\'mr-2 taskEmployeeImg rounded-circle\'></div>';
                 $teamData .= '<div class=\'media-body\'>';
-                $teamData .= '<h5 class=\'mb-0 f-13\'>'.$team->name.'</h5>';
+                $teamData .= '<h5 class=\'mb-0 f-13\'>'.ucfirst($team->name).'</h5>';
                 $teamData .= '<p class=\'my-0 f-11 text-dark-grey\'>'.$team->email.'</p>';
 
                 $teamData .= (!is_null($team->clientDetails->company_name)) ? '<p class=\'my-0 f-11 text-dark-grey\'>'. $team->clientDetails->company_name .'</p>' : '';
                 $teamData .= '</div>';
                 $teamData .= '</div>"';
 
-                $teamData .= 'value="' . $team->id . '"> ' . $team->name . '';
+                $teamData .= 'value="' . $team->id . '"> ' . mb_ucwords($team->name) . '';
 
                 $teamData .= '</option>';
             }
@@ -280,7 +278,7 @@ class ClientController extends AccountBaseController
         }
 
         $this->pageTitle = __('app.update') . ' ' . __('app.client');
-        $this->salutations = Salutation::cases();
+        $this->salutations = ['mr', 'mrs', 'miss', 'dr', 'sir', 'madam'];
         $this->languages = LanguageSetting::where('status', 'enabled')->get();
 
         if (!is_null($this->client->clientDetails)) {
@@ -354,11 +352,6 @@ class ClientController extends AccountBaseController
             $data['locale'] = $request->locale;
             $fields = $request->only($user->clientDetails->getFillable());
 
-            if ($request->has('company_logo_delete') && $request->company_logo_delete == 'yes') {
-                Files::deleteFile($user->clientDetails->company_logo, 'client-logo');
-                $fields['company_logo'] = null;
-            }
-
             if ($request->hasFile('company_logo')) {
                 Files::deleteFile($user->clientDetails->company_logo, 'client-logo');
                 $fields['company_logo'] = Files::uploadLocalOrS3($request->company_logo, 'client-logo', 300);
@@ -425,7 +418,6 @@ class ClientController extends AccountBaseController
                 $q->where('data', 'like', '{"id":' . $user->id . ',%');
                 $q->orWhere('data', 'like', '%,"name":' . $user->name . ',%');
                 $q->orWhere('data', 'like', '%,"user_one":' . $user->id . ',%');
-                $q->orWhere('data', 'like', '%,"client_id":' . $user->id . '%');
             })->delete();
 
         $user->delete();
@@ -493,7 +485,7 @@ class ClientController extends AccountBaseController
             || ($this->viewPermission == 'added' && $this->client->clientDetails->added_by == user()->id)
             || ($this->viewPermission == 'both' && $this->client->clientDetails->added_by == user()->id)));
 
-        $this->pageTitle = $this->client->name;
+        $this->pageTitle = ucfirst($this->client->name);
 
         $this->clientStats = $this->clientStats($id);
         $this->projectChart = $this->projectChartData($id);
@@ -586,13 +578,13 @@ class ClientController extends AccountBaseController
     /**
      * XXXXXXXXXXX
      *
-     * @return array
+     * @return \Illuminate\Http\Response
      */
     public function projectChartData($id)
     {
-        $labels = ProjectStatusSetting::where('status', 'active')->pluck('status_name');
-        $data['labels'] = ProjectStatusSetting::where('status', 'active')->pluck('status_name');
-        $data['colors'] = ProjectStatusSetting::where('status', 'active')->pluck('color');
+        $labels = ['in progress', 'on hold', 'not started', 'canceled', 'finished'];
+        $data['labels'] = [__('app.inProgress'), __('app.onHold'), __('app.notStarted'), __('app.canceled'), __('app.finished')];
+        $data['colors'] = ['#1d82f5', '#FCBD01', '#616e80', '#D30000', '#2CB100'];
         $data['values'] = [];
 
         foreach ($labels as $label) {
@@ -874,7 +866,7 @@ class ClientController extends AccountBaseController
     {
         $id = $request->id;
 
-        $counts = User::withCount('projects', 'invoices', 'estimates')->withoutGlobalScope(ActiveScope::class)->find($id);
+        $counts = User::withCount('projects', 'invoices', 'estimates')->find($id);
 
         $payments = Payment::leftJoin('invoices', 'invoices.id', '=', 'payments.invoice_id')
             ->leftJoin('projects', 'projects.id', '=', 'payments.project_id')
@@ -910,14 +902,14 @@ class ClientController extends AccountBaseController
 
                 $teamData .= '<div class=\'position-relative\'><img src='.$client->image_url.' class=\'mr-2 taskEmployeeImg rounded-circle\'></div>';
                 $teamData .= '<div class=\'media-body\'>';
-                $teamData .= '<h5 class=\'mb-0 f-13\'>'.$client->name.'</h5>';
+                $teamData .= '<h5 class=\'mb-0 f-13\'>'.ucfirst($client->name).'</h5>';
                 $teamData .= '<p class=\'my-0 f-11 text-dark-grey\'>'.$client->email.'</p>';
 
                 $teamData .= (!is_null($client->clientDetails->company_name)) ? '<p class=\'my-0 f-11 text-dark-grey\'>'. $client->clientDetails->company_name .'</p>' : '';
                 $teamData .= '</div>';
                 $teamData .= '</div>"';
 
-                $teamData .= 'value="' . $client->id . '"> ' . $client->name . '';
+                $teamData .= 'value="' . $client->id . '"> ' . mb_ucwords($client->name) . '';
 
                 $teamData .= '</option>';
 
@@ -934,14 +926,14 @@ class ClientController extends AccountBaseController
 
                 $teamData .= '<div class=\'position-relative\'><img src='.$project->client->image_url.' class=\'mr-2 taskEmployeeImg rounded-circle\'></div>';
                 $teamData .= '<div class=\'media-body\'>';
-                $teamData .= '<h5 class=\'mb-0 f-13\'>'.$project->client->name.'</h5>';
+                $teamData .= '<h5 class=\'mb-0 f-13\'>'.ucfirst($project->client->name).'</h5>';
                 $teamData .= '<p class=\'my-0 f-11 text-dark-grey\'>'.$project->client->email.'</p>';
 
                 $teamData .= (!is_null($project->client->company->company_name)) ? '<p class=\'my-0 f-11 text-dark-grey\'>'. $project->client->company->company_name .'</p>' : '';
                 $teamData .= '</div>';
                 $teamData .= '</div>"';
 
-                $teamData .= 'value="' . $project->client->id . '"> ' . $project->client->name . '';
+                $teamData .= 'value="' . $project->client->id . '"> ' . mb_ucwords($project->client->name) . '';
 
                 $teamData .= '</option>';
             }

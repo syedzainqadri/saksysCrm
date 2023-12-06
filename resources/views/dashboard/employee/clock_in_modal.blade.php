@@ -55,7 +55,23 @@
 
 @if ($attendanceSettings->radius_check == 'yes' || $attendanceSettings->save_current_location)
     <script>
-       setCurrentLocation();
+        const currentLatitude = document.getElementById("current-latitude");
+        const currentLongitude = document.getElementById("current-longitude");
+        const x = document.getElementById("current-latitude");
+
+        function getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(showPosition);
+            }
+        }
+
+        function showPosition(position) {
+            currentLatitude.value = position.coords.latitude;
+            currentLongitude.value = position.coords.longitude;
+        }
+
+        getLocation();
+
     </script>
 @endif
 
@@ -70,7 +86,7 @@
         });
     });
 
-    $('body').on('click', '#save-clock-in', function () {
+    $('#save-clock-in').click(function () {
         const workingFrom = $('#working_from').val();
         const location = $('#location').val();
         const work_from_type = $('#work_from_type').val();

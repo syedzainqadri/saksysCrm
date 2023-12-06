@@ -198,6 +198,13 @@ class EmailNotificationSetting extends BaseModel
             'send_email' => 'no',
             'send_push' => 'no',
             'send_slack' => 'no',
+            'setting_name' => 'Clock In Notification',
+            'slug' => 'clock-in-notification',
+        ],
+        [
+            'send_email' => 'no',
+            'send_push' => 'no',
+            'send_slack' => 'no',
             'setting_name' => 'Holiday Notification',
             'slug' => 'holiday-notification',
         ],
@@ -236,13 +243,6 @@ class EmailNotificationSetting extends BaseModel
             'setting_name' => 'Task Mention',
             'slug' => 'task-mention-notification',
         ],
-        [
-            'send_email' => 'yes',
-            'send_push' => 'no',
-            'send_slack' => 'no',
-            'setting_name' => 'Shift Assign Notification',
-            'slug' => 'shift-assign-notification',
-        ]
     ];
 
     public static function userAssignTask()

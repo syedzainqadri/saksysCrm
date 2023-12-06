@@ -31,6 +31,7 @@
     <x-forms.button-primary id="save-discussion" icon="check">@lang('app.save')</x-forms.button-primary>
 </div>
 
+<script src="{{ asset('vendor/jquery/dropzone.min.js') }}"></script>
 <script>
     $(document).ready(function () {
         quillImageLoad('#description');

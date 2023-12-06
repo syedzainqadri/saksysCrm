@@ -3,38 +3,36 @@
 namespace App\Http\Controllers;
 
 use App\DataTables\LeadFollowupDataTable;
-use App\DataTables\LeadGDPRDataTable;
-use App\DataTables\LeadNotesDataTable;
-use App\DataTables\LeadsDataTable;
-use App\DataTables\ProposalDataTable;
-use App\Enums\Salutation;
+use Carbon\Carbon;
+use App\Models\Lead;
 use App\Helper\Reply;
-use App\Http\Requests\Admin\Employee\ImportProcessRequest;
-use App\Http\Requests\Admin\Employee\ImportRequest;
-use App\Http\Requests\CommonRequest;
-use App\Http\Requests\FollowUp\StoreRequest as FollowUpStoreRequest;
-use App\Http\Requests\Lead\StoreRequest;
-use App\Http\Requests\Lead\UpdateRequest;
+use App\Models\LeadAgent;
+use App\Models\LeadSource;
+use App\Models\LeadStatus;
 use App\Imports\LeadImport;
 use App\Jobs\ImportLeadJob;
 use App\Models\GdprSetting;
-use App\Models\Lead;
-use App\Models\LeadAgent;
 use App\Models\LeadCategory;
-use App\Models\LeadCustomForm;
 use App\Models\LeadFollowUp;
+use Illuminate\Http\Request;
+use App\Models\PurposeConsent;
+use App\DataTables\LeadsDataTable;
+use App\Models\PurposeConsentLead;
+use Illuminate\Support\Facades\DB;
+use App\Http\Requests\CommonRequest;
+use App\DataTables\LeadGDPRDataTable;
+use App\DataTables\ProposalDataTable;
+use App\DataTables\LeadNotesDataTable;
+use App\Http\Requests\Lead\StoreRequest;
+use App\Http\Requests\Lead\UpdateRequest;
+use App\Http\Requests\Admin\Employee\ImportRequest;
+use App\Http\Requests\Admin\Employee\ImportProcessRequest;
+use App\Http\Requests\FollowUp\StoreRequest as FollowUpStoreRequest;
+use App\Models\LeadCustomForm;
 use App\Models\LeadNote;
 use App\Models\LeadProduct;
-use App\Models\LeadSource;
-use App\Models\LeadStatus;
 use App\Models\Product;
-use App\Models\PurposeConsent;
-use App\Models\PurposeConsentLead;
-use App\Models\User;
 use App\Traits\ImportExcel;
-use Carbon\Carbon;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class LeadController extends AccountBaseController
 {
@@ -123,7 +121,7 @@ class LeadController extends AccountBaseController
             || ($this->viewPermission == 'both' && ($this->lead->added_by == user()->id || $leadAgentId == user()->id))
         ));
 
-        $this->pageTitle = $this->lead->client_name;
+        $this->pageTitle = ucfirst($this->lead->client_name);
 
         $this->categories = LeadCategory::all();
 
@@ -213,7 +211,7 @@ class LeadController extends AccountBaseController
         $this->categories = LeadCategory::all();
         $this->countries = countries();
         $this->pageTitle = __('modules.lead.createTitle');
-        $this->salutations = Salutation::cases();
+        $this->salutations = ['mr', 'mrs', 'miss', 'dr', 'sir', 'madam'];
 
         if (request()->ajax()) {
             $html = view('leads.ajax.create', $this->data)->render();
@@ -235,39 +233,29 @@ class LeadController extends AccountBaseController
         $this->addPermission = user()->permission('add_lead');
 
         abort_403(!in_array($this->addPermission, ['all', 'added']));
-
-        $existingUser = User::select('id')
-            ->whereHas('roles', function ($q) {
-                        $q->where('name', 'client');
-            })->where('company_id', company()->id)
-            ->where('email', $request->client_email)
-            ->whereNotNull('email')
-            ->first();
-
-            $lead = new Lead();
-            $lead->company_name = $request->company_name;
-            $lead->website = $request->website;
-            $lead->address = $request->address;
-            $lead->cell = $request->cell;
-            $lead->office = $request->office;
-            $lead->city = $request->city;
-            $lead->state = $request->state;
-            $lead->country = $request->country;
-            $lead->postal_code = $request->postal_code;
-            $lead->salutation = $request->salutation;
-            $lead->client_name = $request->client_name;
-            $lead->client_email = $request->client_email;
-            $lead->mobile = $request->mobile;
-            $lead->note = trim_editor($request->note);
-            $lead->next_follow_up = $request->next_follow_up;
-            $lead->agent_id = $request->agent_id;
-            $lead->source_id = $request->source_id;
-            $lead->category_id = $request->category_id;
-            $lead->client_id = $existingUser?->id;
-            $lead->status_id = $request->status;
-            $lead->value = ($request->value) ?: 0;
-            $lead->currency_id = $this->company->currency_id;
-            $lead->save();
+        $lead = new Lead();
+        $lead->company_name = $request->company_name;
+        $lead->website = $request->website;
+        $lead->address = $request->address;
+        $lead->cell = $request->cell;
+        $lead->office = $request->office;
+        $lead->city = $request->city;
+        $lead->state = $request->state;
+        $lead->country = $request->country;
+        $lead->postal_code = $request->postal_code;
+        $lead->salutation = $request->salutation;
+        $lead->client_name = $request->client_name;
+        $lead->client_email = $request->client_email;
+        $lead->mobile = $request->mobile;
+        $lead->note = trim_editor($request->note);
+        $lead->next_follow_up = $request->next_follow_up;
+        $lead->agent_id = $request->agent_id;
+        $lead->source_id = $request->source_id;
+        $lead->category_id = $request->category_id;
+        $lead->status_id = $request->status;
+        $lead->value = ($request->value) ?: 0;
+        $lead->currency_id = $this->company->currency_id;
+        $lead->save();
 
         if (!is_null($request->product_id)) {
 
@@ -282,13 +270,26 @@ class LeadController extends AccountBaseController
             }
         }
 
+        $lead_id = $lead->latest()->first()->id;
+
+        $note_detail = trim_editor($request->note);
+
+        if($note_detail != '') {
+            $lead_notes = new LeadNote();
+            $lead_notes->lead_id = $lead_id;
+            $lead_notes->title = 'Note';
+            $lead_notes->details = $note_detail;
+            $lead_notes->save();
+
+        }
+
         // To add custom fields data
         if ($request->custom_fields_data) {
             $lead->updateCustomFieldData($request->custom_fields_data);
         }
 
-            // Log search
-            $this->logSearchEntry($lead->id, $lead->client_name, 'leads.show', 'lead');
+        // Log search
+        $this->logSearchEntry($lead->id, $lead->client_name, 'leads.show', 'lead');
 
         if ($lead->client_email) {
             $this->logSearchEntry($lead->id, $lead->client_email, 'leads.show', 'lead');
@@ -298,7 +299,7 @@ class LeadController extends AccountBaseController
             $this->logSearchEntry($lead->id, $lead->company_name, 'leads.show', 'lead');
         }
 
-            $redirectUrl = urldecode($request->redirect_url);
+        $redirectUrl = urldecode($request->redirect_url);
 
         if($request->add_more == 'true')
         {
@@ -350,7 +351,7 @@ class LeadController extends AccountBaseController
         $this->categories = LeadCategory::all();
         $this->countries = countries();
         $this->pageTitle = __('modules.lead.updateTitle');
-        $this->salutations = Salutation::cases();
+        $this->salutations = ['mr', 'mrs', 'miss', 'dr', 'sir', 'madam'];
 
         if (request()->ajax()) {
             $html = view('leads.ajax.edit', $this->data)->render();
@@ -448,9 +449,8 @@ class LeadController extends AccountBaseController
     {
         $lead = Lead::findOrFail($request->leadID);
         $this->editPermission = user()->permission('edit_lead');
-        $this->changeLeadStatusPermission = user()->permission('change_lead_status');
 
-        abort_403(!(($this->editPermission == 'all' || ($this->editPermission == 'added' && $lead->added_by == user()->id)) || $this->changeLeadStatusPermission == 'all'));
+        abort_403(!($this->editPermission == 'all' || ($this->editPermission == 'added' && $lead->added_by == user()->id)));
 
         $lead->status_id = $request->statusID;
         $lead->save();
@@ -488,7 +488,7 @@ class LeadController extends AccountBaseController
 
     protected function changeBulkStatus($request)
     {
-        abort_403(!(user()->permission('edit_lead') == 'all' || user()->permission('change_lead_status') == 'all'));
+        abort_403(user()->permission('edit_lead') != 'all');
 
         Lead::whereIn('id', explode(',', $request->row_ids))->update(['status_id' => $request->status]);
     }

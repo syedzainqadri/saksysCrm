@@ -18,16 +18,6 @@ class StoreCreditNotes extends CoreRequest
         return true;
     }
 
-    protected function prepareForValidation()
-    {
-        if ($this->cn_number)
-        {
-            $this->merge([
-                'cn_number' => \App\Helper\NumberFormat::creditNote($this->cn_number),
-            ]);
-        }
-    }
-
     /**
      * Get the validation rules that apply to the request.
      *

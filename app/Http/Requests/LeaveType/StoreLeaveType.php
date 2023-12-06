@@ -28,7 +28,7 @@ class StoreLeaveType extends CoreRequest
             'type_name' => 'required',
             'color' => 'required',
             'leave_number' => 'required',
-            'monthly_limit' => 'required|lte:leave_number',
+            'monthly_limit' => 'required',
             'gender' => 'required',
             'marital_status' => 'required',
             'department' => 'required',

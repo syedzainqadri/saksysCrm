@@ -2,57 +2,72 @@
 
 namespace App\Http\Controllers;
 
-use App\DataTables\ArchiveProjectsDataTable;
-use App\DataTables\ArchiveTasksDataTable;
-use App\DataTables\DiscussionDataTable;
+use Carbon\Carbon;
+use App\Models\Role;
+use App\Models\Task;
+use App\Models\Team;
+use App\Models\User;
+use App\Helper\Files;
+use App\Helper\Reply;
+use App\Models\Module;
+use App\Models\Pinned;
+use App\Models\Expense;
+use App\Models\Invoice;
+use App\Models\Payment;
+use App\Models\Project;
+use App\Models\SubTask;
+use App\Models\Currency;
+use App\Models\TaskFile;
+use App\Models\TaskUser;
+use App\Models\Discussion;
+use App\Models\Permission;
+use App\Models\BankAccount;
+use App\Models\MentionUser;
+use App\Models\ProjectFile;
+use App\Models\ProjectNote;
+use App\Models\SubTaskFile;
+use App\Scopes\ActiveScope;
+use App\Traits\ImportExcel;
+use Illuminate\Http\Request;
+use App\Models\ProjectMember;
+use App\Imports\ProjectImport;
+use App\Jobs\ImportProjectJob;
+use App\Models\MessageSetting;
+use App\Models\PermissionRole;
+use App\Models\PermissionType;
+use App\Models\ProjectSetting;
+use App\Models\ProjectTimeLog;
+use App\Models\UserPermission;
+use App\Models\DiscussionReply;
+use App\Models\ProjectActivity;
+use App\Models\ProjectCategory;
+use App\Models\ProjectTemplate;
+use App\Models\TaskboardColumn;
+use App\Traits\ProjectProgress;
+use App\Models\ProjectMilestone;
+use App\DataTables\TasksDataTable;
+use App\Models\DiscussionCategory;
+use Illuminate\Support\Facades\DB;
+use App\Models\ProjectTimeLogBreak;
+use Illuminate\Support\Facades\Bus;
+use App\Models\ProjectStatusSetting;
+use Maatwebsite\Excel\Facades\Excel;
 use App\DataTables\ExpensesDataTable;
 use App\DataTables\InvoicesDataTable;
 use App\DataTables\PaymentsDataTable;
-use App\DataTables\ProjectNotesDataTable;
 use App\DataTables\ProjectsDataTable;
-use App\DataTables\TasksDataTable;
-use App\DataTables\TicketDataTable;
 use App\DataTables\TimeLogsDataTable;
-use App\Helper\Files;
-use App\Helper\Reply;
-use App\Http\Requests\Admin\Employee\ImportProcessRequest;
-use App\Http\Requests\Admin\Employee\ImportRequest;
+use App\DataTables\DiscussionDataTable;
+use Illuminate\Support\Facades\Artisan;
+use Maatwebsite\Excel\HeadingRowImport;
+use App\DataTables\ArchiveTasksDataTable;
+use App\DataTables\ProjectNotesDataTable;
 use App\Http\Requests\Project\StoreProject;
+use App\DataTables\ArchiveProjectsDataTable;
 use App\Http\Requests\Project\UpdateProject;
-use App\Imports\ProjectImport;
-use App\Jobs\ImportProjectJob;
-use App\Models\BankAccount;
-use App\Models\Currency;
-use App\Models\DiscussionCategory;
-use App\Models\Expense;
-use App\Models\Invoice;
-use App\Models\MessageSetting;
-use App\Models\Payment;
-use App\Models\Pinned;
-use App\Models\Project;
-use App\Models\ProjectActivity;
-use App\Models\ProjectCategory;
-use App\Models\ProjectFile;
-use App\Models\ProjectMember;
-use App\Models\ProjectMilestone;
-use App\Models\ProjectNote;
-use App\Models\ProjectStatusSetting;
-use App\Models\ProjectTemplate;
-use App\Models\ProjectTimeLog;
-use App\Models\ProjectTimeLogBreak;
-use App\Models\SubTask;
-use App\Models\SubTaskFile;
-use App\Models\Task;
-use App\Models\TaskUser;
-use App\Models\TaskboardColumn;
-use App\Models\Team;
-use App\Models\User;
-use App\Scopes\ActiveScope;
-use App\Traits\ImportExcel;
-use App\Traits\ProjectProgress;
-use Carbon\Carbon;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Imports\HeadingRowFormatter;
+use App\Http\Requests\Admin\Employee\ImportRequest;
+use App\Http\Requests\Admin\Employee\ImportProcessRequest;
 use Symfony\Component\Mailer\Exception\TransportException;
 
 class ProjectController extends AccountBaseController
@@ -654,10 +669,10 @@ class ProjectController extends AccountBaseController
             || ($this->viewPermission == 'owned' && in_array(user()->id, $memberIds) && in_array('employee', user_roles()))
             || ($this->viewPermission == 'both' && (user()->id == $this->project->client_id || user()->id == $this->project->added_by))
             || ($this->viewPermission == 'both' && (in_array(user()->id, $memberIds) || user()->id == $this->project->added_by) && in_array('employee', user_roles()))
-           || (($this->viewPermission == 'none') && (!is_null(($this->project->mentionProject))) && in_array(user()->id, $mentionIds))
+           || (($this->viewPermission == 'none') || (!is_null(($this->project->mentionProject))) && in_array(user()->id, $mentionIds))
         ));
 
-        $this->pageTitle = $this->project->project_name;
+        $this->pageTitle = ucfirst($this->project->project_name);
 
         if ($this->project->getCustomFieldGroupsWithFields()) {
             $this->fields = $this->project->getCustomFieldGroupsWithFields()->fields;
@@ -723,8 +738,6 @@ class ProjectController extends AccountBaseController
             $this->activities = ProjectActivity::getProjectActivities($id, 10);
             $this->view = 'projects.ajax.activity';
             break;
-        case 'tickets':
-            return $this->tickets($this->project->project_admin == user()->id);
         default:
             $this->taskChart = $this->taskChartData($id);
             $hoursLogged = $this->project->times()->sum('total_minutes');
@@ -958,7 +971,7 @@ class ProjectController extends AccountBaseController
         foreach ($tasks as $task) {
             $data[$count] = [
                 'id' => 'task-' . $task->id,
-                'name' => $task->heading,
+                'name' => ucfirst($task->heading),
                 'start' => ((!is_null($task->start_date)) ? $task->start_date->format('Y-m-d') : ((!is_null($task->due_date)) ? $task->due_date->format('Y-m-d') : null)),
                 'end' => (!is_null($task->due_date)) ? $task->due_date->format('Y-m-d') : $task->start_date->format('Y-m-d'),
                 'progress' => 0,
@@ -1044,7 +1057,7 @@ class ProjectController extends AccountBaseController
                 $bankName = $bankDetail->bank_name.' |';
             }
 
-            $bankData .= '<option value="' . $bankDetail->id . '">'.$bankName .' '.$bankDetail->account_name. '</option>';
+            $bankData .= '<option value="' . $bankDetail->id . '">'.$bankName .' '.mb_ucwords($bankDetail->account_name). '</option>';
         }
 
         $exchangeRate = Currency::where('id', $request->currencyId)->pluck('exchange_rate')->toArray();
@@ -1269,22 +1282,6 @@ class ProjectController extends AccountBaseController
 
     }
 
-    public function tickets($projectAdmin = false)
-    {
-        $dataTable = new TicketDataTable();
-
-        if (!$projectAdmin) {
-            $viewPermission = user()->permission('view_tickets');
-            abort_403(!in_array($viewPermission, ['all', 'added', 'owned', 'both']));
-        }
-
-        $this->activeTab = request()->tab ?: 'profile';
-        $this->view = 'projects.ajax.tickets';
-
-        return $dataTable->render('projects.show', $this->data);
-
-    }
-
     public function burndownChart($project)
     {
         $viewPermission = user()->permission('view_project_burndown_chart');
@@ -1440,11 +1437,11 @@ class ProjectController extends AccountBaseController
             $name = '';
 
             if (!is_null($item->project_id)) {
-                $name .= "<h5 class='f-12 text-darkest-grey'>" . $item->heading . "</h5><div class='text-muted f-11'>" . $item->project->project_name . '</div>';
+                $name .= "<h5 class='f-12 text-darkest-grey'>" . ucfirst($item->heading) . "</h5><div class='text-muted f-11'>" . $item->project->project_name . '</div>';
 
             }
             else {
-                $name .= "<span class='text-dark-grey f-11'>" . $item->heading . '</span>';
+                $name .= "<span class='text-dark-grey f-11'>" . ucfirst($item->heading) . '</span>';
             }
 
             $options .= '<option data-content="' . $name . '" value="' . $item->id . '">' . $item->heading . '</option>';
@@ -1701,22 +1698,6 @@ class ProjectController extends AccountBaseController
                 }
             }
         }
-    }
-
-    public function getProjects(Request $request)
-    {
-        $projects = Project::query()
-            ->when(($request->requesterType == 'client' && $request->clientId), function ($query) use ($request) {
-                $query->where('client_id', $request->clientId);
-            })
-            ->when(($request->requesterType == 'employee' && $request->userId), function ($query) use ($request) {
-                $query->whereHas('members', function ($q) use ($request) {
-                    $q->where('user_id', $request->userId);
-                });
-            })
-            ->get();
-
-        return Reply::dataOnly(['projects' => $projects]);
     }
 
 }

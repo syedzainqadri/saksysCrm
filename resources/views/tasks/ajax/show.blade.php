@@ -2,13 +2,11 @@
 $editTaskPermission = user()->permission('edit_tasks');
 $sendReminderPermission = user()->permission('send_reminder');
 $changeStatusPermission = user()->permission('change_status');
-$viewProjectPermission = user()->permission('view_projects');
-
 @endphp
 
 <div id="task-detail-section">
 
-    <h3 class="heading-h1 mb-3">{{ $task->heading }}</h3>
+    <h3 class="heading-h1 mb-3">{{ ucfirst($task->heading) }}</h3>
     <div class="row">
         <div class="col-sm-9">
             <div class="card bg-white border-0 b-shadow-4">
@@ -44,14 +42,14 @@ $viewProjectPermission = user()->permission('view_projects');
                                     <span class="border p-2 rounded mr-2 bg-light"><i class="fa fa-clock mr-1"></i><span id="active-task-timer">{{ $task->userActiveTimer->timer }}</span></span>
 
                                     @if (is_null($task->userActiveTimer->activeBreak))
-                                        <x-forms.button-secondary icon="pause-circle" data-time-id="{{ $task->userActiveTimer->id }}" id="pause-timer-btn" class="mr-2" data-url="{{ url()->current() }}">@lang('modules.timeLogs.pauseTimer')</x-forms.button-secondary>
+                                        <x-forms.button-secondary icon="pause-circle" data-time-id="{{ $task->userActiveTimer->id }}" id="pause-timer-btn" class="mr-2">@lang('modules.timeLogs.pauseTimer')</x-forms.button-secondary>
 
                                         <x-forms.button-secondary data-time-id="{{ $task->userActiveTimer->id }}"
-                                            id="stop-task-timer" icon="stop-circle" data-url="{{ url()->current() }}">
+                                            id="stop-task-timer" icon="stop-circle">
                                             @lang('modules.timeLogs.stopTimer')
                                         </x-forms.button-secondary>
                                     @else
-                                        <x-forms.button-secondary id="resume-timer-btn" icon="play-circle" data-url="{{ url()->current() }}"
+                                        <x-forms.button-secondary id="resume-timer-btn" icon="play-circle"
                                         data-time-id="{{ $task->userActiveTimer->activeBreak->id }}">@lang('modules.timeLogs.resumeTimer')</x-forms.button-secondary>
                                     @endif
 
@@ -121,16 +119,8 @@ $viewProjectPermission = user()->permission('view_projects');
                                     @elseif ($task->project->status == 'finished')
                                         <i class="fa fa-circle mr-1 text-dark-green f-10"></i>
                                     @endif
-                                    @if ($viewProjectPermission == 'all'
-                                    || ($viewProjectPermission == 'added' && $task->project->added_by == user()->id)
-                                    || ($viewProjectPermission == 'owned' && user()->id == $task->project->client_id && in_array('client', user_roles()))
-                                    || ($viewProjectPermission == 'both' && (user()->id == $task->project->client_id || user()->id == $task->added_by))
-                                    )
                                     <a href="{{ route('projects.show', $task->project_id) }}" class="text-dark-grey">
                                         {{ $task->project->project_name }}</a>
-                                    @else
-                                    {{ $task->project->project_name }}
-                                    @endif
                                 @else
                                     --
                                 @endif
@@ -165,7 +155,7 @@ $viewProjectPermission = user()->permission('view_projects');
                                         @foreach ($task->users as $item)
                                             <div class="taskEmployeeImg rounded-circle mr-1">
                                                 <a href="{{ route('employees.show', $item->id) }}">
-                                                    <img data-toggle="tooltip" data-original-title="{{ $item->name }}"
+                                                    <img data-toggle="tooltip" data-original-title="{{ mb_ucwords($item->name) }}"
                                                         src="{{ $item->image_url }}">
                                                 </a>
                                             </div>
@@ -545,29 +535,6 @@ $viewProjectPermission = user()->permission('view_projects');
 
             });
 
-            $('#stop-task-timer').click(function() {
-                var id = $(this).data('time-id');
-                var url = "{{ route('timelogs.stop_timer', ':id') }}";
-                url = url.replace(':id', id);
-                var token = '{{ csrf_token() }}';
-
-                let currentUrl = $(this).data('url');
-
-                $.easyAjax({
-                    url: url,
-                    blockUI: true,
-                    type: "POST",
-                    data: {
-                        timeId: id,
-                        currentUrl: currentUrl,
-                        _token: token
-                    },
-                    success: function(data) {
-                        window.location.reload();
-                    }
-                })
-            });
-
             $('body').on('click', '#pinnedItem', function() {
                 var type = $('#pinnedItem').attr('data-pinned');
                 var id = '{{ $task->id }}';
@@ -829,6 +796,7 @@ $viewProjectPermission = user()->permission('view_projects');
                 })
             });
 
+
             $('body').on('click', '.delete-file', function() {
                 var id = $(this).data('row-id');
                 Swal.fire({
@@ -949,6 +917,25 @@ $viewProjectPermission = user()->permission('view_projects');
                 })
             });
 
+            $('#stop-task-timer').click(function() {
+                var id = $(this).data('time-id');
+                var url = "{{ route('timelogs.stop_timer', ':id') }}";
+                url = url.replace(':id', id);
+                var token = '{{ csrf_token() }}';
+                $.easyAjax({
+                    url: url,
+                    blockUI: true,
+                    type: "POST",
+                    data: {
+                        timeId: id,
+                        _token: token
+                    },
+                    success: function(data) {
+                        window.location.reload();
+                    }
+                })
+            });
+
             $('body').on('click', '#reminderButton', function() {
                 Swal.fire({
                     title: "@lang('messages.sweetAlertTitle')",
@@ -1009,7 +996,8 @@ $viewProjectPermission = user()->permission('view_projects');
 
                     }
                 });
-            });
+            })
+
 
             init(RIGHT_MODAL);
         });

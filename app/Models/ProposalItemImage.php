@@ -39,21 +39,21 @@ class ProposalItemImage extends BaseModel
 
     const FILE_PATH = 'proposal-files';
 
-    protected $appends = ['file_url', 'icon', 'file'];
+    protected $appends = ['file_url', 'icon'];
     protected $fillable = ['proposal_item_id', 'filename', 'hashname', 'size', 'external_link'];
 
     public function getFileUrlAttribute()
     {
-        if($this->external_link){
-            return str($this->external_link)->contains('http') ? $this->external_link : asset_url_local_s3($this->external_link);
+        if (empty($this->external_link)) {
+            return asset_url_local_s3('proposal-files/' . $this->proposal_item_id . '/' . $this->hashname);
+        }
+        elseif (!empty($this->external_link)) {
+            return $this->external_link;
+        }
+        else {
+            return '';
         }
 
-        return asset_url_local_s3(ProposalItemImage::FILE_PATH . '/' . $this->proposal_item_id . '/' . $this->hashname);
-    }
-
-    public function getFileAttribute()
-    {
-        return $this->external_link ?: (ProposalItemImage::FILE_PATH . '/' . $this->proposal_item_id . '/' . $this->hashname);
     }
 
     public function item() : BelongsTo

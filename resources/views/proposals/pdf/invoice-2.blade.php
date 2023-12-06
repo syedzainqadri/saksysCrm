@@ -356,7 +356,7 @@
 
             <div class="company-info descriptionFont">
                 <span class="company-name descriptionFont">
-                    {{ $company->company_name }}
+                    {{ mb_ucwords($company->company_name) }}
                 </span>
 
                 <span class="spacer"></span>
@@ -385,7 +385,7 @@
                 </tr>
                 <tr>
                     <td>@lang('app.status'):</td>
-                    <td>{{ $proposal->status }}</td>
+                    <td>{{ mb_ucwords($proposal->status) }}</td>
                 </tr>
                 <tr>
                     <td>@lang('modules.estimates.validTill'):</td>
@@ -408,16 +408,16 @@
             <span  class="descriptionFont">@lang('modules.invoices.billedTo')</span>
             <div  class="descriptionFont">
                 @if ($proposal->lead && $proposal->lead->client_name && $invoiceSetting->show_client_name == 'yes')
-                    <span class="bold descriptionFont">{{ $proposal->lead->client_name }}</span>
+                    <span class="bold descriptionFont">{{ mb_ucwords($proposal->lead->client_name) }}</span>
                 @endif
                 @if ($proposal->lead && $proposal->lead->client_email && $invoiceSetting->show_client_email == 'yes')
-                    <div class="descriptionFont">{{ $proposal->lead->client_email }}</div>
+                    <div class="descriptionFont">{{ mb_ucwords($proposal->lead->client_email) }}</div>
                 @endif
                 @if ($proposal->lead && $proposal->lead->mobile && $invoiceSetting->show_client_phone == 'yes')
                     <div class="descriptionFont">{{ $proposal->lead->mobile }}</div>
                 @endif
                 @if ($proposal->lead && $proposal->lead->company_name && $invoiceSetting->show_client_company_name == 'yes')
-                    <div class="descriptionFont">{{ $proposal->lead->company_name }}</div>
+                    <div class="descriptionFont">{{ mb_ucwords($proposal->lead->company_name) }}</div>
                 @endif
                 @if ($proposal->lead && $proposal->lead->address && $invoiceSetting->show_client_company_address == 'yes')
                     <div class="descriptionFont">{!! nl2br($proposal->lead->address) !!}</div>
@@ -432,7 +432,7 @@
     <div class="invoice-body descriptionFont">
 
         @if ($proposal->description)
-            <div class="f-13 mb-3 description descriptionFont">{!! nl2br(pdfStripTags($proposal->description)) !!}</div>
+            <div class="f-13 mb-3 description descriptionFont">{!! nl2br(strip_tags($proposal->description, ['p', 'b', 'strong', 'a', 'ul', 'li', 'ol', 'i', 'u', 'em', 'blockquote', 'img'])) !!}</div>
         @endif
 
         @if (count($proposal->items) > 0)
@@ -459,9 +459,9 @@
                             <tr data-iterate="item">
                                 <td>{{ ++$count }}</td> <!-- Don't remove this column as it's needed for the row commands -->
                                 <td>
-                                    {{ $item->item_name }}
+                                    {{ ucfirst($item->item_name) }}
                                     @if(!is_null($item->item_summary))
-                                        <p class="item-summary descriptionFont">{!! nl2br(pdfStripTags($item->item_summary)) !!}</p>
+                                        <p class="item-summary descriptionFont">{!! nl2br(strip_tags($item->item_summary, ['p', 'b', 'strong', 'a'])) !!}</p>
                                     @endif
                                     @if ($item->proposalItemImage)
                                         <p class="mt-2">
@@ -495,7 +495,7 @@
                     @endif
                     @foreach($taxes as $key=>$tax)
                     <tr data-iterate="tax">
-                        <td colspan="{{ $invoiceSetting->hsn_sac_code_show ? '5': '4' }}">{{ $key }}:</td>
+                        <td colspan="{{ $invoiceSetting->hsn_sac_code_show ? '5': '4' }}">{{ mb_strtoupper($key) }}:</td>
                         <td>{{ currency_format($tax, $proposal->currency_id, false) }}</td>
                     </tr>
                     @endforeach

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Client;
 use Carbon\Carbon;
 use App\Models\User;
 use App\Helper\Reply;
@@ -20,7 +21,6 @@ use App\DataTables\TicketDataTable;
 use App\Models\TicketReplyTemplate;
 use App\Http\Requests\Tickets\StoreTicket;
 use App\Http\Requests\Tickets\UpdateTicket;
-use App\Models\Project;
 
 class TicketController extends AccountBaseController
 {
@@ -64,7 +64,6 @@ class TicketController extends AccountBaseController
 
             $this->types = TicketType::all();
             $this->tags = TicketTagList::all();
-            $this->projects = Project::allProjects();
         }
 
         return $dataTable->render('tickets.index', $this->data);
@@ -150,7 +149,6 @@ class TicketController extends AccountBaseController
         $ticket->priority = $request->priority;
         $ticket->channel_id = $request->channel_id;
         $ticket->group_id = $request->group_id;
-        $ticket->project_id = $request->project_id;
         $ticket->save();
 
         // Save first message
@@ -176,7 +174,7 @@ class TicketController extends AccountBaseController
         }
 
         // Log search
-        $this->logSearchEntry($ticket->ticket_number, $ticket->subject, 'tickets.show', 'ticket');
+        $this->logSearchEntry($ticket->id, $ticket->subject, 'tickets.show', 'ticket');
 
         $redirectUrl = urldecode($request->redirect_url);
 
@@ -190,8 +188,7 @@ class TicketController extends AccountBaseController
     public function show($ticketNumber)
     {
         $this->viewTicketPermission = user()->permission('view_tickets');
-        $this->ticket = Ticket::with('project')
-            ->where('ticket_number', $ticketNumber)
+        $this->ticket = Ticket::where('ticket_number', $ticketNumber)
             ->first();
 
         abort_if(!$this->ticket, 404);
@@ -255,7 +252,7 @@ class TicketController extends AccountBaseController
         return Reply::dataOnly(['status' => 'success']);
     }
 
-    public function   destroy($id)
+    public function destroy($id)
     {
         $ticket = Ticket::findOrFail($id);
 
@@ -303,9 +300,10 @@ class TicketController extends AccountBaseController
                 $ticket->agent_id = current($diffAgent);
 
             } else {
+                $agentDuplicateCount = 0;
                 $agentDuplicateCount = array_count_values($ticketData);
 
-                if(!empty($agentDuplicateCount)) {
+                if($agentDuplicateCount > 0){  /** @phpstan-ignore-line */
                     $minVal = min($agentDuplicateCount);
                     $agentId = array_search($minVal, $agentDuplicateCount);
                     $ticket->agent_id = $agentId;
@@ -369,17 +367,15 @@ class TicketController extends AccountBaseController
         }
 
         if ($viewPermission == 'owned') {
-            $tickets->where(function ($query) {
-                $query->where('user_id', '=', user()->id)
-                    ->orWhere('agent_id', '=', user()->id);
-            });
+            $tickets->where('user_id', '=', user()->id)
+                ->orWhere('tickets.agent_id', '=', user()->id);
         }
 
         if ($viewPermission == 'both') {
             $tickets->where(function ($query) {
-                $query->where('user_id', '=', user()->id)
-                    ->orWhere('added_by', '=', user()->id)
-                    ->orWhere('agent_id', '=', user()->id);
+                $query->where('tickets.user_id', '=', user()->id)
+                    ->orWhere('tickets.added_by', '=', user()->id)
+                    ->orWhere('tickets.agent_id', '=', user()->id);
             });
         }
 

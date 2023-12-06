@@ -18,13 +18,13 @@
 
                 <div class="col-lg-4">
                     <x-forms.text class="mr-0 mr-lg-2 mr-md-2" :fieldLabel="__('modules.currencySettings.currencyName')"
-                        :fieldPlaceholder="__('placeholders.currency.currencyName')" fieldName="currency_name" fieldId="currency_name"
-                        :fieldValue="$currency->currency_name" fieldRequired="true"></x-forms.text>
+                                  fieldPlaceholder="e.g. Dollar" fieldName="currency_name" fieldId="currency_name"
+                                  :fieldValue="$currency->currency_name" fieldRequired="true"></x-forms.text>
                 </div>
 
                 <div class="col-lg-4">
                     <x-forms.text class="mr-0 mr-lg-2 mr-md-2"
-                                  :fieldLabel="__('modules.currencySettings.currencySymbol')" :fieldPlaceholder="__('placeholders.currency.currencySymbol')"
+                                  :fieldLabel="__('modules.currencySettings.currencySymbol')" fieldPlaceholder="e.g. $"
                                   fieldName="currency_symbol" fieldId="currency_symbol"
                                   :fieldValue="$currency->currency_symbol" fieldRequired="true">
                     </x-forms.text>
@@ -32,7 +32,7 @@
 
                 <div class="col-lg-4">
                     <x-forms.text class="mr-0 mr-lg-2 mr-md-2" :fieldLabel="__('modules.currencySettings.currencyCode')"
-                                  :fieldPlaceholder="__('placeholders.currency.currencyCode')" fieldName="currency_code" fieldId="currency_code"
+                                  fieldPlaceholder="e.g. USD" fieldName="currency_code" fieldId="currency_code"
                                   :fieldValue="$currency->currency_code" fieldRequired="true"></x-forms.text>
                 </div>
 
@@ -56,7 +56,7 @@
                 <div class="col-lg-4 crypto-currency"
                      @if ($currency->is_cryptocurrency == 'no') style="display: none" @endif>
                     <x-forms.text class="mr-0 mr-lg-2 mr-md-2" :fieldLabel="__('modules.currencySettings.usdPrice')"
-                                  :fieldPlaceholder="__('placeholders.price')" fieldName="usd_price" fieldId="usd_price"
+                                  fieldPlaceholder="e.g. 100" fieldName="usd_price" fieldId="usd_price"
                                   :fieldValue="$currency->usd_price" fieldRequired="true"></x-forms.text>
                 </div>
 
@@ -64,7 +64,7 @@
                      @if ($currency->is_cryptocurrency == 'yes') style="display: none;" @endif>
                     <x-forms.number class="mr-0 mr-lg-2 mr-md-2"
                                     :fieldLabel="__('modules.currencySettings.exchangeRate')"
-                                    :fieldPlaceholder="__('placeholders.price')" fieldName="exchange_rate" fieldId="exchange_rate"
+                                    fieldPlaceholder="e.g. 100" fieldName="exchange_rate" fieldId="exchange_rate"
                                     :fieldValue="$currency->exchange_rate" fieldRequired="true"
                                     fieldHelp="( {{company()->currency->currency_code}} {{__('app.to')}} {{$currency->currency_code}} )"></x-forms.number>
 
@@ -73,7 +73,7 @@
                             @lang('modules.currencySettings.fetchLatestExchangeRate')
                         </a>
                     @else
-                        @lang('messages.configureCurrencyConverterKey',['link'=> '<a href="javascript:;" class="fetch-exchange-rate" icon="key"><i class="fa fa-key"></i> '.__("app.clickHere").'</a>'])
+                        @lang('messages.configureCurrencyConverterKey',['link'=> '<a href="javascript:;" class="fetch-exchange-rate" icon="key"><i class="fa fa-key"></i> '.ucwords(__("app.clickHere")).'</a>'])
                     @endif
                 </div>
 

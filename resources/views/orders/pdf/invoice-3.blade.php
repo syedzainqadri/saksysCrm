@@ -400,7 +400,7 @@
 
         <div class="company-info">
             <div>
-                {{ company()->company_name }}
+                {{ mb_ucwords(company()->company_name) }}
             </div>
             <br>
             @if (!is_null($settings) && $order->address)
@@ -433,7 +433,7 @@
 
                 @if ($order->client->name && $invoiceSetting->show_client_name == 'yes')
                     <div>
-                        <span class="bold">{{ $order->client->name }}</span>
+                        <span class="bold">{{ mb_ucwords($order->client->name) }}</span>
                     </div>
                 @endif
 
@@ -451,7 +451,7 @@
 
                 @if ($order->clientDetails->company_name && $invoiceSetting->show_client_company_name == 'yes')
                     <div>
-                        <span>{{ $order->clientDetails->company_name }}</span>
+                        <span>{{ mb_ucwords($order->clientDetails->company_name) }}</span>
                     </div>
                 @endif
 
@@ -491,7 +491,7 @@
                     <th>@lang("app.hsnSac")</th>
                 @endif
                 @if ($order->unit != null)
-                    <th class="qty">{{ $order->unit->unit_type }}</th>
+                    <th class="qty">{{ ucwords($order->unit->unit_type) }}</th>
                     @else
                     <th class="qty"> </th>
                     @endif
@@ -506,9 +506,9 @@
             <tr data-iterate="item">
                 <td>{{ ++$count }}</td> <!-- Don't remove this column as it's needed for the row commands -->
                 <td>
-                    {{ $item->item_name }}
+                    {{ ucfirst($item->item_name) }}
                     @if(!is_null($item->item_summary))
-                        <p class="item-summary  mb-3">{!! nl2br(pdfStripTags($item->item_summary)) !!}</p>
+                        <p class="item-summary  mb-3">{!! nl2br(strip_tags($item->item_summary, ['p', 'b', 'strong', 'a'])) !!}</p>
                     @endif
                     @if ($item->orderItemImage)
                         <p class="mt-2">
@@ -521,7 +521,7 @@
                 @endif
                 <td>{{ $item->quantity }}</td>
                 <td>{{ currency_format($item->unit_price, $order->currency_id, false) }}</td>
-                <td>{{ $item->tax_list }}</td>
+                <td>{{ strtoupper($item->tax_list) }}</td>
                 <td>{{ currency_format($item->amount, $order->currency_id, false) }}</td>
             </tr>
                 @endif
@@ -546,7 +546,7 @@
             @endif
             @foreach($taxes as $key=>$tax)
                 <tr data-iterate="tax">
-                    <th>{{ $key }}:</th>
+                    <th>{{ mb_strtoupper($key) }}:</th>
                     <td>{{ currency_format($tax, $order->currency_id, false) }}</td>
                 </tr>
             @endforeach

@@ -44,7 +44,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property-read \App\Models\UnitType|null $unit
  * @method static \Illuminate\Database\Eloquent\Builder|InvoiceItems whereProductId($value)
  * @method static \Illuminate\Database\Eloquent\Builder|InvoiceItems whereUnitId($value)
- * @property-read \App\Models\Invoice $invoice
  * @mixin \Eloquent
  */
 class InvoiceItems extends BaseModel
@@ -68,7 +67,7 @@ class InvoiceItems extends BaseModel
     {
         return $this->belongsTo(UnitType::class, 'unit_id');
     }
-
+    
     public function getTaxListAttribute()
     {
         $invoiceItem = $this;
@@ -89,11 +88,6 @@ class InvoiceItems extends BaseModel
         }
 
         return $taxes;
-    }
-
-    public function invoice(): BelongsTo
-    {
-        return $this->belongsTo(Invoice::class, 'invoice_id');
     }
 
 }

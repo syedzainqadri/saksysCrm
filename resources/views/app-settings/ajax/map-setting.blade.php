@@ -88,7 +88,7 @@
         </div>
         <div class="col-lg-8 mb-0">
             <x-forms.text :fieldLabel="__('modules.accountSettings.google_map_key')"
-                          :fieldPlaceholder="__('placeholders.googleMapKey')"
+                          fieldPlaceholder="e.g. AIzaSyDSl2bG7XXXXXXXXXXXXXXXXXX"
                           fieldName="google_map_key" fieldId="google_map_key"
                           :fieldValue="global_setting()->google_map_key"/>
 

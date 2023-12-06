@@ -64,27 +64,6 @@ class LanguageSetting extends BaseModel
 
         ],
         [
-            'language_code' => 'bg',
-            'flag_code' => 'bg',
-            'language_name' => 'Bulgarian',
-            'status' => 'disabled',
-
-        ],
-        [
-            'language_code' => 'th',
-            'flag_code' => 'th',
-            'language_name' => 'Thai',
-            'status' => 'disabled',
-
-        ],
-        [
-            'language_code' => 'ka',
-            'flag_code' => 'ge',
-            'language_name' => 'Georgian',
-            'status' => 'disabled',
-
-        ],
-        [
             'language_code' => 'de',
             'flag_code' => 'de',
             'language_name' => 'German',
@@ -120,23 +99,9 @@ class LanguageSetting extends BaseModel
 
         ],
         [
-            'language_code' => 'el',
+            'language_code' => 'gr',
             'flag_code' => 'gr',
             'language_name' => 'Greek',
-            'status' => 'disabled',
-
-        ],
-        [
-            'language_code' => 'hi',
-            'flag_code' => 'in',
-            'language_name' => 'Hindi',
-            'status' => 'disabled',
-
-        ],
-        [
-            'language_code' => 'id',
-            'flag_code' => 'id',
-            'language_name' => 'Indonesian',
             'status' => 'disabled',
 
         ],

@@ -39,12 +39,7 @@ class CustomModuleController extends AccountBaseController
     {
         $this->type = 'custom';
         $this->updateFilePath = config('froiden_envato.tmp_path');
-        $this->allModules = Module::toCollection()->filter(function ($module, $key) {
-            return $key !== 'UniversalBundle';
-        });
-
-        $this->universalBundle = Module::find('UniversalBundle');
-
+        $this->allModules = Module::all();
         $this->view = 'custom-modules.ajax.custom';
         $this->activeTab = 'custom';
         $plugins = EnvatoUpdate::plugins();
@@ -118,14 +113,6 @@ class CustomModuleController extends AccountBaseController
 
             // Delete Modules Directory after moving files
             File::deleteDirectory(storage_path('app') . '/Modules/');
-
-
-            // if module is universal bundle module then activate the module
-            if ($moduleName == 'UniversalBundle') {
-                $module = Module::findOrFail($moduleName);
-                $module->enable();
-                Artisan::call('module:migrate', array($moduleName, '--force' => true));
-            }
 
             $this->flushData();
 
@@ -226,14 +213,8 @@ class CustomModuleController extends AccountBaseController
     {
         Artisan::call('optimize:clear');
         Artisan::call('view:clear');
-        $user = auth()->id();
-        // clear cache
-        cache()->flush();
-        // clear session
-        session()->flush();
-        auth()->logout();
-        // login user
-        auth()->loginUsingId($user);
+        Session::flush();
+        Auth::logout();
     }
 
     /**
@@ -264,18 +245,17 @@ class CustomModuleController extends AccountBaseController
             Artisan::call('module:migrate', array($plugin, '--force' => true));
         }
 
-        $command = $moduleName . ':activate';
+        $command = strtolower($moduleName) . ':activate';
 
         // We will call the module function php artisan asset:activate, zoom:active , etc
         if (array_has(\Artisan::all(), $command) && ($status == 'active')) {
             Artisan::call($command);
         }
 
-        if (strtolower($moduleName) == 'languagepack' && ($status == 'active')) {
-            \session(['languagepack_module_activated' => true]);
-        }
+        cache()->forget('user_modules');
+        /** @phpstan-ignore-next-line */
+        cache(['worksuite_plugins' => array_keys($plugins)]);
 
-        $this->flushData();
 
         return Reply::redirect(route('custom-modules.index') . '?tab=custom', 'Status Changed. Reloading');
     }

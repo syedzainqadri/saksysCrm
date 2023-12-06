@@ -48,10 +48,6 @@ use Illuminate\Support\Facades\DB;
  * @property-read \App\Models\Company|null $company
  * @method static Builder|UserChat whereCompanyId($value)
  * @method static Builder|UserChat whereNotificationSent($value)
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\MentionUser> $mentionProject
- * @property-read int|null $mention_project_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\User> $mentionUser
- * @property-read int|null $mention_user_count
  * @mixin \Eloquent
  */
 class UserChat extends BaseModel

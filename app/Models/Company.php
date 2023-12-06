@@ -2,8 +2,6 @@
 
 namespace App\Models;
 
-use App\Traits\HasMaskImage;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -238,7 +236,6 @@ class Company extends BaseModel
 {
 
     use HasFactory;
-    use HasMaskImage;
 
     protected $table = 'companies';
 
@@ -278,7 +275,7 @@ class Company extends BaseModel
             return global_setting()->light_logo_url;
         }
 
-        return asset_url_local_s3('app-logo/' . $this->light_logo);
+        return asset_url_local_s3('app-logo/' . $this->light_logo, true, 'image');
 
     }
 
@@ -288,7 +285,7 @@ class Company extends BaseModel
             return global_setting()->dark_logo_url;
         }
 
-        return asset_url_local_s3('app-logo/' . $this->logo);
+        return asset_url_local_s3('app-logo/' . $this->logo, true, 'image');
     }
 
     public function getLightLogoUrlAttribute()
@@ -297,7 +294,7 @@ class Company extends BaseModel
             return global_setting()->light_logo_url;
         }
 
-        return asset_url_local_s3('app-logo/' . $this->light_logo);
+        return asset_url_local_s3('app-logo/' . $this->light_logo, true, 'image');
     }
 
     public function getDarkLogoUrlAttribute()
@@ -307,7 +304,7 @@ class Company extends BaseModel
             return asset('img/worksuite-logo.png');
         }
 
-        return asset_url_local_s3('app-logo/' . $this->logo);
+        return asset_url_local_s3('app-logo/' . $this->logo, true, 'image');
     }
 
     public function getLoginBackgroundUrlAttribute()
@@ -318,100 +315,6 @@ class Company extends BaseModel
         }
 
         return asset_url_local_s3('login-background/' . $this->login_background);
-    }
-
-    public function maskedDefaultLogo(): Attribute
-    {
-        return Attribute::make(
-            get: function () {
-                if (is_null($this->logo)) {
-                    return global_setting()->dark_logo_url;
-                }
-
-                return $this->generateMaskedImageAppUrl('app-logo/' . $this->logo);
-            },
-        );
-
-    }
-
-    public function maskedLogoUrl(): Attribute
-    {
-        return Attribute::make(
-            get: function () {
-                if (user()) {
-                    if (user()->dark_theme) {
-                        return $this->maskedDefaultLogo();
-                    }
-                }
-
-                if (company() && company()->auth_theme == 'dark') {
-                    return $this->maskedDefaultLogo();
-
-                }
-
-                if (is_null($this->light_logo)) {
-                    return global_setting()->light_logo_url;
-                }
-
-                return $this->generateMaskedImageAppUrl('app-logo/' . $this->light_logo);
-            },
-        );
-    }
-
-    public function maskedLightLogoUrl(): Attribute
-    {
-        return Attribute::make(
-            get: function () {
-                if (is_null($this->light_logo)) {
-                    return global_setting()->light_logo_url;
-                }
-
-                return $this->generateMaskedImageAppUrl('app-logo/' . $this->light_logo);
-            },
-        );
-
-    }
-
-    public function maskedDarkLogoUrl(): Attribute
-    {
-        return Attribute::make(
-            get: function () {
-                if (is_null($this->logo)) {
-                    return asset('img/worksuite-logo.png');
-                }
-
-                return $this->generateMaskedImageAppUrl('app-logo/' . $this->logo);
-            },
-        );
-
-    }
-
-    public function maskedLoginBackgroundUrl(): Attribute
-    {
-        return Attribute::make(
-            get: function () {
-                if (is_null($this->login_background) || $this->login_background == 'login-background.jpg') {
-                    return null;
-                }
-
-                return $this->generateMaskedImageAppUrl('login-background/' . $this->login_background);
-            },
-        );
-
-    }
-
-    public function maskedFaviconUrl(): Attribute
-    {
-        return Attribute::make(
-            get: function () {
-                if (is_null($this->favicon)) {
-                    return global_setting()->favicon_url;
-                }
-
-                return $this->generateMaskedImageAppUrl('favicon/' . $this->favicon);
-            },
-        );
-
     }
 
     public function getMomentDateFormatAttribute()

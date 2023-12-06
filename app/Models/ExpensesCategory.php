@@ -43,9 +43,14 @@ class ExpensesCategory extends BaseModel
     protected $table = 'expenses_category';
     protected $default = ['id', 'category_name'];
 
-    public function expenses(): HasMany
+    public function expense()
     {
-        return $this->hasMany(Expense::class, 'category_id');
+        return $this->hasMany(Expense::class);
+    }
+
+    public function expenses(): BelongsTo
+    {
+        return $this->belongsTo(Expense::class, 'id');
     }
 
     public function roles(): HasMany

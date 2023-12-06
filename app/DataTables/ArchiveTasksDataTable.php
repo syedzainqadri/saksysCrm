@@ -121,7 +121,6 @@ class ArchiveTasksDataTable extends BaseDataTable
                     return '--';
                 }
 
-                $key = '';
                 $members = '<div class="position-relative">';
 
                 foreach ($row->users as $key => $member) {
@@ -176,10 +175,10 @@ class ArchiveTasksDataTable extends BaseDataTable
                 }
             })
             ->editColumn('clientName', function ($row) {
-                return ($row->clientName) ? $row->clientName : '-';
+                return ($row->clientName) ? mb_ucwords($row->clientName) : '-';
             })
             ->addColumn('task', function ($row) {
-                return $row->heading;
+                return ucfirst($row->heading);
             })
             ->addColumn('timeLogged', function ($row) {
 
@@ -190,7 +189,8 @@ class ArchiveTasksDataTable extends BaseDataTable
 
                     $breakMinutes = ProjectTimeLogBreak::taskBreakMinutes($row->id);
                     $totalMinutes = $totalMinutes - $breakMinutes;
-                    $timeLog = CarbonInterval::formatHuman($totalMinutes); /** @phpstan-ignore-line */
+                    $timeLog = CarbonInterval::formatHuman($totalMinutes);
+
                 }
 
                 return $timeLog;
@@ -220,7 +220,7 @@ class ArchiveTasksDataTable extends BaseDataTable
 
                 return '<div class="media align-items-center">
                         <div class="media-body">
-                    <h5 class="mb-0 f-13 text-darkest-grey"><a href="' . route('tasks.show', [$row->id]) . '" class="openRightModal">' . $row->heading . '</a></h5>
+                    <h5 class="mb-0 f-13 text-darkest-grey"><a href="' . route('tasks.show', [$row->id]) . '" class="openRightModal">' . ucfirst($row->heading) . '</a></h5>
                     <p class="mb-0">' . $private . ' ' . $pin . ' ' . $timer . ' ' . $labels . '</p>
                     </div>
                   </div>';
@@ -258,14 +258,14 @@ class ArchiveTasksDataTable extends BaseDataTable
                 }
             })
             ->addColumn('status', function ($row) {
-                return $row->boardColumn->column_name;
+                return ucfirst($row->boardColumn->column_name);
             })
             ->editColumn('project_name', function ($row) {
                 if (is_null($row->project_id)) {
                     return '-';
                 }
 
-                return '<a href="' . route('projects.show', $row->project_id) . '" class="text-darkest-grey">' . $row->project_name . '</a>';
+                return '<a href="' . route('projects.show', $row->project_id) . '" class="text-darkest-grey">' . ucfirst($row->project_name) . '</a>';
             })
             ->setRowId(function ($row) {
                 return 'row-' . $row->id;
@@ -509,7 +509,7 @@ class ArchiveTasksDataTable extends BaseDataTable
     public function html()
     {
 
-        $dataTable = $this->setBuilder('allTasks-table')
+        return $this->setBuilder('allTasks-table')
             ->parameters([
                 'initComplete' => 'function () {
                    window.LaravelDataTables["allTasks-table"].buttons().container()
@@ -519,13 +519,8 @@ class ArchiveTasksDataTable extends BaseDataTable
                     $("#allTasks-table .select-picker").selectpicker();
                     $(".bs-tooltip-top").removeClass("show");
                 }',
-            ]);
-
-        if (canDataTableExport()) {
-            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
-        }
-
-        return $dataTable;
+            ])
+            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
     }
 
     /**

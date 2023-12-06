@@ -136,7 +136,7 @@ class DiscussionDataTable extends BaseDataTable
      */
     public function html()
     {
-        $dataTable = $this->setBuilder('discussion-table', 0)
+        return $this->setBuilder('discussion-table', 0)
             ->parameters([
                 'fnDrawCallback' => 'function( oSettings ) {
                     $("body").tooltip({
@@ -144,8 +144,6 @@ class DiscussionDataTable extends BaseDataTable
                     })
                 }',
             ]);
-
-        return $dataTable;
     }
 
     /**

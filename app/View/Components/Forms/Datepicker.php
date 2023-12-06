@@ -14,14 +14,13 @@ class Datepicker extends Component
     public $fieldId;
     public $fieldHelp;
     public $custom;
-    public $popover;
 
     /**
      * Create a new component instance.
      *
      * @return void
      */
-    public function __construct($fieldLabel, $fieldPlaceholder, $fieldName, $fieldId, $fieldRequired = false, $fieldValue = null, $fieldHelp = null, $custom = false, $popover = null)
+    public function __construct($fieldLabel, $fieldPlaceholder, $fieldName, $fieldId, $fieldRequired = false, $fieldValue = null, $fieldHelp = null, $custom = false)
     {
         $this->fieldLabel = $fieldLabel;
         $this->fieldRequired = $fieldRequired;
@@ -31,7 +30,6 @@ class Datepicker extends Component
         $this->fieldId = $fieldId;
         $this->fieldHelp = $fieldHelp;
         $this->custom = $custom; // If used in custom fields
-        $this->popover = $popover;
     }
 
     /**

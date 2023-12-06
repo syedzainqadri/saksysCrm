@@ -6,9 +6,7 @@
 
     .permisison-table .thead-light {
         top: 107px;
-        z-index: unset;
     }
-    
 
 </style>
 

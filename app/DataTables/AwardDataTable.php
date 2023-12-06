@@ -33,7 +33,7 @@ class AwardDataTable extends BaseDataTable
                 if ($this->manageAwardPermission == 'all') {
                     return '<input type="checkbox" class="select-table-row" id="datatable-row-' . $row->id . '"  name="datatable_ids[]" value="' . $row->id . '" onclick="dataTableRowCheck(' . $row->id . ')">';
                 }
-
+                
                 return '--';
             })
             ->addColumn('action', function ($row) {
@@ -111,7 +111,7 @@ class AwardDataTable extends BaseDataTable
 
             })
             ->addColumn('appreciation_status', function ($row) {
-                return $row->status;
+                return ucfirst($row->status);
             })
             ->editColumn(
                 'award_icon_id',
@@ -124,7 +124,7 @@ class AwardDataTable extends BaseDataTable
             ->editColumn(
                 'title',
                 function ($row) {
-                    return $row->title;
+                    return ucwords($row->title);
                 }
             )
             ->addIndexColumn()
@@ -164,7 +164,7 @@ class AwardDataTable extends BaseDataTable
      */
     public function html()
     {
-        $dataTable = $this->setBuilder('appreciation-type-table', 3)
+        return $this->setBuilder('appreciation-type-table', 3)
             ->parameters([
                 'initComplete' => 'function () {
                    window.LaravelDataTables["appreciation-type-table"].buttons().container()
@@ -177,8 +177,6 @@ class AwardDataTable extends BaseDataTable
                     $(".change-appreciation-status").selectpicker();
                 }',
             ]);
-
-        return $dataTable;
     }
 
     /**

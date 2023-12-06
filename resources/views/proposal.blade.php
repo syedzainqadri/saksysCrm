@@ -119,7 +119,7 @@
                             <table width="100%" class="">
                                 <tr class="inv-logo-heading">
                                     <td><img src="{{ $invoiceSetting->logo_url }}"
-                                            alt="{{ $company->company_name }}" id="logo" /></td>
+                                            alt="{{ mb_ucwords($company->company_name) }}" id="logo" /></td>
                                     <td align="right"
                                         class="font-weight-bold f-21 text-dark text-uppercase mt-4 mt-lg-0 mt-md-0">
                                         @lang('app.menu.proposal')</td>
@@ -127,7 +127,7 @@
                                 <tr class="inv-num">
                                     <td class="f-14 text-dark">
                                         <p class="mt-3 mb-0">
-                                            {{ $company->company_name }}<br>
+                                            {{ mb_ucwords($company->company_name) }}<br>
                                             @if (!is_null($company))
                                                 {!! nl2br($company->defaultAddress->address) !!}<br>
                                                 {{ $company->company_phone }}
@@ -168,7 +168,7 @@
                                             </span><br>
 
                                             @if ($proposal->lead && $proposal->lead->client_name && $invoiceSetting->show_client_name == 'yes')
-                                                <b>{{ $proposal->lead->client_name }}</b><br>
+                                                <b>{{ mb_ucwords($proposal->lead->client_name) }}</b><br>
                                             @endif
                                             @if ($proposal->lead && $proposal->lead->client_email && $invoiceSetting->show_client_email == 'yes')
                                                 {{ $proposal->lead->client_email }}<br>
@@ -177,7 +177,7 @@
                                                 {{ $proposal->lead->mobile }}<br>
                                             @endif
                                             @if ($proposal->lead && $proposal->lead->company_name && $invoiceSetting->show_client_company_name == 'yes')
-                                                {{ $proposal->lead->company_name }}<br>
+                                                {{ mb_ucwords($proposal->lead->company_name) }}<br>
 
                                             @endif
                                             @if ($proposal->lead && $proposal->lead->address && $invoiceSetting->show_client_company_address == 'yes')
@@ -229,7 +229,7 @@
                                                 @foreach ($proposal->items as $item)
                                                     @if ($item->type == 'item')
                                                         <tr class="text-dark font-weight-semibold f-13">
-                                                            <td>{{ $item->item_name }}</td>
+                                                            <td>{{ ucfirst($item->item_name) }}</td>
                                                             @if ($invoiceSetting->hsn_sac_code_show == 1)
                                                                 <td align="right">{{ $item->hsn_sac_code }}</td>
                                                             @endif
@@ -285,7 +285,7 @@
                                                             @foreach ($taxes as $key => $tax)
                                                                 <tr class="text-dark-grey" align="right">
                                                                     <td class="w-50 border-top-0 border-left-0">
-                                                                        {{ $key }}</td>
+                                                                        {{ mb_strtoupper($key) }}</td>
                                                                     <td class="border-top-0 border-right-0">
                                                                         {{ currency_format($tax, $proposal->currency_id, false) }}
                                                                     </td>
@@ -320,7 +320,7 @@
                                                     <table>
                                                         <tr width="100%" class="font-weight-semibold f-13">
                                                             <td class="border-left-0 border-right-0 border-top-0">
-                                                                {{ $item->item_name }}</td>
+                                                                {{ ucfirst($item->item_name) }}</td>
                                                         </tr>
                                                         @if ($item->item_summary != '' || $item->proposalItemImage)
                                                             <tr>
@@ -385,7 +385,7 @@
                                     @foreach ($taxes as $key => $tax)
                                         <tr>
                                             <th width="50%" class="text-dark-grey font-weight-normal">
-                                                {{ $key }}</th>
+                                                {{ mb_strtoupper($key) }}</th>
                                             <td width="50%" class="text-dark-grey font-weight-normal">
                                                 {{ currency_format($tax, $proposal->currency_id, false) }}</td>
                                         </tr>
@@ -558,7 +558,6 @@
     <!-- Global Required Javascript -->
     <script src="{{ asset('js/main.js') }}"></script>
     <script>
-        document.loading = '@lang('app.loading')';
         const MODAL_DEFAULT = '#myModalDefault';
         const MODAL_LG = '#myModal';
         const MODAL_XL = '#myModalXl';

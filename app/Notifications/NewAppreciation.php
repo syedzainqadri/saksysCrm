@@ -113,7 +113,7 @@ class NewAppreciation extends BaseNotification
                 ->from(config('app.name'))
                 ->image($slack->slack_logo_url)
                 ->to('@' . $notifiable->employee[0]->slack_username)
-                ->content('*' . __('email.newAppreciation.subject') . '*' . "\n" . '<' . route('appreciations.show', $this->userAppreciation->id) . '|' . $this->userAppreciation->award->title . '>');
+                ->content('*' . __('email.newAppreciation.subject') . '*' . "\n" . '<' . route('appreciations.show', $this->userAppreciation->id) . '|' . ucfirst($this->userAppreciation->award->title) . '>');
         }
 
         return (new SlackMessage())

@@ -28,7 +28,7 @@ use Illuminate\Support\Facades\File;
  * @method static \Illuminate\Database\Eloquent\Builder|Module whereUpdatedAt($value)
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Permission> $permissionsAll
  * @property-read int|null $permissions_all_count
-
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Permission> $permissionsAll
  * @mixin \Eloquent
  */
 class Module extends BaseModel
@@ -1702,7 +1702,7 @@ class Module extends BaseModel
             $module = \Nwidart\Modules\Facades\Module::findOrFail(strtolower($module));
             $module->disable();
 
-            $message = 'To activate <strong>' . $module . '</strong> module, minimum version of <b>worksuite application</b> must be greater than equal to <b>' . $parentMinVersion . '</b> But your application version is <b>' . File::get('version.txt') . '</b>. Please upgrade the application to latest version';
+            $message = 'To activate <strong>' . ucwords($module) . '</strong> module, minimum version of <b>worksuite application</b> must be greater than equal to <b>' . $parentMinVersion . '</b> But your application version is <b>' . File::get('version.txt') . '</b>. Please upgrade the application to latest version';
             throw new \Exception($message);
         }
     }

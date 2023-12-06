@@ -125,14 +125,6 @@ class LeaveController extends AccountBaseController
         $employeeLeaveQuota = EmployeeLeaveQuota::whereUserId($request->user_id)->whereLeaveTypeId($request->leave_type_id)->first();
 
         $totalAllowedLeaves = ($employeeLeaveQuota) ? $employeeLeaveQuota->no_of_leaves : $leaveType->no_of_leaves;
-        $sDate = Carbon::createFromFormat(company()->date_format, $request->multiStartDate);
-        $eDate = Carbon::createFromFormat(company()->date_format, $request->multiEndDate);
-        $diffInDays = $sDate->diffInDays($eDate) + 1;
-
-        if($totalAllowedLeaves < $diffInDays) {
-            return Reply::error(__('messages.leaveLimitError'));
-        }
-
         $uniqueId = Str::random(16);
         $employee = User::with('leaveTypes')->findOrFail($request->user_id);
 
@@ -729,7 +721,7 @@ class LeaveController extends AccountBaseController
 
             foreach ($leaves as $key => $leave) {
                 /** @phpstan-ignore-next-line */
-                $title = $leave->name;
+                $title = ucfirst($leave->name);
 
                 $leaveArray[] = [
                     'id' => $leave->id,
@@ -925,10 +917,6 @@ class LeaveController extends AccountBaseController
 
     public function viewRelatedLeave(Request $request)
     {
-        $this->editLeavePermission = user()->permission('edit_leave');
-        $this->deleteLeavePermission = user()->permission('delete_leave');
-        $this->approveRejectPermission = user()->permission('approve_or_reject_leaves');
-        $this->deleteApproveLeavePermission = user()->permission('delete_approve_leaves');
         $this->multipleLeaves = Leave::with('type', 'user')->where('unique_id', $request->uniqueId)->orderBy('leave_date', 'DESC')->get();
         $this->pendingCountLeave = $this->multipleLeaves->where('status', 'pending')->count();
 
@@ -940,9 +928,8 @@ class LeaveController extends AccountBaseController
     {
         $roles = User::with('roles')->findOrFail($id);
         $userRole = [];
-        $userRoles = $roles->roles->count() > 1 ? $roles->roles->where('name', '!=', 'employee') : $roles->roles;
 
-        foreach($userRoles as $role){
+        foreach($roles->roles as $role){
             $userRole[] = $role->id;
         }
 

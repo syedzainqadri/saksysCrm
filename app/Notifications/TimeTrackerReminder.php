@@ -26,6 +26,7 @@ class TimeTrackerReminder extends BaseNotification
     /**
      * Get the notification's delivery channels.
      *
+     * @param mixed $notifiable
      * @return array
      */
     public function via()
@@ -45,10 +46,9 @@ class TimeTrackerReminder extends BaseNotification
     public function toMail($notifiable): MailMessage
     {
         $build = parent::build();
-        $url = route('tasks.index').'?assignedTo='.$notifiable->id;
+        $url = route('tasks.index');
         $url = getDomainSpecificUrl($url, $this->company);
-        $greeting = __('email.trackerReminder.dear') . ' <strong>' . $notifiable->name . '</strong>,' . '<br>';
-        $content = $greeting . __('email.trackerReminder.text');
+        $content = __('email.trackerReminder.text');
 
         return $build
             ->subject(__('email.trackerReminder.subject'))

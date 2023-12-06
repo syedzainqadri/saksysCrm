@@ -1,6 +1,6 @@
 @component('mail::message')
 
-# @lang('email.hello')@if(!empty($notifiableName)){{ ' '.$notifiableName }}@endif!
+# @lang('email.hello') @if (! empty($notifiableName)) {{ $notifiableName }} @endif @lang('!')
 
 @lang('email.newProjectStatus.subject')
 

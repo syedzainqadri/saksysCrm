@@ -2,13 +2,11 @@
 
 namespace App\Mail;
 
-use App\Models\Company;
-use Illuminate\Bus\Queueable;
-use Illuminate\Mail\Mailable;
 use App\Models\EmployeeShiftSchedule;
-use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Config;
+use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Mail\Mailable;
+use Illuminate\Queue\SerializesModels;
 
 class BulkShiftEmail extends Mailable implements ShouldQueue
 {
@@ -17,19 +15,16 @@ class BulkShiftEmail extends Mailable implements ShouldQueue
 
     public $dateRange;
     public $userId;
-    public $company;
 
     /**
      * Create a new message instance.
      *
      * @return void
      */
-    public function __construct($dateRange, $userId, Company $company)
+    public function __construct($dateRange, $userId)
     {
         $this->dateRange = $dateRange;
         $this->userId = $userId;
-        $this->company = $company;
-        Config::set('app.logo', $company->masked_logo_url);
     }
 
     /**
@@ -46,8 +41,7 @@ class BulkShiftEmail extends Mailable implements ShouldQueue
 
         return $this->subject(__('email.shiftScheduled.subject'))
             ->markdown('mail.bulk-shift-email', [
-                'employeeShifts' => $employeeShifts,
-                'company' => $this->company,
+                'employeeShifts' => $employeeShifts
             ]);
     }
 

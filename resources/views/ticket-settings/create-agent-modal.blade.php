@@ -18,7 +18,7 @@
                     <x-forms.select fieldId="ticket_group_id" :fieldLabel="__('modules.tickets.assignGroup')"
                         fieldName="group_id[]" search="true" fieldRequired="true" multiple="true">
                         @foreach ($groups as $group)
-                                <option value="{{ $group->id }}">{{ $group->group_name }}</option>
+                                <option value="{{ $group->id }}">{{ mb_ucwords($group->group_name) }}</option>
                         @endforeach
                     </x-forms.select>
                 </div>

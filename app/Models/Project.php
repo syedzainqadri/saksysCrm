@@ -129,16 +129,17 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Contract> $contracts
  * @property-read int|null $contracts_count
  * @property-read int|null $project_members_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Contract> $contracts
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Contract> $contracts
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Contract> $contracts
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Contract> $contracts
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Contract> $contracts
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Contract> $contracts
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Contract> $contracts
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\MentionUser> $mentionNote
  * @property-read int|null $mention_note_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\User> $mentionUser
  * @property-read int|null $mention_user_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ProjectMilestone> $incompleteMilestones
- * @property-read int|null $incomplete_milestones_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\MentionUser> $mentionProject
- * @property-read int|null $mention_project_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\User> $mentionUser
- * @property-read \App\Models\Project|null $due_date
  * @mixin \Eloquent
  */
 class Project extends BaseModel
@@ -220,11 +221,6 @@ class Project extends BaseModel
         return $this->hasMany(ProjectMilestone::class, 'project_id')->orderBy('id', 'desc');
     }
 
-    public function incompleteMilestones(): HasMany
-    {
-        return $this->hasMany(ProjectMilestone::class, 'project_id')->whereNot('status', 'complete')->orderBy('id', 'desc');
-    }
-
     public function expenses(): HasMany
     {
         return $this->hasMany(Expense::class, 'project_id')->orderBy('id', 'desc');
@@ -296,10 +292,6 @@ class Project extends BaseModel
 
             if (user()->permission('view_projects') == 'added') {
                 $projects->where('projects.added_by', user()->id);
-            }
-
-            if (user()->permission('view_projects') == 'both') {
-                $projects->where('projects.added_by', user()->id)->orWhere('project_members.user_id', user()->id);
             }
 
             if (user()->permission('view_projects') == 'owned' && in_array('employee', user_roles())) {

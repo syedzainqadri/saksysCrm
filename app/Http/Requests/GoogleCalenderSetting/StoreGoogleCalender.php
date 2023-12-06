@@ -26,8 +26,7 @@ class StoreGoogleCalender extends FormRequest
     {
         $rules = [];
 
-
-        if ($this->status) {
+        if (request()->get('status') == 'active') {
             $rules['google_client_id'] = 'required';
             $rules['google_client_secret'] = 'required';
         }

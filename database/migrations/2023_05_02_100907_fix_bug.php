@@ -22,7 +22,6 @@ return new class extends Migration
             if (in_array('user_taskboard_settings_board_column_id_foreign', $foreignKeys)) {
                 $table->dropForeign(['board_column_id']);
             }
-
             $table->foreign('board_column_id')->references('id')->on('taskboard_columns')->onDelete('cascade')->onUpdate('cascade');
         });
 

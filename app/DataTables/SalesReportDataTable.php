@@ -38,7 +38,7 @@ class SalesReportDataTable extends BaseDataTable
             return $row->client ? $row->client->name : '--';
         });
         $datatable->addColumn('invoice_value', function($row){
-            return $row->total ? currency_format($row->total, $row->currency_id) : '--';
+            return $row->total ? currency_format($row->total, company()->currency->currency_id) : '--';
         });
         $datatable->addColumn('bank_account', function($row){
             return !is_null($row->bankAccount) ? $row->bankAccount->bank_name : '--';
@@ -56,11 +56,11 @@ class SalesReportDataTable extends BaseDataTable
                     $discountedAmount = ($row->sub_total - $row->discount);
                 }
 
-                return currency_format($discountedAmount, $row->currency_id);
+                return currency_format($discountedAmount, company()->currency->currency_id);
 
             }
 
-            return currency_format($row->sub_total, $row->currency_id);
+            return currency_format($row->sub_total, company()->currency->currency_id);
 
         });
 
@@ -74,7 +74,7 @@ class SalesReportDataTable extends BaseDataTable
                     $discountAmount = $row->discount;
                 }
 
-                return currency_format($discountAmount, $row->currency_id);
+                return currency_format($discountAmount, company()->currency->currency_id);
             }
 
             return 0;
@@ -113,22 +113,23 @@ class SalesReportDataTable extends BaseDataTable
                                 if (!isset($taxList[$taxValue->tax_name . ': ' . $taxValue->rate_percent . '%'])) {
 
                                     if ($row->calculate_tax == 'after_discount' && $discount > 0) {
-                                        $taxList[$taxValue->tax_name . ': ' . $taxValue->rate_percent . '%'] = ($item->amount - ($item->amount / $row->sub_total) * $discount) * (floatval($taxValue->rate_percent) / 100);
+                                        $taxList[$taxValue->tax_name . ': ' . $taxValue->rate_percent . '%'] = ($item->amount - ($item->amount / $row->sub_total) * $discount) * ($taxValue->rate_percent / 100);
+
                                     }
                                     else {
-                                        $taxList[$taxValue->tax_name . ': ' . $taxValue->rate_percent . '%'] = $item->amount * (floatval($taxValue->rate_percent) / 100);
+                                        $taxList[$taxValue->tax_name . ': ' . $taxValue->rate_percent . '%'] = $item->amount * ($taxValue->rate_percent / 100);
                                     }
 
                                 }
                                 else {
 
                                     if ($row->calculate_tax == 'after_discount' && $discount > 0) {
-                                        $taxList[$taxValue->tax_name . ': ' . $taxValue->rate_percent . '%'] = $taxList[$taxValue->tax_name . ': ' . $taxValue->rate_percent . '%'] + (($item->amount - ($item->amount / $row->sub_total) * $discount) * (floatval($taxValue->rate_percent) / 100));
+                                        $taxList[$taxValue->tax_name . ': ' . $taxValue->rate_percent . '%'] = $taxList[$taxValue->tax_name . ': ' . $taxValue->rate_percent . '%'] + (($item->amount - ($item->amount / $row->sub_total) * $discount) * ($taxValue->rate_percent / 100));
 
                                     }
                                     else {
 
-                                        $taxList[$taxValue->tax_name . ': ' . $taxValue->rate_percent . '%'] = $taxList[$taxValue->tax_name . ': ' . $taxValue->rate_percent . '%'] + ($item->amount * (floatval($taxValue->rate_percent) / 100));
+                                        $taxList[$taxValue->tax_name . ': ' . $taxValue->rate_percent . '%'] = $taxList[$taxValue->tax_name . ': ' . $taxValue->rate_percent . '%'] + ($item->amount * ($taxValue->rate_percent / 100));
                                     }
                                 }
                             }
@@ -164,7 +165,7 @@ class SalesReportDataTable extends BaseDataTable
     }
 
     /**
-     * @param Invoice $model
+     * @param Payment $model
      * @return \Illuminate\Database\Eloquent\Builder
      */
     public function query(Invoice $model)
@@ -212,23 +213,29 @@ class SalesReportDataTable extends BaseDataTable
      */
     public function html()
     {
-        $dataTable = $this->setBuilder('sales-report-table', 5)
+        return $this->builder()
+            ->setTableId('sales-report-table')
+            ->columns($this->getColumns())
+            ->minifiedAjax()
+            ->orderBy(5)
+            ->destroy(true)
+            ->responsive(true)
+            ->serverSide(true)
+            ->stateSave(true)
+            ->processing(true)
+            ->dom($this->domHtml)
+            ->language(__('app.datatable'))
             ->parameters([
                 'initComplete' => 'function () {
                     window.LaravelDataTables["sales-report-table"].buttons().container()
-                    .appendTo( "#table-actions")
-                }',
+                     .appendTo( "#table-actions")
+                 }',
                 'fnDrawCallback' => 'function( oSettings ) {
-                //
-                $(".select-picker").selectpicker();
-                }',
-            ]);
-
-        if (canDataTableExport()) {
-            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
-        }
-
-        return $dataTable;
+                   //
+                   $(".select-picker").selectpicker();
+                 }',
+            ])
+            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
     }
 
     /**
@@ -241,7 +248,7 @@ class SalesReportDataTable extends BaseDataTable
         $columns = Tax::all();
         $newColumns = [];
 
-        $newColumns['#'] = ['data' => 'DT_RowIndex',  'orderable' => false, 'searchable' => false, 'visible' => false, 'title' => '#'];
+        $newColumns['#'] = ['data' => 'DT_RowIndex',  'orderable' => false, 'searchable' => false, 'visible' => false];
         $newColumns[__('app.id')] = ['data' => 'id', 'name' => 'id', 'visible' => false, 'exportable' => false, 'title' => __('app.id')];
         $newColumns[__('modules.payments.paidOn')] = ['data' => 'paid_on', 'name' => 'paid_on', 'title' => __('modules.payments.paidOn')];
         $newColumns[__('app.invoiceNumber')] = ['data' => 'invoice_number', 'name' => 'invoice_number', 'title' => __('app.invoiceNumber')];

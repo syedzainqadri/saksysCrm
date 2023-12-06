@@ -29,16 +29,11 @@ class OrderItemImage extends BaseModel
 
     use IconTrait;
 
-    protected $appends = ['file_url', 'icon', 'file'];
+    protected $appends = ['file_url', 'icon'];
 
     protected $fillable = ['order_item_id', 'external_link'];
 
     public function getFileUrlAttribute()
-    {
-        return str($this->external_link)->contains('http') ? $this->external_link : asset_url_local_s3($this->external_link);
-    }
-
-    public function getFileAttribute()
     {
         return $this->external_link;
     }

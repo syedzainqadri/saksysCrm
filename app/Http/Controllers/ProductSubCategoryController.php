@@ -21,7 +21,6 @@ class ProductSubCategoryController extends AccountBaseController
         $this->categoryID = $request->catID;
         $this->subcategories = ProductSubCategory::all();
         $this->categories = ProductCategory::all();
-
         return view('products.sub-category.create', $this->data);
     }
 
@@ -41,20 +40,14 @@ class ProductSubCategoryController extends AccountBaseController
         $subCategoryData = ProductSubCategory::get();
         $category = '';
         $subCategory = '';
-        $categoryID = $request->categoryID;
+
+        foreach ($subCategoryData as $item) {
+            $subCategory .= '<option value='.$item->id.'>'.ucwords($item->category_name).'</option>';
+        }
 
         foreach ($categoryData as $data) {
-            $selected = ($categoryID == $data->id) ? 'selected' : '';
-            $category .= '<option value='.$data->id.' '.$selected.'>'. $data->category_name .' </option>';
+            $category .= '<option value='.$data->id.'>'.ucwords($data->category_name).'</option>';
         }
-
-        if ($categoryID) {
-            foreach ($subCategoryData as $item) {
-                $selected = ($categoryID == $item->category_id) ? 'selected' : '';
-                $subCategory .= '<option value='.$item->id.' '. $selected .'>'. $item->category_name .' </option>';
-            }
-        }
-
 
         return Reply::successWithData(__('messages.recordSaved'), ['data' => $category, 'subCategoryData' => $subCategory]);
     }
@@ -131,7 +124,7 @@ class ProductSubCategoryController extends AccountBaseController
 
     public function getSubCategories($id)
     {
-        $sub_categories = ProductSubCategory::where('category_id', $id)->get();
+        $sub_categories = ($id == 'null') ? ProductSubCategory::get() : ProductSubCategory::where('category_id', $id)->get();
 
         return Reply::dataOnly(['status' => 'success', 'data' => $sub_categories]);
     }

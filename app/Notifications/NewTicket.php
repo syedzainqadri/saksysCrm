@@ -64,10 +64,10 @@ class NewTicket extends BaseNotification
         $url = route('tickets.show', $this->ticket->ticket_number);
         $url = getDomainSpecificUrl($url, $this->company);
 
-        $content = __('email.newTicket.text') . '<br>' . $this->ticket->subject . ' # ' . $this->ticket->ticket_number . '<br>' . __('modules.tickets.requesterName') . ' - ' . $this->ticket->requester->name;
+        $content = __('email.newTicket.text') . '<br>' . ucfirst($this->ticket->subject) . ' # ' . $this->ticket->ticket_number . '<br>' . __('modules.tickets.requesterName') . ' - ' . mb_ucwords($this->ticket->requester->name);
 
         return $build
-            ->subject(__('email.newTicket.subject') . ' - ' . $this->ticket->subject . ' - ' . __('modules.tickets.ticket') . ' # ' . $this->ticket->ticket_number)
+            ->subject(__('email.newTicket.subject') . ' - ' . ucfirst($this->ticket->subject) . ' - ' . __('modules.tickets.ticket') . ' # ' . $this->ticket->ticket_number)
             ->markdown('mail.email', [
                 'url' => $url,
                 'content' => $content,
@@ -112,7 +112,7 @@ class NewTicket extends BaseNotification
                 ->from(config('app.name'))
                 ->image($slack->slack_logo_url)
                 ->to('@' . $notifiable->employee[0]->slack_username)
-                ->content('*' . __('email.newTicket.subject') . '*' . "\n" . $this->ticket->subject . "\n" . __('modules.tickets.requesterName') . ' - ' . $this->ticket->requester->name);
+                ->content('*' . __('email.newTicket.subject') . '*' . "\n" . ucfirst($this->ticket->subject) . "\n" . __('modules.tickets.requesterName') . ' - ' . mb_ucwords($this->ticket->requester->name));
         }
 
         return (new SlackMessage())

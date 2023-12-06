@@ -59,18 +59,18 @@
                             <td class="pl-20">{{ $key + 1 }}</td>
                             <td>
                                 <a href="javascript:;" class="milestone-detail text-darkest-grey f-w-500"
-                                    data-milestone-id="{{ $item->id }}">{{ $item->milestone_title }}</a>
+                                    data-milestone-id="{{ $item->id }}">{{ ucfirst($item->milestone_title) }}</a>
                             </td>
                             <td>
                                 @if (!is_null($item->currency_id))
-                                    {{ $item->currency?->currency_symbol . $item->cost }}
+                                    {{ $item->currency->currency_symbol . $item->cost }}
                                 @else
                                     {{ $item->cost }}
                                 @endif
                             </td>
                             <td class="pr-20 text-right">
                                 <a href="{{ route('projects.show', [$item->project_id]) }}"
-                                    class="text-darkest-grey">{{ $item->project?->project_name }}</a>
+                                    class="text-darkest-grey">{{ $item->project->project_name }}</a>
                             </td>
                         </tr>
                     @empty

@@ -11,7 +11,6 @@ class ArchiveProjectsDataTable extends BaseDataTable
 {
 
     private $viewProjectPermission;
-    private $editProjectPermission;
     private $deleteProjectPermission;
 
     public function __construct()
@@ -69,7 +68,7 @@ class ArchiveProjectsDataTable extends BaseDataTable
 
                 if (count($row->members) > 0) {
                     foreach ($row->members as $member) {
-                        $img = '<img data-toggle="tooltip" data-original-title="' . $member->user->name . '" src="' . $member->user->image_url . '">';
+                        $img = '<img data-toggle="tooltip" data-original-title="' . mb_ucwords($member->user->name) . '" src="' . $member->user->image_url . '">';
 
                         $members .= '<div class="taskEmployeeImg rounded-circle"><a href="' . route('employees.show', $member->user->id) . '">' . $img . '</a></div> ';
                     }
@@ -95,7 +94,7 @@ class ArchiveProjectsDataTable extends BaseDataTable
 
                 return '<div class="media align-items-center">
                         <div class="media-body">
-                    <h5 class="mb-0 f-13 text-darkest-grey"><a href="' . route('projects.show', [$row->id]) . '">' . $row->project_name . '</a></h5>
+                    <h5 class="mb-0 f-13 text-darkest-grey"><a href="' . route('projects.show', [$row->id]) . '">' . ucfirst($row->project_name) . '</a></h5>
                     </div>
                 </div>';
             })
@@ -126,7 +125,7 @@ class ArchiveProjectsDataTable extends BaseDataTable
                     if ($row->status == $status->status_name) {
                         $color = $status->color;
 
-                        return ' <i class="fa fa-circle mr-1 f-10" style="color:' . $color . '"></i>' . $status->status_name;
+                        return ' <i class="fa fa-circle mr-1 f-10" style="color:' . $color . '"></i>' . ucfirst($status->status_name);
                     }
                 }
             })
@@ -246,7 +245,7 @@ class ArchiveProjectsDataTable extends BaseDataTable
      */
     public function html()
     {
-        $dataTable = $this->setBuilder('projects-table')
+        return $this->setBuilder('projects-table')
             ->parameters([
                 'initComplete' => 'function () {
                     window.LaravelDataTables["projects-table"].buttons().container()
@@ -257,13 +256,8 @@ class ArchiveProjectsDataTable extends BaseDataTable
                         selector: \'[data-toggle="tooltip"]\'
                     })
                 }',
-            ]);
-
-        if (canDataTableExport()) {
-            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
-        }
-
-        return $dataTable;
+            ])
+            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
     }
 
     /**

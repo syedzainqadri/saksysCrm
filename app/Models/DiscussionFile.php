@@ -54,20 +54,12 @@ class DiscussionFile extends BaseModel
 
     const FILE_PATH = 'discussion-files';
 
-    protected $appends = ['file_url', 'icon', 'file'];
+    protected $appends = ['file_url', 'icon'];
 
     public function getFileUrlAttribute()
     {
-        if($this->external_link){
-            return str($this->external_link)->contains('http') ? $this->external_link : asset_url_local_s3($this->external_link);
-        }
-
-        return asset_url_local_s3(DiscussionFile::FILE_PATH . '/' . $this->hashname);
-    }
-
-    public function getFileAttribute()
-    {
-        return $this->external_link ?: (DiscussionFile::FILE_PATH . '/' . $this->hashname);
+        // phpcs:ignore
+        return (!is_null($this->external_link)) ? $this->external_link : asset_url_local_s3(DiscussionFile::FILE_PATH . '/' . $this->hashname);
     }
 
     public function discussion(): BelongsTo

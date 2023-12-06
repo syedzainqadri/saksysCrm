@@ -27,7 +27,7 @@
                             <option value="all">@lang('app.all')</option>
                         @endif
                         @foreach ($leads as $client)
-                            <option value="{{ $client->id }}">{{ $client->client_name }}</option>
+                            <option value="{{ $client->id }}">{{ mb_ucwords($client->client_name) }}</option>
                         @endforeach
                     </select>
                 </div>

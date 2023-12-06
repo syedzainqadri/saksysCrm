@@ -19,7 +19,7 @@
                 <tr id="type-{{ $leaveType->id }}">
                     <td>
                         <p class="f-w-500 mb-0"><i class="fa fa-circle mr-1 text-yellow"
-                                style="color: {{ $leaveType->color }}"></i>{{ $leaveType->type_name }}
+                                style="color: {{ $leaveType->color }}"></i>{{ mb_ucwords($leaveType->type_name) }}
                         </p>
                     </td>
                     <td> {{ $leaveType->no_of_leaves }}</td>
@@ -132,7 +132,7 @@
     $.ajaxModal(MODAL_XL, url);
     });
 
-
+    
     $('.editNewLeaveType').click(function() {
 
         var id = $(this).data('leave-id');

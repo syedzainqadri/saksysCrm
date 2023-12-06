@@ -86,8 +86,8 @@
                                         title="{{ $item->requester->name }}">
                                 </div>
                             </td>
-                            <td width="50%"><a href="{{ route('tickets.show', $item->ticket_number) }}"
-                                    class="text-darkest-grey">{{ $item->subject }}</a>
+                            <td width="50%"><a href="{{ route('tickets.show', $item->id) }}"
+                                    class="text-darkest-grey">{{ ucfirst($item->subject) }}</a>
                                 <br />
                                 <span class="f-10 text-lightest mt-1">{{ $item->requester->name }}</span>
                             </td>

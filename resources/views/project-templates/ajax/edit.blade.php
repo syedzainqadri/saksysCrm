@@ -26,7 +26,7 @@ $addProjectCategoryPermission = user()->permission('manage_project_category');
                                     <option value="">--</option>
                                     @foreach ($categories as $category)
                                         <option @if ($template->category_id == $category->id) selected @endif value="{{ $category->id }}">
-                                            {{ $category->category_name }}</option>
+                                            {{ mb_ucwords($category->category_name) }}</option>
                                     @endforeach
                                 </select>
 

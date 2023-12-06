@@ -72,7 +72,7 @@ if ($viewPermission == 'all'
                     </li>
                     @endif
 
-                    @if ($viewEmployeeTimelogs == 'all' && in_array('timelogs', user_modules()))
+                    @if ($viewEmployeeTimelogs == 'all')
                         <li>
                             <x-tab :href="route('employees.show', $employee->id) . '?tab=timelogs'" :text="__('app.menu.timeLogs')" ajax="false" class="timelogs" />
                         </li>
@@ -90,7 +90,7 @@ if ($viewPermission == 'all'
                         </li>
                     @endif
 
-                    @if ($viewTickets == 'all' && in_array('tickets', user_modules()))
+                    @if ($viewTickets == 'all')
                         <li>
                             <x-tab :href="route('employees.show', $employee->id) . '?tab=tickets'" :text="__('modules.tickets.ticket')" ajax="false" class="tickets" />
                         </li>
@@ -102,7 +102,7 @@ if ($viewPermission == 'all'
                         </li>
                     @endif
 
-                    @if ($manageShiftPermission == 'all' && in_array('attendance', user_modules()))
+                    @if ($manageShiftPermission == 'all')
                         <li>
                             <x-tab :href="route('employees.show', $employee->id) . '?tab=shifts'" :text="__('app.menu.shiftRoster')" class="shifts" />
                         </li>

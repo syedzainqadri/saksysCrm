@@ -31,6 +31,7 @@ class EstimateAccepted extends Notification
     /**
      * Get the notification's delivery channels.
      *
+     * @param  mixed  $notifiable
      * @return array
      */
     public function via()
@@ -53,13 +54,13 @@ class EstimateAccepted extends Notification
                 ->from(config('app.name'))
                 ->to('@' . $notifiable->employee[0]->slack_username)
                 ->image($slack->slack_logo_url)
-                ->content(__('email.hello')  . ' ' .  $notifiable->name . $this->estimate->estimate_number .' '. __('email.estimateAccepted.subject'));
+                ->content(__('email.hello')  . ' ' .  mb_ucwords($notifiable->name) . $this->estimate->estimate_number .' '. __('email.estimateAccepted.subject'));
         }
 
         return (new SlackMessage())
             ->from(config('app.name'))
             ->image($slack->slack_logo_url)
-            ->content(__('email.hello')  . ' ' .  $notifiable->name .' '. $this->estimate->estimate_number .' '. __('email.estimateAccepted.subject'));
+            ->content(__('email.hello')  . ' ' .  mb_ucwords($notifiable->name) .' '. $this->estimate->estimate_number .' '. __('email.estimateAccepted.subject'));
 
     }
 

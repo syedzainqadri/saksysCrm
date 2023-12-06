@@ -614,7 +614,7 @@
                     </div>
                     <div class="company-info description">
                         <div class="description">
-                            {{ $company->company_name }}
+                            {{ mb_ucwords($company->company_name) }}
                         </div>
                         <br>
                         <span class="description">{!! nl2br($company->defaultAddress->address) !!}</span>
@@ -626,7 +626,7 @@
                 <div class="logo">
                     @if($estimate->clientDetails->company_logo)
                         <img src="{{ $estimate->clientDetails->image_url }}"
-                            alt="{{ $estimate->clientDetails->company_name }}" class="logo"/>
+                            alt="{{ mb_ucwords($estimate->clientDetails->company_name) }}" class="logo"/>
                     @endif
                 </div>
             </section>
@@ -656,7 +656,7 @@
 
                     @if ($estimate->client && $estimate->client->name && $invoiceSetting->show_client_name == 'yes')
                     <div>
-                        <span class="bold">{{ $estimate->client->name }}</span>
+                        <span class="bold">{{ mb_ucwords($estimate->client->name) }}</span>
                     </div>
                     @endif
 
@@ -674,7 +674,7 @@
 
                     @if ($estimate->clientDetails && $estimate->clientDetails->company_name && $invoiceSetting->show_client_company_name == 'yes')
                     <div>
-                        <span>{{ $estimate->clientDetails->company_name }}</span>
+                        <span>{{ mb_ucwords($estimate->clientDetails->company_name) }}</span>
                     </div>
                     @endif
 
@@ -704,7 +704,7 @@
                     </div>
                 @endif
                 <div>
-                    <span>@lang('app.status'):</span> <span>{{ $estimate->status }}</span>
+                    <span>@lang('app.status'):</span> <span>{{ mb_ucwords($estimate->status) }}</span>
                 </div>
 
             </section>
@@ -717,7 +717,7 @@
             <section id="items">
 
                 @if ($estimate->description)
-                    <div class="f-13 mb-3">{!! nl2br(pdfStripTags($estimate->description)) !!}</div>
+                    <div class="f-13 mb-3">{!! nl2br(strip_tags($estimate->description, ['p', 'b', 'strong', 'a', 'ul', 'li', 'ol', 'i', 'u', 'em', 'blockquote', 'img'])) !!}</div>
                 @endif
 
                 <table cellpadding="0" cellspacing="0">
@@ -741,9 +741,9 @@
                                 <td>{{ ++$count }}</td>
                                 <!-- Don't remove this column as it's needed for the row commands -->
                                 <td>
-                                    {{ $item->item_name }}
+                                    {{ ucfirst($item->item_name) }}
                                     @if (!is_null($item->item_summary))
-                                        <p class="item-summary mb-3">{!! nl2br(pdfStripTags($item->item_summary)) !!}</p>
+                                        <p class="item-summary mb-3">{!! nl2br(strip_tags($item->item_summary, ['p', 'b', 'strong', 'a'])) !!}</p>
                                     @endif
                                     @if ($item->estimateItemImage)
                                         <p class="mt-2">
@@ -757,7 +757,7 @@
                                 @endif
                                 <td>{{ $item->quantity }}@if($item->unit)<br><span class="f-11 text-dark-grey">{{ $item->unit->unit_type }}</span>@endif</td>
                                 <td>{{ currency_format($item->unit_price, $estimate->currency_id, false) }}</td>
-                                <td>{{ $item->tax_list }}</td>
+                                <td>{{ strtoupper($item->tax_list) }}</td>
                                 <td>{{ currency_format($item->amount, $estimate->currency_id, false) }}</td>
                             </tr>
                         @endif
@@ -782,7 +782,7 @@
                     @endif
                     @foreach ($taxes as $key => $tax)
                         <tr data-iterate="tax">
-                            <th>{{ $key }}:</th>
+                            <th>{{ mb_strtoupper($key) }}:</th>
                             <td>{{ currency_format($tax, $estimate->currency_id, false) }}</td>
                         </tr>
                     @endforeach
@@ -838,7 +838,7 @@
                             @foreach($fields as $field)
                                 <tr>
                                     <td style="text-align: left;background: none;" >
-                                        <div id="field-title">{{ $field->label }}</div>
+                                        <div id="field-title">{{ ucfirst($field->label) }}</div>
                                         <p id="notes">
                                             @if( $field->type == 'text' || $field->type == 'password' || $field->type == 'number' || $field->type == 'textarea')
                                                 {{$estimate->custom_fields_data['field_'.$field->id] ?? '-'}}

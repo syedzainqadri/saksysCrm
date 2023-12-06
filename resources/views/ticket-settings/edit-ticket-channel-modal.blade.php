@@ -9,7 +9,7 @@ r<div class="modal-header">
                 <div class="row">
                     <div class="col-lg-12">
                         <x-forms.text fieldId="channel_name" :fieldLabel="__('modules.tickets.ticketChannel')"
-                            fieldName="channel_name" fieldRequired="true" :fieldPlaceholder="__('placeholders.tickets.ticketChannel')" :fieldValue="$channel->channel_name">
+                            fieldName="channel_name" fieldRequired="true" fieldPlaceholder="e.g. Facebook, Phone, etc." :fieldValue="$channel->channel_name">
                         </x-forms.text>
                     </div>
                 </div>

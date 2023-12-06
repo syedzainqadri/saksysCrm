@@ -66,7 +66,7 @@ class SendTimeTracker extends Command
 
                         $user = User::find($employeeId);
 
-                        if (!$leaveExists && !$timeLogExists && $user && $user->email_notifications) {
+                        if (!$leaveExists && !$timeLogExists && $user) {
                             event(new TimeTrackerReminderEvent($user));
                         }
                     });

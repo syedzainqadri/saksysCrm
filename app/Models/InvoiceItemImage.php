@@ -38,21 +38,22 @@ class InvoiceItemImage extends BaseModel
 
     const FILE_PATH = 'invoice-files';
 
-    protected $appends = ['file_url', 'icon', 'file'];
+    protected $appends = ['file_url', 'icon'];
     protected $fillable = ['invoice_item_id', 'filename', 'hashname', 'size', 'external_link'];
 
     public function getFileUrlAttribute()
     {
-        if($this->external_link){
-            return str($this->external_link)->contains('http') ? $this->external_link : asset_url_local_s3($this->external_link);
+        if (empty($this->external_link)) {
+            return asset_url_local_s3(InvoiceItemImage::FILE_PATH . '/' . $this->invoice_item_id . '/' . $this->hashname);
         }
 
-        return asset_url_local_s3(InvoiceItemImage::FILE_PATH . '/' . $this->invoice_item_id . '/' . $this->hashname);
-    }
+        if (!empty($this->external_link)) {
+            return $this->external_link;
+        }
 
-    public function getFileAttribute()
-    {
-        return $this->external_link ?: (InvoiceItemImage::FILE_PATH . '/' . $this->invoice_item_id . '/' . $this->hashname);
+        return '';
+
+
     }
 
 }

@@ -270,7 +270,7 @@
         <tbody>
             <!-- Table Row Start -->
             <tr>
-                <td><img src="{{ invoice_setting()->logo_url }}" alt="{{ global_setting(->company_name) }}"
+                <td><img src="{{ invoice_setting()->logo_url }}" alt="{{ mb_ucwords(global_setting()->company_name) }}"
                         id="logo" /></td>
                 <td align="right" class="f-21 text-black font-weight-700 text-uppercase">@lang('modules.lead.proposalTemplate')
                 </td>
@@ -280,7 +280,7 @@
             <tr>
                 <td>
                     <p class="line-height mt-1 mb-0 f-14 text-black">
-                        {{ global_setting()->company_name }}<br>
+                        {{ mb_ucwords(global_setting()->company_name) }}<br>
                         @if (!is_null($settings))
                             {!! nl2br(default_address()->address) !!}<br>
                             {{ global_setting()->company_phone }}
@@ -313,7 +313,7 @@
     </table>
 
     @if ($proposalTemplate->description)
-        <div class="f-13 description">{!! pdfStripTags($proposalTemplate->description) !!}</div>
+        <div class="f-13 description">{!! strip_tags($proposalTemplate->description, ['p', 'b', 'strong', 'a', 'ul', 'li', 'ol', 'i', 'u', 'em', 'blockquote', 'img']) !!}</div>
     @endif
 
     <table width="100%" class="f-14 b-collapse">
@@ -337,7 +337,7 @@
             @if ($item->type == 'item')
                 <!-- Table Row Start -->
                 <tr class="main-table-items text-black f-14">
-                    <td width="40%" class="border-bottom-0">{{ $item->item_name }}</td>
+                    <td width="40%" class="border-bottom-0">{{ ucfirst($item->item_name) }}</td>
                     @if ($invoiceSetting->hsn_sac_code_show)
                         <td align="right" class="border-bottom-0" width="10%">{{ $item->hsn_sac_code ? $item->hsn_sac_code : '--' }}</td>
                     @endif
@@ -349,7 +349,7 @@
                 @if ($item->item_summary != '' || $item->proposalTemplateItemImage)
                     </table>
                     <div class="f-13 summary text-black border-bottom-0">
-                        {!! nl2br(pdfStripTags($item->item_summary)) !!}
+                        {!! nl2br(strip_tags($item->item_summary, ['p', 'b', 'strong', 'a'])) !!}
                         @if ($item->proposalTemplateItemImage)
                             <p class="mt-2">
                                 <img src="{{ $item->proposalTemplateItemImage->file_url }}" width="60" height="60"
@@ -382,7 +382,7 @@
                     @foreach ($taxes as $key => $tax)
                         <!-- Table Row Start -->
                         <tr align="right" class="text-grey">
-                            <td width="50%" class="subtotal">{{ $key }}</td>
+                            <td width="50%" class="subtotal">{{ mb_strtoupper($key) }}</td>
                         </tr>
                         <!-- Table Row End -->
                     @endforeach

@@ -239,7 +239,7 @@ class DashboardController extends AccountBaseController
                 foreach ($events as $event) {
                     $eventData[] = [
                         'id' => $event->id,
-                        'title' => $event->event_name,
+                        'title' => ucfirst($event->event_name),
                         'start' => $event->start_date_time,
                         'end' => $event->end_date_time,
                         'event_type' => 'event',
@@ -258,7 +258,7 @@ class DashboardController extends AccountBaseController
                 foreach ($holidays as $holiday) {
                     $eventData[] = [
                         'id' => $holiday->id,
-                        'title' => $holiday->occassion,
+                        'title' => ucfirst($holiday->occassion),
                         'start' => $holiday->date,
                         'end' => $holiday->date,
                         'event_type' => 'holiday',
@@ -288,7 +288,7 @@ class DashboardController extends AccountBaseController
                 foreach ($tasks as $task) {
                     $eventData[] = [
                         'id' => $task->id,
-                        'title' => $task->heading,
+                        'title' => ucfirst($task->heading),
                         'start' => $task->start_date,
                         'end' => $task->due_date ?: $task->start_date,
                         'event_type' => 'task',
@@ -308,7 +308,7 @@ class DashboardController extends AccountBaseController
                 foreach ($tickets as $key => $ticket) {
                     $eventData[] = [
                         'id' => $ticket->ticket_number,
-                        'title' => $ticket->subject,
+                        'title' => ucfirst($ticket->subject),
                         'start' => $ticket->updated_at,
                         'end' => $ticket->updated_at,
                         'event_type' => 'ticket',
@@ -335,12 +335,12 @@ class DashboardController extends AccountBaseController
 
                     $eventData[] = [
                         'id' => $leave->id,
-                        'title' => $duration . ' ' . $leave->user->name,
+                        'title' => $duration . ' ' . ucfirst($leave->user->name),
                         'start' => $leave->leave_date->toDateString(),
                         'end' => $leave->leave_date->toDateString(),
                         'event_type' => 'leave',
                         /** @phpstan-ignore-next-line */
-                        'extendedProps' => ['name' => 'Leave : ' . $leave->user->name, 'bg_color' => $leave->color, 'color' => '#fff', 'icon' => 'fa-plane-departure']
+                        'extendedProps' => ['name' => 'Leave : ' . ucfirst($leave->user->name), 'bg_color' => $leave->color, 'color' => '#fff', 'icon' => 'fa-plane-departure']
                     ];
                 }
             }

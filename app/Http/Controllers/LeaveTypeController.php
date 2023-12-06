@@ -6,13 +6,10 @@ use App\Helper\Reply;
 use App\Http\Requests\LeaveType\StoreLeaveType;
 use App\Models\BaseModel;
 use App\Models\Designation;
-use App\Models\EmployeeDetails;
-use App\Models\EmployeeLeaveQuota;
 use App\Models\LeaveSetting;
 use App\Models\LeaveType;
 use App\Models\Role;
 use App\Models\Team;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class LeaveTypeController extends AccountBaseController
@@ -119,26 +116,6 @@ class LeaveTypeController extends AccountBaseController
         $leaveType->designation = $request->designation ? json_encode($request->designation) : null;
         $leaveType->role = $request->role ? json_encode($request->role) : null;
         $leaveType->save();
-
-        $employees = EmployeeDetails::select('id', 'user_id', 'joining_date')->get();
-        $settings = company();
-        $leaves = $leaveType->no_of_leaves;
-
-        foreach ($employees as $employee) {
-
-            if ($settings && $settings->leaves_start_from == 'year_start')
-            {
-                $joiningDate = $employee->joining_date->copy()->addDay()->startOfMonth();
-                $startingDate = Carbon::create($joiningDate->year + 1, $settings->year_starts_from)->startOfMonth();
-                $differenceMonth = $joiningDate->diffInMonths($startingDate);
-                $countOfMonthsAllowed = $differenceMonth > 12 ? $differenceMonth - 12 : $differenceMonth;
-                $leaves = floor($leaveType->no_of_leaves / 12 * $countOfMonthsAllowed);
-            }
-
-            $employeeQuota = EmployeeLeaveQuota::where('leave_type_id', $leaveType->id)->where('user_id', $employee->user_id)->first();
-            $employeeQuota->no_of_leaves = $leaves;
-            $employeeQuota->save();
-        }
 
         return Reply::success(__('messages.leaveTypeAdded'));
     }

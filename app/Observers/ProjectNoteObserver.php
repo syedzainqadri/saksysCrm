@@ -75,9 +75,9 @@ class ProjectNoteObserver
         $requestMentionIds = explode(',', (request()->mention_user_id));
         $project = $projectNote->project;
         $newMention = [];
-        
-        if (request()->mention_user_id != null) {
-            $projectNote->mentionUser()->sync($requestMentionIds);
+        $projectNote->mentionUser()->sync($requestMentionIds);
+
+        if ($requestMentionIds != null) {
 
             foreach ($requestMentionIds as $value) {
 

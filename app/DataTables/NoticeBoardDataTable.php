@@ -11,7 +11,6 @@ use Yajra\DataTables\Html\Column;
 class NoticeBoardDataTable extends BaseDataTable
 {
 
-    private $viewNoticePermission;
     private $editNoticePermission;
     private $deleteNoticePermission;
 
@@ -157,7 +156,8 @@ class NoticeBoardDataTable extends BaseDataTable
      */
     public function html()
     {
-        $dataTable = $this->setBuilder('notice-board-table', 3)
+        return $this->setBuilder('notice-board-table', 3)
+            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]))
             ->parameters([
                 'initComplete' => 'function () {
                    window.LaravelDataTables["notice-board-table"].buttons().container()
@@ -169,12 +169,6 @@ class NoticeBoardDataTable extends BaseDataTable
                     })
                 }',
             ]);
-
-        if (canDataTableExport()) {
-            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
-        }
-
-        return $dataTable;
     }
 
     /**

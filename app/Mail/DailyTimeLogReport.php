@@ -2,14 +2,15 @@
 
 namespace App\Mail;
 
-use App\Models\User;
 use App\Models\Company;
+use App\Models\User;
+use App\Notifications\BaseNotification;
+use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
-use Illuminate\Mail\Mailable;
-use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Config;
-use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Attachment;
+use Illuminate\Queue\SerializesModels;
 
 class DailyTimeLogReport extends Mailable implements ShouldQueue
 {
@@ -18,21 +19,18 @@ class DailyTimeLogReport extends Mailable implements ShouldQueue
 
     public $todayDate;
     public $company;
-    public $user;
-    public $role;
+    public $username;
 
     /**
      * Create a new message instance.
      *
      * @return void
      */
-    public function __construct(Company $company, $user, $role)
+    public function __construct(Company $company, $username)
     {
         $this->todayDate = now()->timezone($company->timezone)->format('Y-m-d');
         $this->company = $company;
-        $this->user = $user;
-        $this->role = $role;
-        Config::set('app.logo', $company->masked_logo_url);
+        $this->username = $username;
     }
 
     /**
@@ -43,7 +41,7 @@ class DailyTimeLogReport extends Mailable implements ShouldQueue
     public function build()
     {
         return $this->subject(__('email.dailyTimelogReport.subject') . ' ' . $this->todayDate)
-            ->markdown('mail.timelog.timelog-report', ['date' => $this->todayDate, 'name' => $this->user->name]);
+            ->markdown('mail.timelog.timelog-report', ['date' => $this->todayDate, 'name' => $this->username]);
     }
 
     public function attachments()
@@ -58,17 +56,11 @@ class DailyTimeLogReport extends Mailable implements ShouldQueue
     {
         $company = $this->company;
 
-        $employees = User::select('users.id', 'users.name')
-            ->with(['timeLogs' => function ($query) use ($company) {
-                $query->whereRaw('DATE(start_time) = ?', [$this->todayDate]);
-                $query->where('company_id', $company->id);
-            }, 'timeLogs.breaks'])
-            ->when($this->role->name != 'admin', function ($query) {
-                $query->where('users.id', $this->user->id);
-            })
+        $employees = User::select('users.id', 'users.name')->with(['timeLogs' => function ($query) {
+            $query->whereRaw('DATE(start_time) = ?', [$this->todayDate]);
+        }, 'timeLogs.breaks'])
             ->join('role_user', 'role_user.user_id', '=', 'users.id')
             ->join('roles', 'roles.id', '=', 'role_user.role_id')->onlyEmployee()
-            ->where('roles.company_id', $company->id)
             ->groupBy('users.id');
 
         $employees = $employees->get();
@@ -101,11 +93,11 @@ class DailyTimeLogReport extends Mailable implements ShouldQueue
 
         $options = $pdf->getOptions();
         $options->set(array('enable_php' => true));
-        $pdf->getDomPDF()->setOptions($options); /** @phpstan-ignore-line */
+        $pdf->getDomPDF()->setOptions($options);
 
-        $pdf->loadView('timelog-report', ['employees' => $employeeData, 'date' => $now, 'company' => $company]); /** @phpstan-ignore-line */
+        $pdf->loadView('timelog-report', ['employees' => $employeeData, 'date' => $now, 'company' => $company]);
 
-        $dom_pdf = $pdf->getDomPDF(); /** @phpstan-ignore-line */
+        $dom_pdf = $pdf->getDomPDF();
         $canvas = $dom_pdf->getCanvas();
         $canvas->page_text(530, 820, 'Page {PAGE_NUM} of {PAGE_COUNT}', null, 10);
 

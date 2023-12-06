@@ -2,16 +2,14 @@
 <!-- START -->
 <div class="d-flex justify-content-between align-items-center p-3 border-bottom-grey rounded-top bg-white">
     <span>
-        <p class="f-15 f-w-500 mb-0">{{ $discussion->title }}</p>
+        <p class="f-15 f-w-500 mb-0">{{ ucfirst($discussion->title) }}</p>
         <p class="f-11 text-lightest mb-0">@lang('modules.tickets.requestedOn')
             {{ $discussion->created_at->timezone(company()->timezone)->translatedFormat(company()->date_format . ' ' . company()->time_format) }}
         </p>
     </span>
     <span>
         <p class="mb-0 text-capitalize">
-            @if ($discussion->category)
-                <x-status :style="'color:'.$discussion->category->color" :value="$discussion->category->name" />
-            @endif
+            <x-status :style="'color:'.$discussion->category->color" :value="$discussion->category->name" />
         </p>
     </span>
 </div>
@@ -20,18 +18,17 @@
     @php
         $replyUser = $message->user;
     @endphp
-    {{-- clients.show --}}
     <div class="card ticket-message border-0 rounded-bottom
         @if (user()->id == $replyUser->id) bg-white-shade @endif
         " id="message-{{ $message->id }}">
         <div class="card-horizontal">
             <div class="card-img">
-                <a href="{{ route(($replyUser->hasRole('client') ? 'clients.show' : 'employees.show'), $replyUser->id) }}"><img class=""
+                <a href="{{ route('employees.show', $replyUser->id) }}"><img class=""
                         src="{{ $replyUser->image_url }}" alt="{{ $replyUser->name }}"></a>
             </div>
             <div class="card-body border-0 pl-0">
                 <div class="d-flex">
-                    <a href="{{ route(($replyUser->hasRole('client') ? 'clients.show' : 'employees.show'), $replyUser->id) }}">
+                    <a href="{{ route('employees.show', $replyUser->id) }}">
                         <h4 class="card-title f-15 f-w-500 text-dark mr-3">{{ $replyUser->name }}</h4>
                     </a>
                     <p class="card-date f-11 text-lightest mb-0 mr-3">
@@ -129,7 +126,7 @@
     $discussionId = $discussion->id;
 @endphp
 <div class="col-md-12 border-top border-right mb-5 bg-white" id="reply-section">
-    <x-form id="replyDiscussion" method="POST" class="ajax-form">
+    <x-form id="createMethods" method="POST" class="ajax-form">
         <input type="hidden" name="discussion_id" value="{{ $discussionId }}">
             <div class="col-md-12">
                 <div class="form-group my-3">
@@ -151,6 +148,7 @@
     </x-form>
 </div>
 
+<script src="{{ asset('vendor/jquery/dropzone.min.js') }}"></script>
 <script>
 
     $(document).ready(function () {
@@ -276,13 +274,13 @@
                         }).get();
 
             var mention_user_id  =  $.makeArray(mentionUser);
-            var discussionData = $('#replyDiscussion').serialize();
+            var discussionData = $('#createMethods').serialize();
 
             var data = discussionData+='&mention_user_id=' + mention_user_id;
 
             $.easyAjax({
                 url: "{{ route('discussion-reply.store') }}",
-                container: '#replyDiscussion',
+                container: '#createMethods',
                 type: "POST",
                 blockUI: true,
                 data: data,

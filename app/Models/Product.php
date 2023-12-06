@@ -2,13 +2,13 @@
 
 namespace App\Models;
 
-use App\Traits\HasCompany;
 use App\Traits\CustomFieldsTrait;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Traits\HasCompany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Modules\Purchase\Entities\PurchaseStockAdjustment;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Stripe\OrderItem;
 
 /**
  * App\Models\Product
@@ -70,33 +70,16 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @property-read int|null $leads_count
  * @property-read \App\Models\UnitType|null $unit
  * @method static \Illuminate\Database\Eloquent\Builder|Product whereUnitId($value)
-
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Lead> $leads
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Lead> $leads
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Lead> $leads
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Lead> $leads
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Lead> $leads
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Lead> $leads
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\OrderItems> $orderItem
  * @property-read int|null $order_item_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Lead> $leads
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\OrderItems> $orderItem
- * @property string|null $purchase_price
- * @property string $purchase_information
- * @property string $track_inventory
- * @property string|null $sales_description
- * @property string|null $purchase_description
- * @property int|null $opening_stock
- * @property float|null $rate_per_unit
- * @property string|null $sku
- * @property string|null $type
- * @property string $status
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Lead> $leads
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\OrderItems> $orderItem
- * @method static \Illuminate\Database\Eloquent\Builder|Product whereOpeningStock($value)
- * @method static \Illuminate\Database\Eloquent\Builder|Product wherePurchaseDescription($value)
- * @method static \Illuminate\Database\Eloquent\Builder|Product wherePurchaseInformation($value)
- * @method static \Illuminate\Database\Eloquent\Builder|Product wherePurchasePrice($value)
- * @method static \Illuminate\Database\Eloquent\Builder|Product whereRatePerUnit($value)
- * @method static \Illuminate\Database\Eloquent\Builder|Product whereSalesDescription($value)
- * @method static \Illuminate\Database\Eloquent\Builder|Product whereSku($value)
- * @method static \Illuminate\Database\Eloquent\Builder|Product whereStatus($value)
- * @method static \Illuminate\Database\Eloquent\Builder|Product whereTrackInventory($value)
- * @method static \Illuminate\Database\Eloquent\Builder|Product whereType($value)
  * @mixin \Eloquent
  */
 class Product extends BaseModel
@@ -110,7 +93,7 @@ class Product extends BaseModel
 
     protected $fillable = ['name', 'price', 'description', 'taxes'];
 
-    protected $appends = ['total_amount', 'image_url', 'download_file_url', 'image'];
+    protected $appends = ['total_amount', 'image_url', 'download_file_url'];
 
     protected $with = ['tax'];
 
@@ -123,15 +106,6 @@ class Product extends BaseModel
         }
 
         return ($this->default_image) ? asset_url_local_s3(Product::FILE_PATH . '/' . $this->default_image) : '';
-    }
-
-    public function getImageAttribute()
-    {
-        if($this->default_image){
-            return str($this->default_image)->contains('http') ? $this->default_image : (Product::FILE_PATH . '/' . $this->default_image);
-        }
-
-        return $this->default_image;
     }
 
     public function getDownloadFileUrlAttribute()
@@ -210,11 +184,5 @@ class Product extends BaseModel
         return $this->hasMany(OrderItems::class, 'product_id');
 
     }
-
-    public function inventory()
-    {
-        /** @phpstan-ignore-next-line */
-        return $this->hasMany(PurchaseStockAdjustment::class, 'product_id');
-    }
-
+    
 }

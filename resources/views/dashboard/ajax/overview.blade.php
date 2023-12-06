@@ -165,8 +165,8 @@
                                         alt="{{ $item->requester->name }}" title="{{ $item->requester->name }}">
                                 </div>
                             </td>
-                            <td><a href="{{ route('tickets.show', $item->ticket_number) }}"
-                                    class="text-darkest-grey">{{ $item->subject }}</a>
+                            <td><a href="{{ route('tickets.show', $item->id) }}"
+                                    class="text-darkest-grey">{{ ucfirst($item->subject) }}</a>
                                 <br />
                                 <span class="f-10 text-lightest mt-1">{{ $item->requester->name }}</span>
                             </td>
@@ -214,7 +214,7 @@
                                     <div class="taskEmployeeImg rounded-circle mr-1">
                                         <a href="{{ route('employees.show', $item->id) }}">
                                             <img data-toggle="tooltip"
-                                                data-original-title="{{ $item->name }}"
+                                                data-original-title="{{ mb_ucwords($item->name) }}"
                                                 src="{{ $item->image_url }}">
                                         </a>
                                     </div>
@@ -289,7 +289,7 @@
                                 </h4>
                                 <p class="card-text f-12 text-dark-grey">
                                     <a href="{{ route('projects.show', $activity->project_id) }}"
-                                        class="text-lightest font-weight-normal text-capitalize f-12">{{ $activity->project->project_name }}
+                                        class="text-lightest font-weight-normal text-capitalize f-12">{{ mb_ucwords($activity->project->project_name) }}
                                     </a>
                                     <br>
                                     {{ $activity->created_at->timezone(company()->timezone)->translatedFormat(company()->time_format) }}
@@ -324,7 +324,7 @@
                                 </h4>
                                 <p class="card-text f-12 text-dark-grey">
                                     <a href="{{ route('employees.show', $activity->user_id) }}"
-                                        class="text-lightest font-weight-normal text-capitalize f-12">{{ $activity->user->name }}
+                                        class="text-lightest font-weight-normal text-capitalize f-12">{{ mb_ucwords($activity->user->name) }}
                                     </a>
                                     <br>
                                     {{ $activity->created_at->timezone(company()->timezone)->translatedFormat(company()->time_format) }}

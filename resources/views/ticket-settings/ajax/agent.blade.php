@@ -15,7 +15,7 @@
                 <td>
                     <select class="change-agent-group form-control select-picker" data-agent-id="{{ $agent->id }}" multiple name="groupId[]">
                         @foreach ($groups as $group)
-                            <option
+                            <option 
                                 @foreach ($agent->agentGroup as $item)
                                     @if ($item->id == $group->id)
                                             selected

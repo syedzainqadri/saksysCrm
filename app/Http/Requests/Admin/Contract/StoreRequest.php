@@ -4,7 +4,6 @@ namespace App\Http\Requests\Admin\Contract;
 
 use App\Http\Requests\CoreRequest;
 use App\Traits\CustomFieldsRequestTrait;
-use Illuminate\Validation\Rule;
 
 class StoreRequest extends CoreRequest
 {
@@ -20,15 +19,6 @@ class StoreRequest extends CoreRequest
         return true;
     }
 
-    protected function prepareForValidation()
-    {
-        if ($this->contract_number) {
-            $this->merge([
-                'contract_number' => \App\Helper\NumberFormat::contract($this->contract_number),
-            ]);
-        }
-    }
-
     /**
      * Get the validation rules that apply to the request.
      *
@@ -39,10 +29,7 @@ class StoreRequest extends CoreRequest
         $setting = company();
 
         $rules = [
-            'contract_number' => [
-                'required',
-                Rule::unique('contracts')->where('company_id', company()->id)
-            ],
+            'contract_number' => 'required|unique:contracts,contract_number,null,id,company_id,' . company()->id,
             'client_id' => 'required',
             'subject' => 'required',
             'amount' => 'required',

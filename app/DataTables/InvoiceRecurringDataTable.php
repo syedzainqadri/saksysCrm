@@ -4,6 +4,8 @@ namespace App\DataTables;
 
 use App\DataTables\BaseDataTable;
 use App\Models\RecurringInvoice;
+use App\Scopes\CompanyScope;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Html\Button;
@@ -16,7 +18,6 @@ class InvoiceRecurringDataTable extends BaseDataTable
     private $viewInvoicePermission;
     private $deleteInvoicePermission;
     private $editInvoicePermission;
-    private $manageRecurringInvoicePermission;
 
     public function __construct()
     {
@@ -25,6 +26,7 @@ class InvoiceRecurringDataTable extends BaseDataTable
         $this->deleteInvoicePermission = user()->permission('delete_invoices');
         $this->editInvoicePermission = user()->permission('edit_invoices');
         $this->manageRecurringInvoicePermission = user()->permission('manage_recurring_invoice');
+
     }
 
     /**
@@ -72,20 +74,20 @@ class InvoiceRecurringDataTable extends BaseDataTable
             })
             ->editColumn('project_name', function ($row) {
                 if ($row->project_id != null) {
-                    return '<a href="' . route('projects.show', $row->project_id) . '" class="text-darkest-grey">' . $row->project->project_name . '</a>';
+                    return '<a href="' . route('projects.show', $row->project_id) . '" class="text-darkest-grey">' . ucfirst($row->project->project_name) . '</a>';
                 }
 
                 return '--';
             })
             ->addColumn('client_name', function ($row) {
                 if ($row->project && $row->project->client) {
-                    return $row->project->client->name;
+                    return ucfirst($row->project->client->name);
                 }
                 else if ($row->client_id != '') {
-                    return $row->client->name;
+                    return ucfirst($row->client->name);
                 }
                 else if ($row->estimate && $row->estimate->client) {
-                    return $row->estimate->client->name;
+                    return ucfirst($row->estimate->client->name);
                 }
                 else {
                     return '--';
@@ -127,7 +129,7 @@ class InvoiceRecurringDataTable extends BaseDataTable
                     return $role;
                 }
                 else {
-                    return ($row->status == 'inactive') ? ' <i class=\'fa fa-circle mr-2 text-red\'></i>' . $row->status : '<i class=\'fa fa-circle mr-2 text-light-green\'></i>' . $row->status;
+                    return ($row->status == 'inactive') ? ' <i class=\'fa fa-circle mr-2 text-red\'></i>' . ucfirst($row->status) : '<i class=\'fa fa-circle mr-2 text-light-green\'></i>' . ucfirst($row->status);
                 }
             })
             ->editColumn('total', function ($row) {
@@ -234,7 +236,7 @@ class InvoiceRecurringDataTable extends BaseDataTable
      */
     public function html()
     {
-        $dataTable = $this->setBuilder('invoices-recurring-table', 0)
+        return $this->setBuilder('invoices-recurring-table', 0)
             ->parameters([
                 'initComplete' => 'function () {
                    window.LaravelDataTables["invoices-recurring-table"].buttons().container()
@@ -243,13 +245,8 @@ class InvoiceRecurringDataTable extends BaseDataTable
                 'fnDrawCallback' => 'function( oSettings ) {
                     $(".change-invoice-status").selectpicker();
                 }',
-            ]);
-
-        if (canDataTableExport()) {
-            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
-        }
-
-        return $dataTable;
+            ])
+            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
     }
 
     /**

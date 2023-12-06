@@ -17,7 +17,6 @@ return array(
     'regards' => 'Regards',
     'newExpense' => array(
         'subject' => 'New Expense Submitted for Approval',
-        'newSubject' => 'New Expense has been Submitted',
         'action' => 'View Expense',
     ),
     'newExpenseRecurring' => array(
@@ -47,6 +46,8 @@ return array(
         'mentionText' => 'You have been mentioned on project',
         'mentionProjectNote' => 'Project Update: You Have Been Mention On New Project Note',
         'mentionNoteText' => 'You have been mentioned on project Note',
+
+
     ),
     'projectNote' => array(
             'mentionSubject' =>'You have Been Mention On New Project Note',
@@ -57,7 +58,7 @@ return array(
     ),
     'newProject' => array(
         'subject' => 'New Project Added',
-        'text' => 'A new project added with the name',
+        'text' => 'A new project added with name',
         'withName' => 'with name.',
         'loginNow' => ' Login now to view the project.',
     ),
@@ -82,12 +83,12 @@ return array(
     ),
     'newUser' => array(
         'subject' => 'Welcome to',
-        'text' => 'Congratulations! Your account has been created successfully. You can login now and start using our service.',
+        'text' => 'Congratulations! Your account has been created successfully. You can now login and start using our service.',
         'action' => 'Login to Dashboard',
     ),
     'newUserViaLink' => array(
         'subject' => 'New Team Member: Welcome to the Team!',
-        'text' => 'New account has been created successfully via an invitation link. Following are the details-',
+        'text' => 'New account has been created successfully via invitation link. Following are the details-',
         'action' => 'View User Details',
     ),
     'leaves' => array(
@@ -141,12 +142,12 @@ return array(
     ),
     'estimate' => array(
         'subject' => 'New Estimate Created',
-        'text' => 'A new estimate has been created. Please click on the link below to view the estimate.',
+        'text' => 'A new estimate has been Created. Please click on the link below to view estimate.',
         'loginDashboard' => 'Approve / Reject',
     ),
     'invoice' => array(
         'subject' => 'New Invoice Received',
-        'text' => 'A new invoice has been received. Please click on the link below to view an invoice.',
+        'text' => 'A new invoice has been received. Please click on the link below to view invoice.',
         'action' => 'View Invoice',
         'updateSubject' => 'Invoice Updated',
         'updateText' => 'Invoice has been updated. Please click on the link below to view invoice.',
@@ -154,10 +155,10 @@ return array(
     ),
     'order' => array(
         'subject' => 'New Order Placed',
-        'text' => 'A new order has been placed. Please click on the link below to view the order.',
+        'text' => 'A new order has been placed. Please click on the link below to view order.',
         'action' => 'View Order',
         'updateSubject' => 'Order Updated',
-        'updateText' => 'Order has been updated. Please click on the link below to view the order.',
+        'updateText' => 'Order has been updated. Please click on the link below to view order.',
     ),
     'projectReminder' => array(
         'text' => 'This is to remind you about the due date of the following projects which is',
@@ -167,14 +168,13 @@ return array(
     'messages' => array(
         'loginForMoreDetails' => 'Log in for more details.',
         'referenceMessage' => 'I have attached a copy of the invoice for your reference.',
-        'confirmMessage' => 'I would be grateful if you could confirm that everything is on track for payment.'
+        'confirmMessage' => 'I would be really grateful if you could confirm that everything is on track for payment.'
     ),
     'taskComment' => array(
         'subject' => 'New comment on task',
         'action' => 'View Task Comment',
         'mentionTask' => 'You have been mentioned in a task comment',
         'mentionSubject' => 'Mentioned On Comment',
-        'commentedBy' => 'Commented by',
     ),
     'taskNote' => array(
         'subject' => 'New note added for task',
@@ -342,7 +342,7 @@ return array(
     ),
     'testMail' => array(
         'testMail' => 'Test Mail',
-        'mailAddress' => 'Enter the email address where test mail needs to be sent',
+        'mailAddress' => 'Enter email address where test mail needs to be sent',
     ),
     'invitation' => array(
         'subject' => ' has invited you to join ',
@@ -350,7 +350,7 @@ return array(
     ),
     'invoiceReminder' => array(
         'subject' => 'Invoice Reminder',
-        'text' => 'This is to remind you about the due date of the following invoice which is',
+        'text' => 'This is to remind you about the due date of the following invoice which was',
         'action' => 'View Invoice',
     ),
     'invoiceReminderAfter' => array(
@@ -369,11 +369,11 @@ return array(
         'action' => 'Mark Attendance',
     ),
     'BirthdayReminder' => array(
-        'subject' => 'members have a birthday today',
+        'subject' => 'members have birthday today',
         'text' => 'The following team members are celebrating their birthdays today',
         'action' => 'Go to dashboard',
         'birthdayNotification' => 'have birthday',
-        'birthdayNotificationText' => ' others have a birthday on ',
+        'birthdayNotificationText' => ' others have birthday on ',
     ),
     'twoFactor' => array(
         'line1' => 'Your two-factor authentication code is ',
@@ -423,7 +423,6 @@ return array(
         'subject' => 'Time Tracker Reminder',
         'text' => 'You forgot to start the time tracker.',
         'action' => 'View Tasks',
-        'dear' => 'Dear',
     ),
     'holidays' => array(
         'subject' => 'New Holiday Created',
@@ -436,11 +435,4 @@ return array(
         'subject' => 'Rating added on project',
         'text' => 'Rating added on project-.',
      ),
-     'forgetPassword' => array(
-        'subject' => 'Reset Password Notification',
-        'content' => 'You are receiving this email because we received a password reset request for your account.',
-        'actionButton' => 'Reset Password',
-        'expire' => 'This password reset link will expire in 60 minutes.',
-        'contentPassword' => 'If you did not request a password reset, no further action is required.',
-      )
 );

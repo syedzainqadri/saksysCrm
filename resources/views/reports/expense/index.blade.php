@@ -173,6 +173,7 @@
             var projectID = $('#project_id').val();
             var employeeID = $('#employee_id').val();
             var categoryID = $('#category_id').val();
+            var searchText = $('#search-text-field').val();
 
             var url = "{{ route('expense-report.chart') }}";
 
@@ -218,12 +219,14 @@
             }
             var employeeID = $('#employee_id').val();
             var categoryID = $('#category_id').val();
+            var searchText = $('#search-text-field').val();
 
             data['categoryID'] = categoryID;
             data['employeeID'] = employeeID;
             data['projectID'] = projectID;
             data['startDate'] = startDate;
             data['endDate'] = endDate;
+            data['searchText'] = searchText;
         });
 
         const showTable = () => {
@@ -231,21 +234,30 @@
             barChart();
         }
 
-        $('#category_id, #employee_id, #project_id').on('change keyup', function() {
-            if ($('#project_id').val() != "all") {
+        $('#category_id, #employee_id, #project_id')
+            .on('change keyup',
+                function() {
+                    if ($('#project_id').val() != "all") {
+                        $('#reset-filters').removeClass('d-none');
+                        showTable();
+                    } else if ($('#category_id').val() != "all") {
+                        $('#reset-filters').removeClass('d-none');
+                        showTable();
+                    } else if ($('#project_id').val() != "all") {
+                        $('#reset-filters').removeClass('d-none');
+                        showTable();
+                    } else if ($('#employee_id').val() != "all") {
+                        $('#reset-filters').removeClass('d-none');
+                        showTable();
+                    } else {
+                        $('#reset-filters').addClass('d-none');
+                        showTable();
+                    }
+                });
+
+        $('#search-text-field').on('keyup', function() {
+            if ($('#search-text-field').val() != "") {
                 $('#reset-filters').removeClass('d-none');
-                showTable();
-            } else if ($('#category_id').val() != "all") {
-                $('#reset-filters').removeClass('d-none');
-                showTable();
-            } else if ($('#project_id').val() != "all") {
-                $('#reset-filters').removeClass('d-none');
-                showTable();
-            } else if ($('#employee_id').val() != "all") {
-                $('#reset-filters').removeClass('d-none');
-                showTable();
-            } else {
-                $('#reset-filters').addClass('d-none');
                 showTable();
             }
         });

@@ -175,11 +175,6 @@
                                      :href="route('database-backup-settings.index')"
                                      :text="__('app.menu.databaseBackupSetting')"/>
             @endif
-
-            @if (user()->permission('manage_company_setting') == 'all')
-                <x-setting-menu-item :active="$activeMenu" menu="sign_up_setting" :href="route('sign-up-settings.index')"
-                                    :text="__('app.menu.signUpSetting')"/>
-            @endif
         @endif
 
         @foreach (worksuite_plugins() as $item)

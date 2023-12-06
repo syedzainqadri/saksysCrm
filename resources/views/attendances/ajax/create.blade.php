@@ -14,7 +14,7 @@
                             fieldName="department_id" search="true">
                             <option value="0">--</option>
                             @foreach ($departments as $team)
-                                <option value="{{ $team->id }}">{{ $team->team_name }}</option>
+                                <option value="{{ $team->id }}">{{ mb_ucwords($team->team_name) }}</option>
                             @endforeach
                         </x-forms.select>
                     </div>
@@ -43,7 +43,7 @@
                         search="true">
                             @foreach ($location as $locations)
                                 <option @if ($locations->is_default == 1) selected @endif value="{{ $locations->id }}">
-                                    {{ $locations->location }}</option>
+                                    {{ mb_ucwords($locations->location) }}</option>
                             @endforeach
                         </x-forms.select>
                     </div>

@@ -56,7 +56,7 @@ class EmployeesDataTable extends BaseDataTable
             $userRole = $row->roles->pluck('name')->toArray();
 
             if (in_array('admin', $userRole)) {
-                return $row->roles()->withoutGlobalScopes()->latest()->first()->display_name;
+                return __('app.admin');
             }
 
             return $row->current_role_name;
@@ -65,7 +65,8 @@ class EmployeesDataTable extends BaseDataTable
             $userRole = $row->roles->pluck('name')->toArray();
 
             if (in_array('admin', $userRole)) {
-                $uRole = $row->roles()->withoutGlobalScopes()->latest()->first()->display_name;
+                $uRole = __('app.admin');
+
             }
             else {
                 $uRole = $row->current_role_name;
@@ -96,7 +97,7 @@ class EmployeesDataTable extends BaseDataTable
                         $role .= 'selected';
                     }
 
-                    $role .= ' value="' . $item->id . '">' . $item->display_name . '</option>';
+                    $role .= ' value="' . $item->id . '">' . ((in_array($item->name, ['admin', 'client', 'employee'])) ? __('app.' . $item->name) : ucfirst($item->name)) . '</option>';
 
                 }
             }
@@ -213,7 +214,7 @@ class EmployeesDataTable extends BaseDataTable
             ->leftJoin('employee_details', 'employee_details.user_id', '=', 'users.id')
             ->leftJoin('designations', 'employee_details.designation_id', '=', 'designations.id')
             ->join('roles', 'roles.id', '=', 'role_user.role_id')
-            ->select('users.id', 'employee_details.added_by', 'users.salutation', 'users.name', 'users.email', 'users.created_at', 'roles.name as roleName', 'roles.id as roleId', 'users.image', 'users.gender', 'users.status', DB::raw('(select user_roles.role_id from role_user as user_roles where user_roles.user_id = users.id ORDER BY user_roles.role_id DESC limit 1) as `current_role`'), DB::raw('(select roles.name from roles as roles where roles.id = current_role limit 1) as `current_role_name`'), 'designations.name as designation_name', 'employee_details.employee_id', 'employee_details.joining_date')
+            ->select('users.id', 'employee_details.added_by', 'users.name', 'users.email', 'users.created_at', 'roles.name as roleName', 'roles.id as roleId', 'users.image', 'users.gender', 'users.status', DB::raw('(select user_roles.role_id from role_user as user_roles where user_roles.user_id = users.id ORDER BY user_roles.role_id DESC limit 1) as `current_role`'), DB::raw('(select roles.name from roles as roles where roles.id = current_role limit 1) as `current_role_name`'), 'designations.name as designation_name', 'employee_details.employee_id', 'employee_details.joining_date')
             ->onlyEmployee();
 
 
@@ -308,7 +309,7 @@ class EmployeesDataTable extends BaseDataTable
      */
     public function html()
     {
-        $dataTable = $this->setBuilder('employees-table', 2)
+        return $this->setBuilder('employees-table', 2)
             ->parameters([
                 'initComplete' => 'function () {
                     window.LaravelDataTables["employees-table"].buttons().container()
@@ -317,13 +318,8 @@ class EmployeesDataTable extends BaseDataTable
                 'fnDrawCallback' => 'function( oSettings ) {
                    $(".select-picker").selectpicker();
                  }',
-            ]);
-
-        if (canDataTableExport()) {
-            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
-        }
-
-        return $dataTable;
+            ])
+            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
     }
 
     /**

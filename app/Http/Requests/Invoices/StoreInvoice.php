@@ -4,7 +4,6 @@ namespace App\Http\Requests\Invoices;
 
 use App\Http\Requests\CoreRequest;
 use App\Traits\CustomFieldsRequestTrait;
-use Illuminate\Validation\Rule;
 
 class StoreInvoice extends CoreRequest
 {
@@ -20,15 +19,6 @@ class StoreInvoice extends CoreRequest
         return true;
     }
 
-    protected function prepareForValidation()
-    {
-        if ($this->invoice_number) {
-            $this->merge([
-                'invoice_number' => \App\Helper\NumberFormat::invoice($this->invoice_number),
-            ]);
-        }
-    }
-
     /**
      * Get the validation rules that apply to the request.
      *
@@ -41,10 +31,7 @@ class StoreInvoice extends CoreRequest
         $setting = company();
 
         $rules = [
-            'invoice_number' => [
-                'required',
-                Rule::unique('invoices')->where('company_id', company()->id)
-            ],
+            'invoice_number' => 'required|unique:invoices,invoice_number,null,id,company_id,' . company()->id,
             'issue_date' => 'required',
             'sub_total' => 'required',
             'total' => 'required',

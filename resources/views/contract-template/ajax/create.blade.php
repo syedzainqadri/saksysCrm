@@ -21,7 +21,7 @@ $addClientPermission = user()->permission('add_clients');
                             <x-forms.label fieldId="description" :fieldLabel="__('app.description')">
                             </x-forms.label>
                             <div id="description">{!! $contract ? $contract->contract_detail : '' !!}</div>
-                            <textarea name="description" id="description-text" class="d-none"></textarea>
+                            <textarea name="contract_detail" id="description-text" class="d-none"></textarea>
                         </div>
                     </div>
 

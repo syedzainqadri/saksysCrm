@@ -495,7 +495,7 @@ class PaymentController extends AccountBaseController
                 $bankName = $bankAccount->bank_name . ' |';
             }
 
-            $options .= '<option value="' . $bankAccount->id . '"> ' . $bankName . ' ' . $bankAccount->account_name . ' </option>';
+            $options .= '<option value="' . $bankAccount->id . '"> ' . $bankName . ' ' . mb_ucwords($bankAccount->account_name) . ' </option>';
         }
 
         $exchangeRate = Currency::where('id', $request->curId)->pluck('exchange_rate')->toArray();

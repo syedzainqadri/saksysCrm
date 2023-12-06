@@ -2,7 +2,11 @@
 
 namespace Database\Factories;
 
+use App\Models\Currency;
 use App\Models\Project;
+use App\Models\ProjectCategory;
+use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class ProjectFactory extends Factory

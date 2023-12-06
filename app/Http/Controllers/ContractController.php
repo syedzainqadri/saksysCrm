@@ -231,7 +231,12 @@ class ContractController extends AccountBaseController
         $contract->end_date = $request->end_date == null ? $request->end_date : Carbon::createFromFormat($this->company->date_format, $request->end_date)->format('Y-m-d');
         $contract->original_end_date = $request->end_date == null ? $request->end_date : Carbon::createFromFormat($this->company->date_format, $request->end_date)->format('Y-m-d');
         $contract->description = trim_editor($request->description);
-        $contract->contract_detail = trim_editor($request->description);
+        $contract->contract_detail = $request->contract_detail;
+
+        if ($request->contract_detail) {
+            $contract->contract_detail = $request->contract_detail;
+        }
+
         $contract->save();
 
         // To add custom fields data
@@ -385,7 +390,7 @@ class ContractController extends AccountBaseController
         $sign->full_name = $request->first_name . ' ' . $request->last_name;
         $sign->contract_id = $this->contract->id;
         $sign->email = $request->email;
-        $sign->date = Carbon::now()->format('Y-m-d');
+        $sign->date = Carbon::now()->format(company()->date_format);
         $sign->place = $request->place;
         $imageName = null;
 

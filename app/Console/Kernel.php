@@ -72,6 +72,8 @@ class Kernel extends ConsoleKernel
         $timezone = config('app.cron_timezone');
 
 
+        // Schedule the queue:work command to run without overlapping and with 3 tries
+        $schedule->command('queue:work --tries=3 --stop-when-empty')->withoutOverlapping();
         $schedule->command('recurring-task-create')->dailyAt('23:59')->timezone($timezone);
         $schedule->command('auto-stop-timer')->dailyAt('23:30')->timezone($timezone);
         $schedule->command('birthday-notification')->dailyAt('09:00')->timezone($timezone);
@@ -81,7 +83,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('hide-cron-message')->everyMinute();
         $schedule->command('send-attendance-reminder')->everyMinute();
         $schedule->command('sync-user-permissions')->everyMinute();
-//        $schedule->command('fetch-ticket-emails')->everyMinute();
+        $schedule->command('fetch-ticket-emails')->everyMinute();
         $schedule->command('send-auto-followup-reminder')->everyMinute();
         $schedule->command('send-time-tracker')->everyMinute();
 
@@ -103,11 +105,6 @@ class Kernel extends ConsoleKernel
         $schedule->command('add-missing-permissions')->everyThirtyMinutes();
 
         $schedule->command('send-monthly-attendance-report')->monthlyOn();
-
-        $schedule->command('queue:flush')->weekly();
-
-        // Schedule the queue:work command to run without overlapping and with 3 tries
-        $schedule->command('queue:work --tries=3 --stop-when-empty')->withoutOverlapping();
     }
 
     /**

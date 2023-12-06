@@ -2,53 +2,59 @@
 
 namespace App\Http\Controllers;
 
-use App\DataTables\EmployeesDataTable;
-use App\DataTables\LeaveDataTable;
-use App\DataTables\ProjectsDataTable;
-use App\DataTables\TasksDataTable;
-use App\DataTables\TicketDataTable;
-use App\DataTables\TimeLogsDataTable;
-use App\Enums\Salutation;
+use Artisan;
+use Carbon\Carbon;
+use App\Models\Role;
+use App\Models\Task;
+use App\Models\Team;
+use App\Models\User;
 use App\Helper\Files;
 use App\Helper\Reply;
-use App\Http\Requests\Admin\Employee\ImportProcessRequest;
-use App\Http\Requests\Admin\Employee\ImportRequest;
-use App\Http\Requests\Admin\Employee\StoreRequest;
-use App\Http\Requests\Admin\Employee\UpdateRequest;
-use App\Http\Requests\User\CreateInviteLinkRequest;
-use App\Http\Requests\User\InviteEmailRequest;
-use App\Imports\EmployeeImport;
-use App\Jobs\ImportEmployeeJob;
-use App\Models\Appreciation;
-use App\Models\Attendance;
-use App\Models\Designation;
-use App\Models\EmployeeDetails;
-use App\Models\EmployeeSkill;
-use App\Models\LanguageSetting;
 use App\Models\Leave;
-use App\Models\LeaveType;
-use App\Models\Module;
-use App\Models\Notification;
-use App\Models\Passport;
-use App\Models\ProjectTimeLog;
-use App\Models\ProjectTimeLogBreak;
-use App\Models\Role;
-use App\Models\RoleUser;
 use App\Models\Skill;
-use App\Models\Task;
-use App\Models\TaskboardColumn;
-use App\Models\Team;
+use App\Models\Module;
 use App\Models\Ticket;
-use App\Models\UniversalSearch;
-use App\Models\User;
-use App\Models\UserActivity;
-use App\Models\UserInvitation;
+use App\Models\Country;
+use App\Models\Passport;
+use App\Models\RoleUser;
+use App\Models\LeaveType;
+use App\Models\Attendance;
 use App\Models\VisaDetail;
+use App\Models\Designation;
 use App\Scopes\ActiveScope;
 use App\Traits\ImportExcel;
-use Carbon\Carbon;
+use App\Models\Appreciation;
+use App\Models\Notification;
+use App\Models\UserActivity;
 use Illuminate\Http\Request;
+use App\Models\EmployeeSkill;
+use App\Models\ProjectTimeLog;
+use App\Models\UserInvitation;
+use App\Imports\EmployeeImport;
+use App\Jobs\ImportEmployeeJob;
+use App\Models\EmployeeDetails;
+use App\Models\LanguageSetting;
+use App\Models\TaskboardColumn;
+use App\Models\UniversalSearch;
+use App\DataTables\LeaveDataTable;
+use App\DataTables\TasksDataTable;
 use Illuminate\Support\Facades\DB;
+use App\DataTables\TicketDataTable;
+use App\Models\ProjectTimeLogBreak;
+use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Auth;
+use Maatwebsite\Excel\Facades\Excel;
+use App\DataTables\ProjectsDataTable;
+use App\DataTables\TimeLogsDataTable;
+use App\DataTables\EmployeesDataTable;
+use Maatwebsite\Excel\HeadingRowImport;
+use App\Http\Requests\User\InviteEmailRequest;
+use App\Http\Requests\Admin\Employee\StoreRequest;
+use Maatwebsite\Excel\Imports\HeadingRowFormatter;
+use App\Http\Requests\Admin\Employee\ImportRequest;
+use App\Http\Requests\Admin\Employee\UpdateRequest;
+use App\Http\Requests\User\CreateInviteLinkRequest;
+use App\Http\Requests\Admin\Employee\ImportProcessRequest;
 use Symfony\Component\Mailer\Exception\TransportException;
 
 class EmployeeController extends AccountBaseController
@@ -111,7 +117,6 @@ class EmployeeController extends AccountBaseController
         $this->checkifExistEmployeeId = EmployeeDetails::select('id')->where('employee_id', ($this->lastEmployeeID + 1))->first();
         $this->employees = User::allEmployees(null, true);
         $this->languages = LanguageSetting::where('status', 'enabled')->get();
-        $this->salutations = Salutation::cases();
 
         $userRoles = user()->roles->pluck('name')->toArray();
 
@@ -187,7 +192,6 @@ class EmployeeController extends AccountBaseController
             $user->password = bcrypt($request->password);
             $user->mobile = $request->mobile;
             $user->country_id = $request->country;
-            $user->salutation = $request->salutation;
             $user->country_phonecode = $request->country_phonecode;
             $user->gender = $request->gender;
             $user->locale = $request->locale;
@@ -216,7 +220,7 @@ class EmployeeController extends AccountBaseController
             if (!empty($tags)) {
                 foreach ($tags as $tag) {
                     // check or store skills
-                    $skillData = Skill::firstOrCreate(['name' => $tag->value]);
+                    $skillData = Skill::firstOrCreate(['name' => strtolower($tag->value)]);
 
                     // Store user skills
                     $skill = new EmployeeSkill();
@@ -370,7 +374,6 @@ class EmployeeController extends AccountBaseController
         $exceptUsers = [$id];
         $this->roles = Role::where('name', '<>', 'client')->get();
         $this->userRoles = $this->employee->roles->pluck('name')->toArray();
-        $this->salutations = Salutation::cases();
 
         /** @phpstan-ignore-next-line */
         if (count($this->employee->reportingTeam) > 0) {
@@ -420,7 +423,6 @@ class EmployeeController extends AccountBaseController
 
         $user->mobile = $request->mobile;
         $user->country_id = $request->country;
-        $user->salutation = $request->salutation;
         $user->country_phonecode = $request->country_phonecode;
         $user->gender = $request->gender;
         $user->locale = $request->locale;
@@ -454,8 +456,6 @@ class EmployeeController extends AccountBaseController
 
         $user->save();
 
-        cache()->forget('user_is_active_' . $user->id);
-
         $roleId = request()->role;
 
         $userRole = Role::where('id', request()->role)->first();
@@ -486,7 +486,7 @@ class EmployeeController extends AccountBaseController
 
             foreach ($tags as $tag) {
                 // Check or store skills
-                $skillData = Skill::firstOrCreate(['name' => $tag->value]);
+                $skillData = Skill::firstOrCreate(['name' => strtolower($tag->value)]);
 
                 // Store user skills
                 $skill = new EmployeeSkill();
@@ -633,7 +633,7 @@ class EmployeeController extends AccountBaseController
 
         }
 
-        $this->pageTitle = $this->employee->name;
+        $this->pageTitle = ucfirst($this->employee->name);
         $viewDocumentPermission = user()->permission('view_documents');
         $viewImmigrationPermission = user()->permission('view_immigration');
 
@@ -685,7 +685,7 @@ class EmployeeController extends AccountBaseController
             $this->view = 'employees.ajax.leaves_quota';
             break;
         case 'shifts':
-            abort_403(user()->permission('view_shift_roster') != 'all' || !in_array('attendance', user_modules()));
+            abort_403(user()->permission('view_shift_roster') != 'all');
             $this->view = 'employees.ajax.shifts';
             break;
         case 'permissions':
@@ -832,7 +832,7 @@ class EmployeeController extends AccountBaseController
     public function tickets()
     {
         $viewPermission = user()->permission('view_tickets');
-        abort_403(!(in_array($viewPermission, ['all']) && in_array('tickets', user_modules())));
+        abort_403(!in_array($viewPermission, ['all']));
         $tab = request('tab');
         $this->activeTab = $tab ?: 'profile';
         $this->tickets = Ticket::all();
@@ -878,7 +878,7 @@ class EmployeeController extends AccountBaseController
     {
 
         $viewPermission = user()->permission('view_employee_timelogs');
-        abort_403(!(in_array($viewPermission, ['all']) && in_array('timelogs', user_modules())));
+        abort_403(!in_array($viewPermission, ['all']));
 
         $tab = request('tab');
         $this->activeTab = $tab ?: 'profile';
@@ -1008,9 +1008,7 @@ class EmployeeController extends AccountBaseController
         $roles = User::with('roles')->findOrFail($id);
         $userRole = [];
 
-        $userRoles = $roles->roles->count() > 1 ? $roles->roles->where('name', '!=', 'employee') : $roles->roles;
-
-        foreach($userRoles as $role){
+        foreach($roles->roles as $role){
             $userRole[] = $role->id;
         }
 

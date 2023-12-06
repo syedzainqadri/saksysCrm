@@ -33,7 +33,7 @@ class FinanceReportDataTable extends BaseDataTable
             ->eloquent($query)
             ->editColumn('project_id', function ($row) {
                 if (!is_null($row->project)) {
-                    return '<a class="text-darkest-grey" href="' . route('projects.show', $row->project_id) . '">' . $row->project->project_name . '</a>';
+                    return '<a class="text-darkest-grey" href="' . route('projects.show', $row->project_id) . '">' . ucfirst($row->project->project_name) . '</a>';
                 }
                 else {
                     return '--';
@@ -41,7 +41,7 @@ class FinanceReportDataTable extends BaseDataTable
             })
             ->editColumn('invoice_number', function ($row) {
                 if ($row->invoice_id != null) {
-                    return '<a class="text-darkest-grey" href="' . route('invoices.show', $row->invoice_id) . '">' . $row->invoice->invoice_number . '</a>';
+                    return '<a class="text-darkest-grey" href="' . route('invoices.show', $row->invoice_id) . '">' . ucfirst($row->invoice->invoice_number) . '</a>';
                 }
                 else {
                     return '--';
@@ -135,7 +135,7 @@ class FinanceReportDataTable extends BaseDataTable
      */
     public function html()
     {
-        $dataTable = $this->setBuilder('payments-table')
+        return $this->setBuilder('payments-table')
             ->parameters([
                 'initComplete' => 'function () {
                    window.LaravelDataTables["payments-table"].buttons().container()
@@ -144,13 +144,8 @@ class FinanceReportDataTable extends BaseDataTable
                 'fnDrawCallback' => 'function( oSettings ) {
                   //
                 }',
-            ]);
-
-        if (canDataTableExport()) {
-            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
-        }
-
-        return $dataTable;
+            ])
+            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
     }
 
     /**
@@ -161,7 +156,7 @@ class FinanceReportDataTable extends BaseDataTable
     protected function getColumns()
     {
         return [
-            '#' => ['data' => 'DT_RowIndex', 'searchable' => false, 'visible' => false, 'title' => '#'],
+            '#' => ['data' => 'DT_RowIndex', 'searchable' => false, 'visible' => false],
             __('app.project') => ['data' => 'project_id', 'name' => 'project_id', 'title' => __('app.project')],
             __('app.invoice') . '#' => ['data' => 'invoice_number', 'name' => 'invoice.invoice_number', 'title' => __('app.invoice')],
             __('modules.invoices.amount') => ['data' => 'amount', 'name' => 'amount', 'title' => __('modules.invoices.amount')],

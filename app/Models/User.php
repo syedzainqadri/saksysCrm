@@ -2,10 +2,7 @@
 
 namespace App\Models;
 
-use App\Enums\Salutation;
-use App\Notifications\ResetPassword;
 use App\Scopes\ActiveScope;
-use App\Traits\HasMaskImage;
 use App\Traits\HasCompany;
 use Illuminate\Auth\Authenticatable;
 use Illuminate\Auth\Passwords\CanResetPassword;
@@ -13,7 +10,6 @@ use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -212,9 +208,6 @@ use Trebol\Entrust\Traits\EntrustUserTrait;
  * @property-read Collection<int, \App\Models\TicketGroup> $agentGroup
  * @property-read Collection<int, \App\Models\ProjectTimeLog> $timeLogs
  * @property-read Collection<int, \App\Models\VisaDetail> $visa
- * @property-read Collection<int, \App\Models\TicketGroup> $agentGroup
- * @property-read Collection<int, \App\Models\ProjectTimeLog> $timeLogs
- * @property-read Collection<int, \App\Models\VisaDetail> $visa
  * @mixin \Eloquent
  */
 class User extends BaseModel implements AuthenticatableContract, AuthorizableContract, CanResetPasswordContract
@@ -222,7 +215,6 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
 
     use Notifiable, EntrustUserTrait, Authenticatable, Authorizable, CanResetPassword, HasFactory, TwoFactorAuthenticatable;
     use HasCompany;
-    use HasMaskImage;
 
     const ALL_ADDED_BOTH = ['all', 'added', 'both'];
 
@@ -258,27 +250,16 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'last_login' => 'datetime',
-        'two_factor_expires_at	' => 'array',
-        'salutation' => Salutation::class,
+        'two_factor_expires_at	' => 'array'
     ];
 
     protected $appends = ['image_url', 'modules', 'mobile_with_phonecode'];
 
     public function getImageUrlAttribute()
     {
-        $gravatarHash = !is_null($this->email) ? md5(strtolower(trim($this->email))) : md5($this->id);
+        $gravatarHash = md5(strtolower(trim($this->email)));
 
         return ($this->image) ? asset_url_local_s3('avatar/' . $this->image) : 'https://www.gravatar.com/avatar/' . $gravatarHash . '.png?s=200&d=mp';
-    }
-
-    public function maskedImageUrl(): Attribute
-    {
-        return Attribute::make(
-            get: function () {
-                return ($this->image) ? $this->generateMaskedImageAppUrl('avatar/' . $this->image) : 'https://www.gravatar.com/avatar/' . md5($this->id) . '.png?s=200&d=mp';
-            },
-        );
-
     }
 
     public function hasGravatar($email)
@@ -358,16 +339,6 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
 
         return null;
 
-    }
-
-    // phpcs:ignore
-    public function routeNotificationForVonage($notification)
-    {
-        if (!is_null($this->mobile) && !is_null($this->country_phonecode)) {
-            return $this->country_phonecode . $this->mobile;
-        }
-
-        return null;
     }
 
     // phpcs:ignore
@@ -637,6 +608,7 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
                         $q->where('employee_details.user_id', user()->id);
                         $q->orWhere('employee_details.added_by', user()->id);
                     });
+
 
                 }
                 elseif ($viewEmployeePermission == 'owned' && !in_array('client', user_roles())) {
@@ -944,20 +916,15 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
     public function assignUserRolePermission($roleId)
     {
         $rolePermissions = PermissionRole::where('role_id', $roleId)->get();
-        $data = [];
 
-        UserPermission::where('user_id', $this->id)->delete();
-
-        foreach ($rolePermissions as $permission) {
-            $data[] = [
-                'permission_id' => $permission->permission_id,
-                'user_id' => $this->id,
-                'permission_type_id' => $permission->permission_type_id,
-            ];
-        }
-
-        foreach (array_chunk($data, 100) as $item) {
-            UserPermission::insert($item);
+        foreach ($rolePermissions as $key => $value) {
+            $userPermission = UserPermission::where('permission_id', $value->permission_id)
+                ->where('user_id', $this->id)
+                ->firstOrNew();
+            $userPermission->permission_id = $value->permission_id;
+            $userPermission->user_id = $this->id;
+            $userPermission->permission_type_id = $value->permission_type_id;
+            $userPermission->save();
         }
     }
 
@@ -982,6 +949,24 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
             $userPermission->user_id = $this->id;
             $userPermission->permission_type_id = $value->permission_type_id;
             $userPermission->save();
+        }
+    }
+
+    public function insertUserRolePermission($roleId)
+    {
+        $rolePermissions = PermissionRole::where('role_id', $roleId)->get();
+        $data = [];
+
+        foreach ($rolePermissions as $permission) {
+            $data[] = [
+                'permission_id' => $permission->permission_id,
+                'user_id' => $this->id,
+                'permission_type_id' => $permission->permission_type_id,
+            ];
+        }
+
+        foreach (array_chunk($data, 100) as $item) {
+            UserPermission::insert($item);
         }
     }
 
@@ -1034,14 +1019,12 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
     public function userBadge()
     {
         $itsYou = ' <span class="ml-2 badge badge-secondary pr-1">' . __('app.itsYou') . '</span>';
-        /** @phpstan-ignore-next-line */
-        $salutation = ($this->salutation ? $this->salutation->label() . ' ' : '');
 
         if (user() && user()->id == $this->id) {
-            return $salutation . $this->name . $itsYou;
+            return mb_ucfirst($this->name) . $itsYou;
         }
 
-        return $salutation . $this->name;
+        return mb_ucfirst($this->name);
     }
 
     public function estimates(): HasMany
@@ -1059,17 +1042,6 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
         return $query->whereHas('roles', function ($q) {
             $q->where('name', 'employee');
         })->whereHas('employeeDetail');
-    }
-
-    /**
-     * Send the password reset notification.
-     *
-     * @param  string  $token
-     * @return void
-     */
-    public function sendPasswordResetNotification($token)
-    {
-        $this->notify(new ResetPassword($token));
     }
 
 }

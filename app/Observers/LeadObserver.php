@@ -46,7 +46,7 @@ class LeadObserver
     public function created(Lead $lead)
     {
         // Save lead note
-        if (!empty($lead->note)) {
+        if ($lead->note) {
             $lead->note()->create([
                 'lead_id' => $lead->id,
                 'title' => 'Note',

@@ -123,7 +123,6 @@ class AppSettingController extends AccountBaseController
         $setting->time_format = $request->time_format;
         $setting->moment_format = $this->momentFormat($setting->date_format);
         $setting->dashboard_clock = $request->has('dashboard_clock') && $request->dashboard_clock == 'on' ? 1 : 0;
-        $setting->employee_can_export_data = $request->has('employee_can_export_data') && $request->employee_can_export_data == 'on' ? 1 : 0;
         $setting->datatable_row_limit = $request->datatable_row_limit;
         $setting->save();
 
@@ -134,11 +133,6 @@ class AppSettingController extends AccountBaseController
         $user->saveQuietly();
 
         \session()->forget('user');
-
-        if ($request->currency_id) {
-            \session()->forget('currency_format_setting');
-            currency_format_setting($setting->currency_id);
-        }
 
         $this->globalSettingSave($request);
 

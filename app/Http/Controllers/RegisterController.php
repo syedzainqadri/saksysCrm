@@ -18,7 +18,6 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Requests\User\AcceptInviteRequest;
 use App\Http\Requests\User\AccountSetupRequest;
 use App\Events\NewUserRegistrationViaInviteEvent;
-use App\Models\GlobalSetting;
 use Symfony\Component\Mailer\Exception\TransportException;
 
 class RegisterController extends Controller
@@ -33,8 +32,6 @@ class RegisterController extends Controller
         $this->invite = UserInvitation::where('invitation_code', $code)
             ->where('status', 'active')
             ->firstOrFail();
-
-        $this->globalSetting = GlobalSetting::first();
 
         return view('auth.invitation', $this->data);
     }

@@ -141,11 +141,6 @@ $projectArchived = $project->trashed();
                             :text="__('modules.employees.activity')" class="activity" />
                     </li>
 
-                    @if ($viewNotePermission != 'none' )
-                        <li>
-                            <x-tab :href="route('projects.show', $project->id).'?tab=tickets'" :text="__('app.menu.tickets')" class="tickets" ajax="false" />
-                        </li>
-                    @endif
                 </ul>
             </nav>
         </div>

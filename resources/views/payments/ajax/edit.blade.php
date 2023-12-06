@@ -57,7 +57,7 @@
                     <div class="col-lg-3 col-md-6">
                         <x-forms.text fieldId="exchange_rate" :fieldLabel="__('modules.currencySettings.exchangeRate')"
                         fieldName="exchange_rate" fieldRequired="true" :fieldValue="$payment->exchange_rate" :fieldReadOnly="($companyCurrency->id == $payment->currency_id)"
-                        :fieldHelp="$payment->currency->currency_code != company()->currency->currency_code ? ( company()->currency->currency_code.' '.__('app.to').' '.$payment->currency->currency_code ) : ' '" />
+                        :fieldHelp="( company()->currency->currency_code.' '.__('app.to').' '.$payment->currency->currency_code )" />
                     </div>
                     <div class="col-lg-3 col-md-6">
                         <x-forms.text fieldId="transaction_id" :fieldLabel="__('modules.payments.transactionId')"
@@ -128,7 +128,7 @@
                                     @foreach ($bankDetails as $bankDetail)
                                         <option value="{{ $bankDetail->id }}" @if($bankDetail->id == $payment->bank_account_id) selected @endif>@if($bankDetail->type == 'bank')
                                             {{ $bankDetail->bank_name }} | @endif
-                                            {{ $bankDetail->account_name }}
+                                            {{ mb_ucwords($bankDetail->account_name) }}
                                         </option>
                                     @endforeach
                                 @endif
@@ -212,8 +212,8 @@
 
                     var currentCurrencyName = $('#currency option:selected').attr('data-currency-code');
             }
-            let currencyExchange = (companyCurrencyName != currentCurrencyName) ? '( '+companyCurrencyName+' @lang('app.to') '+currentCurrencyName+' )' : '';
-            $('#exchange_rateHelp').html(currencyExchange);
+
+            $('#exchange_rateHelp').html('( '+companyCurrencyName+' @lang('app.to') '+currentCurrencyName+' )');
 
             var url = "{{ route('payments.account_list') }}";
             var curId = $('#currency_id').val();
@@ -296,8 +296,8 @@
                 $('#currency').prop('disabled', false);
                 $('#currency').selectpicker('refresh');
             }
-            let currencyExchange = (companyCurrencyName != currentCurrencyName) ? '( '+companyCurrencyName+' @lang('app.to') '+currentCurrencyName+' )' : '';
-            $('#exchange_rateHelp').html(currencyExchange);
+
+            $('#exchange_rateHelp').html('( '+companyCurrencyName+' @lang('app.to') '+currentCurrencyName+' )');
 
             var url = "{{ route('projects.invoice_list', ':id') }}";
             url = url.replace(':id', id);
@@ -357,8 +357,7 @@
                         $('#bank_account_id').html(response.data);
                         $('#bank_account_id').selectpicker('refresh');
                         $('#exchange_rate').val(response.exchangeRate);
-                        let currencyExchange = (companyCurrencyName != currentCurrencyName) ? '( '+companyCurrencyName+' @lang('app.to') '+currentCurrencyName+' )' : '';
-                        $('#exchange_rateHelp').html(currencyExchange);
+                        $('#exchange_rateHelp').html('( '+companyCurrencyName+' @lang('app.to') '+currentCurrencyName+' )');
                     }
                 }
             });

@@ -43,6 +43,7 @@ use Illuminate\Notifications\Notifiable;
  * @property-read \App\Models\Currency|null $currency
  * @property-read mixed $icon
  * @property-read mixed $issue_on
+ * @property-read mixed $original_cn_number
  * @property-read mixed $total_amount
  * @property-read \App\Models\Invoice|null $invoice
  * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\Invoice[] $invoices
@@ -102,7 +103,7 @@ class CreditNotes extends BaseModel
         'issue_date' => 'datetime',
         'due_date' => 'datetime',
     ];
-    protected $appends = ['total_amount', 'issue_on'];
+    protected $appends = ['total_amount', 'issue_on', 'cn_number', 'original_cn_number'];
     protected $with = ['currency'];
 
     public function project(): BelongsTo
@@ -190,6 +191,43 @@ class CreditNotes extends BaseModel
         return '';
     }
 
+    public function getOriginalCnNumberAttribute()
+    {
+        $invoiceSettings = invoice_setting();
+        $zero = '';
+
+        if (strlen($this->attributes['cn_number']) < $invoiceSettings->invoice_digit) {
+            $condition = $invoiceSettings->invoice_digit - strlen($this->attributes['cn_number']);
+
+            for ($i = 0; $i < $condition; $i++) {
+                $zero = '0' . $zero;
+            }
+        }
+
+        return '#' . $zero . $this->attributes['cn_number'];
+    }
+
+    public function getCnNumberAttribute($value)
+    {
+        if (!is_null($value)) {
+            $invoiceSettings = invoice_setting();
+            $zero = '';
+
+            if (strlen($value) < $invoiceSettings->credit_note_digit) {
+
+                $condition = $invoiceSettings->credit_note_digit - strlen($value);
+
+                for ($i = 0; $i < $condition; $i++) {
+                    $zero = '0' . $zero;
+                }
+            }
+
+            return $invoiceSettings->credit_note_prefix . $invoiceSettings->credit_note_number_separator . $zero . $value;
+        }
+
+        return '';
+    }
+
     public function setIssueDateAttribute($issue_date)
     {
         $issue_date = Carbon::createFromFormat(company()->date_format, $issue_date, company()->timezone)->format('Y-m-d');
@@ -208,17 +246,6 @@ class CreditNotes extends BaseModel
 
             $this->attributes['due_date'] = $due_date;
         }
-    }
-
-    public function formatCreditNoteNumber()
-    {
-        $invoiceSettings = company() ? company()->invoiceSetting : $this->company->invoiceSetting;
-        return \App\Helper\NumberFormat::creditNote($this->cn_number, $invoiceSettings);
-    }
-
-    public static function lastEstimateNumber()
-    {
-        return (int)CreditNotes::latest()->first()?->original_credit_note_number ?? 0;
     }
 
 }

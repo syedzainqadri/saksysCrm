@@ -191,7 +191,7 @@ trait ClientDashboard
         $labelVal = [];
 
         foreach ($leadStatus->pluck('type') as $key => $value) {
-            $labelVal[] = $value;
+            $labelVal[] = __('app.'.$value);
         }
 
         $data['labels'] = $labelVal;

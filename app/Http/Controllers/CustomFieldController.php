@@ -136,6 +136,7 @@ class CustomFieldController extends AccountBaseController
     {
         $this->customFieldGroups = CustomFieldGroup::all();
         $this->types = ['text', 'number', 'password', 'textarea', 'select', 'radio', 'date', 'checkbox', 'file'];
+
         return view('custom-fields.create-custom-field-modal', $this->data);
     }
 
@@ -228,7 +229,7 @@ class CustomFieldController extends AccountBaseController
                 'visible' => $field['visible']
             ];
 
-            if (isset($field['required']) && (in_array($field['required'], ['yes', 'on', 1]))) {
+            if (isset($field['required']) && (in_array(strtolower($field['required']), ['yes', 'on', 1]))) {
                 $insertData['required'] = 'yes';
 
             }

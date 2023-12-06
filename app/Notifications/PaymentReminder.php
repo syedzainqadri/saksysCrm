@@ -2,7 +2,6 @@
 
 namespace App\Notifications;
 
-use App\Http\Controllers\InvoiceController;
 use App\Models\EmailNotificationSetting;
 use App\Models\Invoice;
 use Illuminate\Notifications\Messages\SlackMessage;
@@ -73,31 +72,22 @@ class PaymentReminder extends BaseNotification
     public function toMail($notifiable): MailMessage
     {
         $build = parent::build();
-        // For Sending pdf to email
-        $invoiceController = new InvoiceController();
 
-        if ($pdfOption = $invoiceController->domPdfObjectForDownload($this->invoice->id)) {
-            $pdf = $pdfOption['pdf'];
-            $filename = $pdfOption['fileName'];
+        $url = route('front.invoice', [$this->invoice->hash]);
+        $paymentUrl = getDomainSpecificUrl($url, $this->company);
 
-            $url = route('front.invoice', [$this->invoice->hash]);
-            $paymentUrl = getDomainSpecificUrl($url, $this->company);
+        $content = __('app.invoiceNumber') . ' : ' . ucfirst($this->invoice->invoice_number) . '<p>
+            <b style="color: green">' . __('app.dueDate') . ' : ' . $this->invoice->due_date->format($this->company->date_format) . '</b>
+        </p>';
 
-            $content = __('app.invoiceNumber') . ' : ' . $this->invoice->invoice_number . '<p>
-                <b style="color: green">' . __('app.dueDate') . ' : ' . $this->invoice->due_date->format($this->company->date_format) . '</b>
-            </p>';
-
-            $build->subject(__('email.paymentReminder.subject') . ' - ' . config('app.name') . '.')
-                ->greeting(__('email.hello') . ' ' . $this->user->name . '!')
-                ->markdown('mail.payment.reminder', [
-                    'paymentUrl' => $paymentUrl,
-                    'content' => $content,
-                    'themeColor' => $this->company->header_color
-                ]);
-            $build->attachData($pdf->output(), $filename . '.pdf');
-
-            return $build;
-        }
+        return $build
+            ->subject(__('email.paymentReminder.subject') . ' - ' . config('app.name') . '.')
+            ->greeting(__('email.hello') . ' ' . mb_ucwords($this->user->name) . '!')
+            ->markdown('mail.payment.reminder', [
+                'paymentUrl' => $paymentUrl,
+                'content' => $content,
+                'themeColor' => $this->company->header_color
+            ]);
     }
 
     /**
@@ -131,7 +121,7 @@ class PaymentReminder extends BaseNotification
                 ->from(config('app.name'))
                 ->image($slack->slack_logo_url)
                 ->to('@' . $notifiable->employee[0]->slack_username)
-                ->content('*' . __('email.paymentReminder.subject') . '*' . "\n" . __('app.invoice') . ' - ' . $this->invoice->invoice_number);
+                ->content('*' . __('email.paymentReminder.subject') . '*' . "\n" . __('app.invoice') . ' - ' . ucfirst($this->invoice->invoice_number));
         }
 
         return (new SlackMessage())

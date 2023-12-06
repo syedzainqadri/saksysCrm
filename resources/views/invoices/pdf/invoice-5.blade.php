@@ -291,7 +291,7 @@
     <tbody>
     <!-- Table Row Start -->
     <tr>
-        <td><img src="{{ $invoiceSetting->logo_url }}" alt="{{ $company->company_name }}"
+        <td><img src="{{ $invoiceSetting->logo_url }}" alt="{{ mb_ucwords($company->company_name) }}"
                  id="logo"/></td>
         <td align="right" class="f-21 text-black font-weight-700 text-uppercase">@lang('app.invoice')<br>
             <table class="text-black mt-1 f-11 b-collapse rightaligned">
@@ -328,7 +328,7 @@
         <td class="f-12 text-black">
             <p class="line-height mb-0 ">
                 <span class="text-grey text-capitalize">@lang('modules.invoices.billedFrom')</span><br>
-                {{ $company->company_name }}<br>
+                {{ mb_ucwords($company->company_name) }}<br>
                 @if ($company->company_email)
                     {{ $company->company_email }}<br>
                 @endif
@@ -367,7 +367,7 @@
                                 @lang('modules.invoices.billedTo')</span><br>
 
                     @if ($client->name && $invoiceSetting->show_client_name == 'yes')
-                        {{ $client->name }}<br>
+                        {{ mb_ucwords($client->name) }}<br>
                     @endif
 
                     @if ($client->email && $invoiceSetting->show_client_email == 'yes')
@@ -379,7 +379,7 @@
                     @endif
 
                     @if ($client->clientDetails->company_name && $invoiceSetting->show_client_company_name == 'yes')
-                        {{ $client->clientDetails->company_name }}<br>
+                        {{ mb_ucwords($client->clientDetails->company_name) }}<br>
                     @endif
 
                     @if ($client->clientDetails->address && $invoiceSetting->show_client_company_address == 'yes')
@@ -464,7 +464,7 @@
         <!-- Table Row Start -->
             <tr class="f-12 main-table-items text-black">
                 <td width="40%" class="border-bottom-0">
-                    {{ $item->item_name }}
+                    {{ ucfirst($item->item_name) }}
                 </td>
                 @if ($invoiceSetting->hsn_sac_code_show)
                     <td align="right" width="10%" class="border-bottom-0">
@@ -473,7 +473,7 @@
                 <td align="right" width="10%" class="border-bottom-0">{{ $item->quantity }}@if($item->unit)<br><span class="f-11 text-dark-grey">{{ $item->unit->unit_type }}</span>@endif</td>
                 <td align="right"
                     class="border-bottom-0">{{ currency_format($item->unit_price, $invoice->currency_id, false) }}</td>
-                <td align="right" class="border-bottom-0">{{ $item->tax_list }}</td>
+                <td align="right" class="border-bottom-0">{{ strtoupper($item->tax_list) }}</td>
                 <td align="right" class="border-bottom-0"
                     width="{{ $invoiceSetting->hsn_sac_code_show ? '20%' : '23%' }}">
                     {{ currency_format($item->amount, $invoice->currency_id, false) }}</td>
@@ -483,7 +483,7 @@
                 {{-- DOMPDF HACK FOR RENDER IN TABLE --}}
                 <tr>
                     <td colspan="{{ $invoiceSetting->hsn_sac_code_show ? '6' : '5' }}" class="f-13 summary text-black border-bottom-0 description">
-                        {!! nl2br(pdfStripTags($item->item_summary)) !!}
+                        {!! nl2br(strip_tags($item->item_summary, ['p', 'b', 'strong', 'a'])) !!}
                         @if ($item->invoiceItemImage)
                             <p class="mt-2">
                                 <img src="{{ $item->invoiceItemImage->file_url }}" width="60" height="60" class="img-thumbnail">
@@ -515,7 +515,7 @@
             @foreach ($taxes as $key => $tax)
                 <!-- Table Row Start -->
                     <tr align="right" class="text-grey">
-                        <td width="50%" class="subtotal">{{ $key }}</td>
+                        <td width="50%" class="subtotal">{{ mb_strtoupper($key) }}</td>
                     </tr>
                     <!-- Table Row End -->
             @endforeach
@@ -587,7 +587,7 @@
             <td class="" align="right">
                 <img style="height:95px; margin-bottom: -50px; margin-top: 5px; margin-right: 20"
                      src="{{ $invoiceSetting->authorised_signatory_signature_url }}"
-                     alt="{{ $company->company_name }}"
+                     alt="{{ mb_ucwords($company->company_name) }}"
                      id="logo"/><br>
                 @lang('modules.invoiceSettings.authorisedSignatory')
             </td>
@@ -600,7 +600,7 @@
             <td height="10"></td>
         </tr>
     @endif
-    @if ($invoice->note)
+    @if ($invoice->note != '')
         <tr>
             <td height="10"></td>
         </tr>
@@ -655,7 +655,7 @@
         @foreach($fields as $field)
             <tr>
                 <td style="text-align: left;background: none;">
-                    <div class="f-14">{{ $field->label }}</div>
+                    <div class="f-14">{{ ucfirst($field->label) }}</div>
                     <p class="f-14 line-height text-grey" id="notes">
                         @if( $field->type == 'text' || $field->type == 'password' || $field->type == 'number' || $field->type == 'textarea')
                             {{$invoice->custom_fields_data['field_'.$field->id] ?? '-'}}

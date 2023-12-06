@@ -130,7 +130,7 @@
                                 <tr class="inv-num">
                                     <td class="f-14 text-dark">
                                         <p class="mt-3 mb-0">
-                                            {{ $company->company_name }}<br>
+                                            {{ mb_ucwords($company->company_name) }}<br>
                                             @if (!is_null($company))
                                                 {!! nl2br($defaultAddress->address) !!}<br>
                                                 {{ $company->company_phone }}
@@ -171,7 +171,7 @@
                                             </span><br>
 
                                             @if ($estimate->client && $estimate->client->name && $invoiceSetting->show_client_name == 'yes')
-                                                {{ $estimate->client->name }}<br>
+                                                {{ mb_ucwords($estimate->client->name) }}<br>
                                             @endif
                                             @if ($estimate->client && $estimate->client->email && $invoiceSetting->show_client_email == 'yes')
                                                 {{ $estimate->client->email }}<br>
@@ -180,7 +180,7 @@
                                                +{{$estimate->clientdetails->user->country->phonecode}} {{ $estimate->client->mobile }}<br>
                                             @endif
                                             @if ($estimate->clientDetails && $estimate->clientDetails->company_name && $invoiceSetting->show_client_company_name == 'yes')
-                                                {{ $estimate->clientDetails->company_name }}<br>
+                                                {{ mb_ucwords($estimate->clientDetails->company_name) }}<br>
                                             @endif
                                             @if ($estimate->clientDetails && $estimate->clientDetails->address && $invoiceSetting->show_client_company_address == 'yes')
                                                 {!! nl2br($estimate->clientDetails->address) !!}
@@ -192,7 +192,7 @@
                                     <td align="right" class="mt-4 mt-lg-0 mt-md-0">
                                         @if ($estimate->clientDetails->company_logo)
                                             <img src="{{ $estimate->clientDetails->image_url }}"
-                                            alt="{{ $estimate->clientDetails->company_name }}" class="logo" />
+                                            alt="{{ mb_ucwords($estimate->clientDetails->company_name) }}" class="logo" />
                                             <br><br><br>
                                         @endif
                                         <span
@@ -231,7 +231,7 @@
                                             @foreach ($estimate->items as $item)
                                                 @if ($item->type == 'item')
                                                     <tr class="text-dark font-weight-semibold f-13">
-                                                        <td>{{ $item->item_name }}</td>
+                                                        <td>{{ ucfirst($item->item_name) }}</td>
                                                         @if ($invoiceSetting->hsn_sac_code_show)
                                                             <td align="right">{{ $item->hsn_sac_code }}</td>
                                                         @endif
@@ -287,7 +287,7 @@
                                                         @foreach ($taxes as $key => $tax)
                                                             <tr class="text-dark-grey" align="right">
                                                                 <td class="border-top-0 border-left-0">
-                                                                    {{ $key }}</td>
+                                                                    {{ mb_strtoupper($key) }}</td>
                                                                 <td class="border-top-0 border-right-0">
                                                                     {{ currency_format($tax, $estimate->currency_id, false) }}
                                                                 </td>
@@ -320,7 +320,7 @@
                                                 <table>
                                                     <tr width="100%" class="font-weight-semibold f-13">
                                                         <td class="border-left-0 border-right-0 border-top-0">
-                                                            {{ $item->item_name }}</td>
+                                                            {{ ucfirst($item->item_name) }}</td>
                                                     </tr>
                                                     @if ($item->item_summary != '' || $item->estimateItemImage)
                                                         <tr>
@@ -384,7 +384,7 @@
                                 @foreach ($taxes as $key => $tax)
                                     <tr>
                                         <th width="50%" class="text-dark-grey font-weight-normal">
-                                            {{ $key }}</th>
+                                            {{ mb_strtoupper($key) }}</th>
                                         <td width="50%" class="text-dark-grey font-weight-normal">
                                             {{ currency_format($tax, $estimate->currency_id, false) }}</td>
                                     </tr>
@@ -509,7 +509,6 @@
     <script src="{{ asset('js/main.js') }}"></script>
 
     <script>
-        document.loading = '@lang('app.loading')';
         const MODAL_LG = '#myModal';
         const MODAL_HEADING = '#modelHeading';
         const dropifyMessages = {

@@ -18,7 +18,6 @@ class LeadsDataTable extends BaseDataTable
 {
 
     private $editLeadPermission;
-    private $viewLeadFollowUpPermission;
     private $deleteLeadPermission;
     private $addFollowUpPermission;
     private $changeLeadStatusPermission;
@@ -165,7 +164,7 @@ class LeadsDataTable extends BaseDataTable
                         $selected = '';
                     }
 
-                    $statusLi .= '<option data-content="<i class=\'fa fa-circle\' style=\'color: ' . $st->label_color . '\'></i> ' . $st->type . '"' . $selected . ' value="' . $st->id . '">' . $st->type . '</option>';
+                    $statusLi .= '<option data-content="<i class=\'fa fa-circle\' style=\'color: ' . $st->label_color . '\'></i> ' . ucfirst($st->type) . '"' . $selected . ' value="' . $st->id . '">' . ucfirst($st->type) . '</option>';
                 }
 
                 $action = '<select class="form-control statusChange" name="statusChange" onchange="changeStatus( ' . $row->id . ', this.value)">
@@ -176,7 +175,7 @@ class LeadsDataTable extends BaseDataTable
             else {
                 foreach ($status as $st) {
                     if ($row->status_id == $st->id) {
-                        $action = $st->type;
+                        $action = ucfirst($st->type);
                     }
                 }
             }
@@ -205,7 +204,7 @@ class LeadsDataTable extends BaseDataTable
                 $label = '';
             }
 
-            $client_name = ($row->salutation ? $row->salutation->label() . ' ' : '') . $row->client_name;
+            $client_name = ucfirst($row->salutation) . ' ' . ucfirst($row->client_name);
 
             return '
                         <div class="media-bod1y">
@@ -421,7 +420,7 @@ class LeadsDataTable extends BaseDataTable
      */
     public function html()
     {
-        $dataTable = $this->setBuilder('leads-table', 2)
+        return $this->setBuilder('leads-table', 2)
             ->parameters([
                 'initComplete' => 'function () {
                    window.LaravelDataTables["leads-table"].buttons().container()
@@ -433,13 +432,8 @@ class LeadsDataTable extends BaseDataTable
                     });
                     $(".statusChange").selectpicker();
                 }',
-            ]);
-
-        if (canDataTableExport()) {
-            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
-        }
-
-        return $dataTable;
+            ])
+            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
     }
 
     /**

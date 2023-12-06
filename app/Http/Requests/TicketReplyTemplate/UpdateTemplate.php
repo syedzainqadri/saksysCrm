@@ -26,7 +26,7 @@ class UpdateTemplate extends CoreRequest
     {
         return [
             'reply_heading' => 'required',
-            'description' => 'required'
+            'reply_text' => 'required'
         ];
     }
 

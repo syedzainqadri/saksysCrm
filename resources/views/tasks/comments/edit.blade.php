@@ -10,7 +10,7 @@
             <div class="col-md-12 p-20 ">
                 <div class="media">
                     <img src="{{ $comment->user->image_url }}" class="align-self-start mr-3 taskEmployeeImg rounded"
-                        alt="{{ $comment->user->name }}">
+                        alt="{{ mb_ucwords($comment->user->name) }}">
                     <div class="media-body bg-white">
                         <div class="form-group">
                             <div id="task-edit-comment">{!! $comment->comment !!}</div>
@@ -33,13 +33,8 @@
     var edit_task_comments = "{{ user()->permission('edit_task_comments') }}";
 
     $(document).ready(function() {
-            const atValues = @json($taskuserData);
 
-            if (add_task_comments == "all" || add_task_comments == "added") {
-                quillMention(atValues, '#task-edit-comment');
-            }
-
-            $('#save-edit-comment').click(function() {
+        $('#save-edit-comment').click(function() {
             var comment = document.getElementById('task-edit-comment').children[0].innerHTML;
             document.getElementById('task-edit-comment-text').value = comment;
             var mention_user_id = $('#task-edit-comment span[data-id]').map(function(){
@@ -78,5 +73,11 @@
         });
 
     });
+    const atValues = @json($taskuserData);
 
+    $(document).ready(function() {
+        if (add_task_comments == "all" || add_task_comments == "added") {
+            quillMention(atValues, '#task-edit-comment');
+        }
+    });
 </script>

@@ -21,7 +21,7 @@
         "dompdf/dompdf": "2.0.1",
         "edujugon/push-notification": "^5.2",
         "eluceo/ical": "^0.16.1",
-        "froiden/envato": "^4.0",
+        "froiden/envato": "^1.0",
         "froiden/laravel-installer": "^1.6",
         "froiden/laravel-rest-api": "^10.0",
         "google/apiclient": "^2.10",
@@ -50,10 +50,11 @@
         "league/flysystem-aws-s3-v3": "^3.0",
         "maatwebsite/excel": "^3.1",
         "macellan/laravel-zip": "^1.0",
-        "macsidigital/laravel-zoom": "8.0.1",
+        "macsidigital/laravel-api-client": "dev-master",
+        "macsidigital/laravel-zoom": "dev-master",
         "mitchbred/entrust": "^2.1",
         "mollie/laravel-mollie": "^2.0",
-        "nwidart/laravel-modules": "^10.0",
+        "nwidart/laravel-modules": "^9.0",
         "paragonie/random_compat": "^9.99",
         "paypal/rest-api-sdk-php": "dev-laravel10",
         "pcinaglia/laraupdater": "^1.0",
@@ -61,7 +62,6 @@
         "pusher/pusher-php-server": "^7.2",
         "quickbooks/v3-php-sdk": "^6.1",
         "razorpay/razorpay": "^2.5",
-        "saloonphp/xml-wrangler": "^0.2.0",
         "sentry/sentry-laravel": "^3.3",
         "spatie/laravel-backup": "8.*",
         "square/square": "16.0.0.20211117",
@@ -72,8 +72,8 @@
         "unicodeveloper/laravel-paystack": "^1.0",
         "webklex/laravel-imap": "2.4.0",
         "yajra/laravel-datatables-buttons": "^10.0",
-        "yajra/laravel-datatables-html": "^10.8",
-        "yajra/laravel-datatables-oracle": "^10.8"
+        "yajra/laravel-datatables-html": "^10.5",
+        "yajra/laravel-datatables-oracle": "^10.3"
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "^3.5",
@@ -111,6 +111,13 @@
         {
             "type": "vcs",
             "url": "https://github.com/Froiden/PayPal-PHP-SDK"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/mr-chetan/laravel-zoom"
+        },{
+            "type": "vcs",
+            "url": "https://github.com/philharmonie/laravel-api-client"
         }
     ],
     "config": {
@@ -140,9 +147,6 @@
         },
         "files": [
             "app/Helper/start.php"
-        ],
-        "exclude-from-classmap": [
-            "Modules/UniversalBundle/Modules/*"
         ]
     },
     "autoload-dev": {

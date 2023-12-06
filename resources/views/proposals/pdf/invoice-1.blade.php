@@ -305,16 +305,16 @@
                         <small>@lang("modules.invoices.billedTo"):</small>
                         <div class="mb-3 description">
                             @if ($proposal->lead && $proposal->lead->client_name && $invoiceSetting->show_client_name == 'yes')
-                                <b>{{ $proposal->lead->client_name }}</b>
+                                <b>{{ mb_ucwords($proposal->lead->client_name) }}</b>
                             @endif
                             @if ($proposal->lead && $proposal->lead->client_email && $invoiceSetting->show_client_email == 'yes')
-                                <div>{{ $proposal->lead->client_email }}</div>
+                                <div>{{ mb_ucwords($proposal->lead->client_email) }}</div>
                             @endif
                             @if ($proposal->lead && $proposal->lead->mobile && $invoiceSetting->show_client_phone == 'yes')
                                 <div>{{ $proposal->lead->mobile }}</div>
                             @endif
                             @if ($proposal->lead && $proposal->lead->company_name && $invoiceSetting->show_client_company_name == 'yes')
-                                <div>{{ $proposal->lead->company_name }}</div>
+                                <div>{{ mb_ucwords($proposal->lead->company_name) }}</div>
                             @endif
                             @if ($proposal->lead && $proposal->lead->address && $invoiceSetting->show_client_company_address == 'yes')
                                 <div>{!! nl2br($proposal->lead->address) !!}</div>
@@ -330,7 +330,7 @@
                         </div>
                         <small>@lang("modules.invoices.generatedBy"):</small>
                         <div id="logo" class="description">
-                            <h3 class="name">{{ $company->company_name }}</h3>
+                            <h3 class="name">{{ mb_ucwords($company->company_name) }}</h3>
                             @if (!is_null($company))
                                 <div>{!! nl2br($company->defaultAddress->address) !!}</div>
                                 <div>{{ $company->company_phone }}</div>
@@ -349,7 +349,7 @@
 
             <div id="invoice"  class="description">
                 <h1 class="description">@lang('modules.lead.proposal')#{{ $proposal->id }}</h1>
-                <div  class="description">@lang('app.status'): {{ $proposal->status }}</div>
+                <div  class="description">@lang('app.status'): {{ mb_ucwords($proposal->status) }}</div>
                 <div  class="description">@lang('modules.estimates.validTill'):
                     {{ $proposal->valid_till->translatedFormat($company->date_format) }}</div>
             </div>
@@ -357,7 +357,7 @@
         </div>
         @if ($proposal->description)
             <div  class="description">
-                {!! pdfStripTags($proposal->description) !!}
+                {!! strip_tags($proposal->description, ['p', 'b', 'strong', 'a', 'ul', 'li', 'ol', 'i', 'u', 'em', 'blockquote', 'img']) !!}
             </div>
         @endif
 
@@ -383,11 +383,11 @@
                             <tr style="page-break-inside: avoid;">
                                 <td class="no">{{ ++$count }}</td>
                                 <td class="desc">
-                                    <h3 class="description">{{ $item->item_name }}</h3>
+                                    <h3 class="description">{{ ucfirst($item->item_name) }}</h3>
                                     @if (!is_null($item->item_summary))
                                     <table>
                                         <tr>
-                                            <td class="item-summary word-break border-top-0 border-right-0 border-left-0 border-bottom-0 description">{!! nl2br(pdfStripTags($item->item_summary)) !!}</td>
+                                            <td class="item-summary word-break border-top-0 border-right-0 border-left-0 border-bottom-0 description">{!! nl2br(strip_tags($item->item_summary, ['p', 'b', 'strong', 'a'])) !!}</td>
                                         </tr>
                                     </table>
                                     @endif
@@ -449,7 +449,7 @@
                                 <td class="qty">&nbsp;</td>
                             @endif
                             <td class="qty">&nbsp;</td>
-                            <td class="desc">{{ $key }}</td>
+                            <td class="desc">{{ mb_strtoupper($key) }}</td>
                             <td class="unit">{{ currency_format($tax, $proposal->currency_id, false) }}</td>
                         </tr>
                     @endforeach

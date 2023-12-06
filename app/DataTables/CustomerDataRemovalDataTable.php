@@ -83,7 +83,7 @@ class CustomerDataRemovalDataTable extends BaseDataTable
      */
     public function html()
     {
-        $dataTable = $this->setBuilder('removal-request-customer')
+        return $this->setBuilder('removal-request-customer')
             ->parameters([
                 'initComplete' => 'function () {
                    window.LaravelDataTables["removal-request-customer"].buttons().container()
@@ -95,13 +95,8 @@ class CustomerDataRemovalDataTable extends BaseDataTable
                     });
                     $(".statusChange").selectpicker();
                 }',
-            ]);
-
-        if (canDataTableExport()) {
-            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
-        }
-
-        return $dataTable;
+            ])
+            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
     }
 
     /**

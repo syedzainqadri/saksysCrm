@@ -66,7 +66,7 @@ class NewExpenseRecurringMember extends BaseNotification
         $url = route('recurring-expenses.show', $this->expense->id);
         $url = getDomainSpecificUrl($url, $this->company);
 
-        $content = __('email.newExpenseRecurring.subject') . '.' . '<br>' . __('app.employee') . ': ' . $this->expense->user->name . '<br>' . __('modules.expenses.itemName') . ': ' . $this->expense->item_name . '<br>' . __('app.price') . ': ' . $this->expense->currency->currency_symbol . $this->expense->price;
+        $content = __('email.newExpenseRecurring.subject') . '.' . '<br>' . __('app.employee') . ': ' . mb_ucwords($this->expense->user->name) . '<br>' . __('modules.expenses.itemName') . ': ' . $this->expense->item_name . '<br>' . __('app.price') . ': ' . $this->expense->currency->currency_symbol . $this->expense->price;
 
         return $build
             ->subject(__('email.newExpenseRecurring.subject') . ' - ' . config('app.name'))
@@ -119,7 +119,7 @@ class NewExpenseRecurringMember extends BaseNotification
     {
         return OneSignalMessage::create()
             ->setSubject(__('email.newExpenseRecurring.subject'))
-            ->setBody($this->expense->item_name . ' by ' . $this->expense->user->name);
+            ->setBody($this->expense->item_name . ' by ' . mb_ucwords($this->expense->user->name));
     }
 
 }

@@ -120,7 +120,7 @@
                             <div class="col-lg-4">
                                 <x-forms.number class="mr-0 mr-lg-2 mr-md-2"
                                     :fieldLabel="__('modules.events.repeatEvery')" fieldName="repeat_count"
-                                    fieldId="repeat_count" fieldValue="1" fieldRequired="true" />
+                                    fieldId="repeat_count" fieldValue="" fieldRequired="true" />
                             </div>
                             <div class="col-md-4 mt-3">
                                 <x-forms.select fieldId="repeat_type" fieldLabel="" fieldName="repeat_type"
@@ -128,7 +128,6 @@
                                     <option value="day">@lang('app.day')</option>
                                     <option value="week">@lang('app.week')</option>
                                     <option value="month">@lang('app.month')</option>
-                                    <option id="monthlyOn" value="monthly-on-same-day">@lang('app.eventMonthlyOn', ['week' => __('app.eventDay.' . now()->weekOfMonth), 'day' => now()->translatedFormat('l')])</option>
                                     <option value="year">@lang('app.year')</option>
                                 </x-forms.select>
                             </div>
@@ -163,7 +162,7 @@
                     </div>
                     <div class="col-lg-6 col-md-6">
                         <x-forms.text :fieldLabel="__('modules.events.eventLink')" fieldName="event_link"
-                            fieldId="event_link" :fieldPlaceholder="__('placeholders.website')" />
+                            fieldId="event_link" fieldPlaceholder="https://www.example.com/" />
                     </div>
 
                     <div class="col-lg-12">
@@ -190,32 +189,6 @@
 <script src="{{ asset('vendor/jquery/bootstrap-colorpicker.js') }}"></script>
 
 <script>
-    function monthlyOn() {
-        let ele = $('#monthlyOn');
-        let url = '{{ route('events.monthly_on') }}';
-        setTimeout(() => {
-            $.easyAjax({
-                url: url,
-                type: "POST",
-                data: {
-                    _token: "{{ csrf_token() }}",
-                    date: $('#start_date').val()
-                },
-                success: function(response) {
-                    @if (App::environment('development'))
-                        $('#event_name').val(response.message);
-                        $('#where').val(response.message);
-                        $('#selectAssignee').val({{ user()->id }});
-                        $('#selectAssignee').selectpicker('refresh');
-                    @endif
-                    ele.html(response.message);
-                    $('#repeat_type').selectpicker('refresh');
-                }
-            });
-        }, 100);
-
-    }
-
     $(document).ready(function() {
 
         Dropzone.autoDiscover = false;
@@ -274,7 +247,6 @@
 
         $('#repeat-event').change(function() {
             $('.repeat-event-div').toggleClass('d-none');
-            monthlyOn();
         })
         $('#send_reminder').change(function() {
             $('.send_reminder_div').toggleClass('d-none');
@@ -315,7 +287,6 @@
                     dp2.setDate(date, true)
                 }
                 dp2.setMin(date);
-                monthlyOn();
             },
             ...datepickerConfig
         });
@@ -363,8 +334,6 @@
                 }
             });
         });
-
-        monthlyOn();
 
         init(RIGHT_MODAL);
     });

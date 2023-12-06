@@ -98,7 +98,7 @@ class ProjectTemplateTaskController extends AccountBaseController
      */
     public function show($id)
     {
-        $this->task = ProjectTemplateTask::with(['category'])->findOrFail($id);
+        $this->task = ProjectTemplateTask::findOrFail($id);
 
         $manageProjectTemplatePermission = user()->permission('manage_project_template');
         $viewProjectTemplatePermission = user()->permission('view_project_template');

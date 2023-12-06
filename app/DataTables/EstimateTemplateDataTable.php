@@ -90,6 +90,12 @@ class EstimateTemplateDataTable extends BaseDataTable
 
 
             $model->where(function ($query) {
+                return $query->where('estimate_templates.added_by', user()->id);
+            });
+
+
+
+            $model->where(function ($query) {
                 $query->where('estimate_templates.name', 'like', '%' . request('searchText') . '%');
             });
 
@@ -104,7 +110,7 @@ class EstimateTemplateDataTable extends BaseDataTable
      */
     public function html()
     {
-        $dataTable = $this->setBuilder('estimate-template-table')
+        return $this->setBuilder('estimate-template-table')
             ->parameters([
                 'initComplete' => 'function () {
                     window.LaravelDataTables["estimate-template-table"].buttons().container()
@@ -116,8 +122,6 @@ class EstimateTemplateDataTable extends BaseDataTable
                     })
                 }',
             ]);
-
-        return $dataTable;
     }
 
     /**

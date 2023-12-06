@@ -64,7 +64,7 @@ $addAttendancePermission = user()->permission('add_attendance');
     <!-- CONTENT WRAPPER START -->
     <div class="content-wrapper px-4">
 
-        <div class="d-grid d-lg-flex d-md-flex action-bar">
+        <div class="d-flex">
 
             <div id="table-actions" class="flex-grow-1 align-items-center">
                 @if ($addAttendancePermission == 'all' || $addAttendancePermission == 'added')
@@ -75,21 +75,19 @@ $addAttendancePermission = user()->permission('add_attendance');
                     </x-forms.link-primary>
 
                 @endif
-                @if (canDataTableExport())
                     <x-forms.button-secondary id="export-bymember" class="mr-3 mb-2 mb-lg-0" icon="file-export">
                         @lang('app.exportExcel')
                     </x-forms.button-secondary>
-                @endif
 
                 @if ($addAttendancePermission == 'all' || $addAttendancePermission == 'added')
-                    <x-forms.link-secondary :link="route('attendances.import')" class="mr-3 openRightModal float-left d-none d-lg-block"
+                    <x-forms.link-secondary :link="route('attendances.import')" class="mr-3 openRightModal float-left"
                         icon="file-upload">
                         @lang('app.importExcel')
                     </x-forms.link-secondary>
                 @endif
             </div>
 
-            <div class="btn-group mt-2 mt-lg-0 mt-md-0 ml-0 ml-lg-3 ml-md-3" role="group">
+            <div class="btn-group" role="group">
                 <a href="{{ route('attendances.index') }}" class="btn btn-secondary f-14" data-toggle="tooltip"
                     data-original-title="@lang('app.summary')"><i class="side-icon bi bi-list-ul"></i></a>
 
@@ -238,18 +236,18 @@ $addAttendancePermission = user()->permission('add_attendance');
                 }
             });
         }
-        @if (canDataTableExport())
-            $('#export-bymember').click(function() {
-                var year = $('#year').val();
-                var month = $('#month').val();
 
-                var userId = $('#user_id').val();
+        $('#export-bymember').click(function() {
+            var year = $('#year').val();
+            var month = $('#month').val();
 
-                var url = "{{ route('attendances.export_attendance', [':year', ':month', ':userId']) }}";
-                url = url.replace(':year', year).replace(':month', month).replace(':userId', userId);
-                window.location.href=url;
-            });
-        @endif
+            var userId = $('#user_id').val();
+
+            var url = "{{ route('attendances.export_attendance', [':year', ':month', ':userId']) }}";
+            url = url.replace(':year', year).replace(':month', month).replace(':userId', userId);
+            window.location.href=url;
+        });
+
         $('#attendance-data').on('click', '.view-attendance', function() {
             var attendanceID = $(this).data('attendance-id');
             var url = "{{ route('attendances.show', ':attendanceID') }}";

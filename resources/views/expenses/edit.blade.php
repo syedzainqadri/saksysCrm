@@ -178,7 +178,7 @@
                                                         @if (isset($item->taxes) && array_search($tax->id, json_decode($item->taxes)) !== false)
                                                         selected
                                                         @endif
-                                                        value="{{ $tax->id }}">{{ $tax->tax_name }}:
+                                                        value="{{ $tax->id }}">{{ strtoupper($tax->tax_name) }}:
                                                         {{ $tax->rate_percent }}%</option>
                                                 @endforeach
                                             </select>
@@ -376,10 +376,10 @@
                             +'</tr>'
                             +'<tr>'
                                 +'<td class="border-bottom-0 btrr-mbl btlr">'
-                                    +`<input type="text" class="f-14 border-0 w-100 item_name" name="item_name[]" placeholder="@lang('modules.expenses.itemName')">`
+                                    +'<input type="text" class="f-14 border-0 w-100 item_name" name="item_name[]" placeholder="@lang('modules.expenses.itemName')">'
                                     +'</td>'
                                     +'<td class="border-bottom-0 d-block d-lg-none d-md-none">'
-                                        +`<input type="text" class="f-14 border-0 w-100 mobile-description" name="item_summary[]" placeholder="@lang('placeholders.invoices.description')">`
+                                        +'<input type="text" class="f-14 border-0 w-100 mobile-description" name="item_summary[]" placeholder="@lang('placeholders.invoices.description')">'
                                     +'</td>'
                                     +'<td class="border-bottom-0">'
                                         +'<input type="number" min="1" class="f-14 border-0 w-100 text-right quantity" value="1" name="quantity[]">'
@@ -391,7 +391,7 @@
                                                 +'<div class="select-others height-35 rounded border-0">'
                                                     +'<select id="multiselect'+i+'" name="taxes['+i+'][]" multiple="multiple" class="select-picker type customSequence" data-size="3">'
                                                     @foreach ($taxes as $tax)
-                                                        +'<option data-rate="{{ $tax->rate_percent }}" value="{{ $tax->id }}">{{ $tax->tax_name }}: {{ $tax->rate_percent }}%</option>'
+                                                        +'<option data-rate="{{ $tax->rate_percent }}" value="{{ $tax->id }}">{{ strtoupper($tax->tax_name) }}: {{ $tax->rate_percent }}%</option>'
                                                     @endforeach
                                                     +'</select>'
                                                 +'</div>'

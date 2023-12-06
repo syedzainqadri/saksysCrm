@@ -111,7 +111,7 @@ class NewProjectMember extends BaseNotification
                 ->from(config('app.name'))
                 ->image($slack->slack_logo_url)
                 ->to('@' . $notifiable->employee[0]->slack_username)
-                ->content('*' . __('email.newProjectMember.subject') . '*' . "\n" . __('email.newProjectMember.text') . ' - ' . $this->project->project_name);
+                ->content('*' . __('email.newProjectMember.subject') . '*' . "\n" . __('email.newProjectMember.text') . ' - ' . mb_ucwords($this->project->project_name));
         }
 
         return (new SlackMessage())
@@ -124,7 +124,7 @@ class NewProjectMember extends BaseNotification
     {
         return OneSignalMessage::create()
             ->setSubject(__('email.newProjectMember.subject'))
-            ->setBody($this->project->project_name);
+            ->setBody(mb_ucwords($this->project->project_name));
     }
 
 }

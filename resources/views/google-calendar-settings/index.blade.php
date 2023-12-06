@@ -98,7 +98,7 @@
                 </div>
                 <div class="mb-3 d-flex">
                     <x-forms.checkbox :checked="$module->event_status == '1'"
-                                      :fieldLabel="__('app.menu.events')"
+                                      :fieldLabel="__('app.menu.Events')"
                                       fieldName="event_status" fieldId="event_status"
                                       :fieldValue="$module->event_status"/>
                 </div>

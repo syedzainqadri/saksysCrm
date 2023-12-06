@@ -61,12 +61,12 @@ class TimeLogReportDataTable extends BaseDataTable
 
                     $totalMinutes = now()->diffInMinutes($row->start_time) - $row->breaks->sum('total_minutes');
 
-                    $timeLog = CarbonInterval::formatHuman($totalMinutes - $row->breaks->sum('total_minutes')); /** @phpstan-ignore-line */
+                    $timeLog = CarbonInterval::formatHuman($totalMinutes - $row->breaks->sum('total_minutes'));
                     $timeLog .= ' <i data-toggle="tooltip" data-original-title="' . __('app.active') . '" class="fa fa-hourglass-start" ></i>';
                 }
                 else {
                     $totalMinutes = $row->total_minutes - $row->breaks->sum('total_minutes');
-                    $timeLog = CarbonInterval::formatHuman($totalMinutes - $row->breaks->sum('total_minutes')); /** @phpstan-ignore-line */
+                    $timeLog = CarbonInterval::formatHuman($totalMinutes - $row->breaks->sum('total_minutes'));
 
                     if ($row->approved) {
                         $timeLog .= ' <i data-toggle="tooltip" data-original-title="' . __('app.approved') . '" class="fa fa-check-circle text-primary"></i>';
@@ -233,7 +233,7 @@ class TimeLogReportDataTable extends BaseDataTable
      */
     public function html()
     {
-        $dataTable = $this->setBuilder('timelogs-table', 5)
+        return $this->setBuilder('timelogs-table', 5)
             ->parameters([
                 'initComplete' => 'function () {
                     window.LaravelDataTables["timelogs-table"].buttons().container()
@@ -243,13 +243,8 @@ class TimeLogReportDataTable extends BaseDataTable
                    //
                    $(".select-picker").selectpicker();
                  }',
-            ]);
-
-        if (canDataTableExport()) {
-            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
-        }
-
-        return $dataTable;
+            ])
+            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
     }
 
     /**

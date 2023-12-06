@@ -41,7 +41,6 @@ class StoreTicket extends CoreRequest
         $rules['user_id'] = 'required_if:requester_type,employee';
         $rules['client_id'] = 'required_if:requester_type,client';
         $rules['group_id'] = 'required';
-        $rules['project_id'] = 'nullable|exists:projects,id';
 
         $rules = $this->customFieldRules($rules);
 

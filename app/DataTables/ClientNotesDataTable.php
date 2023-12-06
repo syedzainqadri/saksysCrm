@@ -10,7 +10,6 @@ use Yajra\DataTables\Html\Column;
 class ClientNotesDataTable extends BaseDataTable
 {
 
-    private $viewClientNotePermission;
     private $editClientNotePermission;
     private $deleteClientNotePermission;
 
@@ -164,7 +163,7 @@ class ClientNotesDataTable extends BaseDataTable
      */
     public function html()
     {
-        $dataTable = $this->setBuilder('client-notes-table', 2)
+        return $this->setBuilder('client-notes-table', 2)
             ->parameters([
                 'initComplete' => 'function () {
                    window.LaravelDataTables["client-notes-table"].buttons().container()
@@ -173,13 +172,8 @@ class ClientNotesDataTable extends BaseDataTable
                 'fnDrawCallback' => 'function( oSettings ) {
                   //
                 }',
-            ]);
-
-        if (canDataTableExport()) {
-            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
-        }
-
-        return $dataTable;
+            ])
+            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
     }
 
     /**

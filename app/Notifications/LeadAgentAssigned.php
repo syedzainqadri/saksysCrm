@@ -52,7 +52,7 @@ class LeadAgentAssigned extends BaseNotification
         $url = route('leads.show', $this->lead->id);
         $url = getDomainSpecificUrl($url, $this->company);
 
-        $salutation = ($this->lead->salutation ? $this->lead->salutation->label() : '') .' ';
+        $salutation = $this->lead->salutation .' ';
         $leadEmail = __('modules.lead.clientEmail') . ': ';
         $clientEmail = !is_null($this->lead->client_email) ? $leadEmail : '';
         $content = __('email.leadAgent.subject') . '<br>' . __('modules.lead.clientName') . ': ' . $salutation . $this->lead->client_name . '<br>' . $clientEmail . $this->lead->client_email;

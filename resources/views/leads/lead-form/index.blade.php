@@ -35,7 +35,7 @@
                                                                value="{{ $item->id }}">
                                                     </div>
                                                     <div
-                                                        class="col-md-5">{{ $item->field_display_name}}</div>
+                                                        class="col-md-5">{{ mb_ucwords($item->field_display_name)}}</div>
                                                     <div class="col-md-4">
                                                         @if ($item->field_name != 'name')
                                                             <div class="custom-control custom-switch">

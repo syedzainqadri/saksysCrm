@@ -9,7 +9,9 @@ use Carbon\CarbonInterval;
 use Carbon\CarbonPeriod;
 use App\Models\Attendance;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Events\AfterSheet;
 use Maatwebsite\Excel\Concerns\Exportable;
+use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\FromCollection;
@@ -82,7 +84,6 @@ class AttendanceByMemberExport implements FromCollection, WithHeadings,  WithMap
         // Add New Collection if period date does not match with attendance collection...
         $employeedata = array();
         $emp_attendance = 0;
-        $status = __('app.present');
 
         foreach ($period->toArray() as $date) {
 
@@ -147,11 +148,11 @@ class AttendanceByMemberExport implements FromCollection, WithHeadings,  WithMap
         }
 
         $employee_temp = array();
-        foreach ($attendances->sortBy('date') as $attendance) {
 
+        foreach ($attendances->sortBy('date') as $attendance) {
             $date = Carbon::createFromFormat('Y-m-d H:i:s', $attendance->date)->timezone(company()->timezone)->format(company()->date_format);
-            $to = $attendance->clock_out_time ? \Carbon\Carbon::parse( $attendance->clock_out_time) : null;
-            $from = $attendance->clock_in_time ? \Carbon\Carbon::parse( $attendance->clock_in_time) : null;
+            $to = $attendance->clock_out_time ? \Carbon\Carbon::createFromFormat('Y-m-d H:s:i', $attendance->clock_out_time)->timezone(company()->timezone) : null;
+            $from = $attendance->clock_in_time ? \Carbon\Carbon::createFromFormat('Y-m-d H:s:i', $attendance->clock_in_time)->timezone(company()->timezone) : null;
             $clock_in = $attendance->clock_in_time ? Carbon::createFromFormat('Y-m-d H:i:s', $attendance->clock_in_time)->timezone(company()->timezone)->format(company()->time_format) : 0;
             $clock_out = $attendance->clock_out_time ? Carbon::createFromFormat('Y-m-d H:i:s', $attendance->clock_out_time)->timezone(company()->timezone)->format(company()->time_format) : 0;
             $diff_time = ($to && $from) ? $to->diffInMinutes($from) : 0;
@@ -179,13 +180,18 @@ class AttendanceByMemberExport implements FromCollection, WithHeadings,  WithMap
             else if ($attendance->half_day == 'yes') {
                 $status = __('app.halfday');
             }
+            else {
+                $status = __('app.present');
+            }
 
             if ($diff_time > 0 || $clock_out != 0) {
                 if ($employee_temp && $employee_temp[1] == $date) {
+                    info($employee_temp[1]);
                     $employeedata[$employee_temp[0] - 1]['comments']['clock_in'] .= 'Clock In : ' . $clock_in . ' Clock Out : ' . $clock_out;
                     $employeedata[$employee_temp[0] - 1]['total_hours'] = $employeedata[$employee_temp[0] - 1]['total_hours'] + $diff_time;
                 }
                 else {
+
                     $employeedata[$emp_attendance] = [
                         'date' => $date,
                         'location' => $location,
@@ -215,7 +221,6 @@ class AttendanceByMemberExport implements FromCollection, WithHeadings,  WithMap
             }
         }
 
-
         $employeedata = collect($employeedata);
 
         self::$sum = $employeedata;
@@ -229,7 +234,7 @@ class AttendanceByMemberExport implements FromCollection, WithHeadings,  WithMap
         $diff = $employeedata['total_hours'];
 
         if (is_int($diff)) {
-            $diff = CarbonInterval::formatHuman($employeedata['total_hours']); /** @phpstan-ignore-line */
+            $diff = CarbonInterval::formatHuman($employeedata['total_hours']);
         }
 
         $view_status = ($diff > 0) ? $diff : $employeedata['comments']['status'];

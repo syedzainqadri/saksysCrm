@@ -121,7 +121,7 @@ class HolidayDataTable extends BaseDataTable
      */
     public function html()
     {
-        $dataTable = $this->setBuilder('holiday-table')
+        return $this->setBuilder('holiday-table')
             ->parameters([
                 'initComplete' => 'function () {
                    window.LaravelDataTables["holiday-table"].buttons().container()
@@ -133,13 +133,8 @@ class HolidayDataTable extends BaseDataTable
                     });
                     $(".statusChange").selectpicker();
                 }',
-            ]);
-
-        if (canDataTableExport()) {
-            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
-        }
-
-        return $dataTable;
+            ])
+            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
     }
 
     /**

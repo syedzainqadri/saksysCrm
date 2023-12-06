@@ -234,7 +234,7 @@ class ExpenseController extends AccountBaseController
         else {
             $this->projects = Project::get();
         }
-
+        
         $this->companyCurrency = Currency::where('id', company()->currency_id)->first();
 
         $expense = new Expense();
@@ -338,12 +338,7 @@ class ExpenseController extends AccountBaseController
     {
         abort_403(user()->permission('edit_employees') != 'all');
 
-        $expenses = Expense::withoutGlobalScope(ActiveScope::class)->whereIn('id', explode(',', $request->row_ids))->get();
-
-        $expenses->each(function ($expense) use ($request) {
-            $expense->status = $request->status;
-            $expense->save();
-        });
+        Expense::withoutGlobalScope(ActiveScope::class)->whereIn('id', explode(',', $request->row_ids))->update(['status' => $request->status]);
     }
 
     protected function getEmployeeProjects(Request $request)
@@ -431,8 +426,8 @@ class ExpenseController extends AccountBaseController
                 $selected = $employee->id == $request->userId ? 'selected' : '';
                 $itsYou = $employee->id == user()->id ? "<span class='ml-2 badge badge-secondary pr-1'>". __('app.itsYou') .'</span>' : '';
 
-                $data .= 'data-content="<div class=\'d-inline-block mr-1\'><img class=\'taskEmployeeImg rounded-circle\' src=\'' . $employee->image_url . '\' ></div> '.$employee->name.$itsYou.'"
-                value="' . $employee->id . '"'.$selected.'>'.$employee->name.'</option>';
+                $data .= 'data-content="<div class=\'d-inline-block mr-1\'><img class=\'taskEmployeeImg rounded-circle\' src=\'' . $employee->image_url . '\' ></div> '.ucfirst($employee->name).$itsYou.'"
+                value="' . $employee->id . '"'.$selected.'>'.ucfirst($employee->name).'</option>';
 
             }
         }
@@ -442,8 +437,8 @@ class ExpenseController extends AccountBaseController
 
                 $selected = $manager->id == $request->userId ? 'selected' : '';
                 $itsYou = $manager->id == user()->id ? "<span class='ml-2 badge badge-secondary pr-1'>" . __('app.itsYou') . '</span>' : '';
-                $data .= 'data-content="<div class=\'d-inline-block mr-1\'><img class=\'taskEmployeeImg rounded-circle\' src=\'' . $manager->image_url . '\' ></div> '.$manager->name.'"
-                value="' . $manager->id . '"'.$selected.'>'.$manager->name.$itsYou.'</option>';
+                $data .= 'data-content="<div class=\'d-inline-block mr-1\'><img class=\'taskEmployeeImg rounded-circle\' src=\'' . $manager->image_url . '\' ></div> '.ucfirst($manager->name).'"
+                value="' . $manager->id . '"'.$selected.'>'.ucfirst($manager->name).$itsYou.'</option>';
             }
         }
 

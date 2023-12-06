@@ -13,6 +13,8 @@ use App\Models\Notice;
 use App\Models\Ticket;
 use App\Models\Holiday;
 use App\Models\Project;
+use App\Models\Contract;
+use App\Models\RoleUser;
 use Carbon\CarbonPeriod;
 use App\Models\LeadAgent;
 use App\Models\Attendance;
@@ -29,8 +31,6 @@ use Illuminate\Support\Facades\DB;
 use App\Models\ProjectTimeLogBreak;
 use App\Models\EmployeeShiftSchedule;
 use App\Http\Requests\ClockIn\ClockInRequest;
-use App\Models\Company;
-use App\Models\EmployeeShift;
 
 /**
  *
@@ -70,6 +70,7 @@ trait EmployeeDashboard
             ->where(DB::raw('DATE(`clock_in_time`)'), $date)
             ->get();
 
+
         foreach ($attendance as $item) {
             if (now()->between($item->clock_in_time, $item->clock_out_time)) {
                 $this->cannotLogin = true;
@@ -84,7 +85,7 @@ trait EmployeeDashboard
                 $earlyClockIn = Carbon::now(company()->timezone)->addMinutes($this->attendanceSettings->early_clock_in);
                 $earlyClockIn = $earlyClockIn->setTimezone('UTC');
 
-                if($earlyClockIn->gte($officeStartTime) || $showClockIn->show_clock_in_button == 'yes'){
+                if($earlyClockIn->gte($officeStartTime)){
                     $this->cannotLogin = false;
                 }
                 else {
@@ -145,7 +146,7 @@ trait EmployeeDashboard
             foreach ($events as $key => $event) {
                 $eventData[] = [
                     'id' => $event->id,
-                    'title' => $event->event_name,
+                    'title' => ucfirst($event->event_name),
                     'start' => $event->start_date_time,
                     'end' => $event->end_date_time,
                     'extendedProps' => ['bg_color' => $event->label_color, 'color' => '#fff'],
@@ -351,7 +352,6 @@ trait EmployeeDashboard
             ->get();
 
         $leaveDates = $weekLeaves->pluck('ldate')->toArray();
-        $generalShift = Company::with(['attendanceSetting', 'attendanceSetting.shift'])->first();
 
         // phpcs:ignore
         for ($i = $this->weekStartDate->copy(); $i < $this->weekEndDate->copy(); $i->addDay()) {
@@ -359,9 +359,6 @@ trait EmployeeDashboard
             array_push($currentWeekDates, $date);
 
             if (in_array($date->toDateString(), $holidayDates)) {
-
-                $leave = [];
-
                 foreach ($weekHolidays as $holiday) {
                     if ($holiday->hdate == $date->toDateString()) {
                         $leave = '<i class="fa fa-star text-warning"></i> ' . $holiday->occassion;
@@ -372,9 +369,6 @@ trait EmployeeDashboard
 
             }
             elseif (in_array($date->toDateString(), $leaveDates)) {
-
-                $leave = [];
-
                 foreach ($weekLeaves as $leav) {
                     if ($leav->ldate == $date->toDateString()) {
                         $leave = __('app.onLeave') . ': <span class="badge badge-success" style="background-color:' . $leav->type->color . '">' . $leav->type->type_name . '</span>';
@@ -385,8 +379,6 @@ trait EmployeeDashboard
 
             }
             elseif (in_array($date->toDateString(), $this->employeeShiftDates)) {
-                $shiftSchedule = [];
-
                 foreach ($this->employeeShifts as $shift) {
                     if ($shift->dates == $date->toDateString()) {
                         $shiftSchedule = $shift;
@@ -397,8 +389,7 @@ trait EmployeeDashboard
 
             }
             else {
-                $defaultShift = ($generalShift && $generalShift->attendanceSetting && $generalShift->attendanceSetting->shift) ? '<span class="badge badge-primary" style="background-color:' . $generalShift->attendanceSetting->shift->color . '">'.$generalShift->attendanceSetting->shift->shift_name.'</span>' : '--';
-                array_push($weekShifts, $defaultShift);
+                array_push($weekShifts, '--');
             }
 
         }
@@ -528,7 +519,7 @@ trait EmployeeDashboard
                 $earlyClockIn = Carbon::now(company()->timezone)->addMinutes($this->attendanceSettings->early_clock_in);
                 $earlyClockIn = $earlyClockIn->setTimezone('UTC');
 
-                if($earlyClockIn->gte($officeStartTime) || $showClockIn->show_clock_in_button == 'yes'){
+                if($earlyClockIn->gte($officeStartTime)){
                     $this->cannotLogin = false;
                 }
                 else {
@@ -588,7 +579,7 @@ trait EmployeeDashboard
                 $earlyClockIn = Carbon::now(company()->timezone)->addMinutes($this->attendanceSettings->early_clock_in);
                 $earlyClockIn = $earlyClockIn->setTimezone('UTC');
 
-                if($earlyClockIn->gte($officeStartTime) || $showClockIn->show_clock_in_button == 'yes'){
+                if($earlyClockIn->gte($officeStartTime)){
                     $this->cannotLogin = false;
                 }
                 else {
@@ -644,6 +635,7 @@ trait EmployeeDashboard
             $timestamp = $now->format('Y-m-d') . ' ' . $this->attendanceSettings->office_start_time;
             $officeStartTime = Carbon::createFromFormat('Y-m-d H:i:s', $timestamp, $this->company->timezone);
             $officeStartTime = $officeStartTime->setTimezone('UTC');
+
 
             $lateTime = $officeStartTime->addMinutes($this->attendanceSettings->late_mark_duration);
 

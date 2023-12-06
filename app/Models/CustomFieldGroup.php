@@ -85,7 +85,7 @@ class CustomFieldGroup extends BaseModel
         return Attribute::make(
             get: function () {
                 return $this->customField->map(function ($item) {
-                    if (in_array($item->type, ['select', 'radio'])) {
+                    if (in_array($item->type, ['select', 'radio', 'checkbox'])) {
                         $item->values = json_decode($item->values);
 
                         return $item;

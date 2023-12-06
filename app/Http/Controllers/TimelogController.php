@@ -451,11 +451,6 @@ class TimelogController extends AccountBaseController
         $editTimelogPermission = user()->permission('edit_timelogs');
         $activeTimelogPermission = user()->permission('manage_active_timelogs');
 
-        $taskUrl = route('tasks.show', $timeLog->task_id);
-        $dashboardUrl = route('dashboard');
-
-        $reload = ($request->currentUrl == $taskUrl || $request->currentUrl == $dashboardUrl) ? 'yes' : 'no';
-
         abort_403(!(
             $editTimelogPermission == 'all'
         || ($editTimelogPermission == 'added' && $timeLog->added_by == user()->id)
@@ -511,7 +506,7 @@ class TimelogController extends AccountBaseController
             ->whereNull('end_time')
             ->first();
 
-        return Reply::successWithData(__('messages.timerStoppedSuccessfully'), ['html' => $html, 'activeTimerCount' => $this->activeTimerCount, 'activeTimer' => $selfActiveTimer, 'reload' => $reload]);
+        return Reply::successWithData(__('messages.timerStoppedSuccessfully'), ['html' => $html, 'activeTimerCount' => $this->activeTimerCount, 'activeTimer' => $selfActiveTimer]);
     }
 
     /**
@@ -694,8 +689,6 @@ class TimelogController extends AccountBaseController
 
     public function export()
     {
-        abort_403(!canDataTableExport());
-
         return Excel::download(new EmployeeTimelogs, 'timelogs.xlsx');
     }
 
@@ -705,11 +698,6 @@ class TimelogController extends AccountBaseController
         $timeLog = ProjectTimeLog::findOrFail($timeId);
         $editTimelogPermission = user()->permission('edit_timelogs');
         $activeTimelogPermission = user()->permission('manage_active_timelogs');
-
-        $taskUrl = route('tasks.show', $timeLog->task_id);
-        $dashboardUrl = route('dashboard');
-
-        $reload = ($request->currentUrl == $taskUrl || $request->currentUrl == $dashboardUrl) ? 'yes' : 'no';
 
         abort_403(!(
             $editTimelogPermission == 'all'
@@ -743,7 +731,7 @@ class TimelogController extends AccountBaseController
 
         $clockHtml = view('sections.timer_clock', $this->data)->render();
 
-        return Reply::successWithData(__('messages.timerPausedSuccessfully'), ['html' => $html, 'clockHtml' => $clockHtml, 'reload' => $reload]);
+        return Reply::successWithData(__('messages.timerPausedSuccessfully'), ['html' => $html, 'clockHtml' => $clockHtml]);
     }
 
     public function resumeTimer(Request $request)
@@ -752,11 +740,6 @@ class TimelogController extends AccountBaseController
         $timeLogBreak = ProjectTimeLogBreak::findOrfail($timeId);
         $timeLog = ProjectTimeLog::findOrFail($timeLogBreak->project_time_log_id);
         $editTimelogPermission = user()->permission('edit_timelogs');
-
-        $taskUrl = route('tasks.show', $timeLog->task_id);
-        $dashboardUrl = route('dashboard');
-
-        $reload = ($request->currentUrl == $taskUrl || $request->currentUrl == $dashboardUrl) ? 'yes' : 'no';
 
         abort_403(!(
             $editTimelogPermission == 'all'
@@ -787,19 +770,11 @@ class TimelogController extends AccountBaseController
 
             $clockHtml = view('sections.timer_clock', $this->data)->render();
 
-            return Reply::successWithData(__('messages.timerStartedSuccessfully'), ['html' => $html, 'clockHtml' => $clockHtml, 'reload' => $reload]);
+            return Reply::successWithData(__('messages.timerStartedSuccessfully'), ['html' => $html, 'clockHtml' => $clockHtml]);
 
         }
 
         return Reply::error(__('messages.timerAlreadyRunning'));
-
-    }
-
-    public function timerData()
-    {
-
-        $this->selfActiveTimer = ProjectTimeLog::selfActiveTimer();
-        return Reply::dataOnly(['status' => 'success', 'data' => $this->selfActiveTimer]);
 
     }
 

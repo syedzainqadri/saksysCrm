@@ -331,7 +331,7 @@
                     @if($estimate->clientDetails->company_logo)
                         <div class="client-logo-div">
                             <img src="{{ $estimate->clientDetails->image_url }}"
-                                alt="{{ $estimate->clientDetails->company_name }}" class="client-logo"/>
+                                alt="{{ mb_ucwords($estimate->clientDetails->company_name) }}" class="client-logo"/>
                         </div>
                     @endif
 
@@ -339,7 +339,7 @@
                         <small>@lang("modules.invoices.billedTo"):</small>
                         <div class="mb-3">
                             @if ($estimate->client && $estimate->client->name && $invoiceSetting->show_client_name == 'yes')
-                                <b>{{ $estimate->client->name }}</b>
+                                <b>{{ mb_ucwords($estimate->client->name) }}</b>
                             @endif
                             @if ($estimate->client && $estimate->client->email && $invoiceSetting->show_client_email == 'yes')
                                 <div>{{ $estimate->client->email }}</div>
@@ -348,7 +348,7 @@
                                 <div>@if(isset($estimate->clientdetails->user->country))+{{$estimate->clientdetails->user->country->phonecode}} @endif {{ $estimate->client->mobile }}</div>
                             @endif
                             @if ($estimate->clientDetails && $estimate->clientDetails->company_name && $invoiceSetting->show_client_company_name == 'yes')
-                                <div>{{ $estimate->clientDetails->company_name }}</div>
+                                <div>{{ mb_ucwords($estimate->clientDetails->company_name) }}</div>
                             @endif
                             @if ($estimate->clientDetails && $estimate->clientDetails->address && $invoiceSetting->show_client_company_address == 'yes')
                                 <div>{!! nl2br($estimate->clientDetails->address) !!}</div>
@@ -368,7 +368,7 @@
                         <img src="{{ $invoiceSetting->logo_url }}" alt="home" class="dark-logo" />
                     </div>
                     <small>@lang("modules.invoices.generatedBy"):</small>
-                    <div>{{ $company->company_name }}</div>
+                    <div>{{ mb_ucwords($company->company_name) }}</div>
                     @if(!is_null($company))
                         <div>{!! nl2br($company->defaultAddress->address) !!}</div>
                         <div>{{ $company->company_phone }}</div>
@@ -390,7 +390,7 @@
 
     </div>
     @if ($estimate->description)
-        <div class="f-13 mb-3 description">{!! nl2br(pdfStripTags($estimate->description)) !!}</div>
+        <div class="f-13 mb-3 description">{!! nl2br(strip_tags($estimate->description, ['p', 'b', 'strong', 'a', 'ul', 'li', 'ol', 'i', 'u', 'em', 'blockquote', 'img'])) !!}</div>
     @endif
     <table cellspacing="0" cellpadding="0" id="invoice-table">
         <thead>
@@ -413,11 +413,11 @@
             <tr style="page-break-inside: avoid;">
                 <td class="no">{{ ++$count }}</td>
                 <td class="desc">
-                    <h3 class="description">{{ $item->item_name }}</h3>
+                    <h3 class="description">{{ ucfirst($item->item_name) }}</h3>
                     @if(!is_null($item->item_summary))
                     <table>
                         <tr>
-                            <td class="item-summary description word-break border-top-0 border-right-0 border-left-0 border-bottom-0">{!! nl2br(pdfStripTags($item->item_summary)) !!}</td>
+                            <td class="item-summary description word-break border-top-0 border-right-0 border-left-0 border-bottom-0">{!! nl2br(strip_tags($item->item_summary, ['p', 'b', 'strong', 'a'])) !!}</td>
                         </tr>
                     </table>
                     @endif
@@ -432,7 +432,7 @@
                 @endif
                 <td class="qty"><h3>{{ $item->quantity }}@if($item->unit)<br><span class="f-11 text-dark-grey">{{ $item->unit->unit_type }}</span>@endif</h3></td>
                 <td class="qty"><h3>{{ currency_format($item->unit_price, $estimate->currency_id, false) }}</h3></td>
-                <td>{{ $item->tax_list }}</td>
+                <td>{{ strtoupper($item->tax_list) }}</td>
                 <td class="unit">{{ currency_format($item->amount, $estimate->currency_id, false) }}</td>
             </tr>
             @endif
@@ -470,7 +470,7 @@
                 @if($invoiceSetting->hsn_sac_code_show)
                     <td class="qty">&nbsp;</td>
                 @endif
-                <td class="desc">{{ $key }}</td>
+                <td class="desc">{{ mb_strtoupper($key) }}</td>
                 <td class="unit">{{ currency_format($tax, $estimate->currency_id, false) }}</td>
             </tr>
         @endforeach
@@ -517,7 +517,7 @@
           @foreach($fields as $field)
               <tr>
                   <td style="text-align: left;background: none;" >
-                      <div class="desc">{{ $field->label }} </div>
+                      <div class="desc">{{ ucfirst($field->label) }} </div>
                       <p id="notes">
                             @if( $field->type == 'text' || $field->type == 'password' || $field->type == 'number' || $field->type == 'textarea')
                                 {{$estimate->custom_fields_data['field_'.$field->id] ?? '-'}}

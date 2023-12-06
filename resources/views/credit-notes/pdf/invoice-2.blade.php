@@ -347,7 +347,7 @@
 
             <div class="company-info">
                 <span class="company-name">
-                    {{ company()->company_name }}
+                    {{ mb_ucwords(company()->company_name) }}
                 </span>
 
                 <span class="spacer"></span>
@@ -382,7 +382,7 @@
                 @endif
                 <tr>
                     <td>@lang('app.status'):</td>
-                    <td>{{ $creditNote->status }}</td>
+                    <td>{{ mb_ucwords($creditNote->status) }}</td>
                 </tr>
             </table>
 
@@ -391,7 +391,7 @@
 
             <div id="invoice-title-number">
 
-                <span id="number">{{ $creditNote->cn_number }}</span></p>
+                <span id="number">{{ $creditNoteSetting->credit_note_prefix }}{{ $creditNote->original_cn_number }}</span></p>
 
             </div>
         </section>
@@ -400,11 +400,11 @@
                 @if(!is_null($creditNote->project->client))
                     <span>@lang('modules.credit-notes.billedTo'):</span>
                     <div>
-                        <span class="bold">{{ $creditNote->project->client->name }}</span>
+                        <span class="bold">{{ mb_ucwords($creditNote->project->client->name) }}</span>
                     </div>
 
                     <div>
-                        <span>{{ $creditNote->project->clientDetails->company_name }}</span>
+                        <span>{{ mb_ucwords($creditNote->project->clientDetails->company_name) }}</span>
                     </div>
 
                     <div>
@@ -453,9 +453,9 @@
                 <tr data-iterate="item">
                     <td>{{ ++$count }}</td> <!-- Don't remove this column as it's needed for the row commands -->
                     <td>
-                        {{ $item->item_name }}
+                        {{ ucfirst($item->item_name) }}
                         @if (!is_null($item->item_summary))
-                            <p class="item-summary">{!! nl2br(pdfStripTags($item->item_summary)) !!}</p>
+                            <p class="item-summary">{!! nl2br(strip_tags($item->item_summary, ['p', 'b', 'strong', 'a'])) !!}</p>
                         @endif
                         @if ($item->creditNoteItemImage)
                             <p class="mt-2">
@@ -468,7 +468,7 @@
                     @endif
                     <td>{{ $item->quantity }}@if($item->unit)<br><span class="f-11 text-dark-grey">{{ $item->unit->unit_type }}</span>@endif</td>
                     <td>{{ currency_format($item->unit_price, $creditNote->currency_id, false) }}</td>
-                    <td>{{ $item->tax_list }}</td>
+                    <td>{{ strtoupper($item->tax_list) }}</td>
                     <td>{{ currency_format($item->amount, $creditNote->currency_id, false) }}</td>
                 </tr>
                     @endif
@@ -489,7 +489,7 @@
                 @endif
                 @foreach($taxes as $key=>$tax)
                 <tr data-iterate="tax">
-                    <td colspan="{{ $creditNoteSetting->hsn_sac_code_show ? '5': '4' }}">{{ $key }}:</td>
+                    <td colspan="{{ $creditNoteSetting->hsn_sac_code_show ? '5': '4' }}">{{ mb_strtoupper($key) }}:</td>
                     <td>{{ currency_format($tax, $creditNote->currency_id, false) }}</td>
                 </tr>
                 @endforeach

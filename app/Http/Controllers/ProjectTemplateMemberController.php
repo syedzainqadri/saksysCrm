@@ -6,6 +6,8 @@ use App\Helper\Reply;
 use App\Http\Requests\ProjectMembers\SaveGroupMembers;
 use App\Http\Requests\ProjectMembers\StoreProjectMembers;
 use App\Models\EmployeeDetails;
+use App\Models\Project;
+use App\Models\ProjectMember;
 use App\Models\ProjectTemplate;
 use App\Models\Team;
 use App\Models\User;
@@ -84,7 +86,10 @@ class ProjectTemplateMemberController extends AccountBaseController
 
     public function storeGroup(SaveGroupMembers $request)
     {
-        foreach ($request->group_id as $group) {
+        $groups = $request->group_id;
+        $project = Project::findOrFail($request->project_id);
+
+        foreach ($groups as $group) {
 
             $members = EmployeeDetails::join('users', 'users.id', '=', 'employee_details.user_id')
                 ->where('employee_details.department_id', $group)
@@ -93,12 +98,12 @@ class ProjectTemplateMemberController extends AccountBaseController
                 ->get();
 
             foreach ($members as $user) {
-                $check = ProjectTemplateMember::where('user_id', $user->user_id)->where('project_template_id', $request->project_id)->first();
+                $check = ProjectMember::where('user_id', $user->user_id)->where('project_id', $request->project_id)->first();
 
                 if (is_null($check)) {
-                    $member = new ProjectTemplateMember();
+                    $member = new ProjectMember();
                     $member->user_id = $user->user_id;
-                    $member->project_template_id = $request->project_id;
+                    $member->project_id = $request->project_id;
                     $member->save();
                 }
             }

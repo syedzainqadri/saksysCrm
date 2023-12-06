@@ -6,9 +6,9 @@
             @php
                 $userImage = $user->hasGravatar($user->email) ? str_replace('?s=200&d=mp', '', $user->image_url) : asset('img/avatar.png');
             @endphp
-            <x-forms.file allowedFileExtensions="png jpg jpeg svg bmp" class="mr-0 mr-lg-2 mr-md-2 cropper"
+            <x-forms.file allowedFileExtensions="png jpg jpeg svg" class="mr-0 mr-lg-2 mr-md-2 cropper"
                           :fieldLabel="__('modules.profile.profilePicture')"
-                          :fieldValue="($user->image ? $user->masked_image_url : $userImage)" fieldName="image"
+                          :fieldValue="($user->image ? $user->image_url : $userImage)" fieldName="image"
                           fieldId="profile-image" :popover="__('modules.themeSettings.logoSize')">
             </x-forms.file>
         </div>
@@ -21,7 +21,9 @@
                         data-live-search="true">
                     <option value="">--</option>
                     @foreach ($salutations as $salutation)
-                        <option value="{{ $salutation->value }}" @selected($user->salutation == $salutation)>{{ $salutation->label() }}</option>
+                        <option value="{{ $salutation }}"
+                                @if ($user->salutation == $salutation) selected @endif>@lang('app.'.$salutation)
+                        </option>
                     @endforeach
                 </select>
                 <div class="input-group-append w-70">
@@ -144,7 +146,7 @@
                             fieldName="locale" search="true">
                 @foreach ($languageSettings as $language)
                     <option {{ user()->locale == $language->language_code ? 'selected' : '' }}
-                            data-content="<span class='flag-icon flag-icon-{{ ($language->flag_code == 'en') ? 'gb' : $language->flag_code }} flag-icon-squared'></span> {{ $language->language_name }}"
+                            data-content="<span class='flag-icon flag-icon-{{ ($language->flag_code == 'en') ? 'gb' : strtolower($language->flag_code) }} flag-icon-squared'></span> {{ $language->language_name }}"
                             value="{{ $language->language_code }}">{{ $language->language_name }}</option>
                 @endforeach
             </x-forms.select>
@@ -177,20 +179,6 @@
                 </x-forms.input-group>
             </div>
         @endif
-        @if (in_array('employee', user_roles()))
-            <div class="col-md-4">
-                <x-forms.select fieldId="marital_status" :fieldLabel="__('modules.employees.maritalStatus')"
-                        fieldName="marital_status" :fieldPlaceholder="__('placeholders.date')">
-                        <option @selected($user->employeeDetail->marital_status == 'unmarried') value="unmarried">@lang('modules.leaves.unmarried')</option>
-                        <option @selected($user->employeeDetail->marital_status == 'married') value="married">@lang('modules.leaves.married')</option>
-                </x-forms.select>
-            </div>
-            <div class="col-lg-3 col-md-6 d-none marriage_date">
-                <x-forms.datepicker fieldId="marriage_anniversary_date" :fieldLabel="__('modules.employees.marriageAnniversaryDate')"
-                    fieldName="marriage_anniversary_date" :fieldPlaceholder="__('placeholders.date')"
-                    :fieldValue="$user->employeeDetail->marriage_anniversary_date ? Carbon\Carbon::parse($user->employeeDetail->marriage_anniversary_date)->format(company()->date_format) : '' " />
-            </div>
-        @endif
 
         <div class="col-md-12">
             <div class="form-group my-3">
@@ -216,20 +204,10 @@
         @endif
 
         @if (function_exists('sms_setting') && sms_setting()->telegram_status)
-            <div class="col-md-6">
+            <div class="col-md-4">
                 <x-forms.number fieldName="telegram_user_id" fieldId="telegram_user_id"
                                 fieldLabel="<i class='fab fa-telegram'></i> {{ __('sms::modules.telegramUserId') }}"
                                 :fieldValue="$user->telegram_user_id" :popover="__('sms::modules.userIdInfo')"/>
-                <p class="text-bold text-danger">
-                    @lang('sms::modules.telegramBotNameInfo')
-                </p>
-                <p class="text-bold"><span id="telegram-link-text">https://t.me/{{ sms_setting()->telegram_bot_name }}</span>
-                    <a href="javascript:;" class="btn-copy btn-secondary f-12 rounded p-1 py-2 ml-1"
-                        data-clipboard-target="#telegram-link-text">
-                        <i class="fa fa-copy mx-1"></i>@lang('app.copy')</a>
-                    <a href="https://t.me/{{ sms_setting()->telegram_bot_name }}" target="_blank" class="btn-secondary f-12 rounded p-1 py-2 ml-1">
-                        <i class="fa fa-copy mx-1"></i>@lang('app.openInNewTab')</a>
-                </p>
             </div>
         @endif
 
@@ -244,28 +222,20 @@
     </x-setting-form-actions>
 </div>
 <!-- Buttons End -->
-@if (function_exists('sms_setting') && sms_setting()->telegram_status)
-    <script src="{{ asset('vendor/jquery/clipboard.min.js') }}"></script>
-@endif
+
 <script>
 
     $(document).ready(function () {
 
         @if (!in_array('client', user_roles()))
-            datepicker('#date_of_birth', {
-                position: 'bl',
-                maxDate: new Date(),
-                @if(!is_null($user->employeeDetail->date_of_birth))
-                dateSelected: new Date("{{ $user->employeeDetail->date_of_birth ? str_replace('-', '/', $user->employeeDetail->date_of_birth) : str_replace('-', '/', now()) }}"),
-                @endif
-                ...datepickerConfig
-            });
-
-            datepicker('#marriage_anniversary_date', {
-                position: 'bl',
-                ...datepickerConfig
-            });
-
+        datepicker('#date_of_birth', {
+            position: 'bl',
+            maxDate: new Date(),
+            @if(!is_null($user->employeeDetail->date_of_birth))
+            dateSelected: new Date("{{ $user->employeeDetail->date_of_birth ? str_replace('-', '/', $user->employeeDetail->date_of_birth) : str_replace('-', '/', now()) }}"),
+            @endif
+            ...datepickerConfig
+        });
         @endif
 
         $('#random_password').click(function () {
@@ -287,10 +257,7 @@
                 data: $('#editSettings').serialize(),
                 success: function (response) {
                     if (response.status == 'success') {
-                        if (response.redirect) {
-                            window.location.href = response.redirectUrl;
-                        }
-
+                        // window.location = response.redirectUrl;
                     }
                 }
             });
@@ -307,45 +274,10 @@
         $('#country_id').on('change', function() {
         var phonecode = $(this).find(':selected').data('phonecode');
         $('#country_phonecode').val(phonecode);
-        $('#country_phonecode').selectpicker('refresh');
+        $('.select-picker').selectpicker("refresh");
         });
-        var marital_status = $('#marital_status').val();
-        if(marital_status == 'married') {
-            $('.marriage_date').removeClass('d-none');
-        }
-        $('#marital_status').change(function(){
-            var value = $(this).val();
-            if(value == 'married') {
-                $('.marriage_date').removeClass('d-none');
-            }
-            else {
-                $('.marriage_date').addClass('d-none');
-            }
-        })
-
 
     });
-    @if (function_exists('sms_setting') && sms_setting()->telegram_status)
-        var clipboard = new ClipboardJS('.btn-copy');
 
-        clipboard.on('success', function(e) {
-            Swal.fire({
-                icon: 'success',
-                text: '@lang("app.urlCopied")',
-                toast: true,
-                position: 'top-end',
-                timer: 3000,
-                timerProgressBar: true,
-                showConfirmButton: false,
-                customClass: {
-                    confirmButton: 'btn btn-primary',
-                },
-                showClass: {
-                    popup: 'swal2-noanimation',
-                    backdrop: 'swal2-noanimation'
-                },
-            })
-        });
-    @endif
 </script>
 

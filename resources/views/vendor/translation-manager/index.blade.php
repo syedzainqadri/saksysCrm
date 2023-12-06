@@ -71,16 +71,6 @@
                 window.location.reload();
             });
 
-            $('.form-fix-translation').on('ajax:success', function (e, data) {
-                alert(data.message);
-                window.location.reload();
-            });
-
-            $('.form-create-en-locale').on('ajax:success', function (e, data) {
-                alert(data.message);
-                window.location.reload();
-            });
-
             $('.form-find').on('ajax:success', function (e, data) {
                 $('div.success-find strong.counter').text(data.counter);
                 $('div.success-find').slideDown();
@@ -126,10 +116,6 @@
     </div>
 </header>
 <div class="container-fluid">
-    <div class="alert alert-danger">
-        <strong>Warning!</strong> <i>eng</i> locale is default locale. Do not remove it and edit it. create
-        <i>en</i> locale and edit it. <i>eng</i> will reset on every update.
-    </div>
     <p>Warning, translations are not visible until they are exported back to the app/lang file, using <code>php artisan translation:export</code> command or publish button.</p>
     <div class="alert alert-success success-import" style="display:none;">
         <p>Done importing, processed <strong class="counter">N</strong> items! Reload this page to refresh the groups!</p>
@@ -170,12 +156,6 @@
             <div class="form-group">
                 <input type="hidden" name="_token" value="<?php echo csrf_token(); ?>">
                 <button type="submit" class="btn btn-info" data-disable-with="Searching.." >Find translations in files</button>
-            </div>
-        </form>
-        <form class="form-fix-translation" method="POST" action="{{ route('language_settings.fix_translation')}}" data-remote="true" role="form" data-confirm="@lang('modules.languageSettings.fixTranslationInfo')">
-            <div class="form-group">
-                <input type="hidden" name="_token" value="<?php echo csrf_token(); ?>">
-                <button type="submit" class="btn btn-info" data-disable-with="@lang('app.processing')..." >@lang('modules.languageSettings.fixTranslation')</button>
             </div>
         </form>
         <?php endif; ?>
@@ -333,17 +313,6 @@
                     </div>
                 </div>
             </form>
-            @if (!\Illuminate\Support\Facades\File::exists(base_path() . '/resources/lang/en'))
-                <form class="form-create-en-locale" method="POST"
-                action="{{ route('language_settings.create_en_locale')}}" data-remote="true" role="form"
-                data-confirm="Are you sure you want to create en locale?">
-                    <div class="form-group">
-                        @csrf
-                        <button type="submit" class="btn btn-info" data-disable-with="@lang('app.processing')..." >Create en locale</button>
-                    </div>
-                </form>
-            @endif
-
         </fieldset>
         <fieldset>
             <legend>Export all translations</legend>

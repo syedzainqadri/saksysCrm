@@ -2,7 +2,6 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Company;
 use App\Models\Expense;
 use App\Models\ExpenseRecurring;
 use Illuminate\Console\Command;
@@ -32,19 +31,7 @@ class AutoCreateRecurringExpenses extends Command
 
     public function handle()
     {
-        $companies = Company::select('id', 'timezone')->get();
-
-        foreach ($companies as $company) {
-            $this->createRecurringExpenses($company);
-        }
-    }
-
-    private function createRecurringExpenses($company)
-    {
-        $recurringExpenses = ExpenseRecurring::with('recurrings')
-            ->where('company_id', $company->id)
-            ->where('status', 'active')
-            ->get();
+        $recurringExpenses = ExpenseRecurring::with('recurrings')->where('status', 'active')->get();
 
         foreach ($recurringExpenses as $recurring) {
 
@@ -56,7 +43,7 @@ class AutoCreateRecurringExpenses extends Command
 
             if ($recurring->unlimited_recurring == 1 || ($totalExistingCount < $recurring->billing_cycle)) {
 
-                if ($recurring->next_expense_date->timezone($company->timezone)->isToday()) {
+                if ($recurring->next_expense_date->timezone($recurring->company->timezone)->isToday()) {
                     $this->makeExpense($recurring);
                     $this->saveNextInvoiceDate($recurring);
                 }

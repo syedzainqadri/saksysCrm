@@ -102,7 +102,7 @@ class ProposalDataTable extends BaseDataTable
                 return $action;
             })
             ->editColumn('client_name', function ($row) {
-                return '<a href="' . route('leads.show', $row->lead_id) . '" class="text-darkest-grey">' . $row->client_name . '</a>';
+                return '<a href="' . route('leads.show', $row->lead_id) . '" class="text-darkest-grey">' . mb_ucwords($row->client_name) . '</a>';
             })
             ->addColumn('proposal_number', function ($row) {
                 return '<a href="' . route('proposals.show', $row->id) . '" class="text-darkest-grey">' .__('modules.lead.proposal').'#'. $row->id . '</a>';
@@ -153,7 +153,7 @@ class ProposalDataTable extends BaseDataTable
     public function query()
     {
         $request = $this->request();
-        $model = Proposal::select('proposals.id', 'proposals.hash', 'leads.client_name', 'proposals.send_status', 'leads.client_id', 'leads.id as lead_id', 'total', 'valid_till', 'proposals.status', 'currencies.currency_symbol', 'currencies.id as currencyId', 'leads.company_name', 'proposals.added_by', 'proposals.created_at')
+        $model = Proposal::select('proposals.id', 'proposals.hash', 'leads.client_name', 'proposals.send_status', 'leads.client_id', 'leads.id as lead_id', 'total', 'valid_till', 'status', 'currencies.currency_symbol', 'currencies.id as currencyId', 'leads.company_name', 'proposals.added_by', 'proposals.created_at')
             ->with('signature')
             ->join('currencies', 'currencies.id', '=', 'proposals.currency_id')
             ->join('leads', 'leads.id', 'proposals.lead_id');
@@ -190,7 +190,7 @@ class ProposalDataTable extends BaseDataTable
      */
     public function html()
     {
-        $dataTable = $this->setBuilder('invoices-table')
+        return $this->setBuilder('invoices-table')
             ->parameters([
                 'initComplete' => 'function () {
                     window.LaravelDataTables["invoices-table"].buttons().container()
@@ -201,13 +201,8 @@ class ProposalDataTable extends BaseDataTable
                         selector: \'[data-toggle="tooltip"]\'
                     })
                 }',
-            ]);
-
-        if (canDataTableExport()) {
-            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
-        }
-
-        return $dataTable;
+            ])
+            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
     }
 
     /**

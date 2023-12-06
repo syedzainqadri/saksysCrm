@@ -88,7 +88,7 @@ class KnowledgeBaseDataTable extends BaseDataTable
             ->editColumn(
                 'to',
                 function ($row) {
-                    return $row->to;
+                    return ucfirst($row->to);
                 }
             )
             ->addIndexColumn()
@@ -109,7 +109,7 @@ class KnowledgeBaseDataTable extends BaseDataTable
     {
         $request = $this->request();
         $model = $model->select('*');
-
+        
         if ($request->startDate !== null && $request->startDate != 'null' && $request->startDate != '') {
             $startDate = Carbon::createFromFormat($this->company->date_format, $request->startDate)->toDateString();
             $model = $model->where(DB::raw('DATE(knowledge_bases.`created_at`)'), '>=', $startDate);
@@ -148,7 +148,8 @@ class KnowledgeBaseDataTable extends BaseDataTable
      */
     public function html()
     {
-        $dataTable = $this->setBuilder('knowledgebase-table', 3)
+        return $this->setBuilder('knowledgebase-table', 3)
+            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]))
             ->parameters([
                 'initComplete' => 'function () {
                    window.LaravelDataTables["knowledgebase-table"].buttons().container()
@@ -160,12 +161,6 @@ class KnowledgeBaseDataTable extends BaseDataTable
                     })
                 }',
             ]);
-
-        if (canDataTableExport()) {
-            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
-        }
-
-        return $dataTable;
     }
 
     /**

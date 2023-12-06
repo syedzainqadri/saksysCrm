@@ -34,10 +34,10 @@ class LeadReportDataTable extends BaseDataTable
                 return $row->count_converted_leads;
             })
             ->addColumn('total_amount', function ($row) {
-                return currency_format($row->total_value, company()->currency_id);
+                return currency_format($row->total_value, company()->currency->currency_id);
             })
             ->addColumn('converted_amount', function ($row) {
-                return $row->total_converted_value ? currency_format($row->total_converted_value, company()->currency_id) : 0;
+                return $row->total_converted_value ? currency_format($row->total_converted_value, company()->currency->currency_id) : 0;
             })
             ->addColumn('total_follow_up', function ($row) {
                 return $row->count_total_follow_up;
@@ -53,7 +53,7 @@ class LeadReportDataTable extends BaseDataTable
     }
 
     /**
-     * @param LeadAgent $model
+     * @param Lead $model
      * @return \Illuminate\Database\Eloquent\Builder
      */
     public function query(LeadAgent $model)
@@ -111,23 +111,29 @@ class LeadReportDataTable extends BaseDataTable
      */
     public function html()
     {
-        $dataTable = $this->setBuilder('lead-report-table', 5)
+        return $this->builder()
+            ->setTableId('lead-report-table')
+            ->columns($this->getColumns())
+            ->minifiedAjax()
+            ->orderBy(5)
+            ->destroy(true)
+            ->responsive(true)
+            ->serverSide(true)
+            ->stateSave(true)
+            ->processing(true)
+            ->dom($this->domHtml)
+            ->language(__('app.datatable'))
             ->parameters([
                 'initComplete' => 'function () {
                     window.LaravelDataTables["lead-report-table"].buttons().container()
-                    .appendTo( "#table-actions")
-                }',
+                     .appendTo( "#table-actions")
+                 }',
                 'fnDrawCallback' => 'function( oSettings ) {
-                //
-                $(".select-picker").selectpicker();
-                }',
-            ]);
-
-        if (canDataTableExport()) {
-            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
-        }
-
-        return $dataTable;
+                   //
+                   $(".select-picker").selectpicker();
+                 }',
+            ])
+            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
     }
 
     /**

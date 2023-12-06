@@ -285,7 +285,7 @@
         <tbody>
             <!-- Table Row Start -->
             <tr>
-                <td><img src="{{ $invoiceSetting->logo_url }}" alt="{{ $company->company_name }}"
+                <td><img src="{{ $invoiceSetting->logo_url }}" alt="{{ mb_ucwords($company->company_name) }}"
                         id="logo" /></td>
                 <td align="right" class="f-21 text-black font-weight-700 text-uppercase">@lang('modules.lead.proposal')
                 </td>
@@ -295,7 +295,7 @@
             <tr>
                 <td>
                     <p class="line-height mt-1 mb-0 f-14 text-black description">
-                        {{ $company->company_name }}<br>
+                        {{ mb_ucwords($company->company_name) }}<br>
                         @if (!is_null($company))
                             {!! nl2br($company->defaultAddress->address) !!}<br>
                             {{ $company->company_phone }}
@@ -335,16 +335,16 @@
                                 <p class="line-height mb-0">
                                     <span class="text-grey text-capitalize">@lang("modules.invoices.billedTo")</span><br>
                                     @if ($proposal->lead && $proposal->lead->client_name && $invoiceSetting->show_client_name == 'yes')
-                                       {{ $proposal->lead->client_name }}<br>
+                                       {{ mb_ucwords($proposal->lead->client_name) }}<br>
                                     @endif
                                     @if ($proposal->lead && $proposal->lead->client_email && $invoiceSetting->show_client_email == 'yes')
-                                        {{ $proposal->lead->client_email }}<br>
+                                        {{ mb_ucwords($proposal->lead->client_email) }}<br>
                                     @endif
                                     @if ($proposal->lead && $proposal->lead->mobile && $invoiceSetting->show_client_phone == 'yes')
                                         {{ $proposal->lead->mobile }}<br>
                                     @endif
                                     @if ($proposal->lead && $proposal->lead->company_name && $invoiceSetting->show_client_company_name == 'yes')
-                                        {{ $proposal->lead->company_name }}<br>
+                                        {{ mb_ucwords($proposal->lead->company_name) }}<br>
                                     @endif
                                     @if ($proposal->lead && $proposal->lead->address && $invoiceSetting->show_client_company_address == 'yes')
                                         {!! nl2br($proposal->lead->address) !!}
@@ -368,7 +368,7 @@
     </table>
 
     @if ($proposal->description)
-        <div class="f-13 description">{!! pdfStripTags($proposal->description) !!}</div>
+        <div class="f-13 description">{!! strip_tags($proposal->description, ['p', 'b', 'strong', 'a', 'ul', 'li', 'ol', 'i', 'u', 'em', 'blockquote', 'img']) !!}</div>
     @endif
 
     @if (count($proposal->items) > 0)
@@ -393,7 +393,7 @@
                 @if ($item->type == 'item')
                     <!-- Table Row Start -->
                     <tr class="main-table-items text-black f-14">
-                        <td width="40%" class="border-bottom-0">{{ $item->item_name }}</td>
+                        <td width="40%" class="border-bottom-0">{{ ucfirst($item->item_name) }}</td>
                         @if ($invoiceSetting->hsn_sac_code_show)
                             <td align="right" class="border-bottom-0" width="10%">{{ $item->hsn_sac_code ? $item->hsn_sac_code : '--' }}</td>
                         @endif
@@ -405,7 +405,7 @@
                     @if ($item->item_summary != '' || $item->proposalItemImage)
                         </table>
                         <div class="f-13 summary text-black border-bottom-0 description">
-                            {!! nl2br(pdfStripTags($item->item_summary)) !!}
+                            {!! nl2br(strip_tags($item->item_summary, ['p', 'b', 'strong', 'a'])) !!}
                             @if ($item->proposalItemImage)
                                 <p class="mt-2">
                                     <img src="{{ $item->proposalItemImage->file_url }}" width="60" height="60"
@@ -438,7 +438,7 @@
                         @foreach ($taxes as $key => $tax)
                             <!-- Table Row Start -->
                             <tr align="right" class="text-grey">
-                                <td width="50%" class="subtotal">{{ $key }}</td>
+                                <td width="50%" class="subtotal">{{ mb_strtoupper($key) }}</td>
                             </tr>
                             <!-- Table Row End -->
                         @endforeach

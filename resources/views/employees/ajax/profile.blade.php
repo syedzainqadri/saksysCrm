@@ -49,7 +49,7 @@ $viewAppreciationPermission = user()->permission('view_appreciation');
                             <div class="row">
                                 <div class="col-10">
                                     <h4 class="card-title f-15 f-w-500 text-darkest-grey mb-0">
-                                        {{ ($employee->salutation ? $employee->salutation->label() . ' ' : '') . $employee->name }}
+                                        {{ ucfirst($employee->salutation) . ' ' . $employee->name }}
                                         @isset($employee->country)
                                             <x-flag :country="$employee->country" />
                                         @endisset
@@ -76,9 +76,9 @@ $viewAppreciationPermission = user()->permission('view_appreciation');
                             </div>
 
                             <p class="f-12 font-weight-normal text-dark-grey mb-0">
-                                {{ !is_null($employee->employeeDetail) && !is_null($employee->employeeDetail->designation) ? $employee->employeeDetail->designation->name : '' }}
+                                {{ !is_null($employee->employeeDetail) && !is_null($employee->employeeDetail->designation) ? mb_ucfirst($employee->employeeDetail->designation->name) : '' }}
                                 &bull;
-                                {{ isset($employee->employeeDetail) && !is_null($employee->employeeDetail->department) && !is_null($employee->employeeDetail->department) ? $employee->employeeDetail->department->team_name : '' }}
+                                {{ isset($employee->employeeDetail) && !is_null($employee->employeeDetail->department) && !is_null($employee->employeeDetail->department) ? mb_ucfirst($employee->employeeDetail->department->team_name) : '' }}
                             </p>
 
                             @if ($employee->status == 'active')
@@ -235,7 +235,7 @@ $viewAppreciationPermission = user()->permission('view_appreciation');
                         @if ($showFullProfile)
                             <x-cards.data class="mb-4" :title="__('modules.appreciations.appreciation')">
                                 @forelse ($employee->appreciationsGrouped as $item)
-                                <div class="float-left position-relative mb-2" style="width: 50px" data-toggle="tooltip" data-original-title="@if(isset($item->award->title)){{  $item->award->title }} @endif">
+                                <div class="float-left position-relative mb-2" style="width: 50px" data-toggle="tooltip" data-original-title="@if(isset($item->award->title)){{  mb_ucwords($item->award->title) }} @endif">
                                     @if(isset($item->award->awardIcon->icon))
                                         <x-award-icon :award="$item->award" />
                                     @endif
@@ -266,7 +266,7 @@ $viewAppreciationPermission = user()->permission('view_appreciation');
                                                 @foreach ($employee->reportingTeam as $item)
                                                     <div class="taskEmployeeImg rounded-circle mr-1">
                                                         <a href="{{ route('employees.show', $item->user->id) }}">
-                                                            <img data-toggle="tooltip" data-original-title="{{ $item->user->name }}"
+                                                            <img data-toggle="tooltip" data-original-title="{{ mb_ucwords($item->user->name) }}"
                                                                 src="{{ $item->user->image_url }}">
                                                         </a>
                                                     </div>

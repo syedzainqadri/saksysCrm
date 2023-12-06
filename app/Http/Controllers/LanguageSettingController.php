@@ -2,19 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Flag;
+use App\Helper\Files;
 use App\Helper\Reply;
 use Illuminate\Http\Request;
 use App\Models\LanguageSetting;
 use App\Models\TranslateSetting;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Artisan;
 use App\Http\Requests\Admin\Language\StoreRequest;
 use App\Http\Requests\Admin\Language\UpdateRequest;
 use Barryvdh\TranslationManager\Models\Translation;
 use App\Http\Requests\Admin\Language\AutoTranslateRequest;
+use App\Models\Flag;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class LanguageSettingController extends AccountBaseController
 {
@@ -191,24 +191,6 @@ class LanguageSettingController extends AccountBaseController
         }
 
         return Reply::success(__('messages.deleteSuccess'));
-    }
-
-    public function fixTranslation()
-    {
-        Artisan::call('translations:reset');
-        Artisan::call('translations:import');
-        return Reply::success(__('modules.languageSettings.fixTranslationSuccess'));
-    }
-
-    public function createEnLocale()
-    {
-        // copy eng folder from resources/lang to resources/lang/en
-        File::copyDirectory($this->langPath . '/eng', $this->langPath . '/en');
-
-        // copy eng.json file from resources/lang to resources/lang/en.json
-        File::copy($this->langPath . '/eng.json', $this->langPath . '/en.json');
-
-        return Reply::success(__('messages.recordSaved'));
     }
 
 }

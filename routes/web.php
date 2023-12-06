@@ -283,7 +283,6 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::post('project-notes/apply-quick-action', [ProjectNoteController::class, 'applyQuickAction'])->name('project_notes.apply_quick_action');
     Route::resource('project-notes', ProjectNoteController::class);
     Route::get('projects-ajax', [ProjectController::class, 'ajaxLoadProject'])->name('get.projects-ajax');
-    Route::get('get-projects', [ProjectController::class, 'getProjects'])->name('get.projects');
     Route::resource('projects', ProjectController::class);
 
     /* PRODUCTS */
@@ -360,7 +359,6 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::resource('knowledgebasecategory', KnowledgeBaseCategoryController::class);
 
     /* EVENTS */
-    Route::post('event-monthly-on', [EventCalendarController::class, 'monthlyOn'])->name('events.monthly_on');
     Route::resource('events', EventCalendarController::class);
 
 
@@ -612,7 +610,6 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
         Route::get('show-active-timer', [TimelogController::class, 'showActiveTimer'])->name('timelogs.show_active_timer');
         Route::get('show-timer', [TimelogController::class, 'showTimer'])->name('timelogs.show_timer');
         Route::post('start-timer', [TimelogController::class, 'startTimer'])->name('timelogs.start_timer');
-        Route::get('timer-data', [TimelogController::class, 'timerData'])->name('timelogs.timer_data');
         Route::post('stop-timer', [TimelogController::class, 'stopTimer'])->name('timelogs.stop_timer');
         Route::post('pause-timer', [TimelogController::class, 'pauseTimer'])->name('timelogs.pause_timer');
         Route::post('resume-timer', [TimelogController::class, 'resumeTimer'])->name('timelogs.resume_timer');

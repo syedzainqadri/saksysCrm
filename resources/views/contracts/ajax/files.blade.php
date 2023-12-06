@@ -104,6 +104,7 @@ $deleteContractFilePermission = user()->permission('delete_contract_files');
 </div>
 <!-- TAB CONTENT END -->
 
+<script src="{{ asset('vendor/jquery/dropzone.min.js') }}"></script>
 <script>
     $(document).ready(function() {
         var add_task_files = "{{ $addContractFilePermission }}";

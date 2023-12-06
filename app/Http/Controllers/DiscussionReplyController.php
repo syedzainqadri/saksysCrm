@@ -47,21 +47,6 @@ class DiscussionReplyController extends AccountBaseController
     public function getReplies($id)
     {
         $this->discussion = Discussion::with('category', 'replies', 'replies.user', 'replies.files')->findOrFail($id);
-
-        $project = Project::findOrFail($this->discussion->project_id);
-        $userData = [];
-        $usersData = $project->projectMembers;
-
-        foreach ($usersData as $user) {
-
-            $url = route('employees.show', [$user->id]);
-
-            $userData[] = ['id' => $user->id, 'value' => $user->name, 'image' => $user->image_url, 'link' => $url];
-
-        }
-
-        $this->userData = $userData;
-
         $html = view('discussions.replies.show', $this->data)->render();
         return Reply::dataOnly(['status' => 'success', 'html' => $html]);
     }

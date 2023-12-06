@@ -124,7 +124,7 @@ class EstimatesDataTable extends BaseDataTable
 
             return $action;
         });
-        $datatables->addColumn('estimate_number', function ($row) {
+        $datatables->addColumn('original_estimate_number', function ($row) {
             return '<a href="' . route('estimates.show', $row->id) . '" class="text-darkest-grey">' . $row->estimate_number . '</a>';
         });
         $datatables->addColumn('client_name', function ($row) {
@@ -157,7 +157,7 @@ class EstimatesDataTable extends BaseDataTable
             }
 
             if (!$row->send_status && $row->status != 'draft' && $row->status != 'canceled') {
-                $status .= ' <span class="badge badge-secondary my-2"> ' . __('modules.invoices.notSent') . '</span>';
+                $status .= ' <span class="badge badge-secondary my-2"> ' . mb_strtoupper(__('modules.invoices.notSent')) . '</span>';
             }
 
             return $status;
@@ -182,7 +182,7 @@ class EstimatesDataTable extends BaseDataTable
         // Custom Fields For export
         $customFieldColumns = CustomField::customFieldData($datatables, Estimate::CUSTOM_FIELD_MODEL);
 
-        $datatables->rawColumns(array_merge(['name', 'action', 'status', 'estimate_number'], $customFieldColumns));
+        $datatables->rawColumns(array_merge(['name', 'action', 'status', 'original_estimate_number'], $customFieldColumns));
 
         return $datatables;
     }
@@ -283,7 +283,7 @@ class EstimatesDataTable extends BaseDataTable
      */
     public function html()
     {
-        $dataTable = $this->setBuilder('invoices-table')
+        return $this->setBuilder('invoices-table')
             ->parameters([
                 'initComplete' => 'function () {
                     window.LaravelDataTables["invoices-table"].buttons().container()
@@ -294,13 +294,8 @@ class EstimatesDataTable extends BaseDataTable
                         selector: \'[data-toggle="tooltip"]\'
                     })
                 }',
-            ]);
-
-        if (canDataTableExport()) {
-            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
-        }
-
-        return $dataTable;
+            ])
+            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
     }
 
     /**
@@ -314,7 +309,7 @@ class EstimatesDataTable extends BaseDataTable
         $data = [
             '#' => ['data' => 'DT_RowIndex', 'orderable' => false, 'searchable' => false, 'visible' => false, 'title' => '#'],
             __('app.id') => ['data' => 'id', 'name' => 'id', 'title' => __('app.id'), 'visible' => false],
-            __('app.estimate') . '#' => ['data' => 'estimate_number', 'name' => 'estimate_number', 'title' => __('app.estimate')],
+            __('app.estimate') . '#' => ['data' => 'original_estimate_number', 'name' => 'original_estimate_number', 'title' => __('app.estimate')],
             __('app.client') => ['data' => 'name', 'name' => 'users.name', 'exportable' => false, 'title' => __('app.client'), 'visible' => !in_array('client', user_roles())],
             __('app.customers') => ['data' => 'client_name', 'name' => 'users.name', 'visible' => false, 'title' => __('app.customers')],
             __('app.email') => ['data' => 'email', 'name' => 'users.email',  'visible' => false, 'title' => __('app.email')],

@@ -64,17 +64,10 @@ class NewExpenseMember extends BaseNotification
         $url = route('expenses.show', $this->expense->id);
         $url = getDomainSpecificUrl($url, $this->company);
 
-        if ($this->expense->status == 'approved') {
-            $subject = __('email.newExpense.newSubject');
-        }
-        else {
-            $subject = __('email.newExpense.subject');
-        }
-
-        $content = $subject . '<br>' . __('app.status') . ': ' . $this->expense->status . '<br>' . __('app.employee') . ': ' . $this->expense->user->name . '<br>' . __('modules.expenses.itemName') . ': ' . $this->expense->item_name . '<br>' . __('app.price') . ': ' . currency_format($this->expense->price, $this->expense->currency->id);
+        $content = __('email.newExpense.subject') . '.' . '<br>' . __('app.employee') . ': ' . mb_ucwords($this->expense->user->name) . '<br>' . __('modules.expenses.itemName') . ': ' . $this->expense->item_name . '<br>' . __('app.price') . ': ' . currency_format($this->expense->price, $this->expense->currency->id);
 
         return $build
-            ->subject($subject . ' - ' . config('app.name'))
+            ->subject(__('email.newExpense.subject') . ' - ' . config('app.name'))
             ->markdown('mail.email', [
                 'url' => $url,
                 'content' => $content,
@@ -130,7 +123,7 @@ class NewExpenseMember extends BaseNotification
     {
         return OneSignalMessage::create()
             ->setSubject(__('email.newExpense.subject'))
-            ->setBody($this->expense->item_name . ' by ' . $this->expense->user->name);
+            ->setBody($this->expense->item_name . ' by ' . mb_ucwords($this->expense->user->name));
     }
 
 }

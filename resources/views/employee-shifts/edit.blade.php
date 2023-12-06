@@ -60,7 +60,7 @@
                     <div class="col-lg-4">
                         <div class="bootstrap-timepicker">
                             <x-forms.text :fieldLabel="__('modules.attendance.halfDayMarkTime')" :fieldPlaceholder="__('placeholders.hours')" fieldName="halfday_mark_time"
-                                fieldId="halfday_mark_time" fieldRequired="true" :fieldValue="!is_null($employeeShift->halfday_mark_time) ? \Carbon\Carbon::createFromFormat(
+                                fieldId="halfday_mark_time" :fieldValue="!is_null($employeeShift->halfday_mark_time) ? \Carbon\Carbon::createFromFormat(
                                     'H:i:s',
                                     $employeeShift->halfday_mark_time,
                                 )->translatedFormat(company()->time_format) : ''" />

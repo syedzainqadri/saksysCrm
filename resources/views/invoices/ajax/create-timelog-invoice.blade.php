@@ -49,7 +49,7 @@
                             <select class="form-control select-picker" data-live-search="true" data-size="8"
                                 name="project_id" id="project_id">
                                 @foreach ($projects as $project)
-                                    <option value="{{ $project->id }}">{{ $project->project_name }}
+                                    <option value="{{ $project->id }}">{{ mb_ucwords($project->project_name) }}
                                     </option>
                                 @endforeach
                             </select>
@@ -397,8 +397,8 @@
                     $('#client_company_div').html(data.html);
                     $('#select_currency_id').html(data.currency);
                     $('#exchange_rate').val(data.exchangeRate);
-                    let currencyExchange = (companyCurrencyName != data.currencyName) ? '( ' + companyCurrencyName + ' @lang('app.to') ' + data.currencyName + ' )' : '';
-                    $('#currency_exchange').html(currencyExchange);
+                    $('#currency_exchange').html('( ' + companyCurrencyName +
+                        ' @lang('app.to') ' + data.currencyName + ' )');
                     if ($('#show_shipping_address').prop('checked') === true) {
                         checkShippingAddress();
                     }

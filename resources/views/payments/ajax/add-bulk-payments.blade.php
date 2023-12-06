@@ -84,7 +84,7 @@
                                 <tr>
                                     <td class="border-bottom-0 btrr-mbl btlr text-dark text-left pl-0">@lang('modules.invoices.invoiceNumber') #</td>
                                     <td >@lang('modules.payments.paymentDate')<sup class="text-red f-14 mr-1">*</sup></td>
-                                    <td>@lang('modules.invoices.paymentMethod')</td>
+                                    <td>@lang('modules.invoices.paymentMethod')<sup class="text-red f-14 mr-1">*</sup></td>
                                     <td>@lang('modules.payments.offlinePaymentMethod')</td>
                                     @if($linkPaymentPermission == 'all') <td>@lang('app.menu.bankaccount')</td> @endif
                                     <td>@lang('modules.payments.transactionId')</td>
@@ -178,7 +178,7 @@
                                                             @foreach ($bankDetails as $bankDetail)
                                                                 @if ($pendingPayment->currency->id == $bankDetail->currency_id)
                                                                     <option @if ($pendingPayment->bank_account_id == $bankDetail->id) selected @endif value="{{ $bankDetail->id }}">@if($bankDetail->type == 'bank')
-                                                                        {{ $bankDetail->bank_name }} | @endif {{ $bankDetail->account_name }}
+                                                                        {{ $bankDetail->bank_name }} | @endif {{ mb_ucwords($bankDetail->account_name) }}
                                                                     </option>
                                                                 @endif
                                                             @endforeach
@@ -206,7 +206,7 @@
                                         <td class="border-bottom-0 btrr-mbl btlr text-right pr-0">
                                             <input type="hidden" id="due_amount{{ $key }}"
                                                 value="{{ $pendingPayment->amountDue() }}">
-                                            {{ !is_null($pendingPayment->amountDue()) ? currency_format($pendingPayment->amountDue(), $pendingPayment->currency->id, $pendingPayment->currency->currency_symbol) : currency_format($pendingPayment->amountDue(), $pendingPayment->currency->id) }}
+                                            {{ !is_null($pendingPayment->amountDue()) ? currency_format($pendingPayment->amountDue(), $pendingPayment->currency->id, $pendingPayment->currency->currency_symbol) : currency_format($pendingPayment->amountDue()) }}
                                         </td>
                                     </tr>
                                 @empty

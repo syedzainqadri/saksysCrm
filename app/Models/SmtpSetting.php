@@ -65,6 +65,7 @@ class SmtpSetting extends BaseModel
             $transport->setPassword($this->mail_password);
             $transport->start();
 
+
             if ($this->verified == 0) {
                 $this->verified = 1;
                 $this->save();

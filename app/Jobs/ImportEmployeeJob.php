@@ -47,11 +47,11 @@ class ImportEmployeeJob implements ShouldQueue, ShouldBeUnique
     {
         if (!empty(array_keys($this->columns, 'name')) && !empty(array_keys($this->columns, 'email')) && filter_var($this->row[array_keys($this->columns, 'email')[0]], FILTER_VALIDATE_EMAIL)) {
 
+
             $user = User::where('email', $this->row[array_keys($this->columns, 'email')[0]])->first();
 
             if ($user) {
                 $this->job->fail(__('messages.duplicateEntryForEmail') . $this->row[array_keys($this->columns, 'email')[0]]);
-                return;
             }
 
             $employeeDetails = EmployeeDetails::where('employee_id', $this->row[array_keys($this->columns, 'employee_id')[0]])->first();
@@ -59,6 +59,7 @@ class ImportEmployeeJob implements ShouldQueue, ShouldBeUnique
             if ($employeeDetails) {
                 $this->job->fail(__('messages.duplicateEntryForEmployeeId') . $this->row[array_keys($this->columns, 'employee_id')[0]]);
             }
+
             else {
                 DB::beginTransaction();
                 try {

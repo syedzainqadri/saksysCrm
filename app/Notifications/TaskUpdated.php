@@ -59,7 +59,7 @@ class TaskUpdated extends BaseNotification
         $url = route('tasks.show', $this->task->id);
         $url = getDomainSpecificUrl($url, $this->company);
 
-        $content = $this->task->heading . ' ' . __('email.taskUpdate.subject') . ' #' . $this->task->task_short_code;
+        $content = ucfirst($this->task->heading) . ' ' . __('email.taskUpdate.subject') . ' #' . $this->task->task_short_code;
 
         return $build
             ->subject(__('email.taskUpdate.subject') . ' #' . $this->task->task_short_code . ' - ' . config('app.name') . '.')
@@ -117,7 +117,7 @@ class TaskUpdated extends BaseNotification
                 ->from(config('app.name'))
                 ->image($slack->slack_logo_url)
                 ->to('@' . $notifiable->employee[0]->slack_username)
-                ->content('*' . __('email.taskUpdate.subject') . '*' . "\n" . '<' . route('tasks.show', $this->task->id) . '|' . $this->task->heading . '>' . "\n" . ' #' . $this->task->task_short_code . (!is_null($this->task->project) ? "\n" . __('app.project') . ' - ' . $this->task->project->project_name : '') . "\n" . $labels);
+                ->content('*' . __('email.taskUpdate.subject') . '*' . "\n" . '<' . route('tasks.show', $this->task->id) . '|' . ucfirst($this->task->heading) . '>' . "\n" . ' #' . $this->task->task_short_code . (!is_null($this->task->project) ? "\n" . __('app.project') . ' - ' . ucfirst($this->task->project->project_name) : '') . "\n" . $labels);
         }
 
         return (new SlackMessage())

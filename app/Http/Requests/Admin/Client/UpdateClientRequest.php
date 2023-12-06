@@ -27,6 +27,7 @@ class UpdateClientRequest extends CoreRequest
     public function rules()
     {
         $rules = [
+            'email' => 'nullable|email|required_if:login,enable|unique:users,email,'.$this->route('client').',id,company_id,' . company()->id,
             'slack_username' => 'nullable|unique',
             'name'  => 'required',
             'website' => 'nullable|url',
@@ -34,10 +35,6 @@ class UpdateClientRequest extends CoreRequest
             'password' => 'nullable|min:8',
             'mobile' => 'nullable|numeric'
         ];
-
-        if (isWorksuite()) {
-            $rules['email'] = 'nullable|email|required_if:login,enable|unique:users,email,'.$this->route('client').',id,company_id,' . company()->id;
-        }
 
         $rules = $this->customFieldRules($rules);
 

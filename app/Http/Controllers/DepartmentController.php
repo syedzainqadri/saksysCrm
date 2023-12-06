@@ -11,6 +11,9 @@ use App\Http\Requests\Team\UpdateDepartment;
 use App\Models\EmployeeDetails;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
+use function PHPUnit\Framework\isNull;
 
 class DepartmentController extends AccountBaseController
 {
@@ -99,16 +102,30 @@ class DepartmentController extends AccountBaseController
     public function edit($id)
     {
         $this->department = Team::findOrFail($id);
-        $departments = Team::where('id', '!=', $this->department->id)->get();
+        $this->departments = Team::all();
 
-        $childDepartments = $departments->where('parent_id', $this->department->id)->pluck('id')->toArray();
+        $parentDepartments = DB::select('WITH RECURSIVE hierarchical_children AS (
+            SELECT id, parent_id
+            FROM teams
+            WHERE id = '.$id.'
+            UNION ALL
+            SELECT t.id, t.parent_id
+            FROM teams t
+            JOIN hierarchical_children h ON t.parent_id = h.id
+            )
+            SELECT id FROM hierarchical_children where id != '.$id);
 
-        $departments = $departments->where('parent_id', '!=', $this->department->id);
 
-        // remove child departments
-        $this->departments = $departments->filter(function ($value, $key) use ($childDepartments) {
-            return !in_array($value->parent_id, $childDepartments);
-        });
+        $allIds = [];
+
+        if($parentDepartments){
+            foreach($parentDepartments as $parentDepartment){
+
+                $allIds[] = $parentDepartment->id;
+            }
+        }
+
+        $this->parentIds = $allIds;
 
         if (request()->ajax()) {
             $html = view('departments.ajax.edit', $this->data)->render();
@@ -137,6 +154,8 @@ class DepartmentController extends AccountBaseController
         $group->parent_id = $request->parent_id ?? null;
         $group->save();
 
+        $teams = Team::allDepartments();
+        $options = BaseModel::options($teams, null, 'team_name');
         $redirectUrl = route('departments.index');
 
         return Reply::successWithData(__('messages.updateSuccess'), ['redirectUrl' => $redirectUrl]);
@@ -169,7 +188,6 @@ class DepartmentController extends AccountBaseController
     public function applyQuickAction(Request $request)
     {
         if ($request->action_type == 'delete') {
-            $this->deleteRecords($request);
             return Reply::success(__('messages.deleteSuccess'));
         }
 

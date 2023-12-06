@@ -4,30 +4,21 @@
     foreach ($allModules as $module) {
         $activeModules[] = config(strtolower($module) . '.envato_item_id');
     }
-
-    $plugins = \Froiden\Envato\Functions\EnvatoUpdate::plugins();
-
-    if (empty($plugins)) {
-        $plugins = [];
-    }
-
-    $notInstalledModules = [];
-    foreach ($plugins as $item) {
-        if (!in_array($item['envato_id'], $activeModules)) {
-            $notInstalledModules[] = $item;
-        }
-    }
 @endphp
 
-@if (count($notInstalledModules))
+@if (!empty(($plugins = \Froiden\Envato\Functions\EnvatoUpdate::plugins())) && count($activeModules) !==
+count($plugins))
 
     <div class="col-sm-12 mt-5">
-        <h4>{{ str(config('froiden_envato.envato_product_name'))->replace('new', '')->headline() }} Official Modules</h4>
+        <h4>{{ mb_ucwords(config('froiden_envato.envato_product_name')) }} Official Modules</h4>
         <div class="row">
-            @foreach ($notInstalledModules as $item)
+
+            @foreach ($plugins as $item)
+
+                @if (!in_array($item['envato_id'], $activeModules))
                     <div class="col-sm-12 border rounded p-3 mt-4">
                         <div class="row">
-                            <div class="col-xs-2 col-lg-2">
+                            <div class="col-xs-2 col-lg-1">
                                 <a href="{{ $item['product_link'] }}" target="_blank">
                                     <img src="{{ $item['product_thumbnail'] }}" class="img-responsive" alt="">
                                 </a>
@@ -41,13 +32,17 @@
                                     {{ $item['summary'] }}
                                 </p>
                             </div>
-                            <div class="col-xs-2 col-lg-5 text-right pt-4">
-                                <x-forms.link-primary :link="$item['product_link']" data-toggle="tooltip" data-original-title="Visit {{$item['product_name']}} Page" target="_blank" icon="arrow-right">
+                            <div class="col-xs-2 col-lg-6 text-right pt-4">
+                                <x-forms.link-primary :link="$item['product_link']" target="_blank" icon="arrow-right">
                                 </x-forms.link-primary>
                             </div>
                         </div>
                     </div>
+                @endif
+
+
             @endforeach
+
         </div>
 
     </div>

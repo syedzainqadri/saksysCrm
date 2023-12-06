@@ -64,7 +64,7 @@ class NewEstimate extends BaseNotification
                 'content' => $content,
                 'themeColor' => $this->company->header_color,
                 'actionText' => __('email.estimateDeclined.action'),
-                'notifiableName' => $this->user->name
+                'notifiableName' => mb_ucwords($this->user->name)
             ]);
     }
 

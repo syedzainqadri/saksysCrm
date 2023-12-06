@@ -45,30 +45,34 @@ class ExpenseReportController extends AccountBaseController
         $endDate = ($request->endDate == null) ? null : now($this->company->timezone)->toDateString();
 
         // Expense report start
-        $expenses = Expense::where('status', 'approved');
+        $expenses = Expense::join('currencies', 'currencies.id', '=', 'expenses.currency_id')
+            ->leftJoin('expenses_category', 'expenses_category.id', '=', 'expenses.category_id')
+            ->leftJoin('projects', 'projects.id', '=', 'expenses.project_id')
+            ->leftJoin('project_members', 'project_members.id', '=', 'expenses.user_id')
+            ->where('expenses.status', 'approved');
 
         if ($request->startDate !== null && $request->startDate != 'null' && $request->startDate != '') {
             $startDate = Carbon::createFromFormat($this->company->date_format, $request->startDate)->toDateString();
-            $expenses = $expenses->where(DB::raw('DATE(`purchase_date`)'), '>=', $startDate);
+            $expenses = $expenses->where(DB::raw('DATE(expenses.`purchase_date`)'), '>=', $startDate);
         }
 
         if ($request->endDate !== null && $request->endDate != 'null' && $request->endDate != '') {
             $endDate = Carbon::createFromFormat($this->company->date_format, $request->endDate)->toDateString();
-            $expenses = $expenses->where(DB::raw('DATE(`purchase_date`)'), '<=', $endDate);
+            $expenses = $expenses->where(DB::raw('DATE(expenses.`purchase_date`)'), '<=', $endDate);
         }
 
         if ($request->categoryID != 'all' && !is_null($request->categoryID)) {
-            $expenses = $expenses->where('category_id', '=', $request->categoryID);
+            $expenses = $expenses->where('expenses.category_id', '=', $request->categoryID);
         }
 
         if ($request->projectID != 'all' && !is_null($request->projectID)) {
-            $expenses = $expenses->where('project_id', '=', $request->projectID);
+            $expenses = $expenses->where('expenses.project_id', '=', $request->projectID);
         }
 
         if ($request->employeeID != 'all' && !is_null($request->employeeID)) {
             $employeeID = $request->employeeID;
             $expenses = $expenses->where(function ($query) use ($employeeID) {
-                $query->where('user_id', $employeeID);
+                $query->where('expenses.user_id', $employeeID);
             });
         }
 
@@ -76,24 +80,43 @@ class ExpenseReportController extends AccountBaseController
             ->get([
                 DB::raw('DATE_FORMAT(purchase_date,"%d-%M-%y") as date'),
                 DB::raw('YEAR(purchase_date) year, MONTH(purchase_date) month'),
-                'price',
-                'user_id',
-                'project_id',
-                'currency_id',
-                'exchange_rate',
-                'default_currency_id',
-                'category_id',
+                DB::raw('price as total'),
+                'expenses.user_id',
+                'expenses.project_id',
+                'currencies.id as currency_id',
+                'expenses.exchange_rate',
+                'expenses.default_currency_id',
+                'expenses_category.id as category_id',
+                'expenses_category.category_name'
             ]);
 
 
         $prices = array();
 
         foreach ($expenses as $expense) {
+
+            if((is_null($expense->default_currency_id) && is_null($expense->exchange_rate)) ||
+            (!is_null($expense->default_currency_id) && Company()->currency_id != $expense->default_currency_id))
+            {
+                $currency = Currency::findOrFail($expense->currency_id);
+                $exchangeRate = $currency->exchange_rate;
+            }
+            else {
+                $exchangeRate = $expense->exchange_rate;
+            }
+
             if (!isset($prices[$expense->date])) {
                 $prices[$expense->date] = 0;
             }
 
-            $prices[$expense->date] += $expense->default_currency_price;
+            if ($expense->currency_id != $this->company->currency_id && $exchangeRate != 0) {
+                /** @phpstan-ignore-next-line */
+                $prices[$expense->date] += floor($expense->total / $exchangeRate);
+            }
+            else {
+                /** @phpstan-ignore-next-line */
+                $prices[$expense->date] += round($expense->total, 2);
+            }
         }
 
         $dates = array_keys($prices);

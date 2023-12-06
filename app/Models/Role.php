@@ -58,7 +58,7 @@ class Role extends EntrustRole
     protected function name(): Attribute
     {
         return Attribute::make(
-            set: fn($value) => str_slug($value),
+            set: fn($value) => str_slug(strtolower($value)),
         );
     }
 

@@ -143,8 +143,6 @@ use Illuminate\Notifications\Notifiable;
  * @property-read int|null $mention_task_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\User> $mentionUser
  * @property-read int|null $mention_user_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\MentionUser> $mentionTask
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\User> $mentionUser
  * @mixin \Eloquent
  */
 class Task extends BaseModel
@@ -525,8 +523,7 @@ class Task extends BaseModel
 
         if ($task) {
             $taskID = explode('-', $task->task_short_code);
-            $taskCode = array_pop($taskID);
-            return (int)$taskCode;
+            return (isset($taskID[1]) ? $taskID[1] : 0);
         }
 
         return 0;

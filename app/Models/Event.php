@@ -63,10 +63,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property-read int|null $files_count
  * @method static \Illuminate\Database\Eloquent\Builder|Event whereCompanyId($value)
  * @method static \Illuminate\Database\Eloquent\Builder|Event whereEventLink($value)
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\MentionUser> $mentionEvent
- * @property-read int|null $mention_event_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\User> $mentionUser
- * @property-read int|null $mention_user_count
  * @mixin \Eloquent
  */
 class Event extends BaseModel

@@ -73,7 +73,7 @@ class BankAccountDataTable extends BaseDataTable
                 return $action;
             })
             ->editColumn('bank_name', function ($row) {
-                return $row->type == 'bank' ? $row->bank_name : '--';
+                return $row->type == 'bank' ? Ucfirst($row->bank_name) : '--';
             })
             ->editColumn('bank_name_logo', function ($row) {
                 $bankLogo = '';
@@ -86,10 +86,10 @@ class BankAccountDataTable extends BaseDataTable
                     $bankLogo = $row->file_url;
                 }
 
-                return '<a class="text-darkest-grey" href="' . route('bankaccounts.show', $row->id) . '">' . $bankLogo . ' ' . $row->bank_name . '</a>';
+                return '<a class="text-darkest-grey" href="' . route('bankaccounts.show', $row->id) . '">' . $bankLogo . ' ' . ucfirst($row->bank_name) . '</a>';
             })
             ->editColumn('account_name', function ($row) {
-                return '<a class="text-darkest-grey" href="' . route('bankaccounts.show', $row->id) . '">' . $row->account_name . '</a>';
+                return '<a class="text-darkest-grey" href="' . route('bankaccounts.show', $row->id) . '">' . mb_ucwords($row->account_name) . '</a>';
             })
             ->editColumn('account_type', function ($row) {
                 return $row->type == 'bank' ? __('modules.bankaccount.'.$row->account_type) : '--';
@@ -209,7 +209,7 @@ class BankAccountDataTable extends BaseDataTable
      */
     public function html()
     {
-        $dataTable = $this->setBuilder('bank-account-table', 2)
+        return $this->setBuilder('bank-account-table', 2)
             ->parameters([
                 'initComplete' => 'function () {
                    window.LaravelDataTables["bank-account-table"].buttons().container()
@@ -218,13 +218,8 @@ class BankAccountDataTable extends BaseDataTable
                 'fnDrawCallback' => 'function( oSettings ) {
                     $(".change-account-status").selectpicker();
                 }',
-            ]);
-
-        if (canDataTableExport()) {
-            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
-        }
-
-        return $dataTable;
+            ])
+            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
     }
 
     /**

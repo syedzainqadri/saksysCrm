@@ -14,20 +14,11 @@ $addDesignationPermission = user()->permission('add_designation');
                 <div class="row p-20">
                     <div class="col-lg-9">
                         <div class="row">
-                            <div class="col-lg-2 col-md-3">
+                            <div class="col-lg-4 col-md-6">
                                 <x-forms.text fieldId="employee_id" :fieldLabel="__('modules.employees.employeeId')"
                                     fieldName="employee_id" :fieldValue="((!$checkifExistEmployeeId) ? ($lastEmployeeID+1) : '')" fieldRequired="true"
                                     :fieldPlaceholder="__('modules.employees.employeeIdInfo')" :popover="__('modules.employees.employeeIdHelp')">
                                 </x-forms.text>
-                            </div>
-                            <div class="col-lg-2 col-md-3">
-                                <x-forms.select fieldId="salutation" fieldName="salutation"
-                                    :fieldLabel="__('modules.client.salutation')">
-                                    <option value="">--</option>
-                                    @foreach ($salutations as $salutation)
-                                        <option value="{{ $salutation->value }}">{{ $salutation->label() }}</option>
-                                    @endforeach
-                                </x-forms.select>
                             </div>
                             <div class="col-lg-4 col-md-6">
                                 <x-forms.text fieldId="name" :fieldLabel="__('modules.employees.employeeName')"
@@ -100,7 +91,7 @@ $addDesignationPermission = user()->permission('add_designation');
                         </div>
                     </div>
                     <div class="col-lg-3">
-                        <x-forms.file allowedFileExtensions="png jpg jpeg svg bmp" class="mr-0 mr-lg-2 mr-md-2 cropper"
+                        <x-forms.file allowedFileExtensions="png jpg jpeg svg" class="mr-0 mr-lg-2 mr-md-2 cropper"
                             :fieldLabel="__('modules.profile.profilePicture')" fieldName="image" fieldId="image"
                             fieldHeight="119" :popover="__('messages.fileFormat.ImageFile')" />
                     </div>
@@ -166,7 +157,7 @@ $addDesignationPermission = user()->permission('add_designation');
                             fieldName="locale" search="true">
                             @foreach ($languages as $language)
                                 <option {{ user()->locale == $language->language_code ? 'selected' : '' }}
-                                data-content="<span class='flag-icon flag-icon-{{ ($language->flag_code == 'en') ? 'gb' : $language->flag_code }} flag-icon-squared'></span> {{ $language->language_name }}"
+                                data-content="<span class='flag-icon flag-icon-{{ ($language->flag_code == 'en') ? 'gb' : strtolower($language->flag_code) }} flag-icon-squared'></span> {{ $language->language_name }}"
                                 value="{{ $language->language_code }}">{{ $language->language_name }}</option>
                             @endforeach
                         </x-forms.select>
@@ -259,20 +250,10 @@ $addDesignationPermission = user()->permission('add_designation');
                     </div>
 
                     @if (function_exists('sms_setting') && sms_setting()->telegram_status)
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <x-forms.number fieldName="telegram_user_id" fieldId="telegram_user_id"
                                 fieldLabel="<i class='fab fa-telegram'></i> {{ __('sms::modules.telegramUserId') }}"
                                 :popover="__('sms::modules.userIdInfo')" />
-                            <p class="text-bold text-danger">
-                                @lang('sms::modules.telegramBotNameInfo')
-                            </p>
-                            <p class="text-bold"><span id="telegram-link-text">https://t.me/{{ sms_setting()->telegram_bot_name }}</span>
-                                <a href="javascript:;" class="btn-copy btn-secondary f-12 rounded p-1 py-2 ml-1"
-                                    data-clipboard-target="#telegram-link-text">
-                                    <i class="fa fa-copy mx-1"></i>@lang('app.copy')</a>
-                                <a href="https://t.me/{{ sms_setting()->telegram_bot_name }}" target="_blank" class="btn-secondary f-12 rounded p-1 py-2 ml-1">
-                                    <i class="fa fa-copy mx-1"></i>@lang('app.openInNewTab')</a>
-                            </p>
                         </div>
                     @endif
                     <div class="col-lg-3 col-md-6">
@@ -349,9 +330,6 @@ $addDesignationPermission = user()->permission('add_designation');
 </div>
 
 <script src="{{ asset('vendor/jquery/tagify.min.js') }}"></script>
-@if (function_exists('sms_setting') && sms_setting()->telegram_status)
-    <script src="{{ asset('vendor/jquery/clipboard.min.js') }}"></script>
-@endif
 <script>
     $(document).ready(function() {
 
@@ -544,27 +522,4 @@ $addDesignationPermission = user()->permission('add_designation');
         $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
         $.ajaxModal(MODAL_LG, url);
     })
-
-    @if (function_exists('sms_setting') && sms_setting()->telegram_status)
-        var clipboard = new ClipboardJS('.btn-copy');
-
-        clipboard.on('success', function(e) {
-            Swal.fire({
-                icon: 'success',
-                text: '@lang("app.urlCopied")',
-                toast: true,
-                position: 'top-end',
-                timer: 3000,
-                timerProgressBar: true,
-                showConfirmButton: false,
-                customClass: {
-                    confirmButton: 'btn btn-primary',
-                },
-                showClass: {
-                    popup: 'swal2-noanimation',
-                    backdrop: 'swal2-noanimation'
-                },
-            })
-        });
-    @endif
 </script>

@@ -66,7 +66,7 @@ class NoticeUpdate extends BaseNotification
         $url = route('notices.show', $this->notice->id);
         $url = getDomainSpecificUrl($url, $this->company);
 
-        $content = __('email.noticeUpdate.text') . '<br>' . $this->notice->heading;
+        $content = __('email.noticeUpdate.text') . '<br>' . ucfirst($this->notice->heading);
 
         return $build
             ->subject(__('email.noticeUpdate.subject') . ' - ' . config('app.name'))
@@ -106,7 +106,7 @@ class NoticeUpdate extends BaseNotification
                 ->from(config('app.name'))
                 ->image($slack->slack_logo_url)
                 ->to('@' . $notifiable->employee[0]->slack_username)
-                ->content('*' . __('email.noticeUpdate.subject') . ' : ' . $this->notice->heading . '*' . "\n" . $this->notice->description);
+                ->content('*' . __('email.noticeUpdate.subject') . ' : ' . ucfirst($this->notice->heading) . '*' . "\n" . $this->notice->description);
         }
 
         return (new SlackMessage())

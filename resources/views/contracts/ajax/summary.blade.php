@@ -29,7 +29,7 @@
         <div class="invoice-table-wrapper">
             <table width="100%" class="">
                 <tr class="inv-logo-heading">
-                    <td><img src="{{ invoice_setting()->logo_url }}" alt="{{ company()->company_name }}"
+                    <td><img src="{{ invoice_setting()->logo_url }}" alt="{{ mb_ucwords(company()->company_name) }}"
                             class="logo" /></td>
                     <td align="right" class="font-weight-bold f-21 text-dark text-uppercase mt-4 mt-lg-0 mt-md-0">
                         @lang('app.menu.contract')</td>
@@ -37,7 +37,7 @@
                 <tr class="inv-num">
                     <td class="f-14 text-dark">
                         <p class="mt-3 mb-0">
-                            {{ company()->company_name }}<br>
+                            {{ mb_ucwords(company()->company_name) }}<br>
                             {!! nl2br(default_address()->address) !!}<br>
                             {{ company()->company_phone }}
                         </p><br>
@@ -81,14 +81,14 @@
                     <td class="f-14 text-dark">
                         <p class="mb-0 text-left"><span
                                 class="text-dark-grey text-capitalize">@lang("app.client")</span><br>
-                            {{ $contract->client->name }}<br>
-                            {{ $contract->client->clientDetails->company_name }}<br>
+                            {{ mb_ucwords($contract->client->name) }}<br>
+                            {{ mb_ucwords($contract->client->clientDetails->company_name) }}<br>
                             {!! nl2br($contract->client->clientDetails->address) !!}</p>
                     </td>
                     @if ($contract->client->clientDetails->company_logo)
                         <td align="right">
                                 <img src="{{ $contract->client->clientDetails->image_url }}"
-                                alt="{{ $contract->client->clientDetails->company_name }}" class="logo" />
+                                alt="{{ mb_ucwords($contract->client->clientDetails->company_name) }}" class="logo" />
                         </td>
                     @endif
                 </tr>

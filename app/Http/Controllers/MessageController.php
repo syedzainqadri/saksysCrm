@@ -33,9 +33,8 @@ class MessageController extends AccountBaseController
     {
         session()->forget('message_setting');
         session()->forget('pusher_settings');
-        $this->messageSetting = message_setting();
 
-        abort_403($this->messageSetting->allow_client_admin == 'no' && $this->messageSetting->allow_client_employee == 'no' && in_array('client', user_roles()));
+        abort_403(message_setting()->allow_client_admin == 'no' && message_setting()->allow_client_employee == 'no' && in_array('client', user_roles()));
 
         if (request()->ajax() && request()->has('term')) {
             $term = (request('term') != '') ? request('term') : null;
@@ -67,26 +66,7 @@ class MessageController extends AccountBaseController
         }])
         ->whereIn('id', $messageIds)->orderBy('id', 'desc')->get();
 
-        if(in_array('client', user_roles())) {
-            if ($this->messageSetting->allow_client_employee == 'yes' && $this->messageSetting->restrict_client == 'no') {
-                $this->employees = User::allEmployees();
-            }
-            else if($this->messageSetting->allow_client_employee == 'yes' && $this->messageSetting->restrict_client == 'yes')
-            {
-                $this->project_id = Project::where('client_id', user()->id)->pluck('id');
-                $this->user_id = ProjectMember::whereIn('project_id', $this->project_id)->pluck('user_id');
-                $this->employees = User::whereIn('id', $this->user_id)->get();
-            }
-            else if ($this->messageSetting->allow_client_admin == 'yes') {
-                $this->employees = User::allAdmins($this->messageSetting->company->id);
-            }
-            else{
-                $this->employees = [];
-            }
-        }
-        else{
-            $this->employees = User::allEmployees(null, true, 'all');
-        }
+        $this->employees = User::allEmployees(null, true, 'all');
 
         $userData = [];
 
@@ -143,24 +123,18 @@ class MessageController extends AccountBaseController
             $this->client = User::findOrFail(request()->clientId);
         }
 
-        if(in_array('client', user_roles())) {
-            if ($this->messageSetting->allow_client_employee == 'yes' && $this->messageSetting->restrict_client == 'no') {
-                $this->employees = User::allEmployees();
-            }
-            else if($this->messageSetting->allow_client_employee == 'yes' && $this->messageSetting->restrict_client == 'yes')
-            {
-                $this->employees = User::whereIn('id', $this->user_id)->get();
-            }
-            else if ($this->messageSetting->allow_client_admin == 'yes') {
-                $this->employees = User::allAdmins($this->messageSetting->company->id);
-            }
-            else{
-                $this->employees = [];
-            }
+        if ($this->messageSetting->allow_client_employee == 'yes' && $this->messageSetting->restrict_client == 'no' && in_array('client', user_roles())) {
+            $this->employees = User::allEmployees();
         }
-        else{
-            $this->employees = User::allEmployees(null, true, 'all');
+        else if($this->messageSetting->allow_client_employee == 'yes' && $this->messageSetting->restrict_client == 'yes' && in_array('client', user_roles()))
+        {
+            $this->employees = User::whereIn('id', $this->user_id)->get();
         }
+        else if ($this->messageSetting->allow_client_admin == 'yes' && in_array('client', user_roles())) {
+            $this->employees = User::allAdmins($this->messageSetting->company->id);
+        }
+
+        $this->employees = User::allEmployees(null, true, 'all');
 
         $userData = [];
 

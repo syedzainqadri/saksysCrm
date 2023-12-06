@@ -61,9 +61,4 @@ class ProjectTemplateTask extends BaseModel
         return $this->hasMany(ProjectTemplateSubTask::class);
     }
 
-    public function category(): BelongsTo
-    {
-        return $this->belongsTo(TaskCategory::class, 'project_template_task_category_id');
-    }
-
 }

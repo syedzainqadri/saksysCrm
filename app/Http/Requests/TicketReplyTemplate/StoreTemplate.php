@@ -26,7 +26,7 @@ class StoreTemplate extends CoreRequest
     {
         return [
             'reply_heading' => 'required',
-            'description' => [
+            'reply_text' => [
                 'required',
                 function ($attribute, $value, $fail) {
                     if (trim_editor($value) == '') {

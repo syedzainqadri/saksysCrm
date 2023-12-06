@@ -64,12 +64,12 @@ class ProposalTemplateObserver
 
                         if(isset($invoice_item_image[$key])) {
                             $filename = Files::uploadLocalOrS3($invoice_item_image[$key], ProposalTemplateItemImage::FILE_PATH . '/' . $proposalTemplateItem->id . '/');
-                            $proposalTemplateItemImage->filename = $invoice_item_image[$key]->getClientOriginalName();
-                            $proposalTemplateItemImage->hashname = $filename;
-                            $proposalTemplateItemImage->size = $invoice_item_image[$key]->getSize();
+                            $proposalTemplateItemImage->filename = !isset($invoice_item_image_url[$key]) ? $invoice_item_image[$key]->getClientOriginalName() : '';
+                            $proposalTemplateItemImage->hashname = !isset($invoice_item_image_url[$key]) ? $filename : '';
                         }
 
-                        $proposalTemplateItemImage->external_link = isset($invoice_item_image[$key]) ? null : (isset($invoice_item_image_url[$key]) ? $invoice_item_image_url[$key] : null);
+                        $proposalTemplateItemImage->size = !isset($invoice_item_image_url[$key]) ? $invoice_item_image[$key]->getSize() : '';
+                        $proposalTemplateItemImage->external_link = isset($invoice_item_image_url[$key]) ? $invoice_item_image_url[$key] : '';
                         $proposalTemplateItemImage->save();
                     }
 
@@ -143,7 +143,7 @@ class ProposalTemplateObserver
                     // phpcs:ignore
                     if ((isset($proposal_item_image[$key]) && $request->hasFile('invoice_item_image.' . $key)) || isset($proposal_item_image_url[$key])) {
 
-                        $proposalTemplateItemImage = ProposalTemplateItemImage::where('proposal_template_item_id', $proposalTemplateItem->id)->firstOrNew();
+                        $proposalTemplateItemImage = ProposalTemplateItemImage::where('proposal_template_item_id', $proposalTemplateItem->id)->first();
 
                         $proposalTemplateItemImage->proposal_template_item_id = $proposalTemplateItem->id;
                         $proposalTemplateItemImage->company_id = $proposalTemplateItem->company_id;
@@ -151,16 +151,14 @@ class ProposalTemplateObserver
                         /* Delete previous uploaded file if it not a product (because product images cannot be deleted) */
                         if (!isset($proposal_item_image_url[$key]) && $proposalTemplateItem && $proposalTemplateItem->proposalTemplateItemImage) {
                             Files::deleteFile($proposalTemplateItem->proposalTemplateItemImage->hashname, ProposalTemplateItemImage::FILE_PATH . '/' . $proposalTemplateItem->id . '/');
-                        }
 
-                        if (isset($proposal_item_image[$key])) {
                             $filename = Files::uploadLocalOrS3($proposal_item_image[$key], ProposalTemplateItemImage::FILE_PATH . '/' . $proposalTemplateItem->id . '/');
-                            $proposalTemplateItemImage->filename = isset($proposal_item_image[$key]) ? $proposal_item_image[$key]->getClientOriginalName() : null;
-                            $proposalTemplateItemImage->hashname = isset($proposal_item_image[$key]) ? $filename : null;
-                            $proposalTemplateItemImage->size = isset($proposal_item_image[$key]) ? $proposal_item_image[$key]->getSize() : null;
+                            $proposalTemplateItemImage->filename = !isset($proposal_item_image_url[$key]) ? $proposal_item_image[$key]->getClientOriginalName() : '';
+                            $proposalTemplateItemImage->hashname = !isset($proposal_item_image_url[$key]) ? $filename : '';
                         }
 
-                        $proposalTemplateItemImage->external_link = isset($proposal_item_image[$key]) ? null : ($proposal_item_image_url[$key] ?? null);
+                        $proposalTemplateItemImage->size = !!isset($proposal_item_image_url[$key]) ? $proposal_item_image[$key]->getSize() : '';
+                        $proposalTemplateItemImage->external_link = $proposal_item_image_url[$key] ?? '';
                         $proposalTemplateItemImage->save();
 
                     }

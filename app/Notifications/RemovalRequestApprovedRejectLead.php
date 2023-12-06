@@ -56,7 +56,7 @@ class RemovalRequestApprovedRejectLead extends BaseNotification
                 ->subject(__('email.removalRequestApprovedLead.subject') . ' ' . config('app.name') . '.')
                 ->markdown('mail.email', [
                     'content' => $content,
-                    'notifiableName' => $notifiable->client_name
+                    'notifiableName' => mb_ucwords($notifiable->client_name)
                 ]);
         }
 
@@ -66,7 +66,7 @@ class RemovalRequestApprovedRejectLead extends BaseNotification
             ->subject(__('email.removalRequestRejectedLead.subject') . ' ' . config('app.name') . '.')
             ->markdown('mail.email', [
                 'content' => $content,
-                'notifiableName' => $notifiable->client_name
+                'notifiableName' => mb_ucwords($notifiable->client_name)
             ]);
     }
 

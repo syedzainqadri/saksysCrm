@@ -122,7 +122,7 @@ class NewDiscussionMention extends BaseNotification
     {
         return OneSignalMessage::create()
             ->subject(__('email.discussion.subject'))
-            ->body($this->discussion->title);
+            ->body(ucfirst($this->discussion->title));
     }
 
 }

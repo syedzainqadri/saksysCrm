@@ -51,20 +51,11 @@ class TaskFile extends BaseModel
 
     const FILE_PATH = 'task-files';
 
-    protected $appends = ['file_url', 'icon', 'file'];
+    protected $appends = ['file_url', 'icon'];
 
     public function getFileUrlAttribute()
     {
-        if($this->external_link){
-            return str($this->external_link)->contains('http') ? $this->external_link : asset_url_local_s3($this->external_link);
-        }
-
-        return asset_url_local_s3(TaskFile::FILE_PATH . '/' . $this->task_id . '/' . $this->hashname);
-    }
-
-    public function getFileAttribute()
-    {
-        return $this->external_link ?: (TaskFile::FILE_PATH . '/' . $this->task_id . '/' . $this->hashname);
+        return (!is_null($this->external_link)) ? $this->external_link : asset_url_local_s3('task-files/' . $this->task_id . '/' . $this->hashname);
     }
 
 }

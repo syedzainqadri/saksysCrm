@@ -50,7 +50,6 @@ use App\Http\Controllers\OfflinePaymentSettingController;
 use App\Http\Controllers\PaymentGatewayCredentialController;
 use App\Http\Controllers\NotificationSettingController;
 use App\Http\Controllers\QuickbookSettingsController;
-use App\Http\Controllers\SignUpSettingController;
 use App\Http\Controllers\TaxSettingController;
 use App\Http\Controllers\UnitTypeController;
 use App\Http\Controllers\UpdateAppController;
@@ -160,8 +159,6 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account/settings'], function 
     Route::get('language-settings/auto-translate', [LanguageSettingController::class, 'autoTranslate'])->name('language_settings.auto_translate');
     Route::post('language-settings/auto-translate', [LanguageSettingController::class, 'autoTranslateUpdate'])->name('language_settings.auto_translate_update');
     Route::post('language-settings/update-data/{id?}', [LanguageSettingController::class, 'updateData'])->name('language_settings.update_data');
-    Route::post('language-settings/fix-translation', [LanguageSettingController::class, 'fixTranslation'])->name('language_settings.fix_translation');
-    Route::post('language-settings/create-en-locale', [LanguageSettingController::class, 'createEnLocale'])->name('language_settings.create_en_locale');
     Route::resource('language-settings', LanguageSettingController::class);
 
     // Task Settings
@@ -228,8 +225,6 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account/settings'], function 
     Route::resource('quickbooks-settings', QuickbookSettingsController::class);
 
     Route::resource('custom-link-settings', CustomLinkSettingController::class);
-
-    Route::resource('sign-up-settings', SignUpSettingController::class)->only(['index', 'update']);
 
 });
 

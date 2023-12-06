@@ -36,7 +36,7 @@
                                     @foreach ($categories as $category)
                                         <option
                                             @if (!is_null($task) && $task->task_category_id == $category->id) selected
-                                            @endif value="{{ $category->id }}">{{ $category->category_name }}
+                                            @endif value="{{ $category->id }}">{{ mb_ucwords($category->category_name) }}
                                         </option>
 
                                     @endforeach
@@ -78,7 +78,7 @@
                                     <option
                                         @if ((isset($project) && $project->id == $data->id) || ( !is_null($task) && $data->id == $task->project_id)) selected
                                         @endif value="{{ $data->id }}">
-                                        {{ $data->project_name }}
+                                        {{ mb_ucwords($data->project_name) }}
                                     </option>
                                 @endforeach
                             </x-forms.select>
@@ -370,19 +370,11 @@
                                                 :fieldLabel="__('modules.tasks.dependentTask')"
                                                 fieldName="dependent_task_id" search="true">
                                     <option value="">--</option>
-                                    @if ($projectID)
-                                        @foreach ($dependantTasks as $dependantTask)
-                                        <option value="{{ $dependantTask->id }}">{{ $dependantTask->heading }} ( @lang('app.dueDate'):
-                                        @if(!is_null($dependantTask->due_date)) {{ $dependantTask->due_date->translatedFormat(company()->date_format) }} ) @else - @endif
-                                        </option>
-                                        @endforeach
-                                    @else
-                                        @foreach ($allTasks as $item)
+                                    @foreach ($allTasks as $item)
                                         <option value="{{ $item->id }}">{{ $item->heading }} ( @lang('app.dueDate'):
                                             @if(!is_null($item->due_date)) {{ $item->due_date->translatedFormat(company()->date_format) }} ) @else - @endif
                                         </option>
-                                        @endforeach
-                                    @endif
+                                    @endforeach
                                 </x-forms.select>
                             </div>
                         </div>
@@ -392,7 +384,7 @@
                         <div class="col-lg-12">
                             <x-forms.file-multiple class="mr-0 mr-lg-2 mr-md-2"
                                                    :fieldLabel="__('app.menu.addFile')" fieldName="file"
-                                                   fieldId="file-upload-dropzone"/>
+                                                   fieldId="task-file-upload-dropzone"/>
                             <input type="hidden" name="image_url" id="image_url">
                         </div>
                         <input type="hidden" name="taskID" id="taskID">
@@ -420,6 +412,8 @@
     </div>
 </div>
 
+
+<script src="{{ asset('vendor/jquery/dropzone.min.js') }}"></script>
 <script>
 
     $(document).ready(function () {
@@ -475,11 +469,9 @@
 
         if (add_task_files == "all" || add_task_files == "added") {
 
-            let checkSize = false;
-
             Dropzone.autoDiscover = false;
             //Dropzone class
-            taskDropzone = new Dropzone("div#file-upload-dropzone", {
+            taskDropzone = new Dropzone("div#task-file-upload-dropzone", {
                 dictDefaultMessage: "{{ __('app.dragDrop') }}",
                 url: "{{ route('task-files.store') }}",
                 headers: {
@@ -498,7 +490,6 @@
                 }
             });
             taskDropzone.on('sending', function (file, xhr, formData) {
-                checkSize = false;
                 var ids = $('#taskID').val();
                 formData.append('task_id', ids);
                 $.easyBlockUI();
@@ -507,9 +498,7 @@
                 $.easyBlockUI();
             });
             taskDropzone.on('queuecomplete', function () {
-                if (checkSize == false) {
-                    window.location.href = localStorage.getItem("redirect_task");
-                }
+                window.location.href = localStorage.getItem("redirect_task");
             });
             taskDropzone.on('removedfile', function () {
                 var grp = $('div#file-upload-dropzone').closest(".form-group");
@@ -532,7 +521,6 @@
                 $(grp).addClass("has-error");
                 $(label).addClass("is-invalid");
 
-                checkSize = true;
             });
         }
 
@@ -751,7 +739,7 @@
             let note = document.getElementById('description').children[0].innerHTML;
             document.getElementById('description-text').value = note;
 
-            const url = "{{ route('tasks.store') }}?taskId={{$task ? $task->id : ''}}&add_more=true";
+            const url = "{{ route('tasks.store') }}?taskId={{$task ? $task->id : ''}}";
             var data = $('#save-task-data-form').serialize() + '&add_more=true';
 
             saveTask(data, url, "#save-more-task-form");

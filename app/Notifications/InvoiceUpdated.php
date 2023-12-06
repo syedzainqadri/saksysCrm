@@ -2,11 +2,10 @@
 
 namespace App\Notifications;
 
-use App\Http\Controllers\InvoiceController;
 use App\Models\EmailNotificationSetting;
+use App\Http\Controllers\InvoiceController;
 use App\Models\Invoice;
 use NotificationChannels\OneSignal\OneSignalChannel;
-use NotificationChannels\OneSignal\OneSignalMessage;
 
 class InvoiceUpdated extends BaseNotification
 {
@@ -95,14 +94,6 @@ class InvoiceUpdated extends BaseNotification
             'id' => $this->invoice->id,
             'invoice_number' => $this->invoice->invoice_number
         ];
-    }
-
-    // phpcs:ignore
-    public function toOneSignal($notifiable)
-    {
-        return OneSignalMessage::create()
-            ->setSubject(__('email.invoice.updateSubject'))
-            ->setBody(__('email.invoice.updateText'));
     }
 
 }

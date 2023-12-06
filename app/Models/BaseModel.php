@@ -23,6 +23,7 @@ class BaseModel extends ApiModel
     {
         $options = '<option value="">--</option>';
 
+
         foreach ($items as $item) {
 
             $name = is_null($columnName) ? $item->name : $item->{$columnName};
@@ -39,7 +40,7 @@ class BaseModel extends ApiModel
     {
         return '<div class="media align-items-center">
                         <div class="media-body">
-                    <h5 class="mb-0 f-13 text-darkest-grey"><a href="' . $route . '" class="openRightModal">' . $title . '</a></h5>
+                    <h5 class="mb-0 f-13 text-darkest-grey"><a href="' . $route . '" class="openRightModal">' . ucfirst($title) . '</a></h5>
                     <p class="mb-0">' . $other . '</p>
                     </div>
                   </div>';

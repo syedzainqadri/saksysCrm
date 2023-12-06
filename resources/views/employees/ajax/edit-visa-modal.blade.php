@@ -46,7 +46,7 @@
                 </div>
 
                 <div class="col-lg-12">
-                    <x-forms.file allowedFileExtensions="png jpg jpeg svg pdf doc docx" class="mr-0 mr-lg-2 mr-md-2"
+                    <x-forms.file allowedFileExtensions="png jpg jpeg svg" class="mr-0 mr-lg-2 mr-md-2"
                         :fieldLabel="__('modules.employees.scanCopy')" fieldName="file"
                         :fieldValue="$visa->file ? $visa->image_url : '' "
                         fieldId="file">
@@ -63,6 +63,8 @@
     <x-forms.button-cancel data-dismiss="modal" class="border-0 mr-3">@lang('app.cancel')</x-forms.button-cancel>
     <x-forms.button-primary id="save-visa-form" icon="check">@lang('app.save')</x-forms.button-primary>
 </div>
+
+<script src="{{ asset('vendor/jquery/dropzone.min.js') }}"></script>
 
 <script>
     datepicker('#issue_date', {

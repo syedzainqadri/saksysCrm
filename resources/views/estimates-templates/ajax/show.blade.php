@@ -42,7 +42,7 @@
         <div class="invoice-table-wrapper">
             <table width="100%" class="">
                 <tr class="inv-logo-heading">
-                    <td><img src="{{ invoice_setting()->logo_url }}" alt="{{ company()->company_name }}"
+                    <td><img src="{{ invoice_setting()->logo_url }}" alt="{{ mb_ucwords(company()->company_name) }}"
                             id="logo" /></td>
                     <td align="right" class="font-weight-bold f-21 text-dark text-uppercase mt-4 mt-lg-0 mt-md-0">
                         @lang('modules.estimates.estimateTemplate')</td>
@@ -50,7 +50,7 @@
                 <tr class="inv-num">
                     <td class="f-14 text-dark">
                         <p class="mt-3 mb-0">
-                            {{ company()->company_name }}<br>
+                            {{ mb_ucwords(company()->company_name) }}<br>
                             @if (!is_null($settings))
                                 {!! nl2br(default_address()->address) !!}<br>
                                 {{ company()->company_phone }}
@@ -127,12 +127,12 @@
                                     ({{ $invoice->currency->currency_code }})</td>
                             </tr>
 
-
+                           
                             @foreach ($invoice->items as $item)
 
                                 @if ($item->type == 'item')
                                     <tr class="text-dark font-weight-semibold f-13">
-                                        <td>{{ $item->item_name }}</td>
+                                        <td>{{ ucfirst($item->item_name) }}</td>
                                         @if($invoiceSetting->hsn_sac_code_show == 1)
                                             <td align="right">{{ $item->hsn_sac_code }}</td>
                                         @endif
@@ -140,7 +140,7 @@
                                         <td align="right">
                                             {{ currency_format($item->unit_price, $invoice->currency_id, false) }}
                                         </td>
-                                        <td align="right">{{ $item->tax_list }}</td>
+                                        <td align="right">{{ strtoupper($item->tax_list) }}</td>
                                         <td align="right">{{ currency_format($item->amount, $invoice->currency_id, false) }}
                                         </td>
                                     </tr>
@@ -178,7 +178,7 @@
                                         @foreach ($taxes as $key => $tax)
                                             <tr class="text-dark-grey" align="right">
                                                 <td class="w-50 border-top-0 border-left-0">
-                                                    {{ $key }}</td>
+                                                    {{ strtoupper($key) }}</td>
                                             </tr>
                                         @endforeach
                                         <tr class="bg-light-grey text-dark f-w-500 f-16" align="right">
@@ -229,7 +229,7 @@
                                 <table>
                                     <tr width="100%" class="font-weight-semibold f-13">
                                         <td class="border-left-0 border-right-0 border-top-0">
-                                            {{ $item->item_name }}</td>
+                                            {{ ucfirst($item->item_name) }}</td>
                                     </tr>
                                     @if ($item->item_summary != '' || $item->estimateTemplateItemImage)
                                         <tr>
@@ -288,7 +288,7 @@
 
                 @foreach ($taxes as $key => $tax)
                     <tr>
-                        <th width="50%" class="text-dark-grey font-weight-normal">{{ $key }}</th>
+                        <th width="50%" class="text-dark-grey font-weight-normal">{{ strtoupper($key) }}</th>
                         <td width="50%" class="text-dark-grey font-weight-normal">
                             {{ currency_format($tax, $invoice->currency_id, false) }}</td>
                     </tr>

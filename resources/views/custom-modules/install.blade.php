@@ -88,9 +88,9 @@
                 <!-- Buttons Start -->
                 <div class="w-100 border-top-grey">
                     <x-setting-form-actions>
-                        <x-forms.button-secondary :link="route('custom-modules.index').'?tab=custom'" >
+                        <x-forms.button-cancel :link="route('custom-modules.index').'?tab=custom'" class="border-0">
                             @lang('app.back')
-                        </x-forms.button-secondary>
+                        </x-forms.button-cancel>
                     </x-setting-form-actions>
                     <div class="d-block d-lg-none d-md-none p-4">
                         <x-forms.button-cancel :link="route('custom-modules.index').'?tab=custom'" class="w-100 mt-3">
@@ -109,6 +109,7 @@
 @endsection
 
 @push('scripts')
+    <script src="{{ asset('vendor/jquery/dropzone.min.js') }}"></script>
     <script>
         Dropzone.autoDiscover = false;
         $(document).ready(function () {
@@ -143,9 +144,11 @@
                     $('#install-process').html('');
 
                     if (response.status === 'success') {
-                        $.easyBlockUI('body')
-                        $('#install-process').html(`<div class="alert alert-success">@lang('messages.customModuleInstalled')</div>`);
-                        window.location.href = "{{ route('custom-modules.index').'?tab=custom' }}";
+                        $('#install-process').html('<div class="alert alert-success">Your will be logged out soon. Login and visit <b>Custom modules main page</b> again page to activate it</div>');
+
+                        setTimeout(function () {
+                            window.location.reload();
+                        }, 3000);
                     }
 
                     if (response.status === 'fail') {

@@ -49,20 +49,11 @@ class TicketFile extends BaseModel
 
     const FILE_PATH = 'ticket-files';
 
-    protected $appends = ['file_url', 'icon', 'file'];
+    protected $appends = ['file_url', 'icon'];
 
     public function getFileUrlAttribute()
     {
-        if($this->external_link){
-            return str($this->external_link)->contains('http') ? $this->external_link : asset_url_local_s3($this->external_link);
-        }
-
-        return asset_url_local_s3(TicketFile::FILE_PATH . '/' . $this->ticket_reply_id . '/' . $this->hashname);
-    }
-
-    public function getFileAttribute()
-    {
-        return $this->external_link ?: (TicketFile::FILE_PATH . '/' . $this->ticket_reply_id . '/' . $this->hashname);
+        return (!is_null($this->external_link)) ? $this->external_link : asset_url_local_s3('ticket-files/' . $this->ticket_reply_id . '/' . $this->hashname);
     }
 
     public function reply(): BelongsTo

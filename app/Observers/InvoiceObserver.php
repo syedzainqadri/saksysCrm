@@ -79,13 +79,6 @@ class InvoiceObserver
         if (company()) {
             $invoice->company_id = company()->id;
         }
-
-        if (is_numeric($invoice->invoice_number)) {
-            $invoice->invoice_number = $invoice->formatInvoiceNumber();
-        }
-
-        $invoiceSettings = company() ? company()->invoiceSetting : $invoice->company->invoiceSetting;
-        $invoice->original_invoice_number = str($invoice->invoice_number)->replace($invoiceSettings->invoice_prefix . $invoiceSettings->invoice_number_separator, '');
     }
 
     public function created(Invoice $invoice)
@@ -137,10 +130,10 @@ class InvoiceObserver
                         InvoiceItemImage::create(
                             [
                                 'invoice_item_id' => $invoiceItem->id,
-                                'filename' => isset($invoice_item_image[$key]) ? $invoice_item_image[$key]->getClientOriginalName() : '',
-                                'hashname' => isset($invoice_item_image[$key]) ? $filename : null,
-                                'size' => isset($invoice_item_image[$key]) ? $invoice_item_image[$key]->getSize() : null,
-                                'external_link' => isset($invoice_item_image[$key]) ? null : (isset($invoice_item_image_url[$key]) ? $invoice_item_image_url[$key] : null),
+                                'filename' => !isset($invoice_item_image_url[$key]) ? $invoice_item_image[$key]->getClientOriginalName() : '',
+                                'hashname' => !isset($invoice_item_image_url[$key]) ? $filename : '',
+                                'size' => !isset($invoice_item_image_url[$key]) ? $invoice_item_image[$key]->getSize() : '',
+                                'external_link' => isset($invoice_item_image_url[$key]) ? $invoice_item_image_url[$key] : ''
                             ]
                         );
 
@@ -325,10 +318,10 @@ class InvoiceObserver
                                 'invoice_item_id' => $invoiceItem->id,
                             ],
                             [
-                                'filename' => isset($invoice_item_image[$key]) ? $invoice_item_image[$key]->getClientOriginalName() : '',
-                                'hashname' => isset($invoice_item_image[$key]) ? $filename : null,
-                                'size' => isset($invoice_item_image[$key]) ? $invoice_item_image[$key]->getSize() : null,
-                                'external_link' => isset($invoice_item_image[$key]) ? null : ($invoice_item_image_url[$key] ?? null),
+                                'filename' => !isset($invoice_item_image_url[$key]) ? $invoice_item_image[$key]->getClientOriginalName() : '',
+                                'hashname' => !isset($invoice_item_image_url[$key]) ? $filename : '',
+                                'size' => !isset($invoice_item_image_url[$key]) ? $invoice_item_image[$key]->getSize() : '',
+                                'external_link' => $invoice_item_image_url[$key] ?? ''
                             ]
                         );
                     }

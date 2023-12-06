@@ -57,7 +57,7 @@
                     data-size="8">
                     <option value="all">@lang('app.all')</option>
                     @foreach ($departments as $department)
-                        <option value="{{ $department->id }}">{{ $department->team_name }}</option>
+                        <option value="{{ $department->id }}">{{ ucfirst($department->team_name) }}</option>
                     @endforeach
                 </select>
             </div>
@@ -92,7 +92,7 @@
     <!-- CONTENT WRAPPER START -->
     <div class="content-wrapper px-4">
 
-        <div class="d-grid d-lg-flex d-md-flex action-bar">
+        <div class="d-flex">
             <div id="table-actions" class="flex-grow-1 align-items-center">
                 @if ($manageEmployeeShifts == 'all')
                     <x-forms.link-primary :link="route('shifts.create')" class="mr-3 openRightModal float-left"
@@ -100,14 +100,12 @@
                         @lang('modules.attendance.bulkShiftAssign')
                     </x-forms.link-primary>
                 @endif
-                @if (canDataTableExport())
-                    <x-forms.button-secondary id="export-all" class="mr-3 mb-2 mb-lg-0" icon="file-export">
-                        @lang('app.exportExcel')
-                    </x-forms.button-secondary>
-                @endif
+                <x-forms.button-secondary id="export-all" class="mr-3 mb-2 mb-lg-0" icon="file-export">
+                    @lang('app.exportExcel')
+                </x-forms.button-secondary>
             </div>
 
-            <div class="btn-group mt-2 mt-lg-0 mt-md-0 ml-0 ml-lg-3 ml-md-3" role="group">
+            <div class="btn-group" role="group">
                 <a href="{{ route('shifts.index') }}" class="btn btn-secondary f-14 btn-active" data-toggle="tooltip"
                     data-original-title="@lang('app.summary')"><i class="side-icon bi bi-list-ul"></i></a>
                 @if ($manageEmployeeShifts == 'all')
@@ -272,22 +270,20 @@
 
         showTable(false);
 
-        @if (canDataTableExport())
-            $('#export-all').click(function() {
-                var year = $('#year').val();
-                var month = $('#month').val();
-                var department = $('#department').val();
-                var userId = $('#user_id').val();
-                var startDate = $('#week_start_date').val();
-                var viewType = $('#view_type').val();
+        $('#export-all').click(function() {
+            var year = $('#year').val();
+            var month = $('#month').val();
+            var department = $('#department').val();
+            var userId = $('#user_id').val();
+            var startDate = $('#week_start_date').val();
+            var viewType = $('#view_type').val();
 
-                var url =
-                    "{{ route('shifts.export_all', [':year', ':month', ':userId', ':department', ':startDate', ':viewType']) }}";
-                url = url.replace(':year', year).replace(':month', month).replace(':userId', userId).replace(':department', department).replace(':startDate', startDate).replace(':viewType', viewType);
-                window.location.href = url;
+            var url =
+                "{{ route('shifts.export_all', [':year', ':month', ':userId', ':department', ':startDate', ':viewType']) }}";
+            url = url.replace(':year', year).replace(':month', month).replace(':userId', userId).replace(':department', department).replace(':startDate', startDate).replace(':viewType', viewType);
+            window.location.href = url;
 
-            });
-        @endif
+        });
 
         $('body').on('click', '.approve-request', function() {
             var id = $(this).data('request-id');

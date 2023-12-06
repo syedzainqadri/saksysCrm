@@ -66,7 +66,7 @@ class TaskNoteMention extends BaseNotification
     {
         $url = route('tasks.show', [$this->task->id, 'view' => 'notes']);
         $url = getDomainSpecificUrl($url, $this->company);
-        $project = ((!is_null($this->task->project)) ? __('app.project') . ' - ' . $this->task->project->project_name : '');
+        $project = ((!is_null($this->task->project)) ? __('app.project') . ' - ' . ucfirst($this->task->project->project_name) : '');
 
         $content = __('email.taskNote.mentionNote') .'<br>' . $project . '<br>';
         return parent::build()
@@ -116,7 +116,7 @@ class TaskNoteMention extends BaseNotification
                 ->from(config('app.name'))
                 ->image($slack->slack_logo_url)
                 ->to('@' . $notifiable->employee[0]->slack_username)
-                ->content('*' . __('email.taskNote.mentionNote') . '*' . "\n" . $this->task->heading . "\n" . ' #' . $this->task->task_short_code);
+                ->content('*' . __('email.taskNote.mentionNote') . '*' . "\n" . ucfirst($this->task->heading) . "\n" . ' #' . $this->task->task_short_code);
 
         }
 
@@ -131,7 +131,7 @@ class TaskNoteMention extends BaseNotification
     {
         return OneSignalMessage::create()
             ->subject(__('email.taskNote.mentionSubject'))
-            ->body($this->task->heading . ' ' . __('email.taskNote.subject'));
+            ->body(ucfirst($this->task->heading) . ' ' . __('email.taskNote.subject'));
     }
 
 }

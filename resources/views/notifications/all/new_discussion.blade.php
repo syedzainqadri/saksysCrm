@@ -7,5 +7,5 @@ $route = route('projects.show', $projectId) . '?tab=discussion';
 
 @if ($notificationUser)
     <x-cards.notification :notification="$notification"  :link="$route" :image="$notificationUser->image_url" :title="__('email.discussion.subject')"
-        :text="$notification->data['title']" :time="$notification->created_at" />
+        :text="ucfirst($notification->data['title'])" :time="$notification->created_at" />
 @endif

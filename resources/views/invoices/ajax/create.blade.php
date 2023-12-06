@@ -58,7 +58,7 @@ $addProductPermission = user()->permission('add_product');
                         <input type="text" id="invoice_date" name="issue_date"
                             class="px-6 position-relative text-dark font-weight-normal form-control height-35 rounded p-0 text-left f-15"
                             placeholder="@lang('placeholders.date')"
-                            value="{{ now(company()->timezone)->format(company()->date_format) }}">
+                            value="{{ now(company()->timezone)->translatedFormat(company()->date_format) }}">
                     </div>
                 </div>
             </div>
@@ -104,7 +104,7 @@ $addProductPermission = user()->permission('add_product');
                 </x-forms.label>
                 <input type="number" id="exchange_rate" name="exchange_rate"
                 class="px-6 position-relative text-dark font-weight-normal form-control height-35 rounded p-0 text-left f-15" value="{{$companyCurrency->exchange_rate}}" readonly>
-                <small id="currency_exchange" class="form-text text-muted"></small>
+                <small id="currency_exchange" class="form-text text-muted">( {{company()->currency->currency_code}} @lang('app.to') {{company()->currency->currency_code}} )</small>
             </div>
         </div>
         <!-- INVOICE NUMBER, DATE, DUE DATE, FREQUENCY END -->
@@ -199,7 +199,7 @@ $addProductPermission = user()->permission('add_product');
                                     @foreach ($bankDetails as $bankDetail)
                                         <option value="{{ $bankDetail->id }}">@if($bankDetail->type == 'bank')
                                             {{ $bankDetail->bank_name }} | @endif
-                                            {{ $bankDetail->account_name }}
+                                            {{ mb_ucwords($bankDetail->account_name) }}
                                         </option>
                                     @endforeach
                                 @endif
@@ -288,7 +288,7 @@ $addProductPermission = user()->permission('add_product');
                             <option value="">{{ __('app.select') . ' ' . __('app.product') . ' ' . __('app.category')  }}</option>
                             @foreach ($categories as $category)
                                 <option value="{{ $category->id }}">
-                                    {{ $category->category_name }}</option>
+                                    {{ mb_ucwords($category->category_name) }}</option>
                             @endforeach
                         </select>
                     </x-forms.input-group>
@@ -297,35 +297,22 @@ $addProductPermission = user()->permission('add_product');
             <div class="col-md-3">
                 <div class="form-group c-inv-select mb-4">
                 <x-forms.input-group>
-                    <select class="form-control select-picker" data-live-search="true" data-size="8"
-                        id="add-products" title="{{ __('app.menu.selectProduct') }}">
-                        @if (module_enabled('Purchase'))
-                            @foreach ($products as $item)
-                                @if(($item->track_inventory==1 && $item->inventory[0]->net_quantity > 0) || (($item->track_inventory==0)))
-                                    <option data-content="{{ $item->name }}" value="{{ $item->id }}">
-                                        {{ $item->name }}</option>
-                                @endif
-                            @endforeach
-                        @else
-                            @foreach ($products as $item)
-                                <option data-content="{{ $item->name }}" value="{{ $item->id }}">
-                                    {{ $item->name }}</option>
-                            @endforeach
-                        @endif
+                    <select class="form-control select-picker" data-live-search="true" data-size="8" id="add-products" title="{{ __('app.menu.selectProduct') }}">
+                        @foreach ($products as $item)
+                            <option data-content="{{ $item->name }}" value="{{ $item->id }}">
+                                {{ $item->name }}</option>
+                        @endforeach
                     </select>
                     <x-slot name="preappend">
                         <a href="javascript:;"
                             class="btn btn-outline-secondary border-grey toggle-product-category"
-                            data-toggle="tooltip"
-                            data-original-title="{{ __('modules.productCategory.filterByCategory') }}"><i
-                                class="fa fa-filter"></i></a>
+                            data-toggle="tooltip" data-original-title="{{ __('modules.productCategory.filterByCategory') }}"><i class="fa fa-filter"></i></a>
                     </x-slot>
                     @if ($addProductPermission == 'all' || $addProductPermission == 'added')
                         <x-slot name="append">
                             <a href="{{ route('products.create') }}" data-redirect-url="no"
                                 class="btn btn-outline-secondary border-grey openRightModal"
-                                data-toggle="tooltip"
-                                data-original-title="{{ __('app.add') . ' ' . __('modules.dashboard.newproduct') }}">@lang('app.add')</a>
+                                data-toggle="tooltip" data-original-title="{{ __('app.add').' '.__('modules.dashboard.newproduct') }}">@lang('app.add')</a>
                         </x-slot>
                     @endif
                 </x-forms.input-group>
@@ -408,9 +395,9 @@ $addProductPermission = user()->permission('add_product');
                                                     multiple="multiple"
                                                     class="select-picker type customSequence border-0" data-size="3">
                                                     @foreach ($taxes as $tax)
-                                                        <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ $tax->tax_name .':'. $tax->rate_percent }}%"
+                                                        <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ strtoupper($tax->tax_name) .':'. $tax->rate_percent }}%"
                                                             @selected (isset($item->taxes) && array_search($tax->id, json_decode($item->taxes)) !== false) value="{{ $tax->id }}">
-                                                            {{ $tax->tax_name }}:
+                                                            {{ strtoupper($tax->tax_name) }}:
                                                             {{ $tax->rate_percent }}%</option>
                                                     @endforeach
                                                 </select>
@@ -431,14 +418,8 @@ $addProductPermission = user()->permission('add_product');
                                                 placeholder="@lang('placeholders.invoices.description')">{{ $item->item_summary }}</textarea>
                                         </td>
                                         <td class="border-left-0">
-                                            <input type="file" class="dropify itemImage"
-                                                name="invoice_item_image[]" id="image{{ $item->id }}"
-                                                data-index="{{ $loop->index }}"
-                                                data-allowed-file-extensions="png jpg jpeg bmp"
-                                                data-item-id="image{{ $item->id }}"
-                                                data-default-file="{{ $item->invoiceItemImage ? $item->invoiceItemImage->file_url : '' }}"
-                                                data-height="70" />
-                                            <input type="hidden" name="invoice_item_image_url[]" value="{{ $item->invoiceItemImage ? $item->invoiceItemImage->file : '' }}">
+                                            <input type="file" class="dropify" name="invoice_item_image[]" data-allowed-file-extensions="png jpg jpeg" data-messages-default="test" data-height="70" />
+                                            <input type="hidden" name="invoice_item_image_url[]">
                                         </td>
                                     </tr>
                                 </tbody>
@@ -525,9 +506,9 @@ $addProductPermission = user()->permission('add_product');
                                                     multiple="multiple"
                                                     class="select-picker type customSequence border-0" data-size="3">
                                                     @foreach ($taxes as $tax)
-                                                        <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ $tax->tax_name .':'. $tax->rate_percent }}%"
+                                                        <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ strtoupper($tax->tax_name) .':'. $tax->rate_percent }}%"
                                                             @selected (isset($item->taxes) && array_search($tax->id, json_decode($item->taxes)) !== false) value="{{ $tax->id }}">
-                                                            {{ $tax->tax_name }}:
+                                                            {{ strtoupper($tax->tax_name) }}:
                                                             {{ $tax->rate_percent }}%</option>
                                                     @endforeach
                                                 </select>
@@ -556,11 +537,11 @@ $addProductPermission = user()->permission('add_product');
                                                 <input type="file" class="dropify itemImage"
                                                     name="invoice_item_image[]" id="image{{ $item->id }}"
                                                     data-index="{{ $loop->index }}"
-                                                    data-allowed-file-extensions="png jpg jpeg bmp"
+                                                    data-allowed-file-extensions="png jpg jpeg"
                                                     data-item-id="{{ $item->id }}"
                                                     data-default-file="{{ $item->proposalItemImage ? $item->proposalItemImage->file_url : '' }}"
                                                     data-height="70" multiple />
-                                                <input type="hidden" name="invoice_item_image_url[]"  value="{{ $item->proposalItemImage ? $item->proposalItemImage->file : '' }}">
+                                                <input type="hidden" name="invoice_item_image_url[]">
                                             @else
                                                 <input type="hidden" id="imageId_{{ $item->id }}"
                                                     class="itemOldImage" name="image_id[]"
@@ -569,11 +550,11 @@ $addProductPermission = user()->permission('add_product');
                                                 <input type="file" class="dropify itemImage"
                                                     name="invoice_item_image[]" id="image{{ $item->id }}"
                                                     data-index="{{ $loop->index }}"
-                                                    data-allowed-file-extensions="png jpg jpeg bmp"
+                                                    data-allowed-file-extensions="png jpg jpeg"
                                                     data-item-id="{{ $item->id }}"
                                                     data-default-file="{{ $item->estimateItemImage ? $item->estimateItemImage->file_url : '' }}"
                                                     data-height="70" multiple />
-                                                <input type="hidden" name="invoice_item_image_url[]"  value="{{ $item->estimateItemImage ? $item->estimateItemImage->file : '' }}">
+                                                <input type="hidden" name="invoice_item_image_url[]">
                                             @endif
                                         </td>
                                     </tr>
@@ -651,8 +632,8 @@ $addProductPermission = user()->permission('add_product');
                                             <select id="multiselect" name="taxes[0][]" multiple="multiple"
                                                 class="select-picker type customSequence border-0" data-size="3">
                                                 @foreach ($taxes as $tax)
-                                                    <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ $tax->tax_name .':'. $tax->rate_percent }}%"
-                                                        value="{{ $tax->id }}">{{ $tax->tax_name }}:
+                                                    <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ strtoupper($tax->tax_name) .':'. $tax->rate_percent }}%"
+                                                        value="{{ $tax->id }}">{{ strtoupper($tax->tax_name) }}:
                                                         {{ $tax->rate_percent }}%</option>
                                                 @endforeach
                                             </select>
@@ -670,7 +651,7 @@ $addProductPermission = user()->permission('add_product');
                                             placeholder="@lang('placeholders.invoices.description')"></textarea>
                                     </td>
                                     <td class="border-left-0">
-                                        <input type="file" class="dropify" name="invoice_item_image[]" data-allowed-file-extensions="png jpg jpeg bmp" data-messages-default="test" data-height="70" />
+                                        <input type="file" class="dropify" name="invoice_item_image[]" data-allowed-file-extensions="png jpg jpeg" data-messages-default="test" data-height="70" />
                                         <input type="hidden" name="invoice_item_image_url[]">
                                     </td>
                                 </tr>
@@ -699,7 +680,7 @@ $addProductPermission = user()->permission('add_product');
 
         <!-- TOTAL, DISCOUNT START -->
         <div class="d-flex px-lg-4 px-md-4 px-3 pb-3 c-inv-total">
-            <table width="100%" class="text-right f-14">
+            <table width="100%" class="text-right f-14 text-capitalize">
                 <tbody>
                     <tr>
                         <td width="50%" class="border-0 d-lg-table d-md-table d-none"></td>
@@ -716,7 +697,7 @@ $addProductPermission = user()->permission('add_product');
                                         <td width="20%" class="text-dark-grey">@lang('modules.invoices.discount')
                                         </td>
                                         <td width="40%" style="padding: 5px;">
-                                            <table width="100%" class="mw-250">
+                                            <table width="100%">
                                                 <tbody>
                                                     <tr>
                                                         <td width="70%" class="c-inv-sub-padding">
@@ -902,6 +883,7 @@ $addProductPermission = user()->permission('add_product');
     <!-- FORM END -->
 </div>
 <!-- CREATE INVOICE END -->
+<script src="{{ asset('vendor/jquery/dropzone.min.js') }}"></script>
 <script>
     $(document).ready(function() {
         let defaultImage = '';
@@ -1101,7 +1083,7 @@ $addProductPermission = user()->permission('add_product');
 
                         } else {
                             $('#client_billing_address').html(
-                                "<span class='text-lightest'>@lang('messages.selectCustomerForBillingAddress')</span>"
+                                '<span class="text-lightest">@lang("messages.selectCustomerForBillingAddress")</span>'
                             );
                         }
                     } else {
@@ -1242,8 +1224,8 @@ $addProductPermission = user()->permission('add_product');
                 <div class="select-others height-35 rounded border-0">
                 <select id="multiselect${i}" name="taxes[${i}][]" multiple="multiple" class="select-picker type customSequence" data-size="3">
             @foreach ($taxes as $tax)
-                <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ $tax->tax_name .':'. $tax->rate_percent }}%" value="{{ $tax->id }}">
-                    {{ $tax->tax_name }}:{{ $tax->rate_percent }}%</option>
+                <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ strtoupper($tax->tax_name) .':'. $tax->rate_percent }}%" value="{{ $tax->id }}">
+                    {{ strtoupper($tax->tax_name) }}:{{ $tax->rate_percent }}%</option>
             @endforeach
 
                 </select>
@@ -1259,7 +1241,7 @@ $addProductPermission = user()->permission('add_product');
                         <textarea class="f-14 border-0 w-100 desktop-description form-control" name="item_summary[]" placeholder="@lang("placeholders.invoices.description")"></textarea>
                     </td>
                     <td class="border-left-0">
-                        <input type="file" class="dropify" id="dropify${i}" name="invoice_item_image[]" data-allowed-file-extensions="png jpg jpeg bmp" data-messages-default="test" data-height="70" />
+                        <input type="file" class="dropify" id="dropify${i}" name="invoice_item_image[]" data-allowed-file-extensions="png jpg jpeg" data-messages-default="test" data-height="70" />
                         <input type="hidden" name="invoice_item_image_url[]">
                     </td>
                 </tr>
@@ -1436,8 +1418,7 @@ $addProductPermission = user()->permission('add_product');
                     $('#bank_account_id').html(response.data);
                     $('#bank_account_id').selectpicker('refresh');
                     $('#exchange_rate').val(response.exchangeRate);
-                    let currencyExchange = (companyCurrencyName != currentCurrencyName) ? '( '+companyCurrencyName+' @lang('app.to') '+currentCurrencyName+' )' : '';
-                    $('#currency_exchange').html(currencyExchange);
+                    $('#currency_exchange').html('( '+companyCurrencyName+' @lang('app.to') '+currentCurrencyName+' )');
                 }
             }
         });

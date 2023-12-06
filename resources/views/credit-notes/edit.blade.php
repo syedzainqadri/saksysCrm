@@ -174,9 +174,9 @@ $addProductPermission = user()->permission('add_product');
                                                         class="select-picker type customSequence border-0" data-size="3"
                                                         disabled>
                                                         @foreach ($taxes as $tax)
-                                                            <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ $tax->tax_name .':'. $tax->rate_percent }}%"
+                                                            <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ strtoupper($tax->tax_name) .':'. $tax->rate_percent }}%"
                                                                 @if (isset($item->taxes) && array_search($tax->id, json_decode($item->taxes)) !== false) selected @endif value="{{ $tax->id }}">
-                                                                {{ $tax->tax_name }}:
+                                                                {{ strtoupper($tax->tax_name) }}:
                                                                 {{ $tax->rate_percent }}%</option>
                                                         @endforeach
                                                     </select>
@@ -204,14 +204,14 @@ $addProductPermission = user()->permission('add_product');
                                                 <input type="file"
                                                 class="dropify"
                                                 name="invoice_item_image[]"
-                                                data-allowed-file-extensions="png jpg jpeg bmp"
+                                                data-allowed-file-extensions="png jpg jpeg"
                                                 data-messages-default="test"
                                                 data-height="70"
                                                 data-id="{{ $item->id }}"
                                                 id="{{ $item->id }}"
                                                 data-default-file="{{ $item->creditNoteItemImage ? $item->creditNoteItemImage->file_url : '' }}"
                                                 />
-                                                <input type="hidden" name="invoice_item_image_url[]" value="{{ $item->creditNoteItemImage ? $item->creditNoteItemImage->file : '' }}">
+                                                <input type="hidden" name="invoice_item_image_url[]" value="{{ $item->creditNoteItemImage ? $item->creditNoteItemImage->external_link : '' }}">
                                             </td>
                                         </tr>
                                     </tbody>

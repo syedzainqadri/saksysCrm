@@ -17,13 +17,6 @@ class ChatStoreRequest extends CoreRequest
         return true;
     }
 
-    public function prepareForValidation()
-    {
-        $this->merge([
-            'message' => trim_editor($this->message),
-        ]);
-    }
-
     /**
      * Get the validation rules that apply to the request.
      *

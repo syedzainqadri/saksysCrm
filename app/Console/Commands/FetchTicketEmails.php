@@ -238,7 +238,7 @@ class FetchTicketEmails extends Command
                 $toEmail = $ticketReply->ticket->agent->email;
             }
 
-            Mail::to($toEmail)->send(new MailTicketReply($ticketReply, $this->ticketEmailSetting));
+            Mail::to($toEmail)->send(new MailTicketReply($ticketReply));
 
         }
     }

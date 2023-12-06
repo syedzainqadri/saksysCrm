@@ -21,7 +21,7 @@ $moveClass = '';
     <div class="card-body p-2">
         <div class="d-flex justify-content-between mb-1">
             <a href="{{ route('tasks.show', [$task->id]) }}"
-                class="f-12 f-w-500 text-dark mb-0 text-wrap openRightModal">{{ $task->heading }}</a>
+                class="f-12 f-w-500 text-dark mb-0 text-wrap openRightModal">{{ ucfirst($task->heading) }}</a>
             <p class="f-12 font-weight-bold text-dark-grey mb-0">
                 @if ($task->is_private)
                     <span class='badge badge-secondary mr-1'><i class='fa fa-lock'></i>
@@ -35,7 +35,7 @@ $moveClass = '';
             <div class="mb-1 d-flex">
                 @foreach ($task->labels as $key => $label)
                     <span class='badge badge-secondary mr-1'
-                        style="background:{{ $label->label_color }}">{{ $label->label_name }}
+                        style="background:{{ $label->label_color }}">{{ mb_ucfirst($label->label_name) }}
                     </span>
                 @endforeach
             </div>
@@ -45,7 +45,7 @@ $moveClass = '';
             @if ($task->project_id)
                 <div>
                     <i class="fa fa-layer-group f-11 text-lightest"></i><span
-                        class="ml-2 f-11 text-lightest projectNameSpan">{{ $task->project->project_name }}</span>
+                        class="ml-2 f-11 text-lightest projectNameSpan">{{ ucfirst($task->project->project_name) }}</span>
                 </div>
             @endif
 
@@ -61,14 +61,14 @@ $moveClass = '';
             <div class="d-flex flex-wrap">
                 @foreach ($task->users as $item)
                     <div class="avatar-img mr-1 rounded-circle">
-                        <a href="{{ route('employees.show', $item->id) }}" alt="{{ $item->name }}"
-                            data-toggle="tooltip" data-original-title="{{ $item->name }}"
+                        <a href="{{ route('employees.show', $item->id) }}" alt="{{ mb_ucwords($item->name) }}"
+                            data-toggle="tooltip" data-original-title="{{ mb_ucwords($item->name) }}"
                             data-placement="right"><img src="{{ $item->image_url }}"></a>
                     </div>
                 @endforeach
             </div>
             @if ($task->subtasks_count > 0)
-                {{ $task->completed_subtasks_count .'/' . $task->subtasks_count }}
+                <i class="fa fa-check-square-o"></i> {{ $task->completed_subtasks_count .'/' . $task->subtasks_count }}
             @endif
             @if (!is_null($task->due_date))
                 @if ($task->due_date->endOfDay()->isPast())

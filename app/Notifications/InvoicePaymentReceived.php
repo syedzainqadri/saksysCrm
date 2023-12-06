@@ -85,7 +85,7 @@ class InvoicePaymentReceived extends BaseNotification
             $actionBtn = __('email.invoices.action');
         }
 
-        $message .= (isset($client->name)) ? __('app.by').' '.$client->name.'.' : '.';
+        $message .= (isset($client->name)) ? __('app.by').' '.mb_ucwords($client->name).'.' : '.';
 
         $url = getDomainSpecificUrl($url, $this->company);
 
@@ -134,13 +134,13 @@ class InvoicePaymentReceived extends BaseNotification
                 ->from(config('app.name'))
                 ->to('@' . $notifiable->employee[0]->slack_username)
                 ->image($slack->slack_logo_url)
-                ->content(__('email.hello')  . ' ' .  $notifiable->name ."\n". __('email.invoices.paymentReceivedForInvoice') . ':' . $invoice->invoice_number );
+                ->content(__('email.hello')  . ' ' .  mb_ucwords($notifiable->name) ."\n". __('email.invoices.paymentReceivedForInvoice') . ':' . $invoice->invoice_number );
         }
 
         return (new SlackMessage())
             ->from(config('app.name'))
             ->image($slack->slack_logo_url)
-            ->content(__('email.hello')  . ' ' .  $notifiable->name ."\n". __('email.invoices.paymentReceivedForInvoice') . ':' . $invoice->invoice_number );
+            ->content(__('email.hello')  . ' ' .  mb_ucwords($notifiable->name) ."\n". __('email.invoices.paymentReceivedForInvoice') . ':' . $invoice->invoice_number );
 
 
     }

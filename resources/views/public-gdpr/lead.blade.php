@@ -127,9 +127,7 @@
 
     <!-- Global Required Javascript -->
     <script src="{{ asset('js/main.js') }}"></script>
-    <script>
-        document.loading = '@lang('app.loading')';
-    </script>
+
 </body>
 
 </html>

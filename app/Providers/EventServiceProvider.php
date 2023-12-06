@@ -7,6 +7,7 @@ use App\Events\AttendanceReminderEvent;
 use App\Events\AutoFollowUpReminderEvent;
 use App\Events\AutoTaskReminderEvent;
 use App\Events\BirthdayReminderEvent;
+use App\Events\ClockInEvent;
 use App\Events\ContractSignedEvent;
 use App\Events\DiscussionEvent;
 use App\Events\DiscussionReplyEvent;
@@ -73,6 +74,7 @@ use App\Listeners\AttendanceReminderListener;
 use App\Listeners\AutoFollowUpReminderListener;
 use App\Listeners\AutoTaskReminderListener;
 use App\Listeners\BirthdayReminderListener;
+use App\Listeners\ClockInListener;
 use App\Listeners\ContractSignedListener;
 use App\Listeners\DiscussionListener;
 use App\Listeners\DiscussionReplyListener;
@@ -502,6 +504,7 @@ class EventServiceProvider extends ServiceProvider
         BirthdayReminderEvent::class => [BirthdayReminderListener::class],
         AppreciationEvent::class => [AppreciationListener::class],
         TimeTrackerReminderEvent::class => [TimeTrackerReminderListener::class],
+        ClockInEvent::class => [ClockInListener::class],
         HolidayEvent::class => [HolidayListener::class],
         EstimateAcceptedEvent::class => [EstimateAcceptedListener::class],
         EventInviteMentionEvent::class => [EventInviteMentionListener::class],

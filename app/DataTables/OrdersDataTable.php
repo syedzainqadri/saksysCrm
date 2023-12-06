@@ -169,7 +169,7 @@ class OrdersDataTable extends BaseDataTable
                 }
             )
             ->addColumn('order_status', function ($row) {
-                return $row->status;
+                return ucfirst($row->status);
             })
             ->orderColumn('order_number', 'created_at $1')
             ->orderColumn('name', 'client_id $1')
@@ -246,7 +246,7 @@ class OrdersDataTable extends BaseDataTable
      */
     public function html()
     {
-        $dataTable = $this->setBuilder('orders-table', 0)
+        return $this->setBuilder('orders-table', 0)
             ->parameters([
                 'initComplete' => 'function () {
                     window.LaravelDataTables["orders-table"].buttons().container()
@@ -260,13 +260,8 @@ class OrdersDataTable extends BaseDataTable
                     });
 
                 }',
-            ]);
-
-        if (canDataTableExport()) {
-            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
-        }
-
-        return $dataTable;
+            ])
+            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
     }
 
     /**

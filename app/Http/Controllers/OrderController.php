@@ -185,6 +185,22 @@ class OrderController extends AccountBaseController
             }
         }
 
+        $this->lastOrder = Order::lastOrderNumber() + 1;
+        $this->orderSetting = invoice_setting();
+
+        $zero = '';
+        $customOrderNumber = '';
+
+        if ($this->orderSetting && (strlen($this->lastOrder) < $this->orderSetting->order_digit)) {
+            $condition = $this->orderSetting->order_digit - strlen($this->lastOrder);
+
+            for ($i = 0; $i < $condition; $i++) {
+                $zero = '0' . $zero;
+            }
+
+            $customOrderNumber = $this->orderSetting->order_prefix.''.$this->orderSetting->order_number_separator.''. $zero .''.$request->order_number;
+        }
+
         $order = new Order();
         $order->client_id = $request->client_id ?: user()->id;
         $order->order_date = now()->format('Y-m-d');
@@ -198,6 +214,7 @@ class OrderController extends AccountBaseController
         $order->show_shipping_address = (($request->has('shipping_address') && $request->shipping_address != '') ? 'yes' : 'no');
         $order->company_address_id = $request->company_address_id ?: null;
         $order->order_number = $request->order_number;
+        $order->custom_order_number = $customOrderNumber;
         $order->save();
 
         if ($order->show_shipping_address == 'yes') {
@@ -344,6 +361,7 @@ class OrderController extends AccountBaseController
         $order->discount_type = $request->discount_type;
         $order->status = $request->has('status') ? $request->status : $order->status;
         $order->company_address_id = $request->company_address_id ?: null;
+        $order->custom_order_number = $order->order_number;
         $order->save();
 
         // delete old data

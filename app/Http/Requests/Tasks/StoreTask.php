@@ -35,7 +35,7 @@ class StoreTask extends CoreRequest
         if(!is_null($this->milestone_id))
         {
             $milestone = ProjectMilestone::findOrFail($this->milestone_id);
-            $milestoneEndDate = $milestone->end_date ? Carbon::parse($milestone->end_date) : null;
+            $milestoneEndDate = Carbon::parse($milestone->end_date);
         }
         else
         {

@@ -70,7 +70,7 @@
                             data-size="8" data-container="body">
                             <option value="all">@lang('app.all')</option>
                             @foreach ($projects as $project)
-                                <option value="{{ $project->id }}">{{ $project->project_name }}</option>
+                                <option value="{{ $project->id }}">{{ mb_ucwords($project->project_name) }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -130,11 +130,11 @@ $addTimelogPermission = user()->permission('add_timelogs');
                         @lang('modules.timeLogs.logTime')
                     </x-forms.link-primary>
                 @endif
-                @if (canDataTableExport())
-                    <x-forms.button-secondary class="mr-3 export-excel float-left" icon="file-export">
-                        @lang('app.exportExcel')
-                    </x-forms.button-secondary>
-                @endif
+
+                <x-forms.button-secondary class="mr-3 export-excel float-left" icon="file-export">
+                    @lang('app.exportExcel')
+                </x-forms.button-secondary>
+
             </div>
 
             <div class="btn-group" role="group">
@@ -156,7 +156,7 @@ $addTimelogPermission = user()->permission('add_timelogs');
 
     <script>
         $(function() {
-            var start = moment().clone().startOf('month');
+            var start = moment().subtract(89, 'days');
             var end = moment();
 
             $('#datatableRange').daterangepicker({
@@ -375,38 +375,38 @@ $addTimelogPermission = user()->permission('add_timelogs');
 
         });
 
-        @if (canDataTableExport())
-            $('.export-excel').click(function() {
-                var startDate = $('#start-date').val();
+        $('.export-excel').click(function() {
+            var startDate = $('#start-date').val();
 
-                if (startDate == '') {
-                    startDate = null;
-                }
+            if (startDate == '') {
+                startDate = null;
+            }
 
-                var endDate = $('#end-date').val();
+            var endDate = $('#end-date').val();
 
-                if (endDate == '') {
-                    endDate = null;
-                }
+            if (endDate == '') {
+                endDate = null;
+            }
 
-                var projectID = $('#project_id').val();
-                var employee = $('#employee').val();
+            var projectID = $('#project_id').val();
+            var employee = $('#employee').val();
 
-                var token = "{{ csrf_token() }}";
-                var url = "{{ route('timelogs.export') }}";
+            var token = "{{ csrf_token() }}";
+            var url = "{{ route('timelogs.export') }}";
 
-                window.location = url + '?startDate=' + encodeURIComponent(startDate) + '&endDate=' + encodeURIComponent(endDate) + '&projectID=' + projectID + '&employee=' + employee;
-            });
-        @endif
+            window.location = url + '?startDate=' + encodeURIComponent(startDate) + '&endDate=' + encodeURIComponent(endDate) + '&projectID=' + projectID + '&employee=' + employee;
+        });
 
         showTable();
 
         $(document).ready(function () {
-
+                    
             $('#datatableRange').val('{{ $startDate }}' +
             ' @lang("app.to") ' + '{{ $endDate }}');
+            $('#datatableRange').data('daterangepicker').setStartDate("{{ $startDate }}");
+            $('#datatableRange').data('daterangepicker').setEndDate("{{ $endDate }}");
             showTable();
-
+ 
         });
     </script>
 @endpush

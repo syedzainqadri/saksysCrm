@@ -63,7 +63,7 @@ class ShiftChangeRequestDataTable extends BaseDataTable
                 return $row->shiftSchedule->date->translatedFormat(company()->date_format);
             })
             ->editColumn('status', function ($row) {
-                return $row->status;
+                return ucfirst($row->status);
             })
             ->addIndexColumn()
             ->setRowId(function ($row) {
@@ -128,7 +128,7 @@ class ShiftChangeRequestDataTable extends BaseDataTable
      */
     public function html()
     {
-        $dataTable = $this->setBuilder('shift-table', 2)
+        return $this->setBuilder('shift-table', 2)
             ->parameters([
                 'initComplete' => 'function () {
                     window.LaravelDataTables["shift-table"].buttons().container()
@@ -138,13 +138,8 @@ class ShiftChangeRequestDataTable extends BaseDataTable
                    //
                    $(".select-picker").selectpicker();
                  }',
-            ]);
-
-        if (canDataTableExport()) {
-            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
-        }
-
-        return $dataTable;
+            ])
+            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
     }
 
     /**

@@ -114,6 +114,7 @@ class LeaveType extends BaseModel
                 ->join('users', 'users.id', 'employee_leave_quotas.user_id')
                 ->join('employee_details', 'employee_details.user_id', 'users.id')->where('users.id', $user->id);
 
+
                 if (!is_null($leaveTypeId)) {
                     $leaveTypes = $leaveTypes->where('leave_types.id', $leaveTypeId);
                 }

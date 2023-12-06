@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\Salutation;
 use App\Helper\Reply;
+use App\Models\Country;
 use App\Models\EmergencyContact;
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
 
 class ProfileSettingController extends AccountBaseController
 {
@@ -27,7 +28,7 @@ class ProfileSettingController extends AccountBaseController
 
         $this->countries = countries();
 
-        $this->salutations = Salutation::cases();
+        $this->salutations = ['mr', 'mrs', 'miss', 'dr', 'sir', 'madam'];
 
         switch ($tab) {
 

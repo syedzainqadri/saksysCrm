@@ -39,13 +39,13 @@ class SendDailyTimelogReport extends Command
 
             if ($timelogSetting->timelog_report == 1) {
                 $roles = Role::with('users')
-                    ->where('company_id', $company->id)
                     ->whereIn('id', json_decode($timelogSetting->daily_report_roles))
                     ->get();
 
                 foreach ($roles as $role) {
                     foreach ($role->users as $user) {
-                        Mail::to($user->email)->send(new DailyTimeLogReport($company, $user, $role));
+                        /** @phpstan-ignore-next-line */
+                        Mail::to($user->email)->send(new DailyTimeLogReport($company, $user->name));
                     }
                 }
             }

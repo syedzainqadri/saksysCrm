@@ -1,5 +1,5 @@
 @component('mail::message')
-# @lang('email.hello')@if(!empty($notifiableName)){{ ' '.$notifiableName }}@endif!
+# @lang('email.hello') @if (! empty($notifiableName)) {{ $notifiableName }} @endif @lang('!')
 
 @if (!empty($content))
 

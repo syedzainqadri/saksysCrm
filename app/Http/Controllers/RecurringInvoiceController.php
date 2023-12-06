@@ -476,10 +476,10 @@ class RecurringInvoiceController extends AccountBaseController
                                 'invoice_recurring_item_id' => $invoiceItem->id,
                             ],
                             [
-                                'filename' => isset($invoice_item_image[$key]) ? $invoice_item_image[$key]->getClientOriginalName() : null,
-                                'hashname' => isset($invoice_item_image[$key]) ? $filename : null,
-                                'size' => isset($invoice_item_image[$key]) ? $invoice_item_image[$key]->getSize() : null,
-                                'external_link' => isset($invoice_item_image[$key]) ? null : ($invoice_item_image_url[$key] ?? null),
+                                'filename' => !isset($invoice_item_image_url[$key]) ? $invoice_item_image[$key]->getClientOriginalName() : '',
+                                'hashname' => !isset($invoice_item_image_url[$key]) ? $filename : '',
+                                'size' => !isset($invoice_item_image_url[$key]) ? $invoice_item_image[$key]->getSize() : '',
+                                'external_link' => $invoice_item_image_url[$key] ?? ''
                             ]
                         );
                     }

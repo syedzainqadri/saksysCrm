@@ -67,10 +67,10 @@ class NewTicketRequester extends BaseNotification
         $url = route('tickets.show', $this->ticket->ticket_number);
         $url = getDomainSpecificUrl($url, $this->company);
 
-        $content = __('email.newTicketRequester.text') . '<br>' . $this->ticket->subject . ' # ' . $this->ticket->ticket_number;
+        $content = __('email.newTicketRequester.text') . '<br>' . ucfirst($this->ticket->subject) . ' # ' . $this->ticket->ticket_number;
 
         return $build
-            ->subject(__('email.newTicketRequester.subject') . ' - ' . $this->ticket->subject . ' - ' . __('modules.tickets.ticket') . ' # ' . $this->ticket->ticket_number)
+            ->subject(__('email.newTicketRequester.subject') . ' - ' . ucfirst($this->ticket->subject) . ' - ' . __('modules.tickets.ticket') . ' # ' . $this->ticket->ticket_number)
             ->markdown('mail.email', [
                 'url' => $url,
                 'content' => $content,
@@ -115,7 +115,7 @@ class NewTicketRequester extends BaseNotification
                 ->from(config('app.name'))
                 ->image($slack->slack_logo_url)
                 ->to('@' . $notifiable->employee[0]->slack_username)
-                ->content('*' . __('email.newTicketRequester.subject') . '*' . "\n" . $this->ticket->subject . "\n" . __('modules.tickets.requesterName') . ' - ' . $this->ticket->requester->name);
+                ->content('*' . __('email.newTicketRequester.subject') . '*' . "\n" . ucfirst($this->ticket->subject) . "\n" . __('modules.tickets.requesterName') . ' - ' . mb_ucwords($this->ticket->requester->name));
         }
 
         return (new SlackMessage())
@@ -129,7 +129,7 @@ class NewTicketRequester extends BaseNotification
     {
         return OneSignalMessage::create()
             ->setSubject(__('email.newTicketRequester.subject'))
-            ->setBody($this->ticket->subject . ' # ' . $this->ticket->id);
+            ->setBody(ucfirst($this->ticket->subject) . ' # ' . $this->ticket->id);
     }
 
 }

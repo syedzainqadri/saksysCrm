@@ -51,7 +51,6 @@ trait ProjectDashboard
 
         $hoursLogged = $hoursLogged - $breakMinutes;
 
-        /** @phpstan-ignore-next-line */
         $timeLog = CarbonInterval::formatHuman($hoursLogged);
 
         $this->totalHoursLogged = $timeLog;
@@ -77,9 +76,9 @@ trait ProjectDashboard
 
     public function statusChartData($startDate, $endDate)
     {
-        $labels = ProjectStatusSetting::where('status', 'active')->pluck('status_name');
-        $data['labels'] = ProjectStatusSetting::where('status', 'active')->pluck('status_name');
-        $data['colors'] = ProjectStatusSetting::where('status', 'active')->pluck('color');
+        $labels = ProjectStatusSetting::all()->where('status', 'active')->pluck('status_name');
+        $data['labels'] = ProjectStatusSetting::all()->where('status', 'active')->pluck('status_name');
+        $data['colors'] = ProjectStatusSetting::all()->where('status', 'active')->pluck('color');
         $data['values'] = [];
 
         foreach ($labels as $label) {

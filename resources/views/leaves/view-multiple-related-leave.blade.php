@@ -25,7 +25,7 @@
             }
         @endphp
 
-        @if ($pendingCountLeave > 0 && $approveRejectPermission == 'all')
+        @if ($pendingCountLeave > 0)
             <a class="btn btn-secondary rounded f-14 p-2 leave-action-approved" data-leave-id="{{ $multipleLeaves->first()->unique_id }}"
                 data-leave-action="approved" data-type="approveAll" class="mr-3" icon="check" href="javascript:;">
                 <i class="fa fa-check mr-2"></i>{{$approveTitle}}</a>

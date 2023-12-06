@@ -24,7 +24,7 @@
             <label for="email">@lang('auth.email') <sup class="f-14 mr-1">*</sup></label>
             <input tabindex="2" type="email" name="email"
                    class="form-control height-50 f-15 light_text"
-                   placeholder="@lang('placeholders.email')" id="email">
+                   placeholder="e.g. admin@example.com" id="email">
             <input type="hidden" id="g_recaptcha" name="g_recaptcha">
         </div>
 
@@ -57,14 +57,6 @@
 
         @if ($errors->has('g-recaptcha-response'))
             <div class="help-block with-errors">{{ $errors->first('g-recaptcha-response') }}
-            </div>
-        @endif
-
-        @if ($globalSetting->sign_up_terms == 'yes')
-            <div class="form-group text-left" >
-                <input autocomplete="off" id="read_agreement"
-                    name="terms_and_conditions" type="checkbox" >
-                <label for="read_agreement">@lang('app.acceptTerms') <a href="{{ $globalSetting->terms_link }}" target="_blank" id="terms_link" >@lang('app.termsAndCondition')</a></label>
             </div>
         @endif
 

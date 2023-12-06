@@ -174,7 +174,7 @@ class CreditNoteController extends AccountBaseController
 
         $creditNote->project_id = ($invoice->project_id) ? $invoice->project_id : null;
         $creditNote->client_id = $clientId;
-        $creditNote->cn_number = $request->cn_number;
+        $creditNote->cn_number = CreditNotes::count() + 1;
         $creditNote->invoice_id = $invoice->id;
         $creditNote->issue_date = $request->issue_date;
         $creditNote->due_date = $request->due_date;
@@ -236,16 +236,16 @@ class CreditNoteController extends AccountBaseController
                     'amount' => round($amountArray[$key], 2),
                     'taxes' => ($tax ? (array_key_exists($key, $tax) ? json_encode($tax[$key]) : null) : null)
                 ]);
+            }
 
-                /* Invoice file save here */
-                if(isset($invoice_item_image_url[$key])){
-                    CreditNoteItemImage::create(
-                        [
-                            'credit_note_item_id' => $creditNoteItem->id,
-                            'external_link' => isset($invoice_item_image_url[$key]) ? $invoice_item_image_url[$key] : null
-                        ]
-                    );
-                }
+            /* Invoice file save here */
+            if(isset($creditNoteItem) && isset($invoice_item_image_url[$key])){
+                CreditNoteItemImage::create(
+                    [
+                        'credit_note_item_id' => $creditNoteItem->id,
+                        'external_link' => isset($invoice_item_image_url[$key]) ? $invoice_item_image_url[$key] : ''
+                    ]
+                );
             }
 
         endforeach;

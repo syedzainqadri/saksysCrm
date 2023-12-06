@@ -39,7 +39,7 @@ class SendProjectReminder extends Command
 
     public function handle()
     {
-        $companies = Company::select('id')->get();
+        $companies = Company::select('id', 'timezone')->get();
 
         foreach ($companies as $company) {
 
@@ -81,6 +81,7 @@ class SendProjectReminder extends Command
                         $users = collect($users)->merge($members);
                     }
                 }
+
                 foreach ($users as $user) {
                     $projectsArr = [];
 
@@ -92,15 +93,13 @@ class SendProjectReminder extends Command
 
                     if (!$user->isAdmin($user->id)) {
                         $projectsArr = $this->filterProjects($projectsArr, $company);
+
                     }
                     else {
                         $projectsArr = !in_array('admins', $this->project_setting->remind_to) ? $this->filterProjects($projectsArr, $company) : $projects;
                     }
 
-                    if ($projectsArr->count())
-                    {
-                        event(new ProjectReminderEvent($projectsArr, $user, ['company' => $company, 'project_setting' => $this->project_setting]));
-                    }
+                    event(new ProjectReminderEvent($projectsArr, $user, ['company' => $company, 'project_setting' => $this->project_setting]));
 
                 }
             }

@@ -90,10 +90,10 @@ class ExpensesDataTable extends BaseDataTable
                 <p class="mb-0"><span class="badge badge-primary"> ' . __('app.recurring') . ' </span></p>';
         });
         $datatables->addColumn('export_item_name', function ($row) {
-            return $row->item_name;
+            return ucfirst($row->item_name);
         });
         $datatables->addColumn('employee_name', function ($row) {
-            return $row->user->name;
+            return ucfirst($row->user->name);
         });
         $datatables->editColumn('user_id', function ($row) {
             return view('components.employee', [
@@ -160,7 +160,7 @@ class ExpensesDataTable extends BaseDataTable
             return $status;
         });
         $datatables->addColumn('status_export', function ($row) {
-            return $row->status;
+            return ucfirst($row->status);
         });
 
         $datatables->editColumn(
@@ -204,7 +204,7 @@ class ExpensesDataTable extends BaseDataTable
         $request = $this->request();
 
         $model = Expense::with('currency', 'user', 'user.employeeDetail', 'user.employeeDetail.designation', 'user.session')
-            ->select('expenses.id', 'expenses.item_name', 'expenses.user_id', 'expenses.price', 'users.salutation', 'users.name', 'expenses.purchase_date', 'expenses.currency_id', 'currencies.currency_symbol', 'expenses.status', 'expenses.purchase_from', 'expenses.expenses_recurring_id', 'designations.name as designation_name', 'expenses.added_by')
+            ->select('expenses.id', 'expenses.item_name', 'expenses.user_id', 'expenses.price', 'users.name', 'expenses.purchase_date', 'expenses.currency_id', 'currencies.currency_symbol', 'expenses.status', 'expenses.purchase_from', 'expenses.expenses_recurring_id', 'designations.name as designation_name', 'expenses.added_by')
             ->join('users', 'users.id', 'expenses.user_id')
             ->leftJoin('employee_details', 'employee_details.user_id', '=', 'users.id')
             ->leftJoin('designations', 'employee_details.designation_id', '=', 'designations.id')
@@ -273,7 +273,7 @@ class ExpensesDataTable extends BaseDataTable
      */
     public function html()
     {
-        $dataTable = $this->setBuilder('expenses-table', 2)
+        return $this->setBuilder('expenses-table', 2)
             ->parameters([
                 'initComplete' => 'function () {
                     window.LaravelDataTables["expenses-table"].buttons().container()
@@ -282,13 +282,8 @@ class ExpensesDataTable extends BaseDataTable
                 'fnDrawCallback' => 'function( oSettings ) {
                     $(".change-expense-status").selectpicker();
                 }',
-            ]);
-
-        if (canDataTableExport()) {
-            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
-        }
-
-        return $dataTable;
+            ])
+            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
     }
 
     /**

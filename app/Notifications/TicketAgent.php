@@ -40,7 +40,7 @@ class TicketAgent extends BaseNotification
     public function via($notifiable)
     {
         $via = ['database'];
-
+        
         if ($this->emailSetting->send_email == 'yes' && $notifiable->email_notifications && $notifiable->email != '') {
             array_push($via, 'mail');
         }
@@ -65,7 +65,7 @@ class TicketAgent extends BaseNotification
     public function toMail($notifiable): MailMessage
     {
         $build = parent::build();
-        $url = route('tickets.show', $this->ticket->ticket_number);
+        $url = route('tickets.show', $this->ticket->id);
         $url = getDomainSpecificUrl($url, $this->company);
 
         $content = __('email.ticketAgent.text') . '<br>' . __('modules.tickets.ticket') . ' # ' . $this->ticket->id . '<br>' . __('app.subject') . ' - ' . $this->ticket->subject;
@@ -91,7 +91,7 @@ class TicketAgent extends BaseNotification
     public function toArray($notifiable)
     {
         return [
-            'id' => $this->ticket->ticket_number,
+            'id' => $this->ticket->id,
             'subject' => $this->ticket->subject
         ];
     }
@@ -111,7 +111,7 @@ class TicketAgent extends BaseNotification
                 ->from(config('app.name'))
                 ->image($slack->slack_logo_url)
                 ->to('@' . $notifiable->employee[0]->slack_username)
-                ->content('*' . __('email.ticketAgent.subject') . '*' . "\n" . $this->ticket->subject . "\n" . __('modules.tickets.requesterName') . ' - ' . $this->ticket->requester->name);
+                ->content('*' . __('email.ticketAgent.subject') . '*' . "\n" . ucfirst($this->ticket->subject) . "\n" . __('modules.tickets.requesterName') . ' - ' . mb_ucwords($this->ticket->requester->name));
         }
 
         return (new SlackMessage())

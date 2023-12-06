@@ -109,7 +109,7 @@ class NewInvoice extends BaseNotification
                 ->from(config('app.name'))
                 ->to('@' . $notifiable->employee[0]->slack_username)
                 ->image($slack->slack_logo_url)
-                ->content(__('email.hello')  . ' ' .  $notifiable->name .' '. __('email.invoice.subject'));
+                ->content(__('email.hello')  . ' ' .  mb_ucwords($notifiable->name) .' '. __('email.invoice.subject'));
         }
 
         return (new SlackMessage())

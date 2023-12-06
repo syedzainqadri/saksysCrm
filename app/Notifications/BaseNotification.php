@@ -42,7 +42,7 @@ class BaseNotification extends Notification implements ShouldQueue
 
 
         $globalSetting = GlobalSetting::first();
-        Config::set('app.logo', $globalSetting->masked_logo_url);
+        Config::set('app.logo', $globalSetting->logo_url);
 
         if (isWorksuite()) {
             return $build->from($companyEmail, $companyName);
@@ -51,11 +51,10 @@ class BaseNotification extends Notification implements ShouldQueue
         if (!is_null($company)) {
             $replyName = $company->company_name;
             $replyEmail = $company->company_email;
-            Config::set('app.logo', $company->masked_logo_url);
+            Config::set('app.logo', $company->logo_url);
         }
 
         $companyEmail = config('mail.verified') === true ? $companyEmail : $replyEmail;
-        $companyName = config('mail.verified') === true ? $companyName : $replyName;
 
         return $build->from($companyEmail, $companyName)->replyTo($replyEmail, $replyName);
     }

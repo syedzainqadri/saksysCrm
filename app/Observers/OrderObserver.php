@@ -27,14 +27,7 @@ class OrderObserver
             $order->company_id = company()->id;
         }
 
-
-        if (is_numeric($order->order_number) || is_null($order->order_number)) {
-            $order->order_number = $order->formatOrderNumber();
-        }
-
-        $order->custom_order_number = $order->order_number;
-        $orderSettings = (company()) ? company()->invoiceSetting : $order->company->invoiceSetting;
-        $order->original_order_number = str($order->order_number)->replace($orderSettings->order_prefix . $orderSettings->order_number_separator, '');
+        $order->order_number = (int)Order::max('order_number') + 1;
     }
 
     public function created(Order $order)

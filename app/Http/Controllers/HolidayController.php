@@ -68,6 +68,7 @@ class HolidayController extends AccountBaseController
 
         $this->redirectUrl = request()->date ? route('holidays.index') : route('holidays.table_view');
         $this->date = request()->date ? Carbon::parse(request()->date)->timezone(company()->timezone)->translatedFormat(company()->date_format) : '';
+        $this->time = request()->time ? Carbon::parse(request()->time)->translatedFormat(company()->time_format) : '';
 
         if (request()->ajax()) {
             $this->pageTitle = __('app.menu.holiday');
@@ -95,12 +96,13 @@ class HolidayController extends AccountBaseController
 
         $occassions = $request->occassion;
         $dates = $request->date;
+        $time = $request->time;
 
         foreach ($dates as $index => $value) {
             if ($value != '') {
 
                 $holiday = new Holiday();
-                $holiday->date = Carbon::createFromFormat($this->company->date_format, $value);
+                $holiday->date = Carbon::parse($value . ' ' . $time);
                 $holiday->occassion = $occassions[$index];
                 $holiday->save();
 
@@ -339,6 +341,8 @@ class HolidayController extends AccountBaseController
 
             $google = new Google();
 
+            $description = __('messages.invoiceDueOn');
+
             if ($event->date) {
                 $date = \Carbon\Carbon::parse($event->date)->shiftTimezone($googleAccount->timezone);
 
@@ -348,13 +352,14 @@ class HolidayController extends AccountBaseController
                 $eventData = new \Google_Service_Calendar_Event(array(
                     'summary' => $event->occassion,
                     'location' => $googleAccount->address,
+                    'description' => $description,
                     'colorId' => 1,
                     'start' => array(
-                        'dateTime' => $date->copy()->startOfDay(),
+                        'dateTime' => $date,
                         'timeZone' => $googleAccount->timezone,
                     ),
                     'end' => array(
-                        'dateTime' => $date->copy()->endOfDay(),
+                        'dateTime' => $date,
                         'timeZone' => $googleAccount->timezone,
                     ),
                     'reminders' => array(
@@ -424,7 +429,7 @@ class HolidayController extends AccountBaseController
 
             $eventData->setEnd($end);
 
-            $dy = substr(now()->startOfWeek($day)->translatedFormat('l'), 0, 2);
+            $dy = mb_strtoupper(substr(now()->startOfWeek($day)->translatedFormat('l'), 0, 2));
 
             $eventData->setRecurrence(array('RRULE:FREQ=' . $frequency . ';COUNT=' . count($allDays) . ';BYDAY=' . $dy));
 

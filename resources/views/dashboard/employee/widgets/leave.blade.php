@@ -19,7 +19,7 @@
                         </td>
                         <td class="pr-20" align="right">
                             <span class="badge badge-success p-2"
-                                  style="background-color:{{$totalLeave->type->color}}">{{$totalLeave->type->type_name}}</span>
+                                  style="background-color:{{$totalLeave->type->color}}">{{ucfirst($totalLeave->type->type_name)}}</span>
                         </td>
                     </tr>
                 @empty

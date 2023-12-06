@@ -2,7 +2,6 @@
 
 namespace App\Notifications;
 
-use App\Models\EmailNotificationSetting;
 use App\Models\EmployeeShiftSchedule;
 
 class ShiftScheduled extends BaseNotification
@@ -10,7 +9,6 @@ class ShiftScheduled extends BaseNotification
 
 
     public $employeeShiftSchedule;
-    public $emailSetting;
 
     /**
      * Create a new notification instance.
@@ -21,25 +19,11 @@ class ShiftScheduled extends BaseNotification
     {
         $this->employeeShiftSchedule = $employeeShiftSchedule;
         $this->company = $this->employeeShiftSchedule->shift->company;
-        $this->emailSetting = EmailNotificationSetting::where('company_id', $this->company->id)->where('slug', 'shift-assign-notification')->first();
     }
 
-    /**
-     * Get the notification's delivery channels.
-     *
-     * @param mixed $notifiable
-     * @return array
-     */
-    // phpcs:ignore
-    public function via($notifiable)
+    public function via()
     {
-        $via = ['database'];
-
-        if ($this->emailSetting->send_email == 'yes' && $notifiable->email_notifications && $notifiable->email != '') {
-            array_push($via, 'mail');
-        }
-
-        return $via;
+        return ['mail', 'database'];
     }
 
     /**

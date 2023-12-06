@@ -32,9 +32,6 @@
             color: #6c757d;
             left: 17px !important;
         }
-        #msgContentRight .card-body .card-text span > p {
-            margin-bottom: 0rem !important;
-        }
     </style>
 @endpush
 
@@ -168,6 +165,8 @@
 @endsection
 
 @push('scripts')
+
+    <script src="{{ asset('vendor/jquery/dropzone.min.js') }}"></script>
 
     <script>
 

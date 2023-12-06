@@ -24,7 +24,7 @@ $addProductPermission = user()->permission('add_product');
                             fieldName="salutation">
                             <option value="">--</option>
                             @foreach ($salutations as $salutation)
-                                <option value="{{ $salutation->value }}">{{ $salutation->label() }}</option>
+                                <option value="{{ $salutation }}">@lang('app.'.$salutation)</option>
                             @endforeach
                         </x-forms.select>
                     </div>
@@ -80,7 +80,7 @@ $addProductPermission = user()->permission('add_product');
                                     data-live-search="true">
                                     <option value="">--</option>
                                     @foreach ($sources as $source)
-                                        <option value="{{ $source->id }}">{{ $source->type }}</option>
+                                        <option value="{{ $source->id }}">{{ mb_ucwords($source->type) }}</option>
                                     @endforeach
                                 </select>
 
@@ -105,7 +105,7 @@ $addProductPermission = user()->permission('add_product');
                                     data-live-search="true">
                                     <option value="">--</option>
                                     @foreach ($categories as $category)
-                                        <option value="{{ $category->id }}">{{ $category->category_name }}
+                                        <option value="{{ $category->id }}">{{ mb_ucwords($category->category_name) }}
                                         </option>
                                     @endforeach
                                 </select>
@@ -146,7 +146,7 @@ $addProductPermission = user()->permission('add_product');
                             <option value="">--</option>
                             @foreach ($status as $sts)
                                 <option @if ($columnId == $sts->id) selected @endif value="{{ $sts->id }}">
-                                    {{ $sts->type }}</option>
+                                    {{ ucfirst($sts->type) }}</option>
                             @endforeach
                         </x-forms.select>
                     </div>
@@ -227,22 +227,22 @@ $addProductPermission = user()->permission('add_product');
 
                     <div class="col-lg-3 col-md-6">
                         <x-forms.text :fieldLabel="__('modules.stripeCustomerAddress.state')" fieldName="state"
-                            fieldId="state" :fieldPlaceholder="__('placeholders.state')" />
+                            fieldId="state" fieldPlaceholder="" />
                     </div>
 
                     <div class="col-lg-3 col-md-6">
                         <x-forms.text :fieldLabel="__('modules.stripeCustomerAddress.city')" fieldName="city"
-                            fieldId="city" :fieldPlaceholder="__('placeholders.city')" />
+                            fieldId="city" fieldPlaceholder="" />
                     </div>
 
                     <div class="col-lg-3 col-md-6">
                         <x-forms.text :fieldLabel="__('modules.stripeCustomerAddress.postalCode')"
-                            fieldName="postal_code" fieldId="postal_code" :fieldPlaceholder="__('placeholders.postalCode')" />
+                            fieldName="postal_code" fieldId="postal_code" fieldPlaceholder="" />
                     </div>
                     <div class="col-md-12">
                         <div class="form-group my-3">
                             <x-forms.textarea class="mr-0 mr-lg-2 mr-md-2" :fieldLabel="__('app.address')"
-                                fieldName="address" fieldId="address" :fieldPlaceholder="__('placeholders.address')">
+                                fieldName="address" fieldId="address" fieldPlaceholder="e.g. Rocket Road">
                             </x-forms.textarea>
                         </div>
                     </div>
@@ -258,7 +258,7 @@ $addProductPermission = user()->permission('add_product');
                     </x-forms.button-primary>
                     <x-forms.button-secondary class="mr-3" id="save-more-lead-form" icon="check-double">@lang('app.saveAddMore')
                     </x-forms.button-secondary>
-                    <x-forms.button-cancel :link="route('leads.index')" class="border-0">@lang('app.cancel')
+                    <x-forms.button-cancel :link="route('tasks.index')" class="border-0">@lang('app.cancel')
                     </x-forms.button-cancel>
                 </x-form-actions>
 
@@ -268,6 +268,8 @@ $addProductPermission = user()->permission('add_product');
     </div>
 </div>
 
+
+<script src="{{ asset('vendor/jquery/dropzone.min.js') }}"></script>
 <script>
 
     var add_lead_note_permission = "{{ $addLeadNotePermission }}";
@@ -294,7 +296,7 @@ $addProductPermission = user()->permission('add_product');
             document.getElementById('note-text').value = note;
             }
 
-            const url = "{{ route('leads.store') }}&add_more=true";
+            const url = "{{ route('leads.store') }}";
             var data = $('#save-lead-data-form').serialize() + '&add_more=true';
 
             saveLead(data, url, "#save-more-lead-form");

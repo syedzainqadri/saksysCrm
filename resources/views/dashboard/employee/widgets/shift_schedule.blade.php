@@ -18,7 +18,7 @@
                                 @if (isset($weekShifts[$key]->shift))
                                     @if ($weekShifts[$key]->shift->shift_name == 'Day Off')
                                         <span class="badge badge-secondary text-body"
-                                              style="background-color:{{ $weekShifts[$key]->shift->color }}">{{ __('modules.attendance.' . str($weekShifts[$key]->shift->shift_name)->camel()) }}
+                                              style="background-color:{{ $weekShifts[$key]->shift->color }}">{{ $weekShifts[$key]->shift->shift_name }}
                                                                 </span>
                                     @else
                                         <span class="badge badge-success"
@@ -53,7 +53,7 @@
                                         --
                                     @endif
                                 @else
-                                    @lang('app.defaultShift')
+                                    --
                                 @endif
 
                             </td>

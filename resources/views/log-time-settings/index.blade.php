@@ -77,63 +77,61 @@
 
 @push('scripts')
     <script>
-        $(document).ready(function() {
-            $('#save-form').click(function() {
-                var auto_timer_stop = 'no';
-                var approval_required = 0;
-                var tracker_reminder = 0;
-                var timelog_report = 0;
 
-                if ($('#auto_timer_stop').prop("checked") == true) {
-                    auto_timer_stop = 'yes';
+        $('#save-form').click(function() {
+            var auto_timer_stop = 'no';
+            var approval_required = 0;
+            var tracker_reminder = 0;
+            var timelog_report = 0;
+
+            if ($('#auto_timer_stop').prop("checked") == true) {
+                auto_timer_stop = 'yes';
+            }
+            if ($('#approval_required').prop("checked") == true) {
+                approval_required = 1;
+            }
+            if ($('#tracker_reminder').prop("checked") == true) {
+                tracker_reminder = 1;
+            }
+            if ($('#timelog_report').prop("checked") == true) {
+                timelog_report = 1;
+            }
+            var dailyReport = $('#daily-report-roles option:selected').map(function(){
+            return this.value;
+            }).get();
+            
+            var time = $('#time').val();
+
+            $.easyAjax({
+                url: "{{ route('timelog-settings.store') }}",
+                blockUI: true,
+                type: "POST",
+                data: {
+                    'auto_timer_stop': auto_timer_stop,
+                    'approval_required': approval_required,
+                    'tracker_reminder': tracker_reminder,
+                    'timelog_report': timelog_report,
+                    'daily_report_roles' : dailyReport,
+                    'time': time,
+                    '_token': "{{ csrf_token() }}"
                 }
-                if ($('#approval_required').prop("checked") == true) {
-                    approval_required = 1;
-                }
-                if ($('#tracker_reminder').prop("checked") == true) {
-                    tracker_reminder = 1;
-                }
-                if ($('#timelog_report').prop("checked") == true) {
-                    timelog_report = 1;
-                }
-                var dailyReport = $('#daily-report-roles option:selected').map(function(){
-                return this.value;
-                }).get();
-
-                var time = $('#time').val();
-
-                $.easyAjax({
-                    url: "{{ route('timelog-settings.store') }}",
-                    blockUI: true,
-                    type: "POST",
-                    data: {
-                        'auto_timer_stop': auto_timer_stop,
-                        'approval_required': approval_required,
-                        'tracker_reminder': tracker_reminder,
-                        'timelog_report': timelog_report,
-                        'daily_report_roles' : dailyReport,
-                        'time': time,
-                        '_token': "{{ csrf_token() }}"
-                    }
-                })
-            });
+            })
+        });
 
 
 
-            $('#time').timepicker({
-                @if (company()->time_format == 'H:i')
-                    showMeridian: false,
-                @endif
-            });
+        $('#time').timepicker({
+            @if (company()->time_format == 'H:i')
+                showMeridian: false,
+            @endif
+        });
 
-            $('#tracker_reminder').change(function() {
-                $('#timepicker').toggleClass('d-none');
-            });
+        $('#tracker_reminder').change(function() {
+            $('#timepicker').toggleClass('d-none');
+        });
 
-            $('#timelog_report').click(function() {
-                $('#daily-report-roles').toggleClass('d-none');
-            });
-
+        $('#timelog_report').click(function() {
+            $('#daily-report-roles').toggleClass('d-none');
         });
     </script>
 @endpush

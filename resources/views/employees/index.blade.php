@@ -32,7 +32,7 @@
                 <select class="form-control select-picker" name="designation" id="designation">
                     <option value="all">@lang('app.all')</option>
                     @foreach ($designations as $designation)
-                        <option value="{{ $designation->id }}">{{ $designation->name }}</option>
+                        <option value="{{ $designation->id }}">{{ ucfirst($designation->name) }}</option>
                     @endforeach
                 </select>
             </div>
@@ -74,7 +74,7 @@
                                 id="department">
                             <option value="all">@lang('app.all')</option>
                             @foreach ($departments as $department)
-                                <option value="{{ $department->id }}">{{ $department->team_name }}</option>
+                                <option value="{{ $department->id }}">{{ ucfirst($department->team_name) }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -89,7 +89,11 @@
                         <select class="form-control select-picker" name="role" id="role" data-container="body">
                             <option value="all">@lang('app.all')</option>
                             @foreach ($roles as $role)
-                                    <option value="{{ $role->id }}">{{ $role->display_name }}</option>
+                                @if (in_array($role->name, ['admin', 'client', 'employee']))
+                                    <option value="{{ $role->id }}">{{ __('app.' . $role->name) }}</option>
+                                @else
+                                    <option value="{{ $role->id }}">{{ ucfirst($role->name) }}</option>
+                                @endif
                             @endforeach
                         </select>
                     </div>
@@ -156,7 +160,7 @@
                 @endif
 
                 @if ($addEmployeePermission == 'all')
-                    <x-forms.link-secondary :link="route('employees.import')" class="mr-3 openRightModal mb-2 mb-lg-0 d-none d-lg-block"
+                    <x-forms.link-secondary :link="route('employees.import')" class="mr-3 openRightModal mb-2 mb-lg-0"
                                             icon="file-upload">
                         @lang('app.importExcel')
                     </x-forms.link-secondary>

@@ -66,7 +66,7 @@ class MentionTicketAgent extends BaseNotification
     public function toMail($notifiable): MailMessage
     {
         $build = parent::build();
-        $url = route('tickets.show', $this->ticket->ticket_number);
+        $url = route('tickets.show', $this->ticket->id);
         $url = getDomainSpecificUrl($url, $this->company);
 
         $content = __('email.ticketAgent.mentionedText') . '<br>' . __('modules.tickets.ticket') . ' # ' . $this->ticket->id . '<br>' . __('app.subject') . ' - ' . $this->ticket->subject;
@@ -112,7 +112,7 @@ class MentionTicketAgent extends BaseNotification
                 ->from(config('app.name'))
                 ->image($slack->slack_logo_url)
                 ->to('@' . $notifiable->employee[0]->slack_username)
-                ->content('*' . __('email.ticketAgent.mentionSubject') . '*' . "\n" . $this->ticket->subject . "\n" . __('modules.tickets.requesterName') . ' - ' . $this->ticket->requester->name);
+                ->content('*' . __('email.ticketAgent.mentionSubject') . '*' . "\n" . ucfirst($this->ticket->subject) . "\n" . __('modules.tickets.requesterName') . ' - ' . mb_ucwords($this->ticket->requester->name));
         }
 
         return (new SlackMessage())

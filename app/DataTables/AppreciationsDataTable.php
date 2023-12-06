@@ -76,7 +76,7 @@ class AppreciationsDataTable extends BaseDataTable
                     if (isset($row->award->awardIcon)) {
                         return view('components.award-icon', [
                             'award' => $row->award
-                        ]).' <span class="align-self-center ml-2">' . mb_ucwords($row->award->title) . '</span>'; /** @phpstan-ignore-line */
+                        ]).' <span class="align-self-center ml-2">' . mb_ucwords($row->award->title) . '</span>';
                     }
 
                     return '-';
@@ -87,7 +87,7 @@ class AppreciationsDataTable extends BaseDataTable
                 'appreciation_type',
                 function ($row) {
                     if ($row->award) {
-                        return $row->award->title;
+                        return mb_ucwords($row->award->title);
                     }
 
                     return '-';
@@ -189,7 +189,8 @@ class AppreciationsDataTable extends BaseDataTable
      */
     public function html()
     {
-        $dataTable = $this->setBuilder('user-appreciation-table', 3)
+        return $this->setBuilder('user-appreciation-table', 3)
+            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]))
             ->parameters([
                 'initComplete' => 'function () {
                    window.LaravelDataTables["user-appreciation-table"].buttons().container()
@@ -201,12 +202,6 @@ class AppreciationsDataTable extends BaseDataTable
                     })
                 }',
             ]);
-
-        if (canDataTableExport()) {
-            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
-        }
-
-        return $dataTable;
     }
 
     /**

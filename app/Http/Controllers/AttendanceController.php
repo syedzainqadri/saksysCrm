@@ -345,6 +345,7 @@ class AttendanceController extends AccountBaseController
         }
 
         $this->maxClockIn = $attendanceActivity->count() < $this->attendanceSettings->clockin_in_day;
+
         /** @phpstan-ignore-next-line */
         $this->totalTime = CarbonInterval::formatHuman($this->totalTime, true);
 
@@ -863,7 +864,7 @@ class AttendanceController extends AccountBaseController
                     $clockOut->setTimezone('UTC');
 
                     if ($clockIn->gt($clockOut) && !is_null($clockOut)) {
-
+                        
                         $clockOut = $clockOut->addDay();
                     }
 
@@ -948,8 +949,6 @@ class AttendanceController extends AccountBaseController
 
     public function exportAttendanceByMember($year, $month, $id)
     {
-        abort_403(!canDataTableExport());
-
         $startDate = Carbon::createFromFormat('d-m-Y', '01-' . $month . '-' . $year)->startOfMonth()->startOfDay();
         $endDate = $startDate->copy()->endOfMonth()->endOfDay();
         $obj = User::findOrFail($id);
@@ -960,8 +959,6 @@ class AttendanceController extends AccountBaseController
 
     public function exportAllAttendance($year, $month, $id, $department, $designation)
     {
-        abort_403(!canDataTableExport());
-
         $startDate = Carbon::createFromFormat('d-m-Y', '01-' . $month . '-' . $year)->startOfMonth()->startOfDay();
         $endDate = $startDate->copy()->endOfMonth()->endOfDay();
 

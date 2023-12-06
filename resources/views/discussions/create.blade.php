@@ -16,8 +16,9 @@
                                         fieldName="discussion_category" search="true" fieldRequired="true">
                             @foreach ($categories as $item)
                                 <option
-                                    data-content="<i class='fa fa-circle mr-2' style='color: {{ $item->color }}'></i>{{ $item->name }}"
-                                    value="{{ $item->id }}">{{ $item->name }}
+                                    data-content="<i class='fa fa-circle mr-2' style='color: {{ $item->color }}'></i>@lang('app.'.strtolower($item->name))"
+                                    value="{{ $item->id }}">
+                                    @lang('app.'.strtolower($item->name))
                                 </option>
                             @endforeach
                         </x-forms.select>
@@ -30,7 +31,7 @@
                 </div>
                 <div class="col-md-12">
                     <div class="form-group my-3">
-                        <x-forms.label :fieldLabel="__('app.reply')" fieldRequired="true" fieldId="description">
+                        <x-forms.label :fieldLabel="__('app.description')" fieldRequired="true" fieldId="description">
                         </x-forms.label>
                         <div id="description"></div>
                         <textarea name="description" id="description-text" class="d-none"></textarea>
@@ -52,9 +53,9 @@
         <x-forms.button-primary id="save-discussion" icon="check">@lang('app.save')</x-forms.button-primary>
     </div>
 </x-form>
-
+<script src="{{ asset('vendor/jquery/dropzone.min.js') }}"></script>
 <script>
-     var atValues = @json($userData);
+     const atValues = @json($userData);
 
     quillMention(atValues, '#description');
 

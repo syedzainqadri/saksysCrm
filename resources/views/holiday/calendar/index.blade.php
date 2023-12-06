@@ -46,7 +46,7 @@ $addHolidayPermission = user()->permission('add_holiday');
     <!-- CONTENT WRAPPER START -->
     <div class="content-wrapper">
         <!-- Add Task Export Buttons Start -->
-        <div class="d-grid d-lg-flex d-md-flex action-bar">
+        <div class="d-flex">
             <div id="table-actions" class="flex-grow-1 align-items-center">
                 @if ($addHolidayPermission == 'all' || $addHolidayPermission == 'added')
                     <x-forms.link-primary :link="route('holidays.create')"
@@ -60,7 +60,7 @@ $addHolidayPermission = user()->permission('add_holiday');
                 @endif
             </div>
 
-            <div class="btn-group mt-2 mt-lg-0 mt-md-0 ml-0 ml-lg-3 ml-md-3" role="group" aria-label="Basic example">
+            <div class="btn-group" role="group" aria-label="Basic example">
                 <a href="{{ route('holidays.index') }}" class="btn btn-secondary f-14 btn-active" data-toggle="tooltip"
                     data-original-title="@lang('app.menu.calendar')"><i class="side-icon bi bi-calendar"></i></a>
                 <a href="{{ route('holidays.table_view') }}" class="btn btn-secondary f-14" data-toggle="tooltip"
@@ -123,8 +123,13 @@ $addHolidayPermission = user()->permission('add_holiday');
                 getEventDetail(arg.event.id);
             },
             dateClick: function(info) {
+                console.log(info.date, info.dateStr);
+
                 const myDate = moment(info.date).format('YYYY-MM-DD');
-                addEvent(myDate);
+                const myTime = moment(info.date).format('HH:mm');
+                const timeFormat = moment(info.date).format('A');
+
+                addEvent(myDate, myTime, timeFormat);
             },
             editable: false,
             dayMaxEvents: true, // allow "more" link when too many events
@@ -154,9 +159,9 @@ $addHolidayPermission = user()->permission('add_holiday');
         }
 
         // show leave detail in right modal
-        var addEvent = function(date) {
+        var addEvent = function(date, time=null, format=null) {
             openTaskDetail();
-            let url = `{{ route('holidays.create') }}?date=${date}`;
+            let url = `{{ route('holidays.create') }}?date=${date}&time=${time}`;
 
             $.easyAjax({
                 url: url,

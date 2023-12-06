@@ -124,7 +124,7 @@ class ProjectNoteController extends AccountBaseController
             || ($viewProjectNotePermission == 'both' && (user()->id == $this->note->client_id || $this->note->added_by == user()->id || in_array(user()->id, $memberIds)))/* @phpstan-ignore-line */
         ));
 
-        $this->pageTitle = $this->note->title;
+        $this->pageTitle = ucfirst($this->note->title);
 
         if (request()->ajax()) {
             $html = view('projects.notes.show', $this->data)->render();

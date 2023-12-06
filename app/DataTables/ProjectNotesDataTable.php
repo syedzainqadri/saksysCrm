@@ -166,7 +166,7 @@ class ProjectNotesDataTable extends BaseDataTable
 
     public function html()
     {
-        $dataTable = $this->setBuilder('project-notes-table', 2)
+        return $this->setBuilder('project-notes-table', 2)
             ->parameters([
                 'initComplete' => 'function () {
                    window.LaravelDataTables["project-notes-table"].buttons().container()
@@ -175,13 +175,8 @@ class ProjectNotesDataTable extends BaseDataTable
                 'fnDrawCallback' => 'function( oSettings ) {
                   //
                 }',
-            ]);
-
-        if (canDataTableExport()) {
-            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
-        }
-
-        return $dataTable;
+            ])
+            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
     }
 
     /**

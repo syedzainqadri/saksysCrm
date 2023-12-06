@@ -103,10 +103,10 @@ class ProposalObserver
                         ProposalItemImage::create(
                             [
                                 'proposal_item_id' => $proposalItem->id,
-                                'filename' => isset($invoice_item_image[$key]) ? $invoice_item_image[$key]->getClientOriginalName() : '',
-                                'hashname' => isset($invoice_item_image[$key]) ? $filename : '',
-                                'size' => isset($invoice_item_image[$key]) ? $invoice_item_image[$key]->getSize() : '',
-                                'external_link' => isset($invoice_item_image[$key]) ? null : (isset($invoice_item_image_url[$key]) ? $invoice_item_image_url[$key] : null)
+                                'filename' => !isset($invoice_item_image_url[$key]) ? $invoice_item_image[$key]->getClientOriginalName() : '',
+                                'hashname' => !isset($invoice_item_image_url[$key]) ? $filename : '',
+                                'size' => !isset($invoice_item_image_url[$key]) ? $invoice_item_image[$key]->getSize() : '',
+                                'external_link' => isset($invoice_item_image_url[$key]) ? $invoice_item_image_url[$key] : ''
                             ]
                         );
                     }
@@ -224,9 +224,8 @@ class ProposalObserver
                             $proposalFileSize = $proposal_item_image[$key]->getSize();
                         }
 
-                        if ($filename == '' && isset($proposal_item_image[$key])) {
+                        if ($filename == '') {
                             $filename = Files::uploadLocalOrS3($proposal_item_image[$key], ProposalItemImage::FILE_PATH . '/' . $proposalItem->id . '/');
-                            $proposalFileSize = $proposal_item_image[$key]->getSize();
                         }
 
                         ProposalItemImage::updateOrCreate(
@@ -234,10 +233,10 @@ class ProposalObserver
                                 'proposal_item_id' => $proposalItem->id,
                             ],
                             [
-                                'filename' => isset($proposal_item_image[$key]) ? $proposal_item_image[$key]->getClientOriginalName() : '',
-                                'hashname' => isset($proposal_item_image[$key]) ? $filename : '',
-                                'size' => isset($proposal_item_image[$key]) ? $proposalFileSize : '',
-                                'external_link' => isset($proposal_item_image[$key]) ? null : ($proposal_item_image_url[$key] ?? '')
+                                'filename' => !isset($proposal_item_image_url[$key]) ? $proposal_item_image[$key]->getClientOriginalName() : '',
+                                'hashname' => !isset($proposal_item_image_url[$key]) ? $filename : '',
+                                'size' => !isset($proposal_item_image_url[$key]) ? $proposalFileSize : '',
+                                'external_link' => $proposal_item_image_url[$key] ?? ''
                             ]
                         );
                     }

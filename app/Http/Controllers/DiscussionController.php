@@ -59,7 +59,6 @@ class DiscussionController extends AccountBaseController
             $discussion->project_id = $request->project_id;
         }
 
-        $discussion->last_reply_at = now()->timezone('UTC')->toDateTimeString();
         $discussion->user_id = $this->user->id;
         $discussion->save();
 

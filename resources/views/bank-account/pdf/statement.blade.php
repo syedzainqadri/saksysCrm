@@ -134,7 +134,7 @@
                     @if($statements->type == 'bank')
                     {{ $statements->bank_name }} <br>
                     @endif
-                    {{ $statements->account_name }}
+                    {{ mb_ucwords($statements->account_name) }}
                 </div>
             </div>
 
@@ -179,11 +179,11 @@
                     @php
                     if($transaction->transaction_relation == 'payment'){
                     $title = __('modules.bankaccount.'.$transaction->title).' (
-                    '.$transaction->transaction_relation.'-'.$transaction->transaction_related_to.' )';
+                    '.mb_ucwords($transaction->transaction_relation).'-'.$transaction->transaction_related_to.' )';
                     }
                     elseif($transaction->transaction_relation == 'expense'){
                     $title = __('modules.bankaccount.'.$transaction->title).' (
-                    '.$transaction->transaction_related_to.' )';
+                    '.mb_ucwords($transaction->transaction_related_to).' )';
                     }
                     else {
                     $title = __('modules.bankaccount.'.$transaction->title);

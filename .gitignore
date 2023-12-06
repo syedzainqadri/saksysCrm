@@ -5,14 +5,13 @@
 !public/user-uploads/.htaccess
 /storage/*.key
 /vendor
-# .env
+.env
 .env.backup
 .phpunit.result.cache
 Homestead.json
 Homestead.yaml
 npm-debug.log
 yarn-error.log
-.php-cs-fixer.cache
 /.idea
 /.vscode
 /.vagrant
@@ -27,7 +26,3 @@ grumphp.yml
 /bootstrap/cache/*
 storage/reviewed
 storage/fonts/installed-fonts.json
-resources/lang/*
-!resources/lang/eng/
-!resources/lang/vendor/backup/eng
-!resources/lang/eng.json

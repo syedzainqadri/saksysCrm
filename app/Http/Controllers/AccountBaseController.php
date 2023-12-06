@@ -66,7 +66,6 @@ class AccountBaseController extends Controller
         $this->viewTimelogPermission = user()->permission('view_timelogs');
 
         $this->activeTimerCount = ProjectTimeLog::whereNull('end_time')
-            ->doesntHave('activeBreak')
             ->join('users', 'users.id', 'project_time_logs.user_id')
             ->select('project_time_logs.id');
 

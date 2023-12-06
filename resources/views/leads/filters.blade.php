@@ -139,7 +139,7 @@
                     <select class="form-control select-picker" id="filter_status_id" data-live-search="true" data-container="body" data-size="8">
                         <option value="all">@lang('app.all')</option>
                         @foreach ($status as $sts)
-                            <option data-content="<span class='fa fa-circle text-red' style='color: {{ $sts->label_color }}'></span> {{ $sts->type }}" value="{{ $sts->id }}">{{ $sts->type }}</option>
+                            <option data-content="<span class='fa fa-circle text-red' style='color: {{ $sts->label_color }}'></span> {{ mb_ucwords($sts->type) }}" value="{{ $sts->id }}">{{ $sts->type }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -152,7 +152,7 @@
 
 @push('scripts')
     <script>
-        $('#type, #followUp, #filter_agent_id, #filter_category_id, #filter_source_id, #filter_status_id, #date_filter_on, #min, #max')
+        $('#type, #followUp, #filter_agent_id, #category_id, #filter_source_id, #filter_status_id, #date_filter_on, #min, #max')
             .on('change keyup', function() {
                 if ($('#type').val() != "all") {
                     $('#reset-filters').removeClass('d-none');
@@ -169,7 +169,7 @@
                 } else if ($('#filter_agent_id').val() != "all") {
                     $('#reset-filters').removeClass('d-none');
                     showTable();
-                } else if ($('#filter_category_id').val() != "all") {
+                } else if ($('#category_id').val() != "all") {
                     $('#reset-filters').removeClass('d-none');
                     showTable();
                 } else if ($('#filter_source_id').val() != "all") {

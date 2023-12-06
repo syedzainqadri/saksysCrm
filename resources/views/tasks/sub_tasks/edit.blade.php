@@ -76,6 +76,7 @@
         <x-forms.button-primary id="edit-save-subtask" icon="check">@lang('app.save')</x-forms.button-primary>
     </div>
 </x-form>
+<script src="{{ asset('vendor/jquery/dropzone.min.js') }}"></script>
 
 <script>
     $(document).ready(function() {

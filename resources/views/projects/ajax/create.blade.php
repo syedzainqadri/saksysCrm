@@ -8,6 +8,7 @@
 @endphp
 
 <link rel="stylesheet" href="{{ asset('vendor/css/dropzone.min.css') }}">
+
 <div class="row">
     <div class="col-sm-12">
         <x-form id="save-project-data-form">
@@ -64,7 +65,7 @@
                                         @if (($projectTemplate && $projectTemplate->category_id == $category->id) || ($project && $project->category_id == $category->id)) selected
                                         @endif
                                         value="{{ $category->id }}">
-                                        {{ $category->category_name }}
+                                        {{ mb_ucwords($category->category_name) }}
                                     </option>
                                 @endforeach
                             </select>
@@ -91,7 +92,7 @@
                                         data-live-search="true">
                                     <option value="">--</option>
                                     @foreach ($teams as $team)
-                                        <option @if ($project && $project->team_id === $team->id) selected @endif value="{{ $team->id }}">{{ $team->team_name }}</option>
+                                        <option @if ($project && $project->team_id === $team->id) selected @endif value="{{ $team->id }}">{{ mb_ucfirst($team->team_name) }}</option>
                                     @endforeach
                                 </select>
                             </x-forms.input-group>
@@ -104,7 +105,7 @@
                             </x-forms.label>
 
                             <input type="hidden" name="client_id" id="client_id" value="{{ $client->id }}">
-                            <input type="text" value="{{ $client->name }}"
+                            <input type="text" value="{{ ucfirst($client->name) }}"
                                    class="form-control height-35 f-15 readonly-background" readonly>
                         @else
                             <x-client-selection-dropdown :clients="$clients" fieldRequired="false"
@@ -305,6 +306,9 @@
     </div>
 </div>
 
+
+<script src="{{ asset('vendor/jquery/dropzone.min.js') }}"></script>
+
 <script>
 
     var add_project_files = "{{ $addProjectFilePermission }}";
@@ -330,9 +334,7 @@
 
         if (add_project_files == "all") {
 
-            let checkSize = true;
             Dropzone.autoDiscover = false;
-
             //Dropzone class
             myDropzone = new Dropzone("div#file-upload-dropzone", {
                 dictDefaultMessage: "{{ __('app.dragDrop') }}",
@@ -353,7 +355,6 @@
                 }
             });
             myDropzone.on('sending', function (file, xhr, formData) {
-                checkSize = true;
                 var ids = $('#projectID').val();
                 formData.append('project_id', ids);
             });
@@ -363,13 +364,10 @@
             myDropzone.on('queuecomplete', function () {
                 var msgs = "@lang('messages.updateSuccess')";
                 var redirect_url = $('#redirect_url').val();
-                if (redirect_url != '' && checkSize == true) {
+                if (redirect_url != '') {
                     window.location.href = decodeURIComponent(redirect_url);
                 }
-
-                if (checkSize == true) {
-                    window.location.href = "{{ route('projects.index') }}"
-                }
+                window.location.href = "{{ route('projects.index') }}"
             });
             myDropzone.on('removedfile', function () {
                 var grp = $('div#file-upload-dropzone').closest(".form-group");
@@ -388,13 +386,13 @@
                     helpBlockContainer = $(grp);
                 }
 
-                checkSize = false;
-
                 helpBlockContainer.append('<div class="help-block invalid-feedback">' + message + '</div>');
                 $(grp).addClass("has-error");
                 $(label).addClass("is-invalid");
+
             });
         }
+
 
         $("#selectEmployee").selectpicker({
             actionsBox: true,

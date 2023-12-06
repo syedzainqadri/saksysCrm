@@ -37,7 +37,6 @@ class EstimateTemplateController extends AccountBaseController
 
     public function index(EstimateTemplateDataTable $dataTable)
     {
-        $this->addPermission = user()->permission('add_estimates');
         return $dataTable->render('estimates-templates.index', $this->data);
     }
 
@@ -75,7 +74,7 @@ class EstimateTemplateController extends AccountBaseController
         $quantity = $request->quantity;
         $amount = $request->amount;
 
-        if (isset($items[0]) && (trim($items[0]) == '' || trim($items[0]) == '' || isset($cost_per_item[0]) && trim($cost_per_item[0]) == '')) {
+        if (trim($items[0]) == '' || trim($items[0]) == '' || trim($cost_per_item[0]) == '') {
             return Reply::error(__('messages.addItem'));
         }
 
@@ -237,7 +236,7 @@ class EstimateTemplateController extends AccountBaseController
         $quantity = $request->quantity;
         $amount = $request->amount;
 
-        if (isset($items[0]) && (trim($items[0]) == '' || trim($items[0]) == '' || isset($cost_per_item[0]) && trim($cost_per_item[0]) == '')) {
+        if (trim($items[0]) == '' || trim($cost_per_item[0]) == '') {
             return Reply::error(__('messages.addItem'));
         }
 

@@ -92,10 +92,10 @@
                     </div>
                 @else
                     <x-client-selection-dropdown :clients="$clients" :selected="isset($estimate)
-                    ? $estimate->client_id
-                    : (request()->has('default_client')
-                        ? request()->has('default_client')
-                        : null)" />
+                        ? $estimate->client_id
+                        : (request()->has('default_client')
+                            ? request()->has('default_client')
+                            : null)" />
                 @endif
             </div>
             <!-- CLIENT END -->
@@ -140,7 +140,7 @@
                             <option value="">{{  __('app.menu.selectProductCategory')  }}</option>
                             @foreach ($categories as $category)
                                 <option value="{{ $category->id }}">
-                                    {{ $category->category_name }}</option>
+                                    {{ mb_ucwords($category->category_name) }}</option>
                             @endforeach
                         </select>
                     </x-forms.input-group>
@@ -247,10 +247,10 @@
                                                     multiple="multiple"
                                                     class="select-picker type customSequence border-0" data-size="3">
                                                     @foreach ($taxes as $tax)
-                                                        <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ $tax->tax_name .':'. $tax->rate_percent }}%"
+                                                        <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ strtoupper($tax->tax_name) .':'. $tax->rate_percent }}%"
                                                             @if (isset($item->taxes) && array_search($tax->id, json_decode($item->taxes)) !== false) selected @endif
                                                             value="{{ $tax->id }}">
-                                                            {{ $tax->tax_name }}:
+                                                            {{ strtoupper($tax->tax_name) }}:
                                                             {{ $tax->rate_percent }}%</option>
                                                     @endforeach
                                                 </select>
@@ -278,7 +278,7 @@
                                             <input type="file" class="dropify itemImage"
                                                 name="invoice_item_image[]" id="image{{ $item->id }}"
                                                 data-index="{{ $loop->index }}"
-                                                data-allowed-file-extensions="png jpg jpeg bmp"
+                                                data-allowed-file-extensions="png jpg jpeg"
                                                 data-item-id="{{ $item->id }}"
                                                 data-default-file="{{ $item->estimateItemImage ? $item->estimateItemImage->file_url : '' }}"
                                                 data-height="70" multiple />
@@ -362,10 +362,10 @@
                                                 <select id="multiselect" name="taxes[0][]" multiple="multiple"
                                                     class="select-picker type customSequence border-0" data-size="3">
                                                     @foreach ($taxes as $tax)
-                                                        <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ $tax->tax_name .':'. $tax->rate_percent }}%"
+                                                        <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ strtoupper($tax->tax_name) .':'. $tax->rate_percent }}%"
                                                             @if (isset($item->taxes) && array_search($tax->id, json_decode($item->taxes)) !== false) selected @endif
                                                             value="{{ $tax->id }}">
-                                                            {{ $tax->tax_name }}
+                                                            {{ strtoupper($tax->tax_name) }}
                                                             {{ $tax->rate_percent }}%</option>
                                                     @endforeach
                                                 </select>
@@ -391,13 +391,13 @@
                                             value={{ isset($item->estimateTemplateItemImage->id) ? $item->estimateTemplateItemImage->id : '' }} />
 
                                             <input type="file" class="dropify" name="invoice_item_image[]"
-                                                data-allowed-file-extensions="png jpg jpeg bmp"
+                                                data-allowed-file-extensions="png jpg jpeg"
                                                 data-messages-default="test" data-height="70"
                                                 data-id="{{ $item->id }}" id="{{ $item->id }}"
                                                 data-default-file="{{ $item->estimateTemplateItemImage ? $item->estimateTemplateItemImage->file_url : '' }}"
                                                 @if ($item->estimateTemplateItemImage && $item->estimateTemplateItemImage->external_link) data-show-remove="false" @endif />
                                             <input type="hidden" name="invoice_item_image_url[]"
-                                                value="{{ $item->estimateTemplateItemImage ? $item->estimateTemplateItemImage->file : '' }}">
+                                                value="{{ $item->proposalTemplateItemImage ? $item->proposalTemplateItemImage->external_link : '' }}">
                                         </td>
                                     </tr>
                                 </tbody>
@@ -412,7 +412,6 @@
                 @endforeach
             @else
                 <!-- DESKTOP DESCRIPTION TABLE START -->
-
                 <div class="d-flex px-4 py-3 c-inv-desc item-row">
 
                     <div class="c-inv-desc-table w-100 d-lg-flex d-md-flex d-block">
@@ -474,8 +473,8 @@
                                             <select id="multiselect" name="taxes[0][]" multiple="multiple"
                                                 class="select-picker type customSequence border-0" data-size="3">
                                                 @foreach ($taxes as $tax)
-                                                    <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ $tax->tax_name .':'. $tax->rate_percent }}%"
-                                                        value="{{ $tax->id }}">{{ $tax->tax_name }}:
+                                                    <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ strtoupper($tax->tax_name) .':'. $tax->rate_percent }}%"
+                                                        value="{{ $tax->id }}">{{ strtoupper($tax->tax_name) }}:
                                                         {{ $tax->rate_percent }}%</option>
                                                 @endforeach
                                             </select>
@@ -494,7 +493,7 @@
                                     </td>
                                     <td class="border-left-0">
                                         <input type="file" class="dropify" name="invoice_item_image[]"
-                                            data-allowed-file-extensions="png jpg jpeg bmp" data-height="70" />
+                                            data-allowed-file-extensions="png jpg jpeg" data-height="70" />
                                         <input type="hidden" name="invoice_item_image_url[]">
                                     </td>
                                 </tr>
@@ -541,7 +540,7 @@
                                         <td width="20%" class="text-dark-grey">@lang('modules.invoices.discount')
                                         </td>
                                         <td width="40%" style="padding: 5px;">
-                                            <table width="100%" class="mw-250">
+                                            <table width="100%">
                                                 <tbody>
                                                     <tr>
                                                         <td width="70%" class="c-inv-sub-padding">
@@ -811,10 +810,10 @@
                 </tr>` +
                 '<tr>' +
                 '<td class="border-bottom-0 btrr-mbl btlr">' +
-                `<input type="text" class="f-14 border-0 w-100 item_name form-control" name="item_name[]" placeholder="@lang('modules.expenses.itemName')">` +
+                '<input type="text" class="f-14 border-0 w-100 item_name form-control" name="item_name[]" placeholder="@lang('modules.expenses.itemName')">' +
                 '</td>' +
                 '<td class="border-bottom-0 d-block d-lg-none d-md-none">' +
-                `<textarea class="f-14 border-0 w-100 mobile-description form-control" name="item_summary[]" placeholder="@lang('placeholders.invoices.description')"></textarea>` +
+                '<textarea class="f-14 border-0 w-100 mobile-description form-control" name="item_summary[]" placeholder="@lang('placeholders.invoices.description')"></textarea>' +
                 '</td>';
 
             if (hsn_status == 1) {
@@ -842,8 +841,8 @@
                 '<select id="multiselect' + i + '" name="taxes[' + i +
                 '][]" multiple="multiple" class="select-picker type customSequence" data-size="3">'
             @foreach ($taxes as $tax)
-                +'<option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ $tax->tax_name .':'. $tax->rate_percent }}%" value="{{ $tax->id }}">' +
-                '{{ $tax->tax_name }}:{{ $tax->rate_percent }}%</option>'
+                +'<option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ strtoupper($tax->tax_name) .':'. $tax->rate_percent }}%" value="{{ $tax->id }}">' +
+                '{{ strtoupper($tax->tax_name) }}:{{ $tax->rate_percent }}%</option>'
             @endforeach +
             '</select>' +
             '</div>' +
@@ -859,7 +858,7 @@
             '</td>' +
             '<td class="border-left-0">' +
             '<input type="file" class="dropify" id="dropify' + i +
-                '" name="invoice_item_image[]" data-allowed-file-extensions="png jpg jpeg bmp" data-messages-default="test" data-height="70" /><input type="hidden" name="invoice_item_image_url[]">' +
+                '" name="invoice_item_image[]" data-allowed-file-extensions="png jpg jpeg" data-messages-default="test" data-height="70" /><input type="hidden" name="invoice_item_image_url[]">' +
                 '</td>' +
                 '</tr>' +
                 '</tbody>' +

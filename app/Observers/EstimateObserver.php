@@ -18,7 +18,6 @@ use App\Traits\UnitTypeSaveTrait;
 use App\Events\EstimateAcceptedEvent;
 use App\Events\EstimateDeclinedEvent;
 use App\Models\EstimateTemplateItemImage;
-use App\Models\Product;
 
 class EstimateObserver
 {
@@ -59,15 +58,6 @@ class EstimateObserver
         if (company()) {
             $estimate->company_id = company()->id;
         }
-
-
-        if (is_numeric($estimate->estimate_number)) {
-            $estimate->estimate_number = $estimate->formatEstimateNumber();
-        }
-
-        $invoiceSettings = (company()) ? company()->invoiceSetting : $estimate->company->invoiceSetting;
-        $estimate->original_estimate_number = str($estimate->estimate_number)->replace($invoiceSettings->estimate_prefix . $invoiceSettings->estimate_number_separator, '');
-
     }
 
     public function created(Estimate $estimate)
@@ -116,10 +106,10 @@ class EstimateObserver
                             EstimateItemImage::create(
                                 [
                                     'estimate_item_id' => $estimateItem->id,
-                                    'filename' => isset($invoice_item_image[$key]) ? $invoice_item_image[$key]->getClientOriginalName() : null,
-                                    'hashname' => isset($invoice_item_image[$key]) ? Files::uploadLocalOrS3($invoice_item_image[$key], EstimateItemImage::FILE_PATH . '/' . $estimateItem->id . '/') : null,
-                                    'size' => isset($invoice_item_image[$key]) ? $invoice_item_image[$key]->getSize() : null,
-                                    'external_link' => isset($invoice_item_image[$key]) ? null : ($invoice_item_image_url[$key] ?? null),
+                                    'filename' => !isset($invoice_item_image_url[$key]) ? $invoice_item_image[$key]->getClientOriginalName() : '',
+                                    'hashname' => !isset($invoice_item_image_url[$key]) ? Files::uploadLocalOrS3($invoice_item_image[$key], EstimateItemImage::FILE_PATH . '/' . $estimateItem->id . '/') : '',
+                                    'size' => !isset($invoice_item_image_url[$key]) ? $invoice_item_image[$key]->getSize() : '',
+                                    'external_link' => $invoice_item_image_url[$key] ?? ''
                                 ]
                             );
 
@@ -223,7 +213,7 @@ class EstimateObserver
 
             $fileName = Files::generateNewFileName($estimateTemplateImg->filename);
 
-            Files::copy(EstimateTemplateItemImage::FILE_PATH . '/' . $estimateTemplateImg->estimate_template_item_id . '/' . $estimateTemplateImg->hashname, EstimateItemImage::FILE_PATH . '/' . $estimateItem->id . '/' . $fileName);
+            Files::copy(EstimateItemImage::FILE_PATH . '/' . $estimateTemplateImg->id . '/' . $estimateTemplateImg->hashname, EstimateTemplateItemImage::FILE_PATH . '/' . $estimateItem->id . '/' . $fileName);
 
             $file->filename = $estimateTemplateImg->filename;
             $file->hashname = $fileName;

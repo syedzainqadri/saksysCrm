@@ -70,6 +70,7 @@ class ProductController extends AccountBaseController
         abort_403(!in_array($this->addPermission, ['all', 'added']));
         $this->taxes = Tax::all();
         $this->categories = ProductCategory::all();
+        $this->subCategories = ProductSubCategory::all();
 
         $product = new Product();
 

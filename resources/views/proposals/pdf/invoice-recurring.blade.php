@@ -278,7 +278,7 @@
                 <div id="invoiced_to">
                     @if(!is_null($invoice->project) && !is_null($invoice->project->client) && !is_null($invoice->project->client->clientDetails))
                     <small>@lang("modules.invoices.billedTo"):</small>
-                    <h3 class="name">{{ $invoice->project->client->clientDetails->company_name }}</h3>
+                    <h3 class="name">{{ mb_ucwords($invoice->project->client->clientDetails->company_name) }}</h3>
                     <div class="mb-3">
                         <b>@lang('app.address') :</b>
                         <div>{!! nl2br($invoice->project->clientDetails->address) !!}</div>
@@ -294,7 +294,7 @@
                         @endif
                     @elseif(!is_null($invoice->client_id) && !is_null($invoice->clientDetails))
                         <small>@lang("modules.invoices.billedTo"):</small>
-                        <h3 class="name">{{ $invoice->clientDetails->company_name }}</h3>
+                        <h3 class="name">{{ mb_ucwords($invoice->clientDetails->company_name) }}</h3>
                         <div class="mb-3">
                             <b>@lang('app.address') :</b>
                             <div>{!! nl2br($invoice->clientDetails->address) !!}</div>
@@ -312,7 +312,7 @@
 
                     @if(is_null($invoice->project) && !is_null($invoice->estimate) && !is_null($invoice->estimate->client->clientDetails))
                     <small>@lang("modules.invoices.billedTo"):</small>
-                    <h3 class="name">{{ $invoice->estimate->client->clientDetails->company_name }}</h3>
+                    <h3 class="name">{{ mb_ucwords($invoice->estimate->client->clientDetails->company_name) }}</h3>
                     <div class="mb-3">
                         <b>@lang('app.address') :</b>
                         <div>{!! nl2br($invoice->estimate->client->clientDetails->address) !!}</div>
@@ -335,7 +335,7 @@
                         <img src="{{ $invoiceSetting->logo_url }}" alt="home" class="dark-logo" />
                     </div>
                     <small>@lang("modules.invoices.generatedBy"):</small>
-                    <h3 class="name">{{ $company->company_name }}</h3>
+                    <h3 class="name">{{ mb_ucwords($company->company_name) }}</h3>
                     @if(!is_null($company))
                         <div>{!! nl2br($company->defaultAddress->address) !!}</div>
                         <div>{{ $company->company_phone }}</div>
@@ -360,7 +360,7 @@
             @if($invoice->status === 'unpaid')
                 <div class="date">@lang('app.dueDate'): {{ $invoice->due_date->translatedFormat($company->date_format) }}</div>
             @endif
-            <div class="">@lang('app.status'): {{ $invoice->status }}</div>
+            <div class="">@lang('app.status'): {{ mb_ucwords($invoice->status) }}</div>
         </div>
 
     </div>
@@ -380,9 +380,9 @@
             @if($item->type == 'item')
             <tr style="page-break-inside: avoid;">
                 <td class="no">{{ ++$count }}</td>
-                <td class="desc"><h3>{{ $item->item_name }}</h3>
+                <td class="desc"><h3>{{ ucfirst($item->item_name) }}</h3>
                     @if(!is_null($item->item_summary))
-                        <p class="item-summary">{!! nl2br(pdfStripTags($item->item_summary)) !!}</p>
+                        <p class="item-summary">{!! nl2br(strip_tags($item->item_summary, ['p', 'b', 'strong', 'a'])) !!}</p>
                     @endif
                 </td>
                 <td class="qty"><h3>{{ $item->quantity }}</h3></td>
@@ -412,7 +412,7 @@
                 <td class="no">&nbsp;</td>
                 <td class="qty">&nbsp;</td>
                 <td class="qty">&nbsp;</td>
-                <td class="desc">{{ $key }}</td>
+                <td class="desc">{{ mb_strtoupper($key) }}</td>
                 <td class="unit">{{ number_format((float)$tax, 2, '.', '') }}</td>
             </tr>
         @endforeach

@@ -3,7 +3,6 @@
     #message-new .ql-editor {
       border: 1px solid #a3a3a3;
       border-radius: 6px;
-      padding-left: 6px !important;
       height: 100% !important;
     }
     .ql-editor-disabled {
@@ -14,7 +13,6 @@
     .ql-toolbar{
         display: none !important;
     }
-
     </style>
 <div class="modal-header">
     <h5 class="modal-title" id="modelHeading">@lang("modules.messages.startConversation")</h5>
@@ -125,6 +123,8 @@
     <x-forms.button-cancel data-dismiss="modal" class="border-0 mr-3">@lang('app.cancel')</x-forms.button-cancel>
     <x-forms.button-primary id="save-message" icon="check">@lang('app.send')</x-forms.button-primary>
 </div>
+
+<script src="{{ asset('vendor/jquery/dropzone.min.js') }}"></script>
 
 <script>
 

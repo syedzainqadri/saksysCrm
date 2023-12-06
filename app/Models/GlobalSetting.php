@@ -2,9 +2,7 @@
 
 namespace App\Models;
 
-use App\Traits\HasMaskImage;
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
@@ -15,7 +13,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $currency_key_version
  * @property string $license_type
  * @property string|null $logo
- * @property string|null $email
  * @property string|null $login_background
  * @property string $address
  * @property string|null $website
@@ -173,17 +170,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @method static \Illuminate\Database\Eloquent\Builder|GlobalSetting whereLastLicenseVerifiedAt($value)
  * @property string $auth_theme_text
  * @method static \Illuminate\Database\Eloquent\Builder|GlobalSetting whereAuthThemeText($value)
- * @property string $sign_up_terms
- * @property string|null $terms_link
- * @property int $allow_max_no_of_files
- * @method static \Illuminate\Database\Eloquent\Builder|GlobalSetting whereAllowMaxNoOfFiles($value)
- * @method static \Illuminate\Database\Eloquent\Builder|GlobalSetting whereSignUpTerms($value)
- * @method static \Illuminate\Database\Eloquent\Builder|GlobalSetting whereTermsLink($value)
  * @mixin \Eloquent
  */
 class GlobalSetting extends BaseModel
 {
-    use HasMaskImage;
 
     const CHECKLIST_TOTAL = 6;
 
@@ -390,7 +380,7 @@ class GlobalSetting extends BaseModel
             return asset('img/worksuite-logo.png');
         }
 
-        return asset_url_local_s3('app-logo/' . $this->light_logo);
+        return asset_url_local_s3('app-logo/' . $this->light_logo, true, 'image');
 
     }
 
@@ -400,7 +390,7 @@ class GlobalSetting extends BaseModel
             return asset('img/worksuite-logo.png');
         }
 
-        return asset_url_local_s3('app-logo/' . $this->logo);
+        return asset_url_local_s3('app-logo/' . $this->logo, true, 'image');
     }
 
     public function getLightLogoUrlAttribute()
@@ -409,16 +399,17 @@ class GlobalSetting extends BaseModel
             return asset('img/worksuite-logo.png');
         }
 
-        return asset_url_local_s3('app-logo/' . $this->light_logo);
+        return asset_url_local_s3('app-logo/' . $this->light_logo, true, 'image');
     }
 
     public function getDarkLogoUrlAttribute()
     {
+
         if (is_null($this->logo)) {
             return asset('img/worksuite-logo.png');
         }
 
-        return asset_url_local_s3('app-logo/' . $this->logo);
+        return asset_url_local_s3('app-logo/' . $this->logo, true, 'image');
     }
 
     public function getLoginBackgroundUrlAttribute()
@@ -429,99 +420,6 @@ class GlobalSetting extends BaseModel
         }
 
         return asset_url_local_s3('login-background/' . $this->login_background);
-    }
-
-    public function maskedDefaultLogo(): Attribute
-    {
-        return Attribute::make(
-            get: function () {
-                if (is_null($this->logo)) {
-                    return asset('img/worksuite-logo.png');
-                }
-
-                return $this->generateMaskedImageAppUrl('app-logo/' . $this->logo);
-            },
-        );
-
-    }
-
-    public function maskedLogoUrl(): Attribute
-    {
-        return Attribute::make(
-            get: function () {
-                if (user()) {
-                    if (user()->dark_theme) {
-                        return $this->maskedDefaultLogo();
-                    }
-                }
-
-                if (company() && company()->auth_theme == 'dark') {
-                    return $this->maskedDefaultLogo();
-                }
-
-                if (is_null($this->light_logo)) {
-                    return asset('img/worksuite-logo.png');
-                }
-
-                return $this->generateMaskedImageAppUrl('app-logo/' . $this->light_logo);
-            },
-        );
-    }
-
-    public function maskedLightLogoUrl(): Attribute
-    {
-        return Attribute::make(
-            get: function () {
-                if (is_null($this->light_logo)) {
-                    return asset('img/worksuite-logo.png');
-                }
-
-                return $this->generateMaskedImageAppUrl('app-logo/' . $this->light_logo);
-            },
-        );
-
-    }
-
-    public function maskedDarkLogoUrl(): Attribute
-    {
-        return Attribute::make(
-            get: function () {
-                if (is_null($this->logo)) {
-                    return asset('img/worksuite-logo.png');
-                }
-
-                return $this->generateMaskedImageAppUrl('app-logo/' . $this->logo);
-            },
-        );
-
-    }
-
-    public function maskedLoginBackgroundUrl(): Attribute
-    {
-        return Attribute::make(
-            get: function () {
-                if (is_null($this->login_background) || $this->login_background == 'login-background.jpg') {
-                    return null;
-                }
-
-                return $this->generateMaskedImageAppUrl('login-background/' . $this->login_background);
-            },
-        );
-
-    }
-
-    public function maskedFaviconUrl(): Attribute
-    {
-        return Attribute::make(
-            get: function () {
-                if (is_null($this->favicon)) {
-                    return asset('favicon.png');
-                }
-
-                return $this->generateMaskedImageAppUrl('favicon/' . $this->favicon);
-            },
-        );
-
     }
 
     public function getShowPublicMessageAttribute()
@@ -545,7 +443,7 @@ class GlobalSetting extends BaseModel
             return asset('favicon.png');
         }
 
-        return asset_url_local_s3('favicon/' . $this->favicon);
+        return asset_url_local_s3('favicon/' . $this->favicon, true, 'image');
     }
 
     public static function checkListCompleted()
@@ -567,6 +465,7 @@ class GlobalSetting extends BaseModel
         if (!is_null(global_setting()->favicon)) {
             $checkListCompleted++;
         }
+
 
         return $checkListCompleted;
     }

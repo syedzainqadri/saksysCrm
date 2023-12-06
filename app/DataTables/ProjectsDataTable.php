@@ -139,19 +139,18 @@ class ProjectsDataTable extends BaseDataTable
                 if (count($row->members) > 0) {
                     foreach ($row->members as $key => $member) {
                         if ($key < 4) {
-                            $img = '<img data-toggle="tooltip" height="25" width="25" data-original-title="' . $member->user->name . '" src="' . $member->user->image_url . '">';
+                            $img = '<img data-toggle="tooltip" data-original-title="' . $member->user->name . '" src="' . $member->user->image_url . '">';
 
                             $position = $key > 0 ? 'position-absolute' : '';
                             $members .= '<div class="taskEmployeeImg rounded-circle ' . $position . '" style="left:  ' . ($key * 13) . 'px"><a href="' . route('employees.show', $member->user->id) . '">' . $img . '</a></div> ';
                         }
 
                     }
-                }
-                else if($this->addProjectMemberPermission == 'all') {
+                } else if($this->addProjectMemberPermission == 'all') {
+
                     $members .= '<a href="' . route('projects.show', $row->id) . '?tab=members" class="f-12 text-dark-grey"><i class="fa fa-plus" ></i> ' . __('modules.projects.addMemberTitle') . '</a>';
 
-                }
-                else {
+                } else {
 
                     $members .= '--';
                 }
@@ -181,7 +180,7 @@ class ProjectsDataTable extends BaseDataTable
         );
         $datatables->addColumn(
             'project', function ($row) {
-                return $row->project_name;
+                return ucfirst($row->project_name);
             }
         );
 
@@ -199,7 +198,7 @@ class ProjectsDataTable extends BaseDataTable
 
                 return '<div class="media align-items-center">
                         <div class="media-body">
-                    <h5 class="mb-0 f-13 text-darkest-grey"><a href="' . route('projects.show', [$row->id]) . '">' . $row->project_name . '</a></h5>
+                    <h5 class="mb-0 f-13 text-darkest-grey"><a href="' . route('projects.show', [$row->id]) . '">' . ucfirst($row->project_name) . '</a></h5>
                     <p class="mb-0">' . $pin . '</p>
                     </div>
                 </div>';
@@ -222,7 +221,7 @@ class ProjectsDataTable extends BaseDataTable
         $datatables->addColumn(
             'client_name', function ($row) {
                 if ($row->client) {
-                    return ($row->client->salutation ? $row->client->salutation->label() . ' ' : '') . $row->client->name;
+                    return $row->client->name;
                 }
             }
         );
@@ -271,7 +270,7 @@ class ProjectsDataTable extends BaseDataTable
                             $status .= 'selected';
                         }
 
-                        $status .= '  data-content="<i class=\'fa fa-circle mr-2\' style=\'color: ' . $item->color . '\'></i> ' . $item->status_name . '" value="' . $item->status_name . '" >' . $item->status_name . '</option>';
+                        $status .= '  data-content="<i class=\'fa fa-circle mr-2\' style=\'color: ' . $item->color . '\'></i> ' . ucfirst($item->status_name) . '" value="' . $item->status_name . '" >' . $item->status_name . '</option>';
                     }
 
                     $status .= '</select>';
@@ -368,7 +367,7 @@ class ProjectsDataTable extends BaseDataTable
             ->selectRaw(
                 'projects.id, projects.project_short_code, projects.hash, projects.added_by, projects.project_name, projects.start_date, projects.deadline, projects.client_id,
               projects.completion_percent, projects.project_budget, projects.currency_id,
-            projects.status, users.salutation, users.name, client.name as client_name, client.email as client_email, projects.public, mention_users.user_id as mention_user,
+            projects.status, users.name, client.name as client_name, client.email as client_email, projects.public, mention_users.user_id as mention_user,
            ( select count("id") from pinned where pinned.project_id = projects.id and pinned.user_id = ' . user()->id . ') as pinned_project'
             );
 
@@ -508,7 +507,7 @@ class ProjectsDataTable extends BaseDataTable
      */
     public function html()
     {
-        $dataTable = $this->setBuilder('projects-table', 2)
+        return $this->setBuilder('projects-table', 2)
             ->parameters(
                 [
                 'initComplete' => 'function () {
@@ -523,13 +522,8 @@ class ProjectsDataTable extends BaseDataTable
                     })
                 }',
                 ]
-            );
-
-        if (canDataTableExport()) {
-            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
-        }
-
-        return $dataTable;
+            )
+            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
     }
 
     /**

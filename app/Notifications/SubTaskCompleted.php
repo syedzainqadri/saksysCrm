@@ -57,7 +57,7 @@ class SubTaskCompleted extends BaseNotification
         $url = route('tasks.show', [$this->subTask->task->id, 'view' => 'sub_task']);
         $url = getDomainSpecificUrl($url, $this->company);
 
-        $content = $this->subTask->title . ' ' . __('email.subTaskComplete.subject') . '.' . '<br>' . ((!is_null($this->subTask->task->project)) ? __('app.project') . ' - ' . $this->subTask->task->project->project_name : '') . '<br>';
+        $content = ucfirst($this->subTask->title) . ' ' . __('email.subTaskComplete.subject') . '.' . '<br>' . ((!is_null($this->subTask->task->project)) ? __('app.project') . ' - ' . ucfirst($this->subTask->task->project->project_name) : '') . '<br>';
 
         return $build
             ->subject(__('email.subTaskComplete.subject') . ' - ' . config('app.name') . '.')

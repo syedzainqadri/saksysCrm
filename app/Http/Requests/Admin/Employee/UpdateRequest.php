@@ -31,6 +31,7 @@ class UpdateRequest extends CoreRequest
         $setting = company();
         $rules = [
             'employee_id' => 'required|max:50|unique:employee_details,employee_id,'.$detailID->id.',id,company_id,' . company()->id,
+            'email' => 'required|max:100|unique:users,email,'.$this->route('employee').',id,company_id,' . company()->id,
             'name'  => 'required|max:50',
             'hourly_rate' => 'nullable|numeric',
             'department' => 'required',
@@ -44,10 +45,6 @@ class UpdateRequest extends CoreRequest
             'internship_end_date' => 'nullable|date_format:"' . $setting->date_format . '"|after_or_equal:joining_date',
             'contract_end_date' => 'nullable|date_format:"' . $setting->date_format . '"|after_or_equal:joining_date',
         ];
-
-        if (isWorksuite()) {
-            $rules['email'] = 'required|max:100|unique:users,email,'.$this->route('employee').',id,company_id,' . company()->id;
-        }
 
         if ($detailID) {
             $rules['slack_username'] = 'nullable|unique:employee_details,slack_username,'.$detailID->id.',id,company_id,' . company()->id;

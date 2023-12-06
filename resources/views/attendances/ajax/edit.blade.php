@@ -25,7 +25,7 @@ $deleteAttendancePermission = user()->permission('delete_attendance');
                     @if ($attendanceSettings->shift_name != 'Day Off')
                     <span class="badge badge-info ml-2" style="background-color: {{ $attendanceSettings->color }}">{{ $attendanceSettings->shift_name }}</span>
                     @else
-                    <span class="badge badge-secondary ml-2">{{ __('modules.attendance.' . str($attendanceSettings->shift_name)->camel()) }}</span>
+                    <span class="badge badge-secondary ml-2">{{ $attendanceSettings->shift_name }}</span>
                 @endif
             </h5>
 
@@ -106,7 +106,7 @@ $deleteAttendancePermission = user()->permission('delete_attendance');
                             search="true">
                                 @foreach ($location as $locations)
                                     <option @if (($row->location_id == $locations->id) || (is_null($row->location_id) && $locations->is_default == 1)) selected @endif value="{{ $locations->id }}">
-                                        {{ $locations->location }}</option>
+                                        {{ mb_ucwords($locations->location) }}</option>
                                 @endforeach
                             </x-forms.select>
                         </div>

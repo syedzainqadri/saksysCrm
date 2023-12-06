@@ -5,7 +5,6 @@ namespace App\Notifications;
 use App\Models\EmailNotificationSetting;
 use App\Models\Order;
 use NotificationChannels\OneSignal\OneSignalChannel;
-use NotificationChannels\OneSignal\OneSignalMessage;
 
 class NewOrder extends BaseNotification
 {
@@ -72,14 +71,6 @@ class NewOrder extends BaseNotification
         }
     }
 
-      // phpcs:ignore
-    public function toOneSignal($notifiable)
-    {
-        return OneSignalMessage::create()
-            ->setSubject((!in_array('client', user_roles()) ? __('email.orders.subject') : __('email.order.subject')))
-            ->setBody(__('email.order.text'));
-    }
-
     /**
      * Get the array representation of the notification.
      *
@@ -91,8 +82,7 @@ class NewOrder extends BaseNotification
     {
         return [
             'id' => $this->order->id,
-            'order_number' => $this->order->order_number,
-            'client_id' => $this->order->client_id,
+            'order_number' => $this->order->order_number
         ];
     }
 

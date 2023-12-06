@@ -74,10 +74,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property int|null $group_id
  * @property-read \App\Models\TicketReply|null $latestReply
  * @method static \Illuminate\Database\Eloquent\Builder|Ticket whereGroupId($value)
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\User> $mentionUser
- * @property-read int|null $mention_user_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\MentionUser> $ticketMention
- * @property-read int|null $ticket_mention_count
  * @mixin \Eloquent
  */
 class Ticket extends BaseModel
@@ -163,16 +159,6 @@ class Ticket extends BaseModel
     public function ticketMention(): HasMany
     {
         return $this->hasMany(MentionUser::class, 'ticket_id');
-    }
-
-    public function project(): BelongsTo
-    {
-        return $this->belongsTo(Project::class, 'project_id');
-    }
-
-    public function activities(): HasMany
-    {
-        return $this->hasMany(TicketActivity::class, 'ticket_id')->latest();
     }
 
 }

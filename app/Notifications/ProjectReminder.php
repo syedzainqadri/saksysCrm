@@ -67,7 +67,7 @@ class ProjectReminder extends BaseNotification
             ->markdown('mail.email', [
                 'url' => $url,
                 'content' => $content,
-                'themeColor' => $this->company?->header_color,
+                'themeColor' => $this->company->header_color,
                 'actionText' => __('email.projectReminder.action'),
                 'notifiableName' => $notifiable->name
             ]);

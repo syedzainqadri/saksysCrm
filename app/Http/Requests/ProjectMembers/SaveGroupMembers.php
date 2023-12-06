@@ -26,15 +26,14 @@ class SaveGroupMembers extends CoreRequest
     public function rules()
     {
         return [
-            'group_id.0' => 'required',
-            'project_id' => 'required'
+            'group_id.0' => 'required'
         ];
     }
 
     public function messages()
     {
         return [
-            'group_id.0.required' => __('validation.selectAtLeastOne'),
+            'group_id.0.required' => 'Choose at-least 1 '
         ];
     }
 

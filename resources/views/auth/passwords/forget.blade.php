@@ -8,11 +8,11 @@
             <div class="form-group text-left">
                 <label for="email" class="f-w-500">@lang('auth.email')</label>
                 <input type="email" name="email" class="form-control height-50 f-15 light_text"
-                       autofocus placeholder="@lang('placeholders.email')" id="email">
+                       autofocus placeholder="e.g. admin@example.com" id="email">
             </div>
 
             <button
-                type="button"
+                type="submit"
                 id="submit-login"
                 class="btn-primary f-w-500 rounded w-100 height-50 f-18">
                 @lang('app.sendPasswordLink') <i class="fa fa-arrow-right pl-1"></i>

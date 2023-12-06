@@ -44,7 +44,7 @@
                                 <option value="">--</option>
                                 @if (isset($leaveTypes))
                                     @foreach ($leaveTypes as $leaveType)
-                                        <option value="{{ $leaveType->id }}">{{ $leaveType->type_name }}
+                                        <option value="{{ $leaveType->id }}">{{ mb_ucwords($leaveType->type_name) }}
                                         </option>
                                     @endforeach
                                 @endif
@@ -57,7 +57,7 @@
 
                                         @if ($leave->employeeLeave > 0)
                                             @if($leaveType->leaveTypeCodition($leave, $userRole))
-                                                    <option value="{{ $leave->id }}">{{ $leave->type_name }}</option>
+                                                    <option value="{{ $leave->id }}">{{ mb_ucwords($leave->type_name) }}</option>
                                             @endif
                                         @endif
                                     @endforeach
@@ -145,6 +145,7 @@
 
 {{-- this plugin is used only in leaves create form --}}
 <script src="{{ asset('vendor/jquery/bootstrap-datepicker.min.js') }}"></script>
+<script src="{{ asset('vendor/jquery/dropzone.min.js') }}"></script>
 <script src="{{ asset('vendor/jquery/daterangepicker.min.js')}}" defer=""></script>
 
 
@@ -246,9 +247,6 @@
                     format: 'yyyy-mm-d'
 
                 });
-            }
-            else{
-                $('.date-range-days').html('');
             }
         });
 
@@ -353,9 +351,9 @@
                 success: function(response) {
                     if(response.status == 'success'){
                         if(response.users > 0 && response.users < 2){
-                            $('#users').text(response.users+` @lang('modules.leaves.employeeOnLeave')`);
+                            $('#users').text(response.users+' @lang('modules.leaves.employeeOnLeave')');
                         }else if(response.users > 0){
-                            $('#users').text(response.users+` @lang('modules.leaves.employeesOnLeave')`);
+                            $('#users').text(response.users+' @lang('modules.leaves.employeesOnLeave')');
                         }else{
                             $('#users').text('');
                         }

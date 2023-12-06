@@ -51,7 +51,7 @@ class TaskReportDataTable extends BaseDataTable
                 $members = '';
 
                 foreach ($row->users as $member) {
-                    $img = '<img data-toggle="tooltip" data-original-title="' . $member->name . '" src="' . $member->image_url . '">';
+                    $img = '<img data-toggle="tooltip" data-original-title="' . mb_ucwords($member->name) . '" src="' . $member->image_url . '">';
 
                     $members .= '<div class="taskEmployeeImg rounded-circle"><a href="' . route('employees.show', $member->id) . '">' . $img . '</a></div> ';
                 }
@@ -68,10 +68,10 @@ class TaskReportDataTable extends BaseDataTable
                 return implode(',', $members);
             })
             ->editColumn('clientName', function ($row) {
-                return ($row->clientName) ? $row->clientName : '-';
+                return ($row->clientName) ? mb_ucwords($row->clientName) : '-';
             })
             ->addColumn('task', function ($row) {
-                return $row->heading;
+                return ucfirst($row->heading);
             })
             ->editColumn('heading', function ($row) {
                 $private = $pin = $timer = '';
@@ -90,7 +90,7 @@ class TaskReportDataTable extends BaseDataTable
 
                 return '<div class="media align-items-center">
                         <div class="media-body">
-                    <h5 class="mb-0 f-13 text-darkest-grey"><a href="' . route('tasks.show', [$row->id]) . '" class="openRightModal">' . $row->heading . '</a></h5>
+                    <h5 class="mb-0 f-13 text-darkest-grey"><a href="' . route('tasks.show', [$row->id]) . '" class="openRightModal">' . ucfirst($row->heading) . '</a></h5>
                     <p class="mb-0">' . $private . ' ' . $pin . ' ' . $timer . '</p>
                     </div>
                   </div>';
@@ -99,14 +99,14 @@ class TaskReportDataTable extends BaseDataTable
                 return '<i class="fa fa-circle mr-2" style="color: ' . $row->label_color . '"></i>' . $row->board_column;
             })
             ->addColumn('status', function ($row) {
-                return $row->board_column;
+                return ucfirst($row->board_column);
             })
             ->editColumn('project_name', function ($row) {
                 if (is_null($row->project_id)) {
                     return '-';
                 }
 
-                return '<a href="' . route('projects.show', $row->project_id) . '" class="text-darkest-grey">' . $row->project_name . '</a>';
+                return '<a href="' . route('projects.show', $row->project_id) . '" class="text-darkest-grey">' . ucfirst($row->project_name) . '</a>';
             })
             ->editColumn('short_code', function ($row) {
 
@@ -244,7 +244,7 @@ class TaskReportDataTable extends BaseDataTable
      */
     public function html()
     {
-        $dataTable = $this->setBuilder('allTasks-table')
+        return $this->setBuilder('allTasks-table')
             ->parameters([
                 'initComplete' => 'function () {
                    window.LaravelDataTables["allTasks-table"].buttons().container()
@@ -253,13 +253,8 @@ class TaskReportDataTable extends BaseDataTable
                 'fnDrawCallback' => 'function( oSettings ) {
                     $("#allTasks-table .select-picker").selectpicker();
                 }',
-            ]);
-
-        if (canDataTableExport()) {
-            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
-        }
-
-        return $dataTable;
+            ])
+            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
     }
 
     /**

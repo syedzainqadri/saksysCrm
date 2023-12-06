@@ -41,21 +41,21 @@ class RecurringInvoiceItemImage extends BaseModel
     const FILE_PATH = 'recurring-invoice-files';
 
     protected $table = 'invoice_recurring_item_images';
-    protected $appends = ['file_url', 'icon', 'file'];
+    protected $appends = ['file_url', 'icon'];
     protected $fillable = ['invoice_recurring_item_id', 'filename', 'hashname', 'size', 'external_link'];
 
     public function getFileUrlAttribute()
     {
-        if($this->external_link){
-            return str($this->external_link)->contains('http') ? $this->external_link : asset_url_local_s3($this->external_link);
+        if (empty($this->external_link)) {
+            return asset_url_local_s3(RecurringInvoiceItemImage::FILE_PATH . '/' . $this->invoice_recurring_item_id . '/' . $this->hashname);
+        }
+        elseif (!empty($this->external_link)) {
+            return $this->external_link;
+        }
+        else {
+            return '';
         }
 
-        return asset_url_local_s3(RecurringInvoiceItemImage::FILE_PATH . '/' . $this->invoice_recurring_item_id . '/' . $this->hashname);
-    }
-
-    public function getFileAttribute()
-    {
-        return $this->external_link ?: (RecurringInvoiceItemImage::FILE_PATH . '/' . $this->invoice_recurring_item_id . '/' . $this->hashname);
     }
 
 }

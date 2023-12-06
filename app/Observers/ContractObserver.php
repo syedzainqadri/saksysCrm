@@ -5,8 +5,11 @@ namespace App\Observers;
 use App\Models\Contract;
 use App\Events\NewContractEvent;
 use App\Models\GoogleCalendarModule;
+use App\Models\Notification;
+use App\Models\Order;
 use App\Models\User;
 use App\Services\Google;
+use Illuminate\Support\Str;
 
 class ContractObserver
 {
@@ -46,13 +49,6 @@ class ContractObserver
         if (company()) {
             $contract->company_id = company()->id;
         }
-
-        if (is_numeric($contract->contract_number)) {
-            $contract->contract_number = $contract->formatContractNumber();
-        }
-
-        $invoiceSettings = company() ? company()->invoiceSetting : $contract->company->invoiceSetting;
-        $contract->original_contract_number = str($contract->contract_number)->replace($invoiceSettings->contract_prefix . $invoiceSettings->contract_number_separator, '');
 
     }
 

@@ -20,11 +20,6 @@ class DiscussionListener
     public function handle(DiscussionEvent $event)
     {
         $unmentionUser = $event->project_member;
-        $client = $event->discussion->project?->client;
-
-        if ($client) {
-            Notification::send($client, new NewDiscussion($event->discussion));
-        }
 
         Notification::send($unmentionUser, new NewDiscussion($event->discussion));
     }

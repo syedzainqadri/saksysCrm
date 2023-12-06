@@ -94,7 +94,7 @@ class TimeLogsDataTable extends BaseDataTable
                     || ($this->editTimelogPermission == 'added' && user()->id == $row->added_by)
                     || ($row->project_admin == user()->id)
                 ) {
-                    $action .= '<a class="dropdown-item stop-active-timer" href="javascript:;" data-time-id="' . $row->id . '" data-url="">
+                    $action .= '<a class="dropdown-item stop-active-timer" href="javascript:;" data-time-id="' . $row->id . '">
                                 <i class="fa fa-stop-circle mr-2"></i>
                                 ' . trans('app.stop') . '
                             </a>';
@@ -137,13 +137,13 @@ class TimeLogsDataTable extends BaseDataTable
 
                 $totalMinutes = (($row->activeBreak) ? $row->activeBreak->start_time->diffInMinutes($row->start_time) : now()->diffInMinutes($row->start_time)) - $row->breaks->sum('total_minutes');
 
-                $timeLog = '<span data-trigger="hover"  data-toggle="popover" data-content="' . $row->memo . '">' . CarbonInterval::formatHuman($totalMinutes) . '</span>'; /** @phpstan-ignore-line */
+                $timeLog = '<span data-trigger="hover"  data-toggle="popover" data-content="' . $row->memo . '">' . CarbonInterval::formatHuman($totalMinutes) . '</span>';
 
                 $timeLog .= ' <i data-toggle="tooltip" data-original-title="' . __('app.active') . '" class="fa fa-hourglass-start" ></i>';
             }
             else {
                 $totalMinutes = $row->total_minutes - $row->breaks->sum('total_minutes');
-                $timeLog = '<span data-trigger="hover"  data-toggle="popover" data-content="' . $row->memo . '">' . CarbonInterval::formatHuman($totalMinutes) . ' ' . '</span>'; /** @phpstan-ignore-line */
+                $timeLog = '<span data-trigger="hover"  data-toggle="popover" data-content="' . $row->memo . '">' . CarbonInterval::formatHuman($totalMinutes) . ' ' . '</span>';
 
                 if ($row->approved) {
                     $timeLog .= ' <i data-toggle="tooltip" data-original-title="' . __('app.approved') . '" class="fa fa-check-circle text-primary"></i>';
@@ -157,7 +157,7 @@ class TimeLogsDataTable extends BaseDataTable
                 return '--';
             }
 
-            return currency_format($row->earnings, company()->currency_id);
+            return currency_format($row->earnings);
         });
         $datatables->editColumn('project_name', function ($row) {
             $name = '';
@@ -340,7 +340,7 @@ class TimeLogsDataTable extends BaseDataTable
      */
     public function html()
     {
-        $dataTable = $this->setBuilder('timelogs-table', 2)
+        return $this->setBuilder('timelogs-table', 2)
             ->parameters([
                 'initComplete' => 'function () {
                     window.LaravelDataTables["timelogs-table"].buttons().container()
@@ -357,13 +357,8 @@ class TimeLogsDataTable extends BaseDataTable
 
                    // $(\'[data-toggle="popover"]\').popover();
                 }',
-            ]);
-
-        if (canDataTableExport()) {
-            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
-        }
-
-        return $dataTable;
+            ])
+            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
     }
 
     /**

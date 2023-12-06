@@ -57,10 +57,10 @@ class NewPayment extends BaseNotification
             $url = route('payments.show', $this->payment->id);
             $url = getDomainSpecificUrl($url, $this->company);
             $payment_gateway = !is_null($this->payment->gateway) ? $this->payment->gateway . (($this->payment->offlineMethods) ? ' ('. $this->payment->offlineMethods->name .')' : '') : '--';
-            $payment_invoice = $this->payment->invoice->custom_invoice_number ?? '--';
-            $projectName = $this->payment->project->project_name ?? '--';
-            $clientName = $this->payment->invoice->client->name ?? '--';
-            $clientEmail = $this->payment->invoice->client->email ?? '--';
+            $payment_invoice = !is_null($this->payment->invoice->custom_invoice_number) ? $this->payment->invoice->custom_invoice_number : '--';
+            $projectName = !is_null($this->payment->project_id) ? $this->payment->project->project_name : '--';
+            $clientName = !is_null($this->payment->invoice->client->name) ? $this->payment->invoice->client->name : '--';
+            $clientEmail = !is_null($this->payment->invoice->client->email) ? $this->payment->invoice->client->email : '--';
             $subject = __('email.payment.clientsubject') . ' - ' . config('app.name') . '.';
 
             if ($notifiable->hasRole('admin'))

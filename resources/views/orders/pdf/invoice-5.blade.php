@@ -265,7 +265,7 @@
         <tbody>
             <!-- Table Row Start -->
             <tr>
-                <td><img src="{{ invoice_setting()->logo_url }}" alt="{{ company()->company_name }}"
+                <td><img src="{{ invoice_setting()->logo_url }}" alt="{{ mb_ucwords(company()->company_name) }}"
                         id="logo" /></td>
                 <td align="right" class="f-21 text-black font-weight-700 text-uppercase">@lang('app.order')</td>
             </tr>
@@ -274,7 +274,7 @@
             <tr>
                 <td>
                     <p class="line-height mt-1 mb-0 f-14 text-black">
-                        {{ company()->company_name }}<br>
+                        {{ mb_ucwords(company()->company_name) }}<br>
                         @if (!is_null($settings) && $order->address)
                             {!! nl2br($order->address->address) !!}<br>
                         @endif
@@ -320,7 +320,7 @@
                                             @lang("modules.invoices.billedTo")</span><br>
 
                                             @if ($client->name && $invoiceSetting->show_client_name == 'yes')
-                                                {{ $client->name }}<br>
+                                                {{ mb_ucwords($client->name) }}<br>
                                             @endif
 
                                             @if ($client->email && $invoiceSetting->show_client_email == 'yes')
@@ -332,7 +332,7 @@
                                             @endif
 
                                             @if ($client->clientDetails->company_name && $invoiceSetting->show_client_company_name == 'yes')
-                                                {{ $client->clientDetails->company_name }}<br>
+                                                {{ mb_ucwords($client->clientDetails->company_name) }}<br>
                                             @endif
 
                                             @if ($client->clientDetails->address && $invoiceSetting->show_client_company_address == 'yes')
@@ -388,14 +388,14 @@
                 <!-- Table Row Start -->
                 <tr class="main-table-items text-black">
                     <td width="40%" class="border-bottom-0">
-                        {{ $item->item_name }}
+                        {{ ucfirst($item->item_name) }}
                     </td>
                     @if($invoiceSetting->hsn_sac_code_show)
                         <td align="right" width="10%" class="border-bottom-0">{{ $item->hsn_sac_code ? $item->hsn_sac_code : '--' }}</td>
                     @endif
                     <td align="right" width="10%" class="border-bottom-0">{{ $item->quantity }}@if($item->unit)<br><span class="f-11 text-dark-grey">{{ $item->unit->unit_type }}</span>@endif</td>
                     <td align="right" class="border-bottom-0">{{ currency_format($item->unit_price, $order->currency_id, false) }}</td>
-                    <td align="right" class="border-bottom-0">{{ $item->tax_list }}</td>
+                    <td align="right" class="border-bottom-0">{{ strtoupper($item->tax_list) }}</td>
                     <td align="right" class="border-bottom-0" width="{{ $invoiceSetting->hsn_sac_code_show ? '17%' : '20%' }}">{{ currency_format($item->amount, $order->currency_id, false) }}</td>
                 </tr>
                 <!-- Table Row End -->
@@ -403,7 +403,7 @@
                 {{-- DOMPDF HACK FOR RENDER IN TABLE --}}
                 </table>
                     <div class="f-13 summary text-black border-bottom-0">
-                        {!! nl2br(pdfStripTags($item->item_summary)) !!}
+                        {!! nl2br(strip_tags($item->item_summary, ['p', 'b', 'strong', 'a'])) !!}
                         @if ($item->orderItemImage)
                             <p class="mt-2">
                                 <img src="{{ $item->orderItemImage->file_url }}" width="60" height="60"
@@ -436,7 +436,7 @@
                     @foreach ($taxes as $key => $tax)
                         <!-- Table Row Start -->
                         <tr align="right" class="text-grey">
-                            <td width="50%" class="subtotal">{{ $key }}</td>
+                            <td width="50%" class="subtotal">{{ mb_strtoupper($key) }}</td>
                         </tr>
                         <!-- Table Row End -->
                     @endforeach

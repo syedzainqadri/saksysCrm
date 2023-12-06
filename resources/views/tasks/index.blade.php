@@ -121,7 +121,8 @@ $viewUnassignedTasksPermission = user()->permission('view_unassigned_tasks');
                             data-container="body" data-size="8">
                             <option value="all">@lang('app.all')</option>
                             @foreach ($employees as $employee)
-                                <x-user-option :user="$employee">
+                                <x-user-option :user="$employee"
+                                               :selected="request('assignee') == 'me' && $employee->id == user()->id">
                                 </x-user-option>
                             @endforeach
                             @if ($viewUnassignedTasksPermission == 'all')
@@ -219,18 +220,19 @@ $viewUnassignedTasksPermission = user()->permission('view_unassigned_tasks');
     <!-- CONTENT WRAPPER START -->
     <div class="content-wrapper">
         <!-- Add Task Export Buttons Start -->
-        <div class="d-grid d-lg-flex d-md-flex action-bar">
+        <div class="d-block d-lg-flex d-md-flex justify-content-between action-bar">
             <div id="table-actions" class="flex-grow-1 align-items-center">
                 @if ($addTaskPermission == 'all' || $addTaskPermission == 'added')
                     <x-forms.link-primary :link="route('tasks.create')" class="mr-3 openRightModal float-left" icon="plus">
-                        @lang('app.addTask')
+                        @lang('app.add')
+                        @lang('app.task')
                     </x-forms.link-primary>
                 @endif
 
                 @if (!in_array('client', user_roles()))
                     <x-forms.button-secondary id="filter-my-task" class="mr-3 float-left" icon="user">
                         @lang('modules.tasks.myTask')
-                    </x-forms.button-secondary>
+                    </x-forms.button-primary>
                 @endif
 
             </div>
@@ -252,7 +254,7 @@ $viewUnassignedTasksPermission = user()->permission('view_unassigned_tasks');
                 </div>
             </x-datatable.actions>
 
-            <div class="btn-group mt-2 mt-lg-0 mt-md-0 ml-0 ml-lg-3 ml-md-3" role="group">
+            <div class="btn-group mt-3 mt-lg-0 mt-md-0 ml-lg-3" role="group">
                 <a href="{{ route('tasks.index') }}" class="btn btn-secondary f-14 btn-active task" data-toggle="tooltip"
                     data-original-title="@lang('app.menu.tasks')"><i class="side-icon bi bi-list-ul"></i></a>
 
@@ -284,13 +286,6 @@ $viewUnassignedTasksPermission = user()->permission('view_unassigned_tasks');
     @include('sections.datatable_js')
 
     <script>
-        $(document).ready(()=>{
-            let assignedVal = "{{ $assignedTo }}";
-            if(assignedVal){
-                $('.filter-box #assignedTo').val(assignedVal);
-            }
-        });
-
         $('#allTasks-table').on('preXhr.dt', function(e, settings, data) {
 
             var dateRangePicker = $('#datatableRange').data('daterangepicker');

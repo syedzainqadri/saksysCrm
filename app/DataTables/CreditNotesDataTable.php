@@ -98,7 +98,7 @@ class CreditNotesDataTable extends BaseDataTable
                 return $row->client->name;
             })
             ->editColumn('cn_number', function ($row) {
-                return '<a href="' . route('creditnotes.show', $row->id) . '" class="text-darkest-grey">' . $row->cn_number . '</a>';
+                return '<a href="' . route('creditnotes.show', $row->id) . '" class="text-darkest-grey">' . ucfirst($row->cn_number) . '</a>';
             })
             ->addColumn('credit_note', function ($row) {
                 return $row->cn_number;
@@ -207,7 +207,7 @@ class CreditNotesDataTable extends BaseDataTable
      */
     public function html()
     {
-        $dataTable = $this->setBuilder('invoices-table', 0)
+        return $this->setBuilder('invoices-table', 0)
             ->parameters([
                 'initComplete' => 'function () {
                     window.LaravelDataTables["invoices-table"].buttons().container()
@@ -218,13 +218,8 @@ class CreditNotesDataTable extends BaseDataTable
                         selector: \'[data-toggle="tooltip"]\'
                     })
                 }',
-            ]);
-
-        if (canDataTableExport()) {
-            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
-        }
-
-        return $dataTable;
+            ])
+            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
     }
 
     /**

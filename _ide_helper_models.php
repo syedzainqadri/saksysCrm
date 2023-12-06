@@ -658,6 +658,7 @@ namespace App\Models{
  * @property-read \App\Models\Currency|null $currency
  * @property-read mixed $icon
  * @property-read mixed $issue_on
+ * @property-read mixed $original_cn_number
  * @property-read mixed $total_amount
  * @property-read \App\Models\Invoice|null $invoice
  * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\Invoice[] $invoices
@@ -1161,6 +1162,7 @@ namespace App\Models{
  * @property-read \App\Models\Currency|null $currency
  * @property-read mixed $extras
  * @property-read mixed $icon
+ * @property-read mixed $original_estimate_number
  * @property-read mixed $total_amount
  * @property-read mixed $valid_date
  * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\EstimateItem[] $items
@@ -1565,6 +1567,7 @@ namespace App\Models{
  * @property-read mixed $extras
  * @property-read mixed $icon
  * @property-read mixed $issue_on
+ * @property-read mixed $original_invoice_number
  * @property-read mixed $total_amount
  * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\InvoiceItems[] $items
  * @property-read int|null $items_count

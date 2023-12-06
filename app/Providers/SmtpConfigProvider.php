@@ -2,7 +2,6 @@
 
 namespace App\Providers;
 
-use App\Traits\HasMaskImage;
 use Illuminate\Mail\MailServiceProvider;
 use Illuminate\Queue\QueueServiceProvider;
 use Illuminate\Support\Facades\App;
@@ -13,7 +12,6 @@ use Illuminate\Support\ServiceProvider;
 
 class SmtpConfigProvider extends ServiceProvider
 {
-    use HasMaskImage;
 
     public function register()
     {
@@ -45,7 +43,7 @@ class SmtpConfigProvider extends ServiceProvider
                     Config::set('app.logo', asset('img/worksuite-logo.png'));
                 }
                 else {
-                    Config::set('app.logo', $this->generateMaskedImageAppUrl('app-logo/' . $settings->light_logo));
+                    Config::set('app.logo', asset_url_local_s3('app-logo/' . $settings->light_logo));
                 }
 
                 $pushSetting = DB::table('push_notification_settings')->first();

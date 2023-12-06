@@ -101,29 +101,19 @@
     <div class="modal-body">
         <div class="portlet-body">
             <div class="row">
-                <div class="col-sm-12 col-md-6 ">
-                    <x-forms.select fieldId="country" :fieldLabel="__('app.country')" fieldName="country"
-                        search="true">
-                        @foreach ($countries as $item)
-                            <option data-tokens="{{ $item->iso3 }}" data-phonecode = "{{$item->phonecode}}"
-                                data-content="<span class='flag-icon flag-icon-{{ strtolower($item->iso) }} flag-icon-squared'></span> {{ $item->nicename }}"
-                                value="{{ $item->id }}">{{ $item->nicename }}</option>
-                        @endforeach
-                    </x-forms.select>
-                </div>
 
-                <div class="col-sm-12 col-md-6 ">
+                <div class="col-sm-12 col-md-6 col-lg-4">
                     <x-forms.text :fieldLabel="__('app.location')" :fieldPlaceholder="__('placeholders.city')"
                                   fieldName="location" fieldId="location" fieldRequired="true"/>
                 </div>
 
-                <div class="col-sm-12 col-md-6">
+                <div class="col-sm-12 col-md-6 col-lg-4">
                     <x-forms.text :fieldLabel="__('modules.invoices.taxName')"
                                   :fieldPlaceholder="__('modules.invoices.taxName')" fieldName="tax_name"
                                   fieldId="tax_name"/>
                 </div>
 
-                <div class="col-sm-12 col-md-6">
+                <div class="col-sm-12 col-md-6 col-lg-4">
                     <x-forms.text :fieldLabel="__('modules.invoices.tax')"
                                   :fieldPlaceholder="__('placeholders.invoices.gstNumber')" fieldName="tax_number"
                                   fieldId="tax_number"/>
@@ -137,13 +127,13 @@
 
                     <div class="col-md-6">
                         <x-forms.text :fieldLabel="__('modules.accountSettings.latitude')"
-                                        :fieldPlaceholder="__('placeholders.latitude')"
+                                      fieldPlaceholder="e.g. 38.895"
                                       fieldName="latitude" fieldId="latitude"/>
                     </div>
 
                     <div class="col-md-6">
                         <x-forms.text :fieldLabel="__('modules.accountSettings.longitude')"
-                                        :fieldPlaceholder="__('placeholders.longitude')"
+                                      fieldPlaceholder="e.g. -77.0364"
                                       fieldName="longitude" fieldId="longitude"/>
                     </div>
 
@@ -216,7 +206,6 @@
 </x-form>
 
 <script>
-    $('.select-picker').selectpicker('refresh');
     $('#save-address-setting').click(function () {
         $.easyAjax({
             container: '#createAddress',

@@ -62,7 +62,7 @@ $createPublicProjectPermission = user()->permission('create_public_project');
                                 <option value="">--</option>
                                 @foreach ($categories as $category)
                                     <option @if ($project->category_id == $category->id) selected @endif value="{{ $category->id }}">
-                                        {{ $category->category_name }}</option>
+                                        {{ mb_ucwords($category->category_name) }}</option>
                                 @endforeach
                             </select>
 
@@ -86,7 +86,7 @@ $createPublicProjectPermission = user()->permission('create_public_project');
                                     <option value="">--</option>
                                     @foreach ($teams as $team)
                                         <option @if ($project->team_id === $team->id) selected @endif value="{{ $team->id }}">
-                                            {{ $team->team_name }}
+                                            {{ mb_ucfirst($team->team_name) }}
                                         </option>
                                     @endforeach
                                 </select>
@@ -224,7 +224,7 @@ $createPublicProjectPermission = user()->permission('create_public_project');
                             :fieldLabel="__('app.project') . ' ' . __('app.status')" fieldName="status" search="true">
                             @foreach ($projectStatus as $status)
                                 <option
-                                data-content="<i class='fa fa-circle mr-1 f-15' style='color:{{$status->color}}'></i>{{ $status->status_name }}"
+                                data-content="<i class='fa fa-circle mr-1 f-15' style='color:{{$status->color}}'></i>{{ ucfirst($status->status_name) }}"
                                 @if ($project->status == $status->status_name)
                                 selected @endif
                                 value="{{$status->status_name}}">
@@ -372,6 +372,7 @@ $createPublicProjectPermission = user()->permission('create_public_project');
 </div>
 
 
+<script src="{{ asset('vendor/jquery/dropzone.min.js') }}"></script>
 <script>
     $(document).ready(function() {
 

@@ -44,8 +44,6 @@ class UpdateRequest extends CoreRequest
 
         $attributes = $this->customFieldsAttributes($attributes);
 
-        $attributes['client_name'] = __('app.lead').' '.__('app.name');
-
         return $attributes;
     }
 

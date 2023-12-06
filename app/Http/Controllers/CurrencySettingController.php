@@ -37,7 +37,7 @@ class CurrencySettingController extends AccountBaseController
     public function index()
     {
         $this->currencies = Currency::all();
-        $this->defaultFormattedCurrency = currency_format('1234567.89', company()->currency_id);
+        $this->defaultFormattedCurrency = currency_format('1234567.89');
 
         $this->view = 'currency-settings.ajax.currency-setting';
 
@@ -61,7 +61,7 @@ class CurrencySettingController extends AccountBaseController
         $this->currencies = Currency::all();
         $this->currencyFormatSetting = currency_format_setting();
 
-        $this->defaultFormattedCurrency = currency_format('1234567.89', company()->currency_id);
+        $this->defaultFormattedCurrency = currency_format('1234567.89');
 
         return view('currency-settings.create', $this->data);
     }
@@ -129,7 +129,6 @@ class CurrencySettingController extends AccountBaseController
         $currency->save();
 
         session()->forget('currency_format_setting'.$currency->id);
-        session()->forget('currency_format_setting');
 
         return Reply::success(__('messages.updateSuccess'));
     }

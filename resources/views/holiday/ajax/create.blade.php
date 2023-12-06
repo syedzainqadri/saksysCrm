@@ -5,6 +5,7 @@
                 <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
                     @lang('app.menu.addHoliday')</h4>
                 <input type="hidden" name="redirect_url" value="{{ $redirectUrl }}">
+                <input type="hidden" name="time" value="{{ $time }}">
                 <div class="row pl-20 pr-20 pt-20">
                     <div class="col-lg-5">
                         <x-forms.text class="date-picker" :fieldLabel="__('app.date')" fieldName="date[]"

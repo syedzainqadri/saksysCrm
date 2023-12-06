@@ -11,7 +11,6 @@ use App\Http\Requests\Admin\Client\StoreShippingAddressRequest;
 use App\Http\Requests\InvoiceFileStore;
 use App\Http\Requests\Invoices\StoreInvoice;
 use App\Http\Requests\Invoices\UpdateInvoice;
-use App\Http\Requests\Payments\InvoicePayment;
 use App\Http\Requests\Stripe\StoreStripeDetail;
 use App\Models\BankAccount;
 use App\Models\ClientDetails;
@@ -27,19 +26,19 @@ use App\Models\Order;
 use App\Models\Payment;
 use App\Models\PaymentGatewayCredentials;
 use App\Models\Product;
-use App\Models\ProductCategory;
 use App\Models\Project;
 use App\Models\ProjectMilestone;
 use App\Models\ProjectTimeLog;
 use App\Models\Proposal;
+use App\Models\ProductCategory;
 use App\Models\Tax;
 use App\Models\UnitType;
 use App\Models\User;
 use App\Scopes\ActiveScope;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\App;
 use Stripe\Stripe;
+use Illuminate\Support\Facades\App;
 
 class InvoiceController extends AccountBaseController
 {
@@ -124,16 +123,7 @@ class InvoiceController extends AccountBaseController
 
         $this->units = UnitType::all();
         $this->taxes = Tax::all();
-
-        if (module_enabled('Purchase')){
-            /** @phpstan-ignore-next-line */
-            $this->products = Product::with('inventory')->get();
-        }
-        else
-        {
-            $this->products = Product::all();
-        }
-
+        $this->products = Product::all();
         $this->clients = User::allClients();
         $this->companyAddresses = CompanyAddress::all();
         $this->projects = Project::allProjectsHavingClient();
@@ -261,21 +251,23 @@ class InvoiceController extends AccountBaseController
 
         if ($request->estimate_id) {
             $estimate = Estimate::findOrFail($request->estimate_id);
-            $estimate->status = 'accepted';
-            $estimate->save();
+
+            if ($estimate->sign) {
+                $estimate->status = 'accepted';
+                $estimate->save();
+            }
+
         }
 
         if ($request->proposal_id) {
             $proposal = Proposal::findOrFail($request->proposal_id);
-            $proposalData = [
-                'invoice_convert' => 1,
-            ];
 
             if ($proposal->signature) {
-                $proposalData['status'] = 'accepted';
+                $proposal->status = 'accepted';
             }
 
-            Proposal::where('id', $request->proposal_id)->update($proposalData);
+            $proposal->invoice_convert = 1;
+            $proposal->save();
         }
 
         if ($request->has('shipping_address')) {
@@ -493,7 +485,7 @@ class InvoiceController extends AccountBaseController
 
         $this->company = $this->invoice->company;
 
-        $this->invoiceSetting = $this->company->invoiceSetting;
+        $this->invoiceSetting = invoice_setting();
 
         $this->payments = Payment::with(['offlineMethod'])->where('invoice_id', $this->invoice->id)->where('status', 'complete')->orderBy('paid_on', 'desc')->get();
 
@@ -513,7 +505,7 @@ class InvoiceController extends AccountBaseController
 
     public function domPdfObjectForConsoleDownload($id)
     {
-        $this->invoice = Invoice::with('items')->findOrFail($id);
+        $this->invoice = Invoice::with('items', 'unit')->findOrFail($id);
         $this->paidAmount = $this->invoice->getPaidAmount();
         $this->creditNote = 0;
 
@@ -1103,7 +1095,7 @@ class InvoiceController extends AccountBaseController
         return view('invoices.offline.index', $this->data);
     }
 
-    public function storeOfflinePayment(InvoicePayment $request)
+    public function storeOfflinePayment(Request $request)
     {
         $returnUrl = '';
         $invoice = '';
@@ -1356,7 +1348,7 @@ class InvoiceController extends AccountBaseController
     {
         $id = $request->id;
 
-        $offlineMethod = $id ? OfflinePaymentMethod::select('description')->findOrFail($id) : '';
+        $offlineMethod = ($id != 'all') ? OfflinePaymentMethod::select('description')->findOrFail($id) : '';
         $description = $offlineMethod ? $offlineMethod->description : '';
 
         return Reply::dataOnly(['status' => 'success', 'description' => $description]);

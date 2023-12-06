@@ -30,7 +30,7 @@
 
 <script>
     $('body').on('change', '#allow_client_signup', function () {
-        $(this).is(':checked') ? $('#admin-approval').removeClass('d-none') : $('#admin-approval').addClass('d-none');
+        $('#admin-approval').toggleClass('d-none');
     });
 
     $('body').on('click', '#save-client-signup-setting-form', function () {

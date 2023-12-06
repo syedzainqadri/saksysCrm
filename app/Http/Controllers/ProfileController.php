@@ -17,8 +17,6 @@ class ProfileController extends AccountBaseController
 
     public function update(UpdateProfile $request, $id)
     {
-        $redirect = false;
-
         // For profile image to be uploaded locally
         $user = User::withoutGlobalScope(ActiveScope::class)->findOrFail($id);
         $user->name = $request->name;
@@ -51,10 +49,6 @@ class ProfileController extends AccountBaseController
             $user->telegram_user_id = $request->telegram_user_id;
         }
 
-        if ($user->isDirty('locale')) {
-            $redirect = true;
-        }
-
         $user->save();
 
         if ($user->clientDetails) {
@@ -76,7 +70,7 @@ class ProfileController extends AccountBaseController
             $redirectUrl = route('profile-settings.index');
         }
 
-        return Reply::successWithData(__('messages.updateSuccess'), ['redirectUrl' => $redirectUrl, 'redirect' => $redirect]);
+        return Reply::successWithData(__('messages.updateSuccess'), ['redirectUrl' => $redirectUrl]);
     }
 
     public function addEmployeeDetail($request, $user)
@@ -92,12 +86,6 @@ class ProfileController extends AccountBaseController
         $employee->address = $request->address;
         $employee->slack_username = $request->slack_username;
         $employee->about_me = $request->about_me;
-
-        if (in_array('employee', user_roles())) {
-            $employee->marital_status = $request->marital_status;
-            $employee->marriage_anniversary_date = $request->marriage_anniversary_date ? Carbon::createFromFormat($this->company->date_format, $request->marriage_anniversary_date)->format('Y-m-d') : null;
-        }
-
         $employee->save();
     }
 

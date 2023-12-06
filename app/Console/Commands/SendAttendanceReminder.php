@@ -3,10 +3,8 @@
 namespace App\Console\Commands;
 
 use App\Events\AttendanceReminderEvent;
-use App\Models\Attendance;
 use App\Models\AttendanceSetting;
 use App\Models\Company;
-use App\Models\EmployeeShiftSchedule;
 use App\Models\Holiday;
 use App\Models\User;
 use Carbon\Carbon;
@@ -37,11 +35,11 @@ class SendAttendanceReminder extends Command
      */
     public function handle()
     {
-        $companies = Company::select('id', 'timezone')->get();
+        $companies = Company::select('id')->get();
 
         foreach ($companies as $company) {
 
-            $today = now($company->timezone)->format('Y-m-d');
+            $today = now()->format('Y-m-d');
             $attendanceSetting = AttendanceSetting::where('company_id', $company->id)->first();
 
             if ($attendanceSetting->alert_after_status == 1 && !is_null($attendanceSetting->alert_after) && $attendanceSetting->alert_after != 0) {
@@ -52,38 +50,47 @@ class SendAttendanceReminder extends Command
                     continue;
                 }
 
-                $employeeShiftTime = EmployeeShiftSchedule::with('shift', 'user')
-                    ->where(function($query) use ($company) {
-                        $query->where('shift_start_time', '<=', now($company->timezone));
-                        $query->where('shift_end_time', '>=', now($company->timezone));
-                    })
-                    ->whereHas('user', function ($query) use ($today) {
-                        $query->whereHas('employeeDetail', function ($query) use ($today) {
-                            $query->where('attendance_reminder', '!=', $today)
-                                ->orWhereNull('attendance_reminder');
-                        });
-                    })->get();
+                if (is_null($attendanceSetting->office_start_time)) {
+                    continue;
+                }
 
+                $startDateTime = Carbon::parse($today . ' ' . $attendanceSetting->office_start_time);
+                $currentDateTime = now()->addMinutes($attendanceSetting->alert_after);
 
-                foreach($employeeShiftTime as $employeeShiftTimes){
+                if ($currentDateTime->greaterThan($startDateTime)) {
 
-                    if (is_null($employeeShiftTimes->shift->office_start_time)) {
-                        continue;
-                    }
-
-                    $startDateTime = Carbon::createFromFormat('Y-m-d H:i:s', $today . ' ' . $employeeShiftTimes->shift->office_start_time, $company->timezone);
-                    $currentDateTime = now($company->timezone)->addMinutes($attendanceSetting->alert_after);
-
-                    if ($currentDateTime->greaterThan($startDateTime)) {
-
-                        $clockInCount = Attendance::getTotalUserClockInWithTime($today . ' ' . $employeeShiftTimes->shift->office_start_time, $today . ' ' . $employeeShiftTimes->shift->office_end_time, $employeeShiftTimes->user_id);
-
-                        if (!$clockInCount) {
-                            event(new AttendanceReminderEvent($employeeShiftTimes->user));
-                            $employeeShiftTimes->user->employeeDetail->attendance_reminder = $today;
-                            $employeeShiftTimes->user->employeeDetail->saveQuietly();
+                    $usersData = User::with('employeeDetail')->leftJoin(
+                        'attendances',
+                        function ($join) use ($today) {
+                            $join->on('users.id', '=', 'attendances.user_id')
+                                ->where(DB::raw('DATE(attendances.clock_in_time)'), '=', $today);
                         }
+                    )
+                        ->join('role_user', 'role_user.user_id', '=', 'users.id')
+                        ->join('roles', 'roles.id', '=', 'role_user.role_id')
+                        ->join('employee_details', 'employee_details.user_id', '=', 'users.id')
+                        ->onlyEmployee()
+                        ->where('users.company_id', $company->id)
+                        ->select(
+                            'users.id',
+                            'users.name',
+                            'attendances.clock_in_time',
+                            'employee_details.attendance_reminder',
+                            DB::raw('@attendance_date as atte_date'),
+                            'attendances.id as attendance_id'
+                        )
+                        ->whereNull('attendances.clock_in_time')
+                        ->where(function ($query) use ($today) {
+                            $query->where('employee_details.attendance_reminder', '!=', $today)
+                                ->orWhereNull('employee_details.attendance_reminder');
+                        })
+                        ->groupBy('users.id')
+                        ->get();
 
+                    foreach ($usersData as $userData) {
+                        event(new AttendanceReminderEvent($userData));
+                        $userData->employeeDetail->attendance_reminder = $today;
+                        $userData->employeeDetail->save();
                     }
 
                 }

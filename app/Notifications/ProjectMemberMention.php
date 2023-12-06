@@ -44,7 +44,7 @@ class ProjectMemberMention extends BaseNotification
     {
 
         $via = ['database'];
-
+        
         if ($this->emailSetting->send_email == 'yes' && $notifiable->email_notifications && $notifiable->email != '') {
             array_push($via, 'mail');
         }
@@ -73,7 +73,7 @@ class ProjectMemberMention extends BaseNotification
         $url = route('projects.show', $this->project->id);
         $url = getDomainSpecificUrl($url, $this->company);
 
-        $content = __('email.newProjectMember.mentionText') . ' - ' . $this->project->project_name . '<br>';
+        $content = __('email.newProjectMember.mentionText') . ' - ' . mb_ucwords($this->project->project_name) . '<br>';
 
         return parent::build()
             ->subject(__('email.newProjectMember.mentionProject') . ' - ' . config('app.name') . '.')
@@ -115,7 +115,7 @@ class ProjectMemberMention extends BaseNotification
                 ->from(config('app.name'))
                 ->image($slack->slack_logo_url)
                 ->to('@' . $notifiable->employee[0]->slack_username)
-                ->content('*' . __('email.newProjectMember.mentionText') . '*' . "\n" . __('email.newProjectMember.text') . ' - ' . $this->project->project_name);
+                ->content('*' . __('email.newProjectMember.mentionText') . '*' . "\n" . __('email.newProjectMember.text') . ' - ' . mb_ucwords($this->project->project_name));
         }
 
         return (new SlackMessage())
@@ -128,7 +128,7 @@ class ProjectMemberMention extends BaseNotification
     {
         return OneSignalMessage::create()
             ->subject(__('email.newProjectMember.subject'))
-            ->body($this->project->project_name);
+            ->body(mb_ucwords($this->project->project_name));
     }
 
 }

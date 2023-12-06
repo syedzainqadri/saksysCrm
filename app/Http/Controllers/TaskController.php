@@ -57,12 +57,6 @@ class TaskController extends AccountBaseController
         abort_403(!in_array($viewPermission, ['all', 'added', 'owned', 'both']));
 
         if (!request()->ajax()) {
-            $this->assignedTo = request()->assignedTo;
-
-            if (request()->has('assignee') && request()->assignee == 'me') {
-                $this->assignedTo = user()->id;
-            }
-
             $this->projects = Project::allProjects();
 
             if (in_array('client', user_roles())) {
@@ -114,18 +108,7 @@ class TaskController extends AccountBaseController
     {
         abort_403(user()->permission('edit_tasks') != 'all');
 
-        $taskBoardColumn = TaskboardColumn::findOrFail(request()->status);
-
-        if ($taskBoardColumn && $taskBoardColumn->slug == 'completed') {
-            Task::whereIn('id', explode(',', $request->row_ids))->update([
-                'status' => 'completed',
-                'board_column_id' => $request->status,
-                'completed_on' => now()->format('Y-m-d')
-            ]);
-        }
-        else {
-            Task::whereIn('id', explode(',', $request->row_ids))->update(['board_column_id' => $request->status]);
-        }
+        Task::whereIn('id', explode(',', $request->row_ids))->update(['board_column_id' => $request->status]);
     }
 
     public function changeStatus(Request $request)
@@ -139,11 +122,11 @@ class TaskController extends AccountBaseController
         $this->changeStatusPermission = user()->permission('change_status');
         abort_403(
             !(
-                $this->changeStatusPermission == 'all'
-                || ($this->changeStatusPermission == 'added' && $task->added_by == user()->id)
-                || ($this->changeStatusPermission == 'owned' && in_array(user()->id, $taskUsers))
-                || ($this->changeStatusPermission == 'both' && (in_array(user()->id, $taskUsers) || $task->added_by == user()->id))
-                || ($task->project && $task->project->project_admin == user()->id)
+            $this->changeStatusPermission == 'all'
+            || ($this->changeStatusPermission == 'added' && $task->added_by == user()->id)
+            || ($this->changeStatusPermission == 'owned' && in_array(user()->id, $taskUsers))
+            || ($this->changeStatusPermission == 'both' && (in_array(user()->id, $taskUsers) || $task->added_by == user()->id))
+            || ($task->project && $task->project->project_admin == user()->id)
             )
         );
 
@@ -151,7 +134,6 @@ class TaskController extends AccountBaseController
         $task->board_column_id = $taskBoardColumn->id;
 
         if ($taskBoardColumn->slug == 'completed') {
-            $task->status = 'completed';
             $task->completed_on = now()->format('Y-m-d');
             $task->save();
         }
@@ -187,12 +169,12 @@ class TaskController extends AccountBaseController
 
         abort_403(
             !($this->deletePermission == 'all'
-                || ($this->deletePermission == 'owned' && in_array(user()->id, $taskUsers))
-                || ($task->project && ($task->project->project_admin == user()->id))
-                || ($this->deletePermission == 'added' && $task->added_by == user()->id)
-                || ($this->deletePermission == 'both' && (in_array(user()->id, $taskUsers) || $task->added_by == user()->id))
-                || ($this->deletePermission == 'owned' && (in_array('client', user_roles()) && $task->project && ($task->project->client_id == user()->id)))
-                || ($this->deletePermission == 'both' && (in_array('client', user_roles()) && ($task->project && ($task->project->client_id == user()->id)) || $task->added_by == user()->id))
+            || ($this->deletePermission == 'owned' && in_array(user()->id, $taskUsers))
+            || ($task->project && ($task->project->project_admin == user()->id))
+            || ($this->deletePermission == 'added' && $task->added_by == user()->id)
+            || ($this->deletePermission == 'both' && (in_array(user()->id, $taskUsers) || $task->added_by == user()->id))
+            || ($this->deletePermission == 'owned' && (in_array('client', user_roles()) && $task->project && ($task->project->client_id == user()->id)))
+            || ($this->deletePermission == 'both' && (in_array('client', user_roles()) && ($task->project && ($task->project->client_id == user()->id)) || $task->added_by == user()->id))
             )
         );
 
@@ -228,19 +210,17 @@ class TaskController extends AccountBaseController
         $this->selectedLabel = TaskLabel::where('task_id', request()['duplicate_task'])->get()->pluck('label_id')->toArray();
         $this->projectMember = TaskUser::where('task_id', request()['duplicate_task'])->get()->pluck('user_id')->toArray();
 
-        $this->projects = Project::where('status', '!=', 'finished')->get();
-        $this->taskLabels = TaskLabelList::where('project_id', null)->get();
-        $this->projectID = request()->task_project_id;
+        $this->projects = Project::allProjects();
 
         if (request('task_project_id')) {
             $project = Project::findOrFail(request('task_project_id'));
             $this->projectShortCode = $project->project_short_code;
-            $this->taskLabels = TaskLabelList::where('project_id', request('task_project_id'))->orWhere('project_id', null)->get();
-            $this->milestones = ProjectMilestone::where('project_id', request('task_project_id'))->whereNot('status', 'complete')->get();
+            $this->milestones = ProjectMilestone::where('project_id', request('task_project_id'))->get();
+
         }
         else {
             if ($this->task && $this->task->project) {
-                $this->milestones = $this->task->project->incompleteMilestones;
+                $this->milestones = $this->task->project->milestones;
             }
             else {
                 $this->milestones = collect([]);
@@ -249,17 +229,13 @@ class TaskController extends AccountBaseController
 
         $this->columnId = request('column_id');
         $this->categories = TaskCategory::all();
-
+        $this->taskLabels = TaskLabelList::where('project_id', null)->get();
         $this->taskboardColumns = TaskboardColumn::orderBy('priority', 'asc')->get();
         $completedTaskColumn = TaskboardColumn::where('slug', '=', 'completed')->first();
 
         if (request()->has('default_assign') && request('default_assign') != '') {
             $this->defaultAssignee = request('default_assign');
         }
-
-        $this->dependantTasks = $completedTaskColumn ? Task::where('board_column_id', '<>', $completedTaskColumn->id)
-            ->where('project_id', $this->projectID)
-            ->whereNotNull('due_date')->get() : [];
 
         $this->allTasks = $completedTaskColumn ? Task::where('board_column_id', '<>', $completedTaskColumn->id)->whereNotNull('due_date')->get() : [];
 
@@ -286,8 +262,7 @@ class TaskController extends AccountBaseController
             if (in_array('client', user_roles())) {
                 $this->employees = collect([]); // Do not show all employees to client
 
-            }
-            else {
+            } else {
                 $this->employees = User::allEmployees(null, true, ($this->addPermission == 'all' ? 'all' : null));
             }
 
@@ -385,10 +360,12 @@ class TaskController extends AccountBaseController
 
         if ($project) {
             $projectLastTaskCount = Task::projectTaskCount($project->id);
-            $task->task_short_code = $project->project_short_code . '-' . $this->getTaskShortCode($project->project_short_code, $projectLastTaskCount);
         }
 
         $task->save();
+
+        $task->task_short_code = ($project) ? $project->project_short_code . '-' . ((int)$projectLastTaskCount + 1) : null;
+        $task->saveQuietly();
 
         // Save labels
 
@@ -535,12 +512,12 @@ class TaskController extends AccountBaseController
         $this->taskUsers = $taskUsers = $this->task->users->pluck('id')->toArray();
         abort_403(
             !($editTaskPermission == 'all'
-                || ($editTaskPermission == 'owned' && in_array(user()->id, $taskUsers))
-                || ($editTaskPermission == 'added' && $this->task->added_by == user()->id)
-                || ($this->task->project && ($this->task->project->project_admin == user()->id))
-                || ($editTaskPermission == 'both' && (in_array(user()->id, $taskUsers) || $this->task->added_by == user()->id))
-                || ($editTaskPermission == 'owned' && (in_array('client', user_roles()) && $this->task->project && ($this->task->project->client_id == user()->id)))
-                || ($editTaskPermission == 'both' && (in_array('client', user_roles()) && ($this->task->project && ($this->task->project->client_id == user()->id)) || $this->task->added_by == user()->id))
+            || ($editTaskPermission == 'owned' && in_array(user()->id, $taskUsers))
+            || ($editTaskPermission == 'added' && $this->task->added_by == user()->id)
+            || ($this->task->project && ($this->task->project->project_admin == user()->id))
+            || ($editTaskPermission == 'both' && (in_array(user()->id, $taskUsers) || $this->task->added_by == user()->id))
+            || ($editTaskPermission == 'owned' && (in_array('client', user_roles()) && $this->task->project && ($this->task->project->client_id == user()->id)))
+            || ($editTaskPermission == 'both' && (in_array('client', user_roles()) && ($this->task->project && ($this->task->project->client_id == user()->id)) || $this->task->added_by == user()->id))
             )
         );
 
@@ -550,7 +527,7 @@ class TaskController extends AccountBaseController
 
         $this->pageTitle = __('app.update') . ' ' . __('app.task');
         $this->labelIds = $this->task->label->pluck('label_id')->toArray();
-        $this->projects = Project::where('status', '!=', 'finished')->get();
+        $this->projects = Project::allProjects();
         $this->categories = TaskCategory::all();
         $projectId = $this->task->project_id;
         $this->taskLabels = TaskLabelList::where('project_id', $projectId)->orWhere('project_id', null)->get();
@@ -602,16 +579,16 @@ class TaskController extends AccountBaseController
         $dueDate = $this->task->due_date;
         $leaves = $this->leaves($userId, $startDate, $dueDate);
 
-        if (!is_null($leaves)) {
+        if(!is_null($leaves)) {
             $data = [];
 
-            foreach ($leaves as $key => $value) {
+            foreach($leaves as $key => $value)
+            {
                 $values = implode(', ', $value);
-                $data[] = $key . __('modules.tasks.leaveOn') . ' ' . $values;
+                $data[] = $key .  __('modules.tasks.leaveOn') .' '. $values;
             }
 
-            $this->leaveData = implode("\n", $data);
-            /* @phpstan-ignore-line */
+            $this->leaveData = implode("\n", $data);  /* @phpstan-ignore-line */
 
         }
 
@@ -649,12 +626,12 @@ class TaskController extends AccountBaseController
 
         abort_403(
             !($editTaskPermission == 'all'
-                || ($editTaskPermission == 'owned' && in_array(user()->id, $taskUsers))
-                || ($editTaskPermission == 'added' && $task->added_by == user()->id)
-                || ($task->project && ($task->project->project_admin == user()->id))
-                || ($editTaskPermission == 'both' && (in_array(user()->id, $taskUsers) || $task->added_by == user()->id))
-                || ($editTaskPermission == 'owned' && (in_array('client', user_roles()) && $task->project && ($task->project->client_id == user()->id)))
-                || ($editTaskPermission == 'both' && (in_array('client', user_roles()) && ($task->project && ($task->project->client_id == user()->id)) || $task->added_by == user()->id))
+            || ($editTaskPermission == 'owned' && in_array(user()->id, $taskUsers))
+            || ($editTaskPermission == 'added' && $task->added_by == user()->id)
+            || ($task->project && ($task->project->project_admin == user()->id))
+            || ($editTaskPermission == 'both' && (in_array(user()->id, $taskUsers) || $task->added_by == user()->id))
+            || ($editTaskPermission == 'owned' && (in_array('client', user_roles()) && $task->project && ($task->project->client_id == user()->id)))
+            || ($editTaskPermission == 'both' && (in_array('client', user_roles()) && ($task->project && ($task->project->client_id == user()->id)) || $task->added_by == user()->id))
             )
         );
 
@@ -721,7 +698,7 @@ class TaskController extends AccountBaseController
 
         if ($project) {
             $projectLastTaskCount = Task::projectTaskCount($project->id);
-            $task->task_short_code = $project->project_short_code . '-' . $this->getTaskShortCode($project->project_short_code, $projectLastTaskCount);
+            $task->task_short_code = ($project) ? $project->project_short_code . '-' . ((int)$projectLastTaskCount + 1) : null;
         }
 
         $task->saveQuietly();
@@ -740,22 +717,6 @@ class TaskController extends AccountBaseController
         return Reply::successWithData(__('messages.updateSuccess'), ['redirectUrl' => route('tasks.show', $id)]);
     }
 
-    /**
-     * @param $projectShortCode
-     * @param $lastProjectCount
-     * @return mixed
-     */
-    public function getTaskShortCode($projectShortCode, $lastProjectCount)
-    {
-        $task = Task::where('task_short_code', $projectShortCode . '-' . $lastProjectCount)->exists();
-        if ($task) {
-            return $this->getTaskShortCode($projectShortCode, $lastProjectCount + 1);
-        }
-
-        return $lastProjectCount;
-
-    }
-
     public function show($id)
     {
 
@@ -766,23 +727,24 @@ class TaskController extends AccountBaseController
         $this->viewUnassignedTasksPermission = user()->permission('view_unassigned_tasks');
 
         $this->task = Task::with(
-            ['boardColumn', 'project', 'users', 'label', 'approvedTimeLogs', 'mentionTask',
-                'approvedTimeLogs.user', 'approvedTimeLogs.activeBreak', 'comments',
-                'comments.commentEmoji', 'comments.like', 'comments.dislike', 'comments.likeUsers',
-                'comments.dislikeUsers', 'comments.user', 'subtasks.files', 'userActiveTimer',
-                'files' => function ($q) use ($viewTaskFilePermission) {
-                    if ($viewTaskFilePermission == 'added') {
-                        $q->where('added_by', user()->id);
-                    }
-                },
-                'subtasks' => function ($q) use ($viewSubTaskPermission) {
-                    if ($viewSubTaskPermission == 'added') {
-                        $q->where('added_by', user()->id);
-                    }
-                }]
+            ['boardColumn', 'project', 'users', 'label', 'approvedTimeLogs','mentionTask',
+                                'approvedTimeLogs.user', 'approvedTimeLogs.activeBreak','comments',
+                                'comments.commentEmoji', 'comments.like', 'comments.dislike', 'comments.likeUsers',
+                                'comments.dislikeUsers', 'comments.user', 'subtasks.files', 'userActiveTimer',
+            'files' => function ($q) use ($viewTaskFilePermission) {
+                if ($viewTaskFilePermission == 'added') {
+                    $q->where('added_by', user()->id);
+                }
+            },
+            'subtasks' => function ($q) use ($viewSubTaskPermission) {
+                if ($viewSubTaskPermission == 'added') {
+                    $q->where('added_by', user()->id);
+                }
+            }]
         )
             ->withCount('subtasks', 'files', 'comments', 'activeTimerAll')
             ->findOrFail($id)->withCustomFields();
+
 
 
         $this->taskUsers = $taskUsers = $this->task->users->pluck('id')->toArray();
@@ -791,14 +753,9 @@ class TaskController extends AccountBaseController
 
         $usersData = $this->task->users;
 
-        if ($this->task->createBy && !in_array($this->task->createBy->id, $taskUsers)) {
-            $url = route('employees.show', [$this->task->createBy->user_id ?? $this->task->createBy->id]);
-            $taskuserData[] = ['id' => $this->task->createBy->user_id ?? $this->task->createBy->id, 'value' => $this->task->createBy->user->name ?? $this->task->createBy->name, 'image' => $this->task->createBy->user->image_url ?? $this->task->createBy->image_url, 'link' => $url];
-        }
-
         foreach ($usersData as $user) {
 
-            $url = route('employees.show', [$user->user_id ?? $user->id]);
+            $url = route('employees.show', [ $user->user_id ?? $user->id]);
             $taskuserData[] = ['id' => $user->user_id ?? $user->id, 'value' => $user->user->name ?? $user->name, 'image' => $user->user->image_url ?? $user->image_url, 'link' => $url];
 
         }
@@ -810,15 +767,15 @@ class TaskController extends AccountBaseController
         $mentionUser = $this->task->mentionTask->pluck('user_id')->toArray();
         abort_403(
             !(
-                $viewTaskPermission == 'all'
-                || ($viewTaskPermission == 'added' && $this->task->added_by == user()->id)
-                || ($viewTaskPermission == 'owned' && in_array(user()->id, $taskUsers))
-                || ($viewTaskPermission == 'both' && (in_array(user()->id, $taskUsers) || $this->task->added_by == user()->id))
-                || ($viewTaskPermission == 'owned' && in_array('client', user_roles()) && $this->task->project_id && $this->task->project->client_id == user()->id)
-                || ($viewTaskPermission == 'both' && in_array('client', user_roles()) && $this->task->project_id && $this->task->project->client_id == user()->id)
-                || ($this->viewUnassignedTasksPermission == 'all' && in_array('employee', user_roles()))
-                || ($this->task->project_id && $this->task->project->project_admin == user()->id)
-                || ((!is_null($this->task->mentionTask)) && in_array(user()->id, $mentionUser))
+            $viewTaskPermission == 'all'
+            || ($viewTaskPermission == 'added' && $this->task->added_by == user()->id)
+            || ($viewTaskPermission == 'owned' && in_array(user()->id, $taskUsers))
+            || ($viewTaskPermission == 'both' && (in_array(user()->id, $taskUsers) || $this->task->added_by == user()->id))
+            || ($viewTaskPermission == 'owned' && in_array('client', user_roles()) && $this->task->project_id && $this->task->project->client_id == user()->id)
+            || ($viewTaskPermission == 'both' && in_array('client', user_roles()) && $this->task->project_id && $this->task->project->client_id == user()->id)
+            || ($this->viewUnassignedTasksPermission == 'all' && in_array('employee', user_roles()))
+            || ($this->task->project_id && $this->task->project->project_admin == user()->id )
+            || ((!is_null($this->task->mentionTask)) && in_array(user()->id, $mentionUser))
             )
 
         );
@@ -986,8 +943,7 @@ class TaskController extends AccountBaseController
 
         if (!is_null($project->client)) {
             $data = '<h5 class= "mb-2 f-13"> ' . __('modules.projects.projectClient') . '</h5>';
-            $data .= view('components.client', ['user' => $project->client]);
-            /* @phpstan-ignore-line */
+            $data .= view('components.client', ['user' => $project->client]);            /* @phpstan-ignore-line */
         }
         else {
             $data = '<p> ' . __('modules.projects.projectDoNotHaveClient') . '</p>';
@@ -1011,7 +967,6 @@ class TaskController extends AccountBaseController
         if (request()->has('for_timelogs')) {
             $tasks = Task::projectLogTimeTasks($id);
             $options = BaseModel::options($tasks, null, 'heading');
-
             return Reply::dataOnly(['status' => 'success', 'data' => $options]);
         }
 
@@ -1029,7 +984,7 @@ class TaskController extends AccountBaseController
 
         foreach ($tasks as $item) {
 
-            $options .= '<option  data-content="<div class=\'d-inline-block mr-1\'></div>  ' . $item->heading . ' ( Due date: ' . $item->due_date->format(company()->date_format) . ' ) " value="' . $item->id . '"> ' . $item->heading . '  ' . $item->due_date . ' </option>';
+            $options .= '<option  data-content="<div class=\'d-inline-block mr-1\'></div>  ' . $item->heading . ' ( Due date: ' .  $item->due_date->format(company()->date_format) . ' ) " value="' . $item->id . '"> ' . $item->heading . '  ' . $item->due_date . ' </option>';
         }
 
         return Reply::dataOnly(['status' => 'success', 'data' => $options]);
@@ -1066,10 +1021,10 @@ class TaskController extends AccountBaseController
         $startDate = request()->start_date ? carbon::createFromFormat(company()->date_format, request()->start_date)->format('Y-m-d') : null;
         $dueDate = request()->due_date ? carbon::createFromFormat(company()->date_format, request()->due_date)->format('Y-m-d') : null;
 
-        if (request()->start_date && request()->due_date && request()->user_id) {
+        if(request()->start_date && request()->due_date && request()->user_id) {
             $data = $this->leaves(request()->user_id, $startDate, $dueDate);
 
-            return reply::dataOnly(['data' => $data]);
+                return reply::dataOnly(['data' => $data]);
         }
     }
 
@@ -1077,19 +1032,20 @@ class TaskController extends AccountBaseController
     {
         $leaveDates = [];
 
-        foreach ($userIds as $userId) {
+        foreach($userIds as $userId) {
             $leaves = Leave::with('user')
                 ->where('user_id', $userId)
                 ->whereBetween('leave_date', [$startDate, $dueDate])
                 ->get();
 
-            foreach ($leaves as $leave) {
+            foreach($leaves as $leave)
+            {
                 $userName[] = $leave->user->name;
                 $leaveDates[] = $leave->leave_date->format('d,M Y');
             }
         }
 
-        if (isset($userName)) {
+        if(isset($userName)) {
             $uniqueUser = array_unique($userName);
             $data = [];
 
@@ -1098,8 +1054,7 @@ class TaskController extends AccountBaseController
 
                 foreach ($userName as $key => $value) {
                     if ($value == $name) {
-                        $data[$name][] = $leaveDates[$key];
-                        /** @phpstan-ignore-line */
+                        $data[$name][] = $leaveDates[$key];  /** @phpstan-ignore-line */
                     }
                 }
             }

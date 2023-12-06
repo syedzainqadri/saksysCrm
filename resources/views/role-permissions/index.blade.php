@@ -39,18 +39,14 @@
                 @forelse($roles as $role)
                     <div class="d-flex justify-content-between border rounded my-3 px-4 py-2 align-items-center">
                         <div>
-                            <div class="heading-h4">{{ $role->display_name }}</div>
+                            <div class="heading-h4">{{ ($role->name == 'admin' || $role->name == 'employee' || $role->name == 'client') ? __('app.'.$role->name) : mb_ucwords($role->display_name) }}</div>
                             <div class="simple-text text-lightest mt-1">{{ $role->users_count }} @lang('app.member')
                             </div>
                         </div>
                         <div>
-                            @if ($role->name == 'admin')
-                                <span class="text-lightest">@lang('messages.adminPermissionsCantChange')</span>
-                            @else
-                                <x-forms.button-secondary class="view-permission" data-role-id="{{ $role->id }}" icon="key">
-                                    @lang('modules.permission.permissions')
-                                </x-forms.button-secondary>
-                            @endif
+                            <x-forms.button-secondary class="view-permission" data-role-id="{{ $role->id }}" icon="key">
+                                @lang('modules.permission.permissions')
+                            </x-forms.button-secondary>
                         </div>
                     </div>
                     <div class="table-sm-responsive role-permissions" id="role-permission-{{ $role->id }}"></div>

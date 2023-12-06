@@ -76,8 +76,13 @@ class ContractTemplateController extends AccountBaseController
         $contract->currency_id = $request->currency_id;
         $contract->contract_type_id = $request->contract_type;
         $contract->description = trim_editor($request->description);
-        $contract->contract_detail = trim_editor($request->description);
+        $contract->description = $request->contract_detail;
         $contract->added_by = user()->id;
+
+        if ($request->contract_detail) {
+            $contract->contract_detail = $request->contract_detail;
+        }
+
         $contract->save();
 
         return Reply::redirect(route('contract-template.index'), __('messages.recordSaved'));
@@ -142,7 +147,11 @@ class ContractTemplateController extends AccountBaseController
         $contract->currency_id = $request->currency_id;
         $contract->contract_type_id = $request->contract_type;
         $contract->description = trim_editor($request->description);
-        $contract->contract_detail = trim_editor($request->description);
+        $contract->description = $request->contract_detail;
+
+        if ($request->contract_detail) {
+            $contract->contract_detail = $request->contract_detail;
+        }
 
         $contract->save();
 

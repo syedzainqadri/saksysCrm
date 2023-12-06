@@ -34,7 +34,7 @@ $projectArchived = $project->trashed();
                             <option value="not finished">@lang('modules.tasks.hideCompletedTask')</option>
                             <option value="all">@lang('app.all')</option>
                             @foreach ($taskBoardStatus as $status)
-                                <option value="{{ $status->id }}">{{ $status->slug == 'completed' || $status->slug == 'incomplete' ? __('app.' . $status->slug) : $status->column_name }}</option>
+                                <option value="{{ $status->id }}">{{ $status->slug == 'completed' || $status->slug == 'incomplete' ? __('app.' . $status->slug) : mb_ucwords($status->column_name) }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -106,7 +106,7 @@ $projectArchived = $project->trashed();
                 <div class="select-status mr-3 d-none quick-action-field" id="change-status-action">
                     <select name="status" class="form-control select-picker">
                         @foreach ($taskBoardStatus as $status)
-                            <option value="{{ $status->id }}">{{ $status->slug == 'completed' || $status->slug == 'incomplete' ? __('app.' . $status->slug) : $status->column_name }}</option>
+                            <option value="{{ $status->id }}">{{ $status->slug == 'completed' || $status->slug == 'incomplete' ? __('app.' . $status->slug) : mb_ucwords($status->column_name) }}</option>
                         @endforeach
                     </select>
                 </div>

@@ -55,7 +55,7 @@ class LeaveStatusUpdate extends BaseNotification
         $url = route('leaves.show', $this->leave->id);
         $url = getDomainSpecificUrl($url, $this->company);
 
-        $content = __('email.leaves.statusSubject') . '<br>' . __('app.date') . ': ' . $this->leave->leave_date->format($this->company->date_format) . '<br>' . __('app.status') . ': ' . $this->leave->status;
+        $content = __('email.leaves.statusSubject') . '<br>' . __('app.date') . ': ' . $this->leave->leave_date->format($this->company->date_format) . '<br>' . __('app.status') . ': ' . mb_ucwords($this->leave->status);
 
         return $build
             ->subject(__('email.leaves.statusSubject') . ' - ' . config('app.name'))

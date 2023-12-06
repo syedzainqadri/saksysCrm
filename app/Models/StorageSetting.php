@@ -26,7 +26,7 @@ namespace App\Models;
 class StorageSetting extends BaseModel
 {
 
-    const HASH_TEMP_FILE_TIME = 60;
+    const HASH_TEMP_FILE_TIME = 30;
 
     protected $table = 'file_storage_settings';
 

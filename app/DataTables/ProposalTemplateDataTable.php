@@ -5,16 +5,12 @@ namespace App\DataTables;
 use App\DataTables\BaseDataTable;
 use App\Models\ProposalTemplate;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
 
 class ProposalTemplateDataTable extends BaseDataTable
 {
-
-    private $viewProposalPermission;
-    private $addProposalPermission;
-    private $editProposalsPermission;
-    private $deleteProposalPermission;
-    private $manageProposalTemplate;
 
     public function __construct()
     {
@@ -25,6 +21,7 @@ class ProposalTemplateDataTable extends BaseDataTable
         $this->editProposalsPermission = user()->permission('edit_lead_proposals');
         $this->deleteProposalPermission = user()->permission('delete_lead_proposals');
         $this->manageProposalTemplate = user()->permission('manage_proposal_template');
+
     }
 
     /**
@@ -123,7 +120,7 @@ class ProposalTemplateDataTable extends BaseDataTable
      */
     public function html()
     {
-        $dataTable = $this->setBuilder('proposal-template-table')
+        return $this->setBuilder('proposal-template-table')
             ->parameters([
                 'initComplete' => 'function () {
                     window.LaravelDataTables["proposal-template-table"].buttons().container()
@@ -135,8 +132,6 @@ class ProposalTemplateDataTable extends BaseDataTable
                     })
                 }',
             ]);
-
-        return $dataTable;
     }
 
     /**

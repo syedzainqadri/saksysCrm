@@ -30,7 +30,7 @@
                                            id="customCheck2" @if(in_array('events',$event_filter)) checked @endif>
                                     <label
                                         class="form-check-label form_custom_label text-dark-grey pl-2 mr-3 justify-content-start cursor-pointer checkmark-20 pt-2 text-wrap"
-                                        for="customCheck2">@lang('app.menu.events')</label>
+                                        for="customCheck2">@lang('app.menu.Events')</label>
                                 </div>
                             @endif
                             @if(in_array('holidays', user_modules()))

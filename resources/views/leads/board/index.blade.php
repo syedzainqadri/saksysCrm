@@ -39,7 +39,7 @@ $viewLeadPermission = user()->permission('view_lead');
     <!-- CONTENT WRAPPER START -->
     <div class="w-task-board-box px-4 py-2 bg-white">
         <!-- Add Task Export Buttons Start -->
-        <div class="d-grid d-lg-flex d-md-flex action-bar my-3">
+        <div class="d-block d-lg-flex d-md-flex my-3">
 
             <x-alert type="warning" icon="info" class="d-lg-none">@lang('messages.dragDropScreenInfo')</x-alert>
 
@@ -57,7 +57,7 @@ $viewLeadPermission = user()->permission('view_lead');
                 @endif
             </div>
 
-            <div class="btn-group mt-2 mt-lg-0 mt-md-0 ml-0 ml-lg-3 ml-md-3" role="group">
+            <div class="btn-group mt-2 mt-lg-0 mt-md-0" role="group">
                 <a href="{{ route('leads.index') }}" class="btn btn-secondary f-14" data-toggle="tooltip"
                     data-original-title="@lang('modules.leaves.tableView')"><i class="side-icon bi bi-list-ul"></i></a>
 
@@ -101,12 +101,11 @@ $viewLeadPermission = user()->permission('view_lead');
             var category_id = $('#filter_category_id').val();
             var source_id = $('#filter_source_id').val();
             var date_filter_on = $('#date_filter_on').val();
-            var status_id = $('#filter_status_id').val();
 
             var url = "{{ route('leadboards.index') }}?startDate=" + encodeURIComponent(startDate) + '&endDate=' +
                 encodeURIComponent(endDate) + '&type=' + type + '&followUp=' + followUp + '&agent=' +
                 agent + '&category_id=' + category_id + '&source_id=' + source_id +
-                '&searchText=' + searchText  + '&min=' + min + '&max=' + max + '&date_filter_on=' + date_filter_on + '&status_id=' + status_id;
+                '&searchText=' + searchText  + '&min=' + min + '&max=' + max + '&date_filter_on=' + date_filter_on;
 
             $.easyAjax({
                 url: url,
@@ -271,49 +270,6 @@ $viewLeadPermission = user()->permission('view_lead');
                     if (response.status == 'success') {
                         showTable();
                     }
-                }
-            });
-        });
-
-        $('body').on('click', '.delete-table-row', function() {
-            var id = $(this).data('id');
-            Swal.fire({
-                title: "@lang('messages.sweetAlertTitle')",
-                text: "@lang('messages.recoverRecord')",
-                icon: 'warning',
-                showCancelButton: true,
-                focusConfirm: false,
-                confirmButtonText: "@lang('messages.confirmDelete')",
-                cancelButtonText: "@lang('app.cancel')",
-                customClass: {
-                    confirmButton: 'btn btn-primary mr-3',
-                    cancelButton: 'btn btn-secondary'
-                },
-                showClass: {
-                    popup: 'swal2-noanimation',
-                    backdrop: 'swal2-noanimation'
-                },
-                buttonsStyling: false
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    var url = "{{ route('leads.destroy', ':id') }}";
-                    url = url.replace(':id', id);
-
-                    var token = "{{ csrf_token() }}";
-
-                    $.easyAjax({
-                        type: 'POST',
-                        url: url,
-                        data: {
-                            '_token': token,
-                            '_method': 'DELETE'
-                        },
-                        success: function(response) {
-                            if (response.status == "success") {
-                                window.location.href = "{{ route('leadboards.index')}}";
-                            }
-                        }
-                    });
                 }
             });
         });

@@ -114,7 +114,7 @@ class ContractsDataTable extends BaseDataTable
             })
             ->editColumn('project_name', function ($row) {
                 if ($row->project_id != null) {
-                    return '<a href="' . route('projects.show', $row->project_id) . '" class="text-darkest-grey">' . $row->project->project_name . '</a>';
+                    return '<a href="' . route('projects.show', $row->project_id) . '" class="text-darkest-grey">' . ucfirst($row->project->project_name) . '</a>';
                 }
 
                 return '--';
@@ -155,10 +155,10 @@ class ContractsDataTable extends BaseDataTable
             ->editColumn('client.name', function ($row) {
                 return '<div class="media align-items-center">
                     <a href="' . route('clients.show', [$row->client_id]) . '">
-                    <img src="' . $row->client->image_url . '" class="mr-3 taskEmployeeImg rounded-circle" alt="' . $row->client->name . '" title="' . $row->client->name . '"></a>
+                    <img src="' . $row->client->image_url . '" class="mr-3 taskEmployeeImg rounded-circle" alt="' . ucfirst($row->client->name) . '" title="' . ucfirst($row->client->name) . '"></a>
                     <div class="media-body">
-                    <h5 class="mb-0 f-13 text-darkest-grey"><a href="' . route('clients.show', [$row->client_id]) . '">' . ($row->client->salutation ? $row->client->salutation->label() . ' ' : '') . $row->client->name . '</a></h5>
-                    <p class="mb-0 f-13 text-dark-grey">' . $row->client->clientDetails->company_name . '</p>
+                    <h5 class="mb-0 f-13 text-darkest-grey"><a href="' . route('clients.show', [$row->client_id]) . '">' . ucfirst($row->client->name) . '</a></h5>
+                    <p class="mb-0 f-13 text-dark-grey">' . ucfirst($row->client->clientDetails->company_name) . '</p>
                     </div>
                   </div>';
             })
@@ -179,7 +179,6 @@ class ContractsDataTable extends BaseDataTable
 
     /**
      * @param Contract $model
-     * @property-read \App\Models\Award $title
      * @return \Illuminate\Database\Eloquent\Builder
      */
     public function query(Contract $model)
@@ -264,12 +263,11 @@ class ContractsDataTable extends BaseDataTable
     /**
      * Optional method if you want to use html builder.
      *
-     * @property-read \App\Models\Award $title
      * @return \Yajra\DataTables\Html\Builder
      */
     public function html()
     {
-        $dataTable = $this->setBuilder('contracts-table')
+        return $this->setBuilder('contracts-table')
             ->parameters([
                 'initComplete' => 'function () {
                    window.LaravelDataTables["contracts-table"].buttons().container()
@@ -279,13 +277,8 @@ class ContractsDataTable extends BaseDataTable
                   //
                 }',
                 /* 'buttons'      => ['excel'] */
-            ]);
-
-        if (canDataTableExport()) {
-            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
-        }
-
-        return $dataTable;
+            ])
+            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
     }
 
     /**

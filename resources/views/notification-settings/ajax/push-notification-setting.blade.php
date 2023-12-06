@@ -25,14 +25,8 @@
 
     <div class="col-xl-4 col-lg-12 col-md-12 ntfcn-tab-content-right border-left-grey p-4">
         <h4 class="f-16 text-capitalize f-w-500 text-dark-grey">@lang("modules.pushSettings.notificationTitle")</h4>
-        <div class="mb-3 d-flex">
-            <x-forms.checkbox  :checked="$checkedAll==true"
-                :fieldLabel="__('modules.permission.selectAll')"
-                fieldName="select_all_checkbox" fieldId="select_all"
-                fieldValue="all"/>
-        </div>
         @foreach ($emailSettings as $emailSetting)
-            <div class="mb-3 d-flex notification">
+            <div class="mb-3 d-flex">
                 <x-forms.checkbox :checked="$emailSetting->send_push == 'yes'"
                     :fieldLabel="__('modules.emailNotification.'.str_slug($emailSetting->setting_name))"
                     fieldName="send_push[]" :fieldId="'send_push_'.$emailSetting->id" :fieldValue="$emailSetting->id" />
@@ -74,22 +68,4 @@
                 type: "GET",
             })
         });
-
-        var checkboxes = document.querySelectorAll(".notification input[type=checkbox]");
-
-        $('body').on('click', '#select_all', function() {
-            var selectAll = $('#select_all').is(':checked');
-
-            if(selectAll == true){
-                checkboxes.forEach(function(checkbox){
-                    checkbox.checked = true;
-                })
-            }
-            else{
-                checkboxes.forEach(function(checkbox){
-                    checkbox.checked = false;
-                })
-            }
-        });
-
     </script>

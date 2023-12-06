@@ -74,7 +74,7 @@ $deleteAttendancePermission = user()->permission('delete_attendance');
                         search="true">
                             @foreach ($location as $locations)
                                 <option value="{{ $locations->id }}">
-                                    {{ $locations->location }}</option>
+                                    {{ mb_ucwords($locations->location) }}</option>
                             @endforeach
                         </x-forms.select>
                     </div>

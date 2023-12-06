@@ -106,6 +106,7 @@ $deleteFilePermission = user()->permission('delete_project_files');
 </div>
 <!-- TAB CONTENT END -->
 
+<script src="{{ asset('vendor/jquery/dropzone.min.js') }}"></script>
 <script>
     $(document).ready(function () {
         var add_project_files = "{{ $addFilePermission }}";
@@ -141,21 +142,21 @@ $deleteFilePermission = user()->permission('delete_project_files');
         taskDropzone.on('uploadprogress', function() {
             $.easyBlockUI();
         });
-        taskDropzone.on('completemultiple', function(file) {
+        taskDropzone.on('queuecomplete', function(file) {
             var taskView = JSON.parse(file[0].xhr.response).view;
             taskDropzone.removeAllFiles();
             $.easyUnblockUI();
             $('#task-file-list').html(taskView);
         });
         taskDropzone.on('removedfile', function () {
-            var grp = $('div#employee_file').closest(".form-group");
+            var grp = $('div#file-upload-dropzone').closest(".form-group");
             var label = $('div#file-upload-box').siblings("label");
             $(grp).removeClass("has-error");
             $(label).removeClass("is-invalid");
         });
         taskDropzone.on('error', function (file, message) {
             taskDropzone.removeFile(file);
-            var grp = $('div#employee_file').closest(".form-group");
+            var grp = $('div#file-upload-dropzone').closest(".form-group");
             var label = $('div#file-upload-box').siblings("label");
             $(grp).find(".help-block").remove();
             var helpBlockContainer = $(grp);

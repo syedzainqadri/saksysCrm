@@ -15,6 +15,10 @@ class NewProject extends BaseNotification
      */
     private $project;
 
+    /**
+     * @var \Illuminate\Contracts\Foundation\Application|\Illuminate\Session\SessionManager|\Illuminate\Session\Store|mixed
+     */
+
     public function __construct(Project $project)
     {
         $this->project = $project;

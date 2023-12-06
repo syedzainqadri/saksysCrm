@@ -52,21 +52,12 @@ class UserchatFile extends BaseModel
 
     const FILE_PATH = 'message-files';
 
-    protected $appends = ['file_url', 'icon', 'file'];
+    protected $appends = ['file_url', 'icon'];
     protected $table = 'users_chat_files';
 
     public function getFileUrlAttribute()
     {
-        if($this->external_link){
-            return str($this->external_link)->contains('http') ? $this->external_link : asset_url_local_s3($this->external_link);
-        }
-
-        return asset_url_local_s3(UserchatFile::FILE_PATH . '/' . $this->hashname);
-    }
-
-    public function getFileAttribute()
-    {
-        return $this->external_link ?: (UserchatFile::FILE_PATH . '/' . $this->hashname);
+        return (!is_null($this->external_link)) ? $this->external_link : asset_url_local_s3(UserchatFile::FILE_PATH . '/' . $this->hashname);
     }
 
     public function chat(): BelongsTo

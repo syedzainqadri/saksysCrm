@@ -92,7 +92,7 @@ class AwardController extends AccountBaseController
             $icon = "<i class='bi bi-". $item->awardIcon->icon."' style='color:".$item->color_code ."'></i>     ";
 
             $options .= '<option ' . $selected . '  data-content="'.$icon .' '. $name .'" value="'.$item->id.'">
-                                                '.$name.'
+                                                '.mb_ucwords($name).'
                                             </option>';
         }
 

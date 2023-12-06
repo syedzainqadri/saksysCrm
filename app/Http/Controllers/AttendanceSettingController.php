@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Helper\Reply;
 use App\Http\Requests\AttendanceSetting\UpdateAttendanceSetting;
 use App\Models\AttendanceSetting;
-use App\Models\Company;
 use App\Models\EmployeeShift;
 use App\Models\Holiday;
 use App\Models\Role;

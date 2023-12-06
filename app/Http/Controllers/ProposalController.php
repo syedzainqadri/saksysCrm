@@ -295,7 +295,7 @@ class ProposalController extends AccountBaseController
     public function sendProposal($id)
     {
         $proposal = Proposal::findOrFail($id);
-
+        
         if (request()->data_type != 'mark_as_send') {
             event(new NewProposalEvent($proposal, 'new'));
         }
@@ -316,7 +316,7 @@ class ProposalController extends AccountBaseController
     {
         $this->proposal = Proposal::with('unit')->findOrFail($id);
         $this->viewLeadProposalsPermission = user()->permission('view_lead_proposals');
-        abort_403(!($this->viewLeadProposalsPermission == 'all' || ($this->viewLeadProposalsPermission == 'added' && $this->proposal->added_by == user()->id)));
+        abort_403(!($this->viewLeadProposalsPermission == 'all' || ($this->viewLeadProposalsPermission == 'added' && $this->estimate->added_by == user()->id)));
 
         $pdfOption = $this->domPdfObjectForDownload($id);
         $pdf = $pdfOption['pdf'];

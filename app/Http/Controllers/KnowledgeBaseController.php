@@ -43,7 +43,7 @@ class KnowledgeBaseController extends AccountBaseController
 
         if (request()->id != '') {
             $category = KnowledgeBaseCategory::findOrFail(request('id'));
-            $this->activeMenu = str_replace(' ', '_', $category->name);
+            $this->activeMenu = strtolower(str_replace(' ', '_', $category->name));
             $this->knowledgebases = $this->knowledgebases->where('category_id', request('id'));
 
         } else {

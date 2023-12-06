@@ -37,6 +37,7 @@ class RolePermissionController extends AccountBaseController
         abort_403(user()->permission('manage_role_permission_setting') != 'all');
 
         $this->roles = Role::withCount('users')
+            ->where('name', '<>', 'admin')
             ->orderBy('id', 'asc')
             ->get();
 
@@ -112,8 +113,6 @@ class RolePermissionController extends AccountBaseController
             }
         }
 
-        \Illuminate\Support\Facades\Artisan::call('cache:clear');
-
         return Reply::dataOnly(['status' => 'success']);
     }
 
@@ -125,7 +124,7 @@ class RolePermissionController extends AccountBaseController
     public function permissions()
     {
         $roleId = request('roleId');
-        $this->role = Role::with('permissions')->where('name', '<>', 'admin')->findOrFail($roleId);
+        $this->role = Role::with('permissions')->findOrFail($roleId);
 
         if ($this->role->name == 'client') {
             $clientModules = ModuleSetting::where('type', 'client')->get()->pluck('module_name');
@@ -166,7 +165,7 @@ class RolePermissionController extends AccountBaseController
 
         $role = new Role();
         $role->name = $request->name;
-        $role->display_name = $request->name;
+        $role->display_name = mb_ucwords($request->name);
         $role->save();
 
         if ($request->import_from_role != '') {
@@ -247,7 +246,7 @@ class RolePermissionController extends AccountBaseController
 
     public function update(Request $request, $id)
     {
-        Role::where('id', $id)->update(['display_name' => $request->role_name]);
+        Role::where('id', $id)->update(['display_name' => mb_ucwords($request->role_name), 'name' => $request->role_name]);
     }
 
     public function addMissingAdminPermission($companyId = null)

@@ -55,7 +55,7 @@
                     <div class="col-lg-4">
                         <div class="bootstrap-timepicker">
                             <x-forms.text :fieldLabel="__('modules.attendance.halfDayMarkTime')" :fieldPlaceholder="__('placeholders.hours')" fieldName="halfday_mark_time"
-                                fieldId="halfday_mark_time" fieldRequired="true" />
+                                fieldId="halfday_mark_time" />
                         </div>
                     </div>
 

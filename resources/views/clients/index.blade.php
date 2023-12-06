@@ -80,7 +80,7 @@
                             data-container="body" data-size="8">
                             <option value="all">@lang('app.all')</option>
                             @foreach ($categories as $category)
-                                <option value="{{ $category->id }}">{{ $category->category_name }}</option>
+                                <option value="{{ $category->id }}">{{ mb_ucwords($category->category_name) }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -174,17 +174,18 @@
     <!-- CONTENT WRAPPER START -->
     <div class="content-wrapper">
         <!-- Add Task Export Buttons Start -->
-        <div class="d-grid d-lg-flex d-md-flex action-bar">
+        <div class="d-block d-lg-flex d-md-flex justify-content-between action-bar dd">
 
             <div id="table-actions" class="flex-grow-1 align-items-center">
                 @if ($addClientPermission == 'all' || $addClientPermission == 'added' || $addClientPermission == 'both')
                     <x-forms.link-primary :link="route('clients.create')" class="mr-3 openRightModal float-left mb-2 mb-lg-0 mb-md-0" icon="plus">
-                        @lang('app.addClient')
+                        @lang('app.add')
+                        @lang('app.client')
                     </x-forms.link-primary>
                 @endif
 
                 @if ($addClientPermission == 'all' || $addClientPermission == 'added' || $addClientPermission == 'both')
-                    <x-forms.link-secondary :link="route('clients.import')" class="mr-3 float-left mb-2 mb-lg-0 mb-md-0 d-sm-bloc d-none d-lg-block" icon="file-upload">
+                    <x-forms.link-secondary :link="route('clients.import')" class="mr-3 float-left mb-2 mb-lg-0 mb-md-0 d-sm-bloc" icon="file-upload">
                         @lang('app.importExcel')
                     </x-forms.link-secondary>
                 @endif
@@ -207,7 +208,7 @@
             </x-datatable.actions>
 
 
-            <div class="btn-group mt-2 mt-lg-0 mt-md-0 ml-0 ml-lg-3 ml-md-3" role="group">
+            <div class="btn-group ml-0 ml-lg-3 ml-md-3" role="group">
                 <a href="{{ route('clients.index') }}" class="btn btn-secondary f-14 btn-active show-clients" data-toggle="tooltip"
                     data-original-title="@lang('app.menu.clients')"><i class="side-icon bi bi-list-ul"></i></a>
 

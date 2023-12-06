@@ -180,7 +180,7 @@ class FortifyServiceProvider extends ServiceProvider
             Carbon::setLocale($globalSetting->locale);
             setlocale(LC_TIME, $globalSetting->locale . '_' . mb_strtoupper($globalSetting->locale));
 
-            return view('auth.register', ['globalSetting' => $globalSetting]);
+                return view('auth.register', ['globalSetting' => $globalSetting]);
 
         });
 

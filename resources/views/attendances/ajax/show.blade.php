@@ -17,14 +17,14 @@ $deleteAttendancePermission = user()->permission('delete_attendance');
                     <div class="col-12">
                         <h4 class="card-title f-15 f-w-500 text-darkest-grey mb-0">
                             <a href="{{ route('employees.show', [$attendance->user->id]) }}"
-                                class="text-darkest-grey">{{ $attendance->user->name }}  @if(user() && user()->id == $attendance->user->id) <span class='ml-2 badge badge-secondary'> @lang('app.itsYou')</span> @endif </a>
+                                class="text-darkest-grey">{{ ucfirst($attendance->user->name) }}</a>
 
                             @isset($attendance->user->country)
                                 <x-flag :country="$attendance->user->country" />
                             @endisset
                         </h4>
                         <p class="mb-0 f-13 text-dark-grey">
-                            {{ (!is_null($attendance->user->employeeDetail) && !is_null($attendance->user->employeeDetail->designation)) ? $attendance->user->employeeDetail->designation->name : ' ' }}
+                            {{ (!is_null($attendance->user->employeeDetail) && !is_null($attendance->user->employeeDetail->designation)) ? mb_ucwords($attendance->user->employeeDetail->designation->name) : ' ' }}
                         </p>
                     </div>
                 </div>
@@ -80,7 +80,7 @@ $deleteAttendancePermission = user()->permission('delete_attendance');
                                             @if ($item->shift->shift_name != 'Day Off')
                                                 <span class="badge badge-info ml-2" style="background-color: {{ $item->shift->color }}">{{ $item->shift->shift_name }}</span>
                                             @else
-                                                <span class="badge badge-secondary ml-2" >{{ __('modules.attendance.' . str($attendanceSettings->shift_name)->camel()) }}</span>
+                                                <span class="badge badge-secondary ml-2" >{{ $attendanceSettings->shift_name }}</span>
                                             @endif
                                         @endif
                                     </p>
@@ -94,7 +94,7 @@ $deleteAttendancePermission = user()->permission('delete_attendance');
                                                 {{ $item->location }} {{ $item->working_from != '' ? '(' . $item->working_from . ')' : ''  }}
                                             @else
                                                 <i class="fa fa-map-marker-alt ml-2"></i>
-                                                {{ $item->location }} ({{$item->work_from_type}})
+                                                {{ $item->location }} ({{ucfirst($item->work_from_type)}})
                                             @endif
                                         @endif
 
@@ -109,8 +109,7 @@ $deleteAttendancePermission = user()->permission('delete_attendance');
                                         @endif
 
                                         @if ($item->latitude != '' && $item->longitude != '')
-
-                                        <a href="https://www.google.com/maps/search/?api=1&query={{ $item->latitude }}%2C{{ $item->longitude }}" target="_blank">
+                                        <a href="https://www.google.com/maps/{{ '@'.$item->latitude }},{{ $item->longitude }},17z" target="_blank">
                                             <i class="fa fa-map-marked-alt ml-2"></i> @lang('modules.attendance.showOnMap')</a>
                                         @endif
                                     </p>

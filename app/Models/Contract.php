@@ -2,13 +2,13 @@
 
 namespace App\Models;
 
+use App\Traits\HasCompany;
 use App\Scopes\ActiveScope;
 use App\Traits\CustomFieldsTrait;
-use App\Traits\HasCompany;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 /**
  * App\Models\Contract
@@ -92,6 +92,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property int|null $project_id
  * @property string|null $contract_note
  * @property-read mixed $extras
+ * @property-read mixed $original_contract_number
  * @property-read \App\Models\Project|null $project
  * @method static \Illuminate\Database\Eloquent\Builder|Contract whereContractNote($value)
  * @method static \Illuminate\Database\Eloquent\Builder|Contract whereContractNumber($value)
@@ -108,15 +109,16 @@ class Contract extends BaseModel
 
     use CustomFieldsTrait, HasFactory, HasCompany;
 
+
     protected $casts = [
         'start_date' => 'datetime',
         'end_date' => 'datetime',
-        'sign_date' => 'datetime',
     ];
+
 
     protected $with = ['currency'];
 
-    protected $appends = ['image_url', 'company_signature'];
+    protected $appends = ['image_url', 'company_signature', 'original_contract_number'];
 
     const CUSTOM_FIELD_MODEL = 'App\Models\Contract';
 
@@ -167,13 +169,44 @@ class Contract extends BaseModel
 
     public static function lastContractNumber()
     {
-        return (int)Contract::latest()->first()?->original_contract_number ?? 0;
+        return (int)Contract::max('contract_number');
     }
 
-    public function formatContractNumber()
+    public function getOriginalContractNumberAttribute()
     {
-        $invoiceSettings = company() ? company()->invoiceSetting : $this->company->invoiceSetting;
-        return \App\Helper\NumberFormat::contract($this->contract_number, $invoiceSettings);
+        $invoiceSettings = (company()) ? company()->invoiceSetting : $this->company->invoiceSetting;
+        $zero = '';
+
+        if (strlen($this->attributes['contract_number']) < $invoiceSettings->contract_digit) {
+            $condition = $invoiceSettings->contract_digit - strlen($this->attributes['contract_number']);
+
+            for ($i = 0; $i < $condition; $i++) {
+                $zero = '0' . $zero;
+            }
+        }
+
+        return $zero . $this->attributes['contract_number'];
+    }
+
+    public function getContractNumberAttribute($value)
+    {
+        if (is_null($value)) {
+            return '';
+        }
+
+        $invoiceSettings = (company()) ? company()->invoiceSetting : $this->company->invoiceSetting;
+        $zero = '';
+
+        if (strlen($value) < $invoiceSettings->contract_digit) {
+            $condition = $invoiceSettings->contract_digit - strlen($value);
+
+            for ($i = 0; $i < $condition; $i++) {
+                $zero = '0' . $zero;
+            }
+        }
+
+        return $invoiceSettings->contract_prefix . $invoiceSettings->contract_number_separator . $zero . $value;
+
     }
 
     public function getCompanySignatureAttribute()

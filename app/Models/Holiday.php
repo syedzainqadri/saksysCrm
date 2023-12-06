@@ -35,8 +35,6 @@ use Illuminate\Support\Facades\DB;
  * @property int|null $company_id
  * @property-read \App\Models\Company|null $company
  * @method static \Illuminate\Database\Eloquent\Builder|Holiday whereCompanyId($value)
- * @property-read \App\Models\Holiday|null $hdate
- * @property-read \App\Models\Leave|null $ldate
  * @mixin \Eloquent
  */
 class Holiday extends BaseModel
@@ -57,6 +55,7 @@ class Holiday extends BaseModel
     const FRIDAY = 5;
 
     const SATURDAY = 6;
+
 
     // Don't forget to fill this array
     protected $fillable = ['date', 'occassion'];

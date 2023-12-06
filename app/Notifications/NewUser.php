@@ -9,6 +9,7 @@ use Illuminate\Notifications\Messages\SlackMessage;
 class NewUser extends BaseNotification
 {
 
+
     /**
      * Create a new notification instance.
      *
@@ -115,11 +116,12 @@ class NewUser extends BaseNotification
             $url = route('login');
             $url = getDomainSpecificUrl($url, $this->company);
 
-            $to = '@'.$notifiable->employee[0]->slack_username;
-            $content = '*'. __('email.newUser.subject') . ' ' . config('app.name') . '!*' . "\n" . __('email.newUser.text');
-            $url = "\n" . '<' . $url . '|' . __('email.newUser.action') . '>';
-
-            return $slackMessage->to($to)->content($content . $url);
+            //phpcs:ignore
+            return $slackMessage
+                    //phpcs:ignore
+                ->to('@' . $notifiable->employee[0]->slack_username)
+                //phpcs:ignore
+                ->content('*' . __('email.newUser.subject') . ' ' . config('app.name') . '!*' . "\n" . __('email.newUser.text')) . "\n" . '<' . $url . '|' . __('email.newUser.action') . '>';
 
         } catch (\Exception $e) {
             return $slackMessage->content('*' . __('email.newUser.subject') . '*' . "\n" .'This is a redirected notification. Add slack username for *' . $notifiable->name . '*');

@@ -7,16 +7,17 @@ use App\Models\Ticket;
 use App\Models\CustomField;
 use App\Models\CustomFieldGroup;
 use App\DataTables\BaseDataTable;
+use Illuminate\Database\Eloquent\Model;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
 use Illuminate\Support\Facades\DB;
+use Yajra\DataTables\EloquentDataTable;
 
 class   TicketDataTable extends BaseDataTable
 {
 
     private $deleteTicketPermission;
     private $viewTicketPermission;
-    private $editTicketPermission;
 
     public function __construct()
     {
@@ -148,7 +149,7 @@ class   TicketDataTable extends BaseDataTable
             return $row->status;
         });
         $datatables->editColumn('subject', function ($row) {
-            return '<a href="' . route('tickets.show', $row->ticket_number) . '" class="text-darkest-grey" >' . $row->subject . '</a>' . $row->badge();
+            return '<a href="' . route('tickets.show', $row->ticket_number) . '" class="text-darkest-grey" >' . ucfirst($row->subject) . '</a>' . $row->badge();
         });
         $datatables->addColumn('name', function ($row) {
             return $row->requester ? $row->requester->name : $row->ticket_number;
@@ -172,11 +173,9 @@ class   TicketDataTable extends BaseDataTable
         $datatables->editColumn('updated_at', function ($row) {
             return $row->created_at->timezone($this->company->timezone)->translatedFormat($this->company->date_format . ' ' . $this->company->time_format);
         });
-
         $datatables->setRowId(function ($row) {
             return 'row-' . $row->id;
         });
-
         $datatables->orderColumn('user_id', 'name $1');
         $datatables->orderColumn('status', 'id $1');
 
@@ -267,12 +266,6 @@ class   TicketDataTable extends BaseDataTable
             $model->where('ticket_tags.tag_id', '=', $request->tagId);
         }
 
-        if (!is_null($request->projectID) && $request->projectID != 'all') {
-            $model->whereHas('project', function ($q) use ($request) {
-                $q->where('project_id', $request->projectID);
-            });
-        }
-
         if ($this->viewTicketPermission == 'owned') {
             $model->where(function ($query) {
                 $query->where('tickets.user_id', '=', user()->id)
@@ -312,7 +305,7 @@ class   TicketDataTable extends BaseDataTable
      */
     public function html()
     {
-        $dataTable = $this->setBuilder('ticket-table', 5)
+        return $this->setBuilder('ticket-table', 5)
             ->parameters([
                 'initComplete' => 'function () {
                     window.LaravelDataTables["ticket-table"].buttons().container()
@@ -325,13 +318,8 @@ class   TicketDataTable extends BaseDataTable
                         selector: \'[data-toggle="tooltip"]\'
                     })
                 }',
-            ]);
-
-        if (canDataTableExport()) {
-            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
-        }
-
-        return $dataTable;
+            ])
+            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
     }
 
     /**
@@ -350,7 +338,7 @@ class   TicketDataTable extends BaseDataTable
                 'searchable' => false,
                 'visible' => !in_array('client', user_roles())
             ],
-            __('modules.tickets.ticket') . ' #' => ['data' => 'ticket_number', 'name' => 'ticket_number', 'title' => __('modules.tickets.ticket') . ' #'],
+            __('modules.tickets.ticket') . ' #' => ['data' => 'ticket_number', 'name' => 'ticket_number', 'title' => __('modules.tickets.ticket') . ' #', 'visible' => showId()],
             __('modules.tickets.ticketSubject') => ['data' => 'subject', 'name' => 'subject', 'title' => __('modules.tickets.ticketSubject'), 'width' => '20%'],
             __('app.name') => ['data' => 'name', 'name' => 'user_id', 'visible' => false, 'title' => __('app.name')],
             __('modules.tickets.requesterName') => ['data' => 'user_id', 'name' => 'user_id', 'visible' => !in_array('client', user_roles()), 'exportable' => false, 'title' => __('modules.tickets.requesterName'), 'width' => '20%'],

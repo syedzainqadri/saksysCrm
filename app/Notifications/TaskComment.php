@@ -71,13 +71,8 @@ class TaskComment extends BaseNotification
         $build = parent::build();
         $url = route('tasks.show', [$this->task->id, 'view' => 'comments']);
         $url = getDomainSpecificUrl($url, $this->company);
-
-        $heading = __('email.taskComment.subject') . ' - ' . $this->task->heading . ' #' . $this->task->task_short_code . '<br>';
-        $projectName = ($this->task->project != null) ? '<br>'. __('app.project') . ' - ' . $this->task->project->project_name. '<br>' : '<br>';
-        $comment = '<br>'. __('app.comment') . ' - ' . $this->taskComment->comment . '<br>';
-        $commentBy = ($this->taskComment && $this->taskComment->user) ? __('email.taskComment.commentedBy') . ' - ' . $this->taskComment->user->name. '<br>' : '<br>';
-
-        $content = $heading . $projectName . $comment . $commentBy;
+        $projectName = ($this->task->project != null) ? ucfirst($this->task->project->project_name) : '';
+        $content = __('email.taskComment.subject') . ' - ' . ucfirst($this->task->heading) . ' #' . $this->task->task_short_code . '<br>' . (!is_null($this->task->project)) ? __('app.project') . ' - ' .$projectName : '' . '<br>';
 
         return $build
             ->subject(__('email.taskComment.subject') . ' #' . $this->task->task_short_code . ' - ' . config('app.name') . '.')
@@ -122,7 +117,7 @@ class TaskComment extends BaseNotification
                 ->from(config('app.name'))
                 ->image($slack->slack_logo_url)
                 ->to('@' . $notifiable->employee[0]->slack_username)
-                ->content('*' . __('email.taskComment.subject') . '*' . "\n" . $this->task->heading . "\n" . ' #' . $this->task->task_short_code);
+                ->content('*' . __('email.taskComment.subject') . '*' . "\n" . ucfirst($this->task->heading) . "\n" . ' #' . $this->task->task_short_code);
         }
 
         return (new SlackMessage())
@@ -136,7 +131,7 @@ class TaskComment extends BaseNotification
     {
         return OneSignalMessage::create()
             ->setSubject(__('email.taskComment.subject'))
-            ->setBody($this->task->heading . ' ' . __('email.taskComment.subject'));
+            ->setBody(ucfirst($this->task->heading) . ' ' . __('email.taskComment.subject'));
     }
 
 }

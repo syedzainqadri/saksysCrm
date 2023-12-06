@@ -66,7 +66,7 @@
                         <select class="form-control select-picker" name="project_id" id="project_id" data-live-search="true" data-container="body" data-size="8">
                             <option value="all">@lang('app.all')</option>
                             @foreach ($projects as $project)
-                                <option value="{{ $project->id }}">{{ $project->project_name }}</option>
+                                <option value="{{ $project->id }}">{{ mb_ucwords($project->project_name) }}</option>
                             @endforeach
                         </select>
                     </div>

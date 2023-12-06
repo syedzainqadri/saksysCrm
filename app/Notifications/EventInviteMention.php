@@ -34,7 +34,7 @@ class EventInviteMention extends BaseNotification
     public function via($notifiable)
     {
         $via = ['database'];
-
+        
         if ($notifiable->email_notifications && $notifiable->email != '') {
 
             array_push($via, 'mail');
@@ -61,7 +61,7 @@ class EventInviteMention extends BaseNotification
             ->setDtStart(new \DateTime($this->event->start_date_time))
             ->setDtEnd(new \DateTime($this->event->end_date_time))
             ->setNoTime(true)
-            ->setSummary($this->event->event_name);
+            ->setSummary(ucfirst($this->event->event_name));
         $vCalendar->addComponent($vEvent);
         $vFile = $vCalendar->render();
 

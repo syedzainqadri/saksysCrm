@@ -90,7 +90,7 @@ class ProductsDataTable extends BaseDataTable
 
         $datatables->editColumn('name', function ($row) {
 
-            return '<a href="' . route('products.show', [$row->id]) . '" class="openRightModal text-darkest-grey" >' . $row->name . '</a>';
+            return '<a href="' . route('products.show', [$row->id]) . '" class="openRightModal text-darkest-grey" >' . ucfirst($row->name) . '</a>';
         });
         $datatables->editColumn('default_image', function ($row) {
             return '<img src="' . $row->image_url . '" class="border rounded height-35" />';
@@ -118,10 +118,10 @@ class ProductsDataTable extends BaseDataTable
                     }
                 }
 
-                return currency_format($row->price + $totalTax, company()->currency_id);
+                return currency_format($row->price + $totalTax);
             }
 
-            return currency_format($row->price, company()->currency_id);
+            return currency_format($row->price);
         });
         $datatables->addIndexColumn();
         $datatables->smart(false);
@@ -184,7 +184,7 @@ class ProductsDataTable extends BaseDataTable
      */
     public function html()
     {
-        $dataTable = $this->setBuilder('products-table', 2)
+        return $this->setBuilder('products-table', 2)
             ->parameters([
                 'initComplete' => 'function () {
                    window.LaravelDataTables["products-table"].buttons().container()
@@ -195,13 +195,8 @@ class ProductsDataTable extends BaseDataTable
                         selector: \'[data-toggle="tooltip"]\'
                     })
                 }',
-            ]);
-
-        if (canDataTableExport()) {
-            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
-        }
-
-        return $dataTable;
+            ])
+            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
     }
 
     /**

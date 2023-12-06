@@ -2,29 +2,29 @@
 
 namespace App\Http\Controllers;
 
-use App\Events\ContractSignedEvent;
+use Carbon\Carbon;
 use App\Helper\Files;
 use App\Helper\Reply;
-use App\Http\Requests\Admin\Contract\SignRequest;
-use App\Http\Requests\EstimateAcceptRequest;
-use App\Models\AcceptEstimate;
-use App\Models\Contract;
-use App\Models\ContractSign;
-use App\Models\Estimate;
-use App\Models\EstimateItem;
-use App\Models\EstimateItemImage;
 use App\Models\Invoice;
-use App\Models\InvoiceItemImage;
-use App\Models\InvoiceItems;
+use App\Models\Contract;
+use App\Models\Estimate;
 use App\Models\SmtpSetting;
 use App\Scopes\ActiveScope;
-use App\Traits\UniversalSearchTrait;
-use Carbon\Carbon;
+use App\Models\ContractSign;
+use App\Models\EstimateItem;
+use App\Models\InvoiceItems;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\App;
+use App\Models\AcceptEstimate;
+use Laravel\Socialite\Two\User;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\File;
+use App\Events\ContractSignedEvent;
+use Illuminate\Support\Facades\App;
 use Nwidart\Modules\Facades\Module;
+use App\Traits\UniversalSearchTrait;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Redirect;
+use App\Http\Requests\EstimateAcceptRequest;
+use App\Http\Requests\Admin\Contract\SignRequest;
 
 class PublicUrlController extends Controller
 {
@@ -268,7 +268,7 @@ class PublicUrlController extends Controller
         foreach ($estimate->items as $item) :
 
             if (!is_null($item)) {
-                $invoiceItem = InvoiceItems::create(
+                InvoiceItems::create(
                     [
                         'invoice_id' => $invoice->id,
                         'item_name' => $item->item_name,
@@ -280,24 +280,6 @@ class PublicUrlController extends Controller
                         'taxes' => $item->taxes
                     ]
                 );
-
-                $estimateItemImage = $item->estimateItemImage;
-
-                if(!is_null($estimateItemImage)) {
-
-                    $file = new InvoiceItemImage();
-
-                    $file->invoice_item_id = $invoiceItem->id;
-
-                    $fileName = Files::generateNewFileName($estimateItemImage->filename);
-
-                    Files::copy(EstimateItemImage::FILE_PATH . '/' . $estimateItemImage->item->id . '/' . $estimateItemImage->hashname, InvoiceItemImage::FILE_PATH . '/' . $invoiceItem->id . '/' . $fileName);
-
-                    $file->filename = $estimateItemImage->filename;
-                    $file->hashname = $fileName;
-                    $file->size = $estimateItemImage->size;
-                    $file->save();
-                }
             }
 
         endforeach;
@@ -402,7 +384,7 @@ class PublicUrlController extends Controller
 
         $dom_pdf = $pdf->getDomPDF();
         $canvas = $dom_pdf->getCanvas();
-        $canvas->page_text(530, 820, null, null, 10);
+        $canvas->page_text(530, 820, 'Page {PAGE_NUM} of {PAGE_COUNT}', null, 10);
         $filename = $this->estimate->estimate_number;
 
         return [

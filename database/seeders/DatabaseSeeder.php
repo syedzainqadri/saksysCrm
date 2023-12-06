@@ -63,7 +63,7 @@ class DatabaseSeeder extends Seeder
         }
 
         if (!App::environment('codecanyon')) {
-            Artisan::call('sync-user-permissions all');
+            Artisan::call('sync-user-permissions all fresh');
         }
 
         config(['app.seeding' => false]);

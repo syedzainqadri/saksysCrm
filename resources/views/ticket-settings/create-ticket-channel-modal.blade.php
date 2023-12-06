@@ -10,7 +10,7 @@
                 <div class="row">
                     <div class="col-lg-12">
                         <x-forms.text fieldId="channel_name" :fieldLabel="__('modules.tickets.ticketChannel')"
-                            fieldName="channel_name" fieldRequired="true" :fieldPlaceholder="__('placeholders.tickets.ticketChannel')">
+                            fieldName="channel_name" fieldRequired="true" fieldPlaceholder="e.g. Facebook, Phone, etc.">
                         </x-forms.text>
                     </div>
                 </div>

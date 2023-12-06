@@ -21,6 +21,7 @@ class Files
      * @param string $dir
      * @param null $width
      * @param int $height
+     * @param null $crop
      * @return string
      * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException
      * @throws \Exception
@@ -115,14 +116,8 @@ class Files
             // Add data to file_storage table
             $newName = self::fileStore($uploadedFile, $dir);
 
-            $fileVisibility = [];
-
-            if (config('filesystems.default') == 'local') {
-                $fileVisibility = ['directory_visibility' => 'public', 'visibility' => 'public'];
-            }
-
             // We have given 2 options of upload for now s3 and local
-            Storage::disk(config('filesystems.default'))->putFileAs($dir, $uploadedFile, $newName, $fileVisibility);
+            Storage::disk(config('filesystems.default'))->putFileAs($dir, $uploadedFile, $newName, ['directory_visibility' => 'public', 'visibility' => 'public']);
 
             // Upload files to aws s3 or digitalocean or wasabi or minio
             Storage::disk(config('filesystems.default'))->missing($dir . '/' . $newName);

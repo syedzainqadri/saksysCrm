@@ -64,7 +64,7 @@ class EmployeePermissionSeeder extends Seeder
 
         foreach ($adminRole->roleuser as $roleuser) {
             try {
-                $roleuser->user->assignUserRolePermission($adminRole->id);
+                $roleuser->user->insertUserRolePermission($adminRole->id);
             } catch (\Exception $e) {
                 echo($e->getMessage());
             }

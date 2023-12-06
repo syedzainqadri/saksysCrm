@@ -21,7 +21,7 @@
             <div class="col-md-12">
                 <x-forms.text class="mb-3" fieldId="company_name"
                     :fieldLabel="__('modules.client.companyName')" fieldName="company_name"
-                    :fieldPlaceholder="__('placeholders.company')" :fieldValue="$lead->company_name ?? ''"></x-forms.text>
+                    fieldPlaceholder="e.g. Space X" :fieldValue="$lead->company_name ?? ''"></x-forms.text>
             </div>
             <div class="col-md-12">
                 <div class="form-group my-3">

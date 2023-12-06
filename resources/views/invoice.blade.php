@@ -128,7 +128,7 @@
                         <table width="100%" class="___class_+?14___">
                             <tr class="inv-logo-heading">
                                 <td><img src="{{ $company->invoiceSetting->logo_url }}"
-                                         alt="{{ $company->company_name }}" id="logo"/></td>
+                                         alt="{{ mb_ucwords($company->company_name) }}" id="logo"/></td>
                                 <td align="right"
                                     class="font-weight-bold f-21 text-dark text-uppercase mt-4 mt-lg-0 mt-md-0">
                                     @lang('app.invoice')</td>
@@ -136,7 +136,7 @@
                             <tr class="inv-num">
                                 <td class="f-14 text-dark">
                                     <p class="mt-3 mb-0">
-                                        {{ $company->company_name }}<br>
+                                        {{ mb_ucwords($company->company_name) }}<br>
                                         @if (!is_null($company))
                                             {!! $invoice->address ? nl2br($invoice->address->address) : '' !!}<br>
                                             {{ $company->company_phone }}
@@ -186,7 +186,7 @@
                                             class="text-dark-grey text-capitalize">@lang('modules.invoices.billedTo')</span><br>
 
                                         @if ($invoice->client && $invoice->client->name && $invoice->company->invoiceSetting->show_client_name == 'yes')
-                                            {{ $invoice->client->name }}<br>
+                                            {{ mb_ucwords($invoice->client->name) }}<br>
                                         @endif
 
                                         @if ($invoice->client && $invoice->client->email && $invoice->company->invoiceSetting->show_client_email == 'yes')
@@ -198,7 +198,7 @@
                                         @endif
 
                                         @if ($invoice->clientDetails && $invoice->clientDetails->company_name && $invoice->company->invoiceSetting->show_client_company_name == 'yes')
-                                            {{ $invoice->clientDetails->company_name }}<br>
+                                            {{ mb_ucwords($invoice->clientDetails->company_name) }}<br>
                                         @endif
 
                                         @if ($invoice->clientDetails && $invoice->clientDetails->address && $invoice->company->invoiceSetting->show_client_company_address == 'yes')
@@ -225,7 +225,7 @@
                                 <td align="right" class="mt-4 mt-lg-0 mt-md-0">
                                     @if($invoice->clientDetails->company_logo)
                                         <img src="{{ $invoice->clientDetails->image_url }}"
-                                            alt="{{ $invoice->clientDetails->company_name }}" class="logo" style="height:50px;" />
+                                            alt="{{ mb_ucwords($invoice->clientDetails->company_name) }}" class="logo" style="height:50px;" />
                                             <br><br><br>
                                     @endif
                                         <span
@@ -272,7 +272,7 @@
                                         @foreach ($invoice->items as $item)
                                             @if ($item->type == 'item')
                                                 <tr class="text-dark font-weight-semibold f-13">
-                                                    <td>{{ $item->item_name }}</td>
+                                                    <td>{{ ucfirst($item->item_name) }}</td>
                                                     @if ($invoiceSetting->hsn_sac_code_show)
                                                         <td align="right">{{ $item->hsn_sac_code }}</td>
                                                     @endif
@@ -325,7 +325,7 @@
                                                     @foreach ($taxes as $key => $tax)
                                                         <tr class="text-dark-grey" align="right">
                                                             <td class="w-50 border-top-0 border-left-0">
-                                                                {{ $key }}</td>
+                                                                {{ mb_strtoupper($key) }}</td>
                                                         </tr>
                                                     @endforeach
                                                     <tr class=" text-dark-grey font-weight-bold" align="right">
@@ -387,7 +387,7 @@
                                             <table>
                                                 <tr width="100%" class="font-weight-semibold f-13">
                                                     <td class="border-left-0 border-right-0 border-top-0">
-                                                        {{ $item->item_name }}</td>
+                                                        {{ ucfirst($item->item_name) }}</td>
                                                 </tr>
                                                 @if ($item->item_summary != '' || $item->invoiceItemImage)
                                                     <tr>
@@ -458,7 +458,7 @@
                             @foreach ($taxes as $key => $tax)
                                 <tr>
                                     <th width="50%" class="text-dark-grey font-weight-normal">
-                                        {{ $key }}</th>
+                                        {{ mb_strtoupper($key) }}</th>
                                     <td width="50%" class="text-dark-grey font-weight-normal">
                                         {{ currency_format($tax, $invoice->currency_id, false) }}</td>
                                 </tr>
@@ -655,7 +655,7 @@
 <script>
     const MODAL_LG = '#myModal';
     const MODAL_HEADING = '#modelHeading';
-    document.loading = '@lang('app.loading')';
+
     const dropifyMessages = {
         default: '@lang('app.dragDrop')',
         replace: '@lang('app.dragDropReplace')',

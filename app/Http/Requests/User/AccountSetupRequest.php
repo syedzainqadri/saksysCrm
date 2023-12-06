@@ -24,20 +24,12 @@ class AccountSetupRequest extends FormRequest
      */
     public function rules()
     {
-        $global = global_setting();
-
-        $rules = [
+        return [
             'company_name' => 'required',
             'full_name' => 'required',
             'email' => 'required|email:rfc',
-            'password' => 'required|min:8',
+            'password' => 'required|min:8'
         ];
-
-        if ($global && $global->sign_up_terms == 'yes') {
-            $rules['terms_and_conditions'] = 'required';
-        }
-
-        return $rules;
     }
 
 }

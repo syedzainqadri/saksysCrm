@@ -58,7 +58,7 @@
                             </x-forms.label>
                             <div
                                 id="description">{!! $contractTemplate ? $contractTemplate->contract_detail : '' !!}</div>
-                            <textarea name="description" id="description-text" class="d-none"></textarea>
+                            <textarea name="contract_detail" id="description-text" class="d-none"></textarea>
                         </div>
                     </div>
 
@@ -161,7 +161,7 @@
                     </div>
 
                     <div class="col-md-6 col-lg-4">
-                        <x-forms.text fieldId="office" :fieldPlaceholder="__('placeholders.mobileWithPlus')"
+                        <x-forms.text fieldId="office" fieldPlaceholder="e.g. +19876543"
                                       :fieldValue="($contract ? $contract->office: '')"
                                       :fieldLabel="__('modules.client.officePhoneNumber')" fieldName="office">
                         </x-forms.text>
@@ -170,7 +170,7 @@
                     <div class="col-md-6 col-lg-3">
                         <x-forms.text fieldId="city" :fieldValue="($contract ? $contract->city: '')"
                                       :fieldLabel="__('modules.stripeCustomerAddress.city')"
-                                      :fieldPlaceholder="__('placeholders.city')"
+                                      fieldPlaceholder="e.g. Hawthorne"
                                       fieldName="city">
                         </x-forms.text>
                     </div>
@@ -179,7 +179,7 @@
                     <div class="col-md-6 col-lg-3">
                         <x-forms.text fieldId="state" :fieldValue="($contract ? $contract->state: '')"
                                       :fieldLabel="__('modules.stripeCustomerAddress.state')" fieldName="state"
-                                      :fieldPlaceholder="__('placeholders.state')">
+                                      fieldPlaceholder="e.g. California">
                         </x-forms.text>
                     </div>
 
@@ -191,7 +191,7 @@
 
                     <div class="col-md-6 col-lg-3">
                         <x-forms.text fieldId="postal_code" :fieldValue="($contract ? $contract->postal_code: '')"
-                                        :fieldPlaceholder="__('placeholders.postalCode')"
+                                      fieldPlaceholder="e.g. 90250"
                                       :fieldLabel="__('modules.stripeCustomerAddress.postalCode')"
                                       fieldName="postal_code">
                         </x-forms.text>

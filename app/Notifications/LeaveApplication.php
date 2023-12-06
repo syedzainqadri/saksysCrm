@@ -53,8 +53,7 @@ class LeaveApplication extends BaseNotification
         $url = route('leaves.show', $this->leave->id);
         $url = getDomainSpecificUrl($url, $this->company);
 
-        $content = __('email.leave.applied') . ':- ' . '<br>' . __('app.date') . ': ' . $this->leave->leave_date->toDayDateTimeString() . '<br>' . __('app.status') . ': ' . $this->leave->status;
-        $content .= '<br>' . __('modules.leaves.reason') . ': ' . $this->leave->reason;
+        $content = __('email.leave.applied') . ':- ' . '<br>' . __('app.date') . ': ' . $this->leave->leave_date->toDayDateTimeString() . '<br>' . __('app.status') . ': ' . mb_ucwords($this->leave->status);
 
         return $build
             ->subject(__('email.leave.applied') . ' - ' . config('app.name'))

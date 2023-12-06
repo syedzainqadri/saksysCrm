@@ -4,7 +4,6 @@ namespace App\Http\Requests;
 
 use App\Traits\CustomFieldsRequestTrait;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class StoreEstimate extends FormRequest
 {
@@ -20,15 +19,6 @@ class StoreEstimate extends FormRequest
         return true;
     }
 
-    protected function prepareForValidation()
-    {
-        if ($this->estimate_number && is_numeric($this->estimate_number)) {
-            $this->merge([
-                'estimate_number' => \App\Helper\NumberFormat::estimate($this->estimate_number),
-            ]);
-        }
-    }
-
     /**
      * Get the validation rules that apply to the request.
      *
@@ -37,15 +27,7 @@ class StoreEstimate extends FormRequest
     public function rules()
     {
         $rules = [
-            'estimate_number' => [
-                'required',
-                /** @phpstan-ignore-next-line */
-                Rule::unique('estimates')->where('company_id', company()->id)
-                    ->when($this->route('estimate'), function ($q) {
-                        /** @phpstan-ignore-next-line */
-                        $q->where('id', '<>', $this->route('estimate'));
-                    })
-            ],
+            'estimate_number' => 'required|unique:estimates,estimate_number,' . $this->route('estimate').',id,company_id,' . company()->id,
             'client_id' => 'required',
             'valid_till' => 'required',
             'sub_total' => 'required',

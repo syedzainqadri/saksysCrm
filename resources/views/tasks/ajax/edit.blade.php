@@ -33,7 +33,7 @@ $viewTaskCategoryPermission = user()->permission('view_task_category');
                                 @if ($viewTaskCategoryPermission == 'all' || $viewTaskCategoryPermission == 'added')
                                     @foreach ($categories as $category)
                                         <option @if ($task->task_category_id == $category->id) selected @endif value="{{ $category->id }}">
-                                            {{ $category->category_name }}
+                                            {{ mb_ucwords($category->category_name) }}
                                         </option>
                                     @endforeach
                                 @endif
@@ -58,7 +58,7 @@ $viewTaskCategoryPermission = user()->permission('view_task_category');
                                 <option value="">--</option>
                                 @foreach ($projects as $project)
                                     <option @if ($project->id == $task->project_id) selected @endif value="{{ $project->id }}">
-                                        {{ $project->project_name }}
+                                        {{ mb_ucwords($project->project_name) }}
                                     </option>
                                 @endforeach
                             </select>
@@ -189,8 +189,8 @@ $viewTaskCategoryPermission = user()->permission('view_task_category');
                                 <x-forms.select fieldName="milestone_id" fieldId="milestone-id"
                                     :fieldLabel="__('modules.projects.milestones')">
                                     <option value="">--</option>
-                                    @if ($task->project && count($task->project->incompleteMilestones) > 0)
-                                        @foreach ($task->project->incompleteMilestones as $milestone)
+                                    @if ($task->project && count($task->project->milestones) > 0)
+                                        @foreach ($task->project->milestones as $milestone)
                                             <option @if ($milestone->id == $task->milestone_id) selected @endif value="{{ $milestone->id }}">
                                                 {{ $milestone->milestone_title }}</option>
                                         @endforeach
@@ -393,6 +393,7 @@ $viewTaskCategoryPermission = user()->permission('view_task_category');
 </div>
 
 
+<script src="{{ asset('vendor/jquery/dropzone.min.js') }}"></script>
 <script>
     var add_task_files = "{{ $addTaskFilePermission }}";
 

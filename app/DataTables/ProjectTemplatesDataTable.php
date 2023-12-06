@@ -13,8 +13,6 @@ class ProjectTemplatesDataTable extends BaseDataTable
     private $deleteProjectPermission;
     private $viewProjectPermission;
     private $addProjectPermission;
-    private $manageProjectTemplatePermission;
-    private $viewProjectTemplatePermission;
 
     public function __construct()
     {
@@ -99,7 +97,7 @@ class ProjectTemplatesDataTable extends BaseDataTable
                 return '<div class="media align-items-center">
                             <div class="media-body">
                                 <h5 class="mb-0 f-13 text-darkest-grey">
-                                    <a href="' . route('project-template.show', [$row->id]) . '">' . $row->project_name . '</a>
+                                    <a href="' . route('project-template.show', [$row->id]) . '">' . ucfirst($row->project_name) . '</a>
                                 </h5>
                             </div>
                         </div>';
@@ -133,6 +131,12 @@ class ProjectTemplatesDataTable extends BaseDataTable
             });
         }
 
+        if ($this->manageProjectTemplatePermission == 'added') {
+            $model->where(function ($query) {
+                return $query->where('project_templates.added_by', user()->id);
+            });
+        }
+
         return $model;
     }
 
@@ -143,7 +147,7 @@ class ProjectTemplatesDataTable extends BaseDataTable
      */
     public function html()
     {
-        $dataTable = $this->setBuilder('projects-template-table')
+        return $this->setBuilder('projects-template-table')
             ->parameters([
                 'initComplete' => 'function () {
                     window.LaravelDataTables["projects-template-table"].buttons().container()
@@ -155,8 +159,6 @@ class ProjectTemplatesDataTable extends BaseDataTable
                     })
                 }',
             ]);
-
-        return $dataTable;
     }
 
     /**

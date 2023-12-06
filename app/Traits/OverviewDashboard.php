@@ -13,6 +13,7 @@ use App\Models\TaskboardColumn;
 use App\Models\Ticket;
 use App\Models\UserActivity;
 use Carbon\Carbon;
+use Carbon\CarbonInterval;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -149,18 +150,16 @@ trait OverviewDashboard
         $incomes = [];
 
         foreach ($payments as $invoice) {
-
             if (!isset($incomes[$invoice->date])) {
                 $incomes[$invoice->date] = 0;
             }
 
             if ($invoice->currency_id != $this->company->currency_id && $invoice->exchange_rate != 0) {
-                $incomes[$invoice->date] += floor((float)$invoice->total / (float)$invoice->exchange_rate);
-            }
-            else {
+                $incomes[$invoice->date] += floor($invoice->total / $invoice->exchange_rate);
+
+            } else {
                 $incomes[$invoice->date] += round($invoice->total, 2);
             }
-
         }
 
         $dates = array_keys($incomes);

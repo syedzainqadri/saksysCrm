@@ -20,20 +20,11 @@ $changeEmployeeRolePermission = user()->permission('change_employee_role');
                 <div class="row p-20">
                     <div class="col-lg-9">
                         <div class="row">
-                            <div class="col-md-2">
+                            <div class="col-md-4">
                                 <x-forms.text fieldId="employee_id" :fieldLabel="__('modules.employees.employeeId')"
                                     fieldName="employee_id" :fieldValue="$employee->employeeDetail->employee_id"
                                     fieldRequired="true" :fieldPlaceholder="__('modules.employees.employeeIdInfo')" :popover="__('modules.employees.employeeIdHelp')">
                                 </x-forms.text>
-                            </div>
-                            <div class="col-md-2">
-                                <x-forms.select fieldId="salutation" fieldName="salutation"
-                                    :fieldLabel="__('modules.client.salutation')">
-                                    <option value="">--</option>
-                                    @foreach ($salutations as $salutation)
-                                        <option value="{{ $salutation->value }}" @selected($employee->salutation == $salutation)>{{ $salutation->label() }}</option>
-                                    @endforeach
-                                </x-forms.select>
                             </div>
                             <div class="col-md-4">
                                 <x-forms.text fieldId="name" :fieldLabel="__('modules.employees.employeeName')"
@@ -112,9 +103,9 @@ $changeEmployeeRolePermission = user()->permission('change_employee_role');
                         @php
                             $userImage = $employee->hasGravatar($employee->email) ? str_replace('?s=200&d=mp', '', $employee->image_url) : asset('img/avatar.png');
                         @endphp
-                        <x-forms.file allowedFileExtensions="png jpg jpeg svg bmp" class="mr-0 mr-lg-2 mr-md-2 cropper"
+                        <x-forms.file allowedFileExtensions="png jpg jpeg svg" class="mr-0 mr-lg-2 mr-md-2 cropper"
                             :fieldLabel="__('modules.profile.profilePicture')"
-                            :fieldValue="($employee->image ? $employee->masked_image_url : $userImage)" fieldName="image"
+                            :fieldValue="($employee->image ? $employee->image_url : $userImage)" fieldName="image"
                             fieldId="image" fieldHeight="119" :popover="__('messages.fileFormat.ImageFile')" />
                     </div>
                     <div class="col-md-4">
@@ -179,7 +170,7 @@ $changeEmployeeRolePermission = user()->permission('change_employee_role');
                             fieldName="locale" search="true">
                             @foreach ($languages as $language)
                                 <option @if ($employee->locale == $language->language_code) selected @endif
-                                data-content="<span class='flag-icon flag-icon-{{ ($language->flag_code == 'en') ? 'gb' : $language->flag_code }} flag-icon-squared'></span> {{ $language->language_name }}"
+                                data-content="<span class='flag-icon flag-icon-{{ ($language->flag_code == 'en') ? 'gb' : strtolower($language->flag_code) }} flag-icon-squared'></span> {{ $language->language_name }}"
                                 value="{{ $language->language_code }}">{{ $language->language_name }}</option>
                             @endforeach
                         </x-forms.select>
@@ -327,20 +318,10 @@ $changeEmployeeRolePermission = user()->permission('change_employee_role');
                     </div>
 
                     @if (function_exists('sms_setting') && sms_setting()->telegram_status)
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <x-forms.number fieldName="telegram_user_id" fieldId="telegram_user_id"
                                 fieldLabel="<i class='fab fa-telegram'></i> {{ __('sms::modules.telegramUserId') }}"
                                 :fieldValue="$employee->telegram_user_id" :popover="__('sms::modules.userIdInfo')" />
-                            <p class="text-bold text-danger">
-                                @lang('sms::modules.telegramBotNameInfo')
-                            </p>
-                            <p class="text-bold"><span id="telegram-link-text">https://t.me/{{ sms_setting()->telegram_bot_name }}</span>
-                                <a href="javascript:;" class="btn-copy btn-secondary f-12 rounded p-1 py-2 ml-1"
-                                    data-clipboard-target="#telegram-link-text">
-                                    <i class="fa fa-copy mx-1"></i>@lang('app.copy')</a>
-                                <a href="https://t.me/{{ sms_setting()->telegram_bot_name }}" target="_blank" class="btn-secondary f-12 rounded p-1 py-2 ml-1">
-                                    <i class="fa fa-copy mx-1"></i>@lang('app.openInNewTab')</a>
-                            </p>
                         </div>
                     @endif
                     <div class="col-lg-3 col-md-6">
@@ -419,9 +400,6 @@ $changeEmployeeRolePermission = user()->permission('change_employee_role');
 </div>
 
 <script src="{{ asset('vendor/jquery/tagify.min.js') }}"></script>
-@if (function_exists('sms_setting') && sms_setting()->telegram_status)
-    <script src="{{ asset('vendor/jquery/clipboard.min.js') }}"></script>
-@endif
 <script>
     $(document).ready(function() {
 
@@ -604,26 +582,4 @@ $changeEmployeeRolePermission = user()->permission('change_employee_role');
             $.ajaxModal(MODAL_LG, url);
         });
 
-        @if (function_exists('sms_setting') && sms_setting()->telegram_status)
-        var clipboard = new ClipboardJS('.btn-copy');
-
-        clipboard.on('success', function(e) {
-            Swal.fire({
-                icon: 'success',
-                text: '@lang("app.urlCopied")',
-                toast: true,
-                position: 'top-end',
-                timer: 3000,
-                timerProgressBar: true,
-                showConfirmButton: false,
-                customClass: {
-                    confirmButton: 'btn btn-primary',
-                },
-                showClass: {
-                    popup: 'swal2-noanimation',
-                    backdrop: 'swal2-noanimation'
-                },
-            })
-        });
-    @endif
 </script>

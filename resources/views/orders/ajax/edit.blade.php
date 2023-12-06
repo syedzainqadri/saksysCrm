@@ -186,14 +186,14 @@ $addProductPermission = user()->permission('add_product');
                                             value="{{ $item->unit_price }}" name="cost_per_item[]" readonly>
                                     </td>
                                     <td class="border-bottom-0">
-                                        <input class="form-control height-35 f-14 border-0 w-100 text-right bg-additional-grey "                            value="{{ $item->tax_list ?: '--' }}" readonly>
+                                        <input class="form-control height-35 f-14 border-0 w-100 text-right bg-additional-grey "                            value="{{ strtoupper($item->tax_list) ?: '--' }}" readonly>
                                         <div class="select-others  d-none height-35 rounded border-0">
                                             <select id="multiselect{{ $key }}"
                                                 name="taxes[{{ $key }}][]" multiple="multiple"
                                                 class="select-picker type customSequence border-0" data-size="3">
                                                 @foreach ($taxes as $tax)
-                                                    <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ $tax->tax_name .':'. $tax->rate_percent }}%" @if (isset($item->taxes) && array_search($tax->id, json_decode($item->taxes)) !== false) selected @endif
-                                                        value="{{ $tax->id }}">{{ $tax->tax_name }}:
+                                                    <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ strtoupper($tax->tax_name) .':'. $tax->rate_percent }}%" @if (isset($item->taxes) && array_search($tax->id, json_decode($item->taxes)) !== false) selected @endif
+                                                        value="{{ $tax->id }}">{{ strtoupper($tax->tax_name) }}:
                                                         {{ $tax->rate_percent }}%</option>
                                                 @endforeach
                                             </select>
@@ -216,15 +216,15 @@ $addProductPermission = user()->permission('add_product');
                                         <input type="file"
                                         class="dropify"
                                         name="invoice_item_image[]"
-                                        data-allowed-file-extensions="png jpg jpeg bmp"
+                                        data-allowed-file-extensions="png jpg jpeg"
                                         data-messages-default="test"
                                         data-height="70"
                                         data-id="{{ $item->id }}"
                                         id="{{ $item->id }}"
-                                        data-default-file="{{ $item->orderItemImage ? $item->orderItemImage->file_url : null }}"
+                                        data-default-file="{{ $item->orderItemImage ? $item->orderItemImage->external_link : '' }}"
                                         disabled
                                         />
-                                        <input type="hidden" name="invoice_item_image_url[]" value="{{ $item->orderItemImage ? $item->orderItemImage->file : '' }}">
+                                        <input type="hidden" name="invoice_item_image_url[]" value="{{ $item->orderItemImage ? $item->orderItemImage->external_link : '' }}">
                                         <input type="hidden" name="item_ids[]" value="{{ $item->id }}">
                                     </td>
                                 </tr>

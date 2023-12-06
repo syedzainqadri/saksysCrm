@@ -12,6 +12,7 @@ return [
     | has failed, such as for an invalid token or invalid new password.
     |
     */
+
     'password' => 'Passwords must be at least six characters and match the confirmation.',
     'reset' => 'Your password has been reset!. Please wait, you will be redirected back to login page in a while',
     'sent' => 'Please check your email account. We have e-mailed your password reset link!',

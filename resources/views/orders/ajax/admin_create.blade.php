@@ -338,7 +338,7 @@ $addProductPermission = user()->permission('add_product');
 
                         } else {
                             $('#client_billing_address').html(
-                                "<span class='text-lightest'>@lang('messages.selectCustomerForBillingAddress')</span>"
+                                '<span class="text-lightest">@lang("messages.selectCustomerForBillingAddress")</span>'
                             );
                         }
                     } else {

@@ -42,8 +42,6 @@ class AttendanceReportDataTable extends BaseDataTable
         $startDate = now($this->company->timezone)->startOfMonth();
         $endDate = $endDate = now($this->company->timezone);
 
-        $diff = 0;
-
         if ($request->startDate != '') {
             // if this month filter's end date is not equal to now
             $diff = ($endDate->lt(Carbon::createFromFormat($this->company->date_format, $request->endDate))) ? $endDate->diffInDays(Carbon::createFromFormat($this->company->date_format, $request->endDate)) : 0;
@@ -84,7 +82,7 @@ class AttendanceReportDataTable extends BaseDataTable
                     'user' => $row
                 ]);
             })
-            ->addColumn('present_days', function ($row) use ($startDate, $endDate) {
+            ->addColumn('present_days', function ($row) use ($startDate, $endDate, $holidays) {
                 $this->daysPresent = Attendance::countDaysPresentByUser($startDate, $endDate, $row->id);
 
                 if ($this->daysPresent == 0) {
@@ -161,7 +159,7 @@ class AttendanceReportDataTable extends BaseDataTable
      */
     public function html()
     {
-        $dataTable = $this->setBuilder('attendance-report-table')
+        return $this->setBuilder('attendance-report-table')
             ->parameters([
                 'initComplete' => 'function () {
                     window.LaravelDataTables["attendance-report-table"].buttons().container()
@@ -172,13 +170,8 @@ class AttendanceReportDataTable extends BaseDataTable
                         selector: \'[data-toggle="tooltip"]\'
                     })
                 }',
-            ]);
-
-        if (canDataTableExport()) {
-            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
-        }
-
-        return $dataTable;
+            ])
+            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
     }
 
     /**

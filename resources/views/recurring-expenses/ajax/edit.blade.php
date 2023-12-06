@@ -65,7 +65,7 @@ $addExpenseCategoryPermission = user()->permission('manage_expense_category');
                                         data-content="<div class='d-inline-block mr-1'><img
                                                 class='taskEmployeeImg rounded-circle' src='{{ $employee->image_url }}'></div>
                                         {{ $employee->name }}"
-                                        value="{{ $employee->id }}">{{ $employee->name }}</option>
+                                        value="{{ $employee->id }}">{{ mb_ucwords($employee->name) }}</option>
                                     @endforeach
                                 </select>
                             </x-forms.input-group>
@@ -80,7 +80,7 @@ $addExpenseCategoryPermission = user()->permission('manage_expense_category');
                         <option value="">--</option>
                         @foreach ($projects as $project)
                             <option data-currency-id="{{ $project->currency_id }}" @if ($expense->project_id == $project->id) selected @endif value="{{ $project->id }}">
-                                {{ $project->project_name }}
+                                {{ mb_ucwords($project->project_name) }}
                             </option>
                         @endforeach
                     </x-forms.select>
@@ -110,7 +110,7 @@ $addExpenseCategoryPermission = user()->permission('manage_expense_category');
                             @foreach ($bankDetails as $bankDetail)
                                 <option value="{{ $bankDetail->id }}" @if($bankDetail->id == $expense->bank_account_id) selected @endif>@if($bankDetail->type == 'bank')
                                     {{ $bankDetail->bank_name }} | @endif
-                                    {{ $bankDetail->account_name }}
+                                    {{ mb_ucwords($bankDetail->account_name) }}
                                 </option>
                             @endforeach
                         @endif
@@ -127,7 +127,7 @@ $addExpenseCategoryPermission = user()->permission('manage_expense_category');
                             <option value="">--</option>
                             @foreach ($categories as $category)
                                 <option @if ($expense->category_id == $category->id) selected @endif value="{{ $category->id }}">
-                                    {{ $category->category_name }}
+                                    {{ mb_ucwords($category->category_name) }}
                                 </option>
                             @endforeach
                         </select>

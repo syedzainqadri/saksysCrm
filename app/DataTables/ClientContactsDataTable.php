@@ -71,13 +71,13 @@ class ClientContactsDataTable extends BaseDataTable
             ->editColumn(
                 'contact_name',
                 function ($row) {
-                    return $row->contact_name;
+                    return ucfirst($row->contact_name);
                 }
             )
             ->editColumn(
                 'title',
                 function ($row) {
-                    return $row->title;
+                    return ucfirst($row->title);
                 }
             )
             ->editColumn(
@@ -112,7 +112,7 @@ class ClientContactsDataTable extends BaseDataTable
      */
     public function html()
     {
-        $dataTable = $this->setBuilder('clients-table')
+        return $this->setBuilder('clients-table')
             ->parameters([
                 'initComplete' => 'function () {
                    window.LaravelDataTables["clients-table"].buttons().container()
@@ -122,13 +122,8 @@ class ClientContactsDataTable extends BaseDataTable
                   //
                 }',
                 /* 'buttons'      => ['excel'] */
-            ]);
-
-        if (canDataTableExport()) {
-            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
-        }
-
-        return $dataTable;
+            ])
+            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
     }
 
     /**

@@ -55,15 +55,15 @@
                     </td>
                     <td class="border-bottom-0">
                         <input class="form-control height-35 f-14 border-0 w-100 text-right bg-additional-grey"
-                            value="{{ $item->tax_list ?: '--' }}" readonly>
+                            value="{{ strtoupper($item->tax_list) ?: '--' }}" readonly>
                         <div class="select-others height-35 d-none rounded border-0">
                             <select id="multiselect" name="taxes[0][]"
                                 multiple="multiple"
                                 class="select-picker type customSequence border-0 bg-additional-grey" data-size="3">
                                 @foreach ($taxes as $tax)
-                                    <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ $tax->tax_name .':'. $tax->rate_percent }}%"
+                                    <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ strtoupper($tax->tax_name) .':'. $tax->rate_percent }}%"
                                         @if (isset($item->taxes) && array_search($tax->id, json_decode($item->taxes)) !== false) selected @endif value="{{ $tax->id }}">
-                                        {{ $tax->tax_name }}:
+                                        {{ strtoupper($tax->tax_name) }}:
                                         {{ $tax->rate_percent }}%</option>
                                 @endforeach
                             </select>
@@ -85,9 +85,9 @@
                     </td>
                     <td class="border-left-0">
                         @if ($item->image_url != '')
-                            <input type="file" class="dropify" disabled name="invoice_item_image[]" data-allowed-file-extensions="png jpg jpeg bmp" data-messages-default="test" data-height="70" data-default-file="{{ $item->image_url }}" data-show-remove="false" />
+                            <input type="file" class="dropify" disabled name="invoice_item_image[]" data-allowed-file-extensions="png jpg jpeg" data-messages-default="test" data-height="70" data-default-file="{{ $item->image_url }}" data-show-remove="false" />
                         @endif
-                        <input type="hidden" name="invoice_item_image_url[]" value="{{ $item->image }}">
+                        <input type="hidden" name="invoice_item_image_url[]" value="{{ $item->image_url }}">
                     </td>
                 </tr>
             </tbody>

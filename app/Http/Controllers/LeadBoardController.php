@@ -216,12 +216,7 @@ class LeadBoardController extends AccountBaseController
                             ->orWhere('leads.mobile', 'like', '%' . request('searchText') . '%');
                     });
                 }
-            }])->where(function ($query) use ($request) {
-                if ($request->status_id != 'all' && $request->status_id != '') {
-                    $query->where('id', $request->status_id);
-                }
-            })
-            ->orderBy('priority', 'asc')->get();
+            }])->orderBy('priority', 'asc')->get();
 
             $result = array();
 

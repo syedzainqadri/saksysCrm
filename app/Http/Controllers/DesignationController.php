@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use App\Helper\Reply;
+use App\Models\BaseModel;
+use App\Models\LeaveType;
 use App\Models\Designation;
 use App\Models\EmployeeDetails;
 use Illuminate\Http\Request;
@@ -87,18 +90,7 @@ class DesignationController extends AccountBaseController
     public function edit($id)
     {
         $this->designation = Designation::findOrFail($id);
-
-        $designations = Designation::where('id', '!=', $this->designation->id)->get();
-
-        $childDesignations = $designations->where('parent_id', $this->designation->id)->pluck('id')->toArray();
-
-        $designations = $designations->where('parent_id', '!=', $this->designation->id);
-
-        // remove child designations
-        $this->designations = $designations->filter(function ($value, $key) use ($childDesignations) {
-            return !in_array($value->parent_id, $childDesignations);
-        });
-
+        $this->designations = Designation::all();
 
         if (request()->ajax())
         {

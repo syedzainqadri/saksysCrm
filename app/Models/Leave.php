@@ -68,8 +68,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $unique_id
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\LeaveFile> $files
  * @property-read int|null $files_count
- * @property-read \App\Models\Leave|null $ldate
  * @method static \Illuminate\Database\Eloquent\Builder|Leave whereUniqueId($value)
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\LeaveFile> $files
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\LeaveFile> $files
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\LeaveFile> $files
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\LeaveFile> $files
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\LeaveFile> $files
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\LeaveFile> $files
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\LeaveFile> $files
  * @mixin \Eloquent
  */
 class Leave extends BaseModel

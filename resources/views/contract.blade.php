@@ -110,7 +110,7 @@
             <div class="invoice-table-wrapper">
                 <table width="100%" class="">
                     <tr class="inv-logo-heading">
-                        <td><img src="{{ $invoiceSetting->logo_url }}" alt="{{ $company->company_name }}"
+                        <td><img src="{{ $invoiceSetting->logo_url }}" alt="{{ mb_ucwords($company->company_name) }}"
                                  class="logo"/></td>
                         <td align="right" class="font-weight-bold f-21 text-dark text-uppercase mt-4 mt-lg-0 mt-md-0">
                             @lang('app.menu.contract')</td>
@@ -118,7 +118,7 @@
                     <tr class="inv-num">
                         <td class="f-14 text-dark">
                             <p class="mt-3 mb-0">
-                                {{ $company->company_name }}<br>
+                                {{ mb_ucwords($company->company_name) }}<br>
                                 {!! nl2br($company->defaultAddress->address) !!}<br>
                                 {{ $company->company_phone }}
                             </p><br>
@@ -162,8 +162,8 @@
                         <td class="f-14 text-dark">
                             <p class="mb-0 text-left"><span
                                     class="text-dark-grey text-capitalize">@lang("app.client")</span><br>
-                                {{ $contract->client->name }}<br>
-                                {{ $contract->client->clientDetails->company_name }}<br>
+                                {{ mb_ucwords($contract->client->name) }}<br>
+                                {{ mb_ucwords($contract->client->clientDetails->company_name) }}<br>
                                 {!! nl2br($contract->client->clientDetails->address) !!}</p>
                         </td>
                         <td align="right">
@@ -183,8 +183,7 @@
             <div class="d-flex flex-column">
                 <h5>@lang('app.subject')</h5>
                 <p class="f-15">{{ $contract->subject }}</p>
-                <h5>@lang('modules.contracts.notes')</h5>
-                <p class="f-15">{{ $contract->contract_note }}</p>
+
                 <h5>@lang('app.description')</h5>
                 <div class="ql-editor p-0">{!! $contract->contract_detail !!}</div>
 
@@ -203,7 +202,7 @@
                 <img src="{{ $contract->signature->signature }}" style="width: 200px;">
                 <p>@lang('app.client_name'):- {{ $contract->signature->full_name }}<br>
                     @lang('app.place'):- {{ $contract->signature->place }}<br>
-                    @lang('app.date'):- {{ $contract->signature->date->translatedFormat($company->date_format) }}</p>
+                    @lang('app.date'):- {{ $contract->signature->date }}</p>
             </div>
             @endif
 
@@ -211,7 +210,7 @@
             <div class="d-flex flex-column">
                 <h6>@lang('modules.estimates.companysignature')</h6>
                 <img src="{{$contract->company_signature}}" style="width: 200px;">
-                <p>@lang('app.date'):- {{ $contract->sign_date->translatedFormat($company->date_format) }}</p>
+                <p>@lang('app.date'):- {{ $contract->sign_date }}</p>
             </div>
             @endif
 
@@ -230,14 +229,14 @@
         <div
             class="card-footer bg-white border-0 d-flex justify-content-end py-0 py-lg-4 py-md-4 mb-4 mb-lg-3 mb-md-3 ">
 
-            <x-forms.button-cancel :link="route('contracts.index')" class="border-0 mr-3 mb-2">@lang('app.cancel')
+            <x-forms.button-cancel :link="route('contracts.index')" class="border-0 mr-3">@lang('app.cancel')
             </x-forms.button-cancel>
 
-            <x-forms.link-secondary :link="route('front.contract.download', $contract->hash)" class="mr-3 mb-2" icon="download">@lang('app.download')
+            <x-forms.link-secondary :link="route('front.contract.download', $contract->hash)" class="mr-3" icon="download">@lang('app.download')
             </x-forms.link-secondary>
 
             @if (!$contract->signature)
-                <x-forms.link-primary class="mb-2" link="javascript:;" data-toggle="modal"
+                <x-forms.link-primary link="javascript:;" data-toggle="modal"
                 data-target="#signature-modal" icon="check">@lang('app.sign')
                 </x-forms.link-primary>
             @endif
@@ -284,7 +283,6 @@
 <script src="{{ asset('js/main.js') }}"></script>
 
 <script>
-    document.loading = '@lang('app.loading')';
     const MODAL_LG = '#myModal';
     const MODAL_HEADING = '#modelHeading';
 

@@ -4,11 +4,13 @@ namespace App\Observers;
 
 use App\Models\CreditNotes;
 use App\Events\NewCreditNoteEvent;
+use App\Models\Notification;
 use App\Models\Payment;
 use App\Models\UniversalSearch;
 use App\Models\User;
 use App\Scopes\ActiveScope;
 use App\Traits\UnitTypeSaveTrait;
+use Carbon\Carbon;
 
 class CreditNoteObserver
 {
@@ -30,14 +32,6 @@ class CreditNoteObserver
         if (company()) {
             $creditNote->company_id = company()->id;
         }
-
-        if (is_numeric($creditNote->cn_number)) {
-            $creditNote->cn_number = $creditNote->formatCreditNoteNumber();
-        }
-
-        $invoiceSettings = company() ? company()->invoiceSetting : $creditNote->company->invoiceSetting;
-        $creditNote->original_credit_note_number = str($creditNote->cn_number)->replace($invoiceSettings->credit_note_prefix . $invoiceSettings->credit_note_number_separator, '');
-
     }
 
     public function deleting(CreditNotes $creditNote)

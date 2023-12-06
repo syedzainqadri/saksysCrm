@@ -107,14 +107,18 @@ $addOrderPermission = user()->permission('add_order');
                 @if (in_array('client', user_roles()) && in_array('orders', $user->modules) && ($addOrderPermission == 'all' ))
                     <x-forms.link-primary :link="route('products.index')" class="mr-3 float-left"
                         icon="plus">
-                        @lang('app.addNewOrder')
+                        @lang('app.add')
+                        @lang('app.new')
+                        @lang('app.order')
                     </x-forms.link-primary>
                 @endif
 
                 @if (!in_array('client', user_roles()) && ($addOrderPermission == 'all' || $addOrderPermission == 'added'))
                     <x-forms.link-primary :link="route('orders.create')" class="mr-3 float-left"
                         icon="plus">
-                        @lang('app.addNewOrder')
+                        @lang('app.add')
+                        @lang('app.new')
+                        @lang('app.order')
                     </x-forms.link-primary>
                 @endif
             </div>

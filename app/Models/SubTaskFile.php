@@ -53,20 +53,11 @@ class SubTaskFile extends BaseModel
 
     const FILE_PATH = 'sub-task-files';
 
-    protected $appends = ['file_url', 'icon', 'file'];
+    protected $appends = ['file_url', 'icon'];
 
     public function getFileUrlAttribute()
     {
-        if($this->external_link){
-            return str($this->external_link)->contains('http') ? $this->external_link : asset_url_local_s3($this->external_link);
-        }
-
-        return asset_url_local_s3(SubTaskFile::FILE_PATH . '/' . $this->sub_task_id . '/' . $this->hashname);
-    }
-
-    public function getFileAttribute()
-    {
-        return $this->external_link ?: (SubTaskFile::FILE_PATH . '/' . $this->sub_task_id . '/' . $this->hashname);
+        return (!is_null($this->external_link)) ? $this->external_link : asset_url_local_s3(SubTaskFile::FILE_PATH . '/' . $this->sub_task_id . '/' . $this->hashname);
     }
 
 }

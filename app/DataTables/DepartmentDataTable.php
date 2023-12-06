@@ -70,7 +70,7 @@ class DepartmentDataTable extends BaseDataTable
             ->editColumn(
                 'name',
                 function ($row) {
-                    return '<h5 class="mb-0 f-13 text-darkest-grey"><a href="' . route('departments.show', [$row->id]) . '" class="openRightModal">' . $row->team_name . '</a></h5>';
+                    return '<h5 class="mb-0 f-13 text-darkest-grey"><a href="' . route('departments.show', [$row->id]) . '" class="openRightModal">' . ucfirst($row->team_name) . '</a></h5>';
                 }
             )
             ->editColumn('parent_id', function ($row) {
@@ -95,7 +95,7 @@ class DepartmentDataTable extends BaseDataTable
     /**
      * Get query source of dataTable.
      *
-     * @param \App\Models\Team $model
+     * @param \App\Models\DepartmentDataTable $model
      * @return \Illuminate\Database\Eloquent\Builder
      */
 
@@ -142,7 +142,8 @@ class DepartmentDataTable extends BaseDataTable
      */
     public function html()
     {
-        $dataTable = $this->setBuilder('departments-table', 2)
+        return $this->setBuilder('departments-table', 2)
+            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]))
             ->parameters([
                 'initComplete' => 'function () {
                    window.LaravelDataTables["departments-table"].buttons().container()
@@ -154,12 +155,6 @@ class DepartmentDataTable extends BaseDataTable
                     })
                 }',
             ]);
-
-        if (canDataTableExport()) {
-            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
-        }
-
-        return $dataTable;
     }
 
     /**

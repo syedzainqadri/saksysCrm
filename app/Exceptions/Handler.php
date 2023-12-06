@@ -60,7 +60,7 @@ class Handler extends ExceptionHandler
 
     public function report(Throwable $exception)
     {
-        if (app()->bound('sentry') && $this->shouldReport($exception) && config('services.sentry.enabled')) {
+        if (app()->bound('sentry') && $this->shouldReport($exception) && App::environment('demo')) {
             app('sentry')->captureException($exception);
         }
 

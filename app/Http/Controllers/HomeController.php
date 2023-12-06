@@ -412,7 +412,7 @@ class HomeController extends Controller
 
             $data[] = [
                 'id' => 'task-' . $task->id,
-                'name' => $task->heading,
+                'name' => ucfirst($task->heading),
                 'start' => ((!is_null($task->start_date)) ? $task->start_date->format('Y-m-d') : ((!is_null($task->due_date)) ? $task->due_date->format('Y-m-d') : null)),
                 'end' => ((!is_null($task->due_date)) ? $task->due_date->format('Y-m-d') : $task->start_date->format('Y-m-d')),
                 'progress' => 0,
@@ -690,7 +690,6 @@ class HomeController extends Controller
         $lead->postal_code = (request()->has('postal_code') ? $request->postal_code : '');
         $lead->source_id = (request()->has('source') ? $request->source : '');
         $lead->status_id = $leadStatus->id;
-        $lead->note = (request()->has('message') ? $request->message : null);
         $lead->value = 0;
         $lead->currency_id = $company->currency_id;
         $lead->save();
@@ -879,7 +878,7 @@ class HomeController extends Controller
         }
 
         if (((int)str_replace('.', '', $enableModules['worksuite'])) < 400) {
-            $message .= 'Please update' . config('app.name') . ' greater then 4.0.0 version';
+            $message .= 'Please update' . ucfirst(config('app.name')) . ' greater then 4.0.0 version';
         }
 
         $enableModules['message'] = $message;

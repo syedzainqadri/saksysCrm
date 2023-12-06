@@ -25,6 +25,7 @@ use App\Models\ThemeSetting;
 use App\Models\UserPermission;
 use App\Scopes\CompanyScope;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -172,11 +173,11 @@ if (!function_exists('language_setting_locale')) {
     // @codingStandardsIgnoreLine
     function language_setting_locale($locale)
     {
-        if (!cache()->has('language_setting_' . $locale)) {
-            cache(['language_setting_' . $locale => \App\Models\LanguageSetting::where('language_code', $locale)->first()]);
+        if (!cache()->has('language_setting_'.$locale)) {
+            cache(['language_setting_'.$locale => \App\Models\LanguageSetting::where('language_code', $locale)->first()]);
         }
 
-        return cache('language_setting_' . $locale);
+        return cache('language_setting_'.$locale);
     }
 
 }
@@ -304,7 +305,6 @@ if (!function_exists('user_modules')) {
         }
 
         cache()->put('user_modules_' . $user->id, $moduleArray);
-
         return $moduleArray;
     }
 
@@ -377,21 +377,16 @@ if (!function_exists('isRunningInConsoleOrSeeding')) {
 if (!function_exists('asset_url_local_s3')) {
 
     // @codingStandardsIgnoreLine
-    function asset_url_local_s3($path)
+    function asset_url_local_s3($path, $appRoute = false, $type = 'file')
     {
         if (in_array(config('filesystems.default'), StorageSetting::S3_COMPATIBLE_STORAGE)) {
-            //    Check if the URL is already cached
-            if (\Illuminate\Support\Facades\Cache::has(config('filesystems.default').'-'.$path)) {
-                $temporaryUrl = \Illuminate\Support\Facades\Cache::get(config('filesystems.default').'-'.$path);
-            }
-            else {
-                // Generate a new temporary URL and cache it
-                $temporaryUrl = Storage::disk(config('filesystems.default'))->temporaryUrl($path, now()->addMinutes(StorageSetting::HASH_TEMP_FILE_TIME));
-                \Illuminate\Support\Facades\Cache::put(config('filesystems.default').'-'.$path, $temporaryUrl, StorageSetting::HASH_TEMP_FILE_TIME * 60);
+            if ($appRoute) {
+                $filePath = FileController::encryptDecrypt($path);
+
+                return route('file.getFile', ['type' => $type, 'path' => $filePath]);
             }
 
-            logger($path);
-            return $temporaryUrl;
+            return Storage::disk(config('filesystems.default'))->temporaryUrl($path, now()->addMinutes(StorageSetting::HASH_TEMP_FILE_TIME));
         }
 
         $path = Files::UPLOAD_FOLDER . '/' . $path;
@@ -871,7 +866,6 @@ if (!function_exists('minute_to_hour')) {
     function minute_to_hour($totalMinutes)
     {
         return \Carbon\CarbonInterval::formatHuman($totalMinutes);
-        /** @phpstan-ignore-line */
     }
 
 }
@@ -1119,36 +1113,6 @@ if (!function_exists('user_role_ids')) {
         }
 
         return null;
-    }
-
-}
-
-if (!function_exists('canDataTableExport')) {
-
-    function canDataTableExport()
-    {
-        return in_array('admin', user_roles()) || (company()->employee_can_export_data && in_array('employee', user_roles()));
-    }
-
-}
-
-if (!function_exists('pdfStripTags')) {
-
-    function pdfStripTags($text)
-    {
-        return strip_tags($text, [
-            'p',
-            'b',
-            'strong',
-            'a',
-            'ul',
-            'li',
-            'ol',
-            'i',
-            'u',
-            'blockquote',
-            'img',
-        ]);
     }
 
 }

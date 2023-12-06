@@ -79,7 +79,7 @@ foreach ($projects as $project) {
                                 <option value="">--</option>
                                 @foreach ($projects as $project)
                                     <option data-currency-id="{{ $project->currency_id }}" @if ($projectId == $project->id) selected @endif value="{{ $project->id }}">
-                                        {{ $project->project_name }}
+                                        {{ mb_ucwords($project->project_name) }}
                                     </option>
                                 @endforeach
                             </x-forms.select>
@@ -94,7 +94,7 @@ foreach ($projects as $project) {
                                 @if($viewBankAccountPermission != 'none')
                                     @foreach ($bankDetails as $bankDetail)
                                         <option value="{{ $bankDetail->id }}">@if($bankDetail->type == 'bank')
-                                            {{ $bankDetail->bank_name }} | @endif {{ $bankDetail->account_name }}
+                                            {{ $bankDetail->bank_name }} | @endif {{ mb_ucwords($bankDetail->account_name) }}
                                         </option>
                                     @endforeach
                                 @endif
@@ -111,7 +111,7 @@ foreach ($projects as $project) {
                                 data-live-search="true">
                                 <option value="">--</option>
                                 @foreach ($categories as $category)
-                                    <option value="{{ $category->id }}">{{ $category->category_name }}
+                                    <option value="{{ $category->id }}">{{ mb_ucwords($category->category_name) }}
                                     </option>
                                 @endforeach
                             </select>

@@ -5,7 +5,6 @@ namespace App\Models;
 use App\Scopes\ActiveScope;
 use App\Traits\CustomFieldsTrait;
 use App\Traits\HasCompany;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -23,7 +22,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property \Illuminate\Support\Carbon $purchase_date
  * @property string|null $purchase_from
  * @property float $price
- * @property float $default_currency_price
  * @property int $currency_id
  * @property int|null $project_id
  * @property string|null $bill
@@ -85,9 +83,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @method static \Illuminate\Database\Eloquent\Builder|Expense whereBankAccountId($value)
  * @method static \Illuminate\Database\Eloquent\Builder|Expense whereDefaultCurrencyId($value)
  * @method static \Illuminate\Database\Eloquent\Builder|Expense whereExchangeRate($value)
-
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\User> $mentionUser
- * @property-read int|null $mention_user_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BankTransaction> $transactions
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BankTransaction> $transactions
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BankTransaction> $transactions
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BankTransaction> $transactions
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BankTransaction> $transactions
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BankTransaction> $transactions
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BankTransaction> $transactions
  * @mixin \Eloquent
  */
@@ -103,7 +104,7 @@ class Expense extends BaseModel
         'purchase_date' => 'datetime',
         'purchase_on' => 'datetime',
     ];
-    protected $appends = ['total_amount', 'purchase_on', 'bill_url', 'default_currency_price'];
+    protected $appends = ['total_amount', 'purchase_on', 'bill_url'];
     protected $with = ['currency', 'company:id'];
 
     public function getBillUrlAttribute()
@@ -150,7 +151,7 @@ class Expense extends BaseModel
     {
 
         if (!is_null($this->price) && !is_null($this->currency_id)) {
-            return currency_format($this->price, $this->currency_id);
+            return currency_format($this->price, $this->currency->id);
         }
 
         return '';
@@ -169,23 +170,6 @@ class Expense extends BaseModel
     public function mentionUser(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'mention_users')->withoutGlobalScope(ActiveScope::class)->using(MentionUser::class);
-    }
-
-    public function defaultCurrencyPrice() : Attribute
-    {
-        return Attribute::make(
-            get: function () {
-                if ($this->currency_id == company()->currency_id) {
-                    return $this->price;
-                }
-
-                if(!$this->exchange_rate){
-                    return $this->price;
-                }
-
-                return (($this->price * (float)$this->exchange_rate) / company()->currency->exchange_rate);
-            },
-        );
     }
 
 }

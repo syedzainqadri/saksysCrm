@@ -408,7 +408,7 @@
 
         <div class="company-info">
             <div class="description">
-               {{ $company->company_name }}
+               {{ mb_ucwords($company->company_name) }}
             </div>
 
             <br />
@@ -440,16 +440,16 @@
         <span>@lang('modules.invoices.billedTo'):</span>
         <div>
             @if ($proposal->lead && $proposal->lead->client_name && $invoiceSetting->show_client_name == 'yes')
-                <span class="bold">{{ $proposal->lead->client_name }}</span>
+                <span class="bold">{{ mb_ucwords($proposal->lead->client_name) }}</span>
             @endif
             @if ($proposal->lead && $proposal->lead->client_email && $invoiceSetting->show_client_email == 'yes')
-                <div>{{ $proposal->lead->client_email }}</div>
+                <div>{{ mb_ucwords($proposal->lead->client_email) }}</div>
             @endif
             @if ($proposal->lead && $proposal->lead->mobile && $invoiceSetting->show_client_phone == 'yes')
                 <div>{{ $proposal->lead->mobile }}</div>
             @endif
             @if ($proposal->lead && $proposal->lead->company_name && $invoiceSetting->show_client_company_name == 'yes')
-                <div>{{ $proposal->lead->company_name }}</div>
+                <div>{{ mb_ucwords($proposal->lead->company_name) }}</div>
             @endif
             @if ($proposal->lead && $proposal->lead->address && $invoiceSetting->show_client_company_address == 'yes')
                 <div>{!! nl2br($proposal->lead->address) !!}</div>
@@ -462,7 +462,7 @@
     <br>
     <section id="items">
         @if ($proposal->description)
-            <div class="f-13 mb-3 description">{!! nl2br(pdfStripTags($proposal->description)) !!}</div>
+            <div class="f-13 mb-3 description">{!! nl2br(strip_tags($proposal->description, ['p', 'b', 'strong', 'a', 'ul', 'li', 'ol', 'i', 'u', 'em', 'blockquote', 'img'])) !!}</div>
         @endif
 
         @if (count($proposal->items) > 0)
@@ -487,9 +487,9 @@
                 <tr data-iterate="item">
                     <td>{{ ++$count }}</td> <!-- Don't remove this column as it's needed for the row commands -->
                     <td>
-                        <div class="mb-3 description">{{ $item->item_name }}</div>
+                        <div class="mb-3 description">{{ ucfirst($item->item_name) }}</div>
                         @if(!is_null($item->item_summary))
-                            <p class="item-summary mb-3 description">{!! nl2br(pdfStripTags($item->item_summary)) !!}</p>
+                            <p class="item-summary mb-3 description">{!! nl2br(strip_tags($item->item_summary, ['p', 'b', 'strong', 'a'])) !!}</p>
                         @endif
                         @if ($item->proposalItemImage)
                             <p class="mt-2">
@@ -531,7 +531,7 @@
                 @endif
                 @foreach($taxes as $key=>$tax)
                     <tr data-iterate="tax">
-                        <th>{{ $key }}:</th>
+                        <th>{{ mb_strtoupper($key) }}:</th>
                         <td>{{ currency_format($tax, $proposal->currency_id, false) }}</td>
                     </tr>
                 @endforeach
@@ -550,7 +550,7 @@
             <div class="notes">
                 <div class="description">
                     <span>@lang('app.status'):</span>
-                    <span>{{ $proposal->status }}</span>
+                    <span>{{ mb_ucwords($proposal->status) }}</span>
                 </div>
                 <div class="description">
                     <span>@lang('modules.estimates.validTill'):</span>

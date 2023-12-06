@@ -30,7 +30,7 @@ class CreateNewUser implements CreatesNewUsers
      */
     public function create(array $input)
     {
-        $rules = [
+        Validator::make($input, [
             'name' => ['required', 'string', 'max:255'],
             'email' => [
                 'required',
@@ -40,13 +40,7 @@ class CreateNewUser implements CreatesNewUsers
                 Rule::unique(User::class),
             ],
             'password' => 'required|min:8',
-        ];
-
-        if (global_setting()->sign_up_terms == 'yes') {
-            $rules['terms_and_conditions'] = 'required';
-        }
-
-        Validator::make($input, $rules)->validate();
+        ])->validate();
 
         // Checking is google recaptcha is valid
         if (global_setting()->google_recaptcha_status == 'active') {

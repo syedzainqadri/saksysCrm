@@ -45,7 +45,7 @@ class AutoCreateRecurringInvoices extends Command
 
     public function handle()
     {
-        $companies = Company::select('id', 'timezone')->get();
+        $companies = Company::select('id')->with('currency')->get();
 
         foreach ($companies as $company) {
 
@@ -62,7 +62,7 @@ class AutoCreateRecurringInvoices extends Command
 
                 if ($recurring->unlimited_recurring == 1 || ($totalExistingCount < $recurring->billing_cycle)) {
 
-                    if ($recurring->next_invoice_date->timezone($company->timezone)->isToday()) {
+                    if ($recurring->next_invoice_date->timezone($recurring->company->timezone)->isToday()) {
                         $this->invoiceCreate($recurring);
                         $this->saveNextInvoiceDate($recurring);
                     }

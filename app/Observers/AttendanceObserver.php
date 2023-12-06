@@ -3,6 +3,7 @@
 namespace App\Observers;
 
 use App\Models\Attendance;
+use App\Events\ClockInEvent;
 
 class AttendanceObserver
 {
@@ -23,6 +24,11 @@ class AttendanceObserver
         }
 
         $attendance->company_id = $attendance->user->company_id;
+    }
+
+    public function created(Attendance $attendance)
+    {
+        event(new ClockInEvent($attendance));
     }
 
 }

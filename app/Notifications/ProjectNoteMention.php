@@ -68,7 +68,7 @@ class ProjectNoteMention extends BaseNotification
         $url = route('projects.show', $this->project->id);
         $url = getDomainSpecificUrl($url, $this->company);
 
-        $content = __('email.projectNote.mentionText') . ' - ' . $this->project->project_name . '<br>';
+        $content = __('email.projectNote.mentionText') . ' - ' . mb_ucwords($this->project->project_name) . '<br>';
 
         return parent::build()
             ->subject(__('email.projectNote.mentionSubject') . ' - ' . config('app.name') . '.')
@@ -116,7 +116,7 @@ class ProjectNoteMention extends BaseNotification
                 ->from(config('app.name'))
                 ->image($slack->slack_logo_url)
                 ->to('@' . $notifiable->employee[0]->slack_username)
-                ->content('*' . __('email.projectNote.mentionText') . '*' . "\n" . __('email.newProjectMember.text') . ' - ' . $this->project->project_name);
+                ->content('*' . __('email.projectNote.mentionText') . '*' . "\n" . __('email.newProjectMember.text') . ' - ' . mb_ucwords($this->project->project_name));
         }
 
         return (new SlackMessage())
@@ -130,7 +130,7 @@ class ProjectNoteMention extends BaseNotification
     {
         return OneSignalMessage::create()
             ->subject(__('email.projectNote.mentionSubject'))
-            ->body($this->project->heading . ' ' . __('email.projectNote.subject'));
+            ->body(ucfirst($this->project->heading) . ' ' . __('email.projectNote.subject'));
     }
 
 }

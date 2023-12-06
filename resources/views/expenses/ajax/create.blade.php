@@ -31,7 +31,7 @@ $addExpenseCategoryPermission = user()->permission('manage_expense_category');
                     <div class="col-md-6 col-lg-3">
                         <x-forms.number fieldId="exchange_rate" :fieldLabel="__('modules.currencySettings.exchangeRate')"
                         fieldName="exchange_rate" fieldRequired="true" :fieldValue="$companyCurrency->exchange_rate" fieldReadOnly="true"
-                        :fieldHelp="' '"/>
+                        :fieldHelp="'( '.company()->currency->currency_name.' '.__('app.to').' '.company()->currency->currency_name.' )'"/>
                     </div>
 
                     <div class="col-md-6 col-lg-3">
@@ -75,7 +75,7 @@ $addExpenseCategoryPermission = user()->permission('manage_expense_category');
                                 <option value="">--</option>
                                 @foreach ($projects as $project)
                                     <option data-currency-id="{{ $project->currency_id }}" @if ($projectId == $project->id) selected @endif value="{{ $project->id }}">
-                                        {{ $project->project_name }}
+                                        {{ mb_ucwords($project->project_name) }}
                                     </option>
                                 @endforeach
                             </x-forms.select>
@@ -91,7 +91,7 @@ $addExpenseCategoryPermission = user()->permission('manage_expense_category');
                                 data-live-search="true">
                                 <option value="">--</option>
                                 @foreach ($categories as $category)
-                                    <option value="{{ $category->id }}">{{ $category->category_name }}
+                                    <option value="{{ $category->id }}">{{ mb_ucwords($category->category_name) }}
                                     </option>
                                 @endforeach
                             </select>
@@ -119,7 +119,7 @@ $addExpenseCategoryPermission = user()->permission('manage_expense_category');
                                 @if($viewBankAccountPermission != 'none')
                                     @foreach ($bankDetails as $bankDetail)
                                         <option value="{{ $bankDetail->id }}">@if($bankDetail->type == 'bank')
-                                            {{ $bankDetail->bank_name }} | @endif {{ $bankDetail->account_name }}
+                                            {{ $bankDetail->bank_name }} | @endif {{ mb_ucwords($bankDetail->account_name) }}
                                         </option>
                                     @endforeach
                                 @endif
@@ -296,8 +296,7 @@ $addExpenseCategoryPermission = user()->permission('manage_expense_category');
                     $('#bank_account_id').html(response.data);
                     $('#bank_account_id').selectpicker('refresh');
                     $('#exchange_rate').val(response.exchangeRate);
-                    let currencyExchange = (companyCurrencyName != currentCurrencyName) ? '( '+companyCurrencyName+' @lang('app.to') '+currentCurrencyName+' )' : '';
-                    $('#exchange_rateHelp').html(currencyExchange);
+                    $('#exchange_rateHelp').html('( '+companyCurrencyName+' @lang('app.to') '+currentCurrencyName+' )');
                 }
             }
         });

@@ -3,7 +3,7 @@
 
 <div class="row">
     <div class="col-sm-12">
-        <x-form id="save-event-data-form" method="PUT">
+        <x-form id="save-event-data-form" method="put">
             <div class="add-client bg-white rounded">
                 <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
                     {{ $event->event_name }}
@@ -113,6 +113,36 @@
                     </div>
                 @endif
 
+                    <div class="col-lg-12 mb-2">
+                        <x-forms.checkbox :fieldLabel="__('modules.events.repeat')" fieldName="repeat"
+                            fieldId="repeat-event" fieldValue="yes" fieldRequired="true"
+                            :checked="$event->repeat == 'yes'" />
+                    </div>
+
+                    <div class="col-lg-12 repeat-event-div @if ($event->repeat == 'no') d-none @endif">
+                        <div class="row">
+                            <div class="col-lg-4">
+                                <x-forms.number class="mr-0 mr-lg-2 mr-md-2"
+                                    :fieldLabel="__('modules.events.repeatEvery')" fieldName="repeat_count"
+                                    fieldId="repeat_count" :fieldValue="$event->repeat_every"
+                                    fieldRequired="true" />
+                            </div>
+                            <div class="col-lg-4 mt-3">
+                                <x-forms.select fieldId="repeat_type" fieldLabel="" fieldName="repeat_type"
+                                    search="true">
+                                    <option @if ($event->repeat_type == 'day') selected @endif value="day">@lang('app.day')</option>
+                                    <option @if ($event->repeat_type == 'week') selected @endif value="week">@lang('app.week')</option>
+                                    <option @if ($event->repeat_type == 'month') selected @endif value="month">@lang('app.month')</option>
+                                    <option @if ($event->repeat_type == 'year') selected @endif value="year">@lang('app.year')</option>
+                                </x-forms.select>
+                            </div>
+                            <div class="col-lg-4">
+                                <x-forms.text :fieldLabel="__('modules.events.cycles')" fieldName="repeat_cycles"
+                                    fieldRequired="true" fieldId="repeat_cycles" fieldPlaceholder=""
+                                    :fieldValue="$event->repeat_cycles" />
+                            </div>
+                        </div>
+                    </div>
 
                     <div class="col-lg-12 mb-2">
                         <x-forms.checkbox :fieldLabel="__('modules.tasks.reminder')" fieldName="send_reminder"
@@ -140,7 +170,7 @@
                     </div>
                     <div class="col-lg-6 col-md-6">
                         <x-forms.text :fieldLabel="__('modules.events.eventLink')" fieldName="event_link"
-                            fieldId="event_link" :fieldValue="$event->event_link" :fieldPlaceholder="__('placeholders.website')" />
+                            fieldId="event_link" :fieldValue="$event->event_link" fieldPlaceholder="https://www.example.com/" />
                     </div>
                     <div class="col-md-12 mt-3">
                         <a class="f-15 f-w-500" href="javascript:;" id="add-file"><i
@@ -328,6 +358,9 @@
                 });
             });
 
+        $('#repeat-event').change(function() {
+            $('.repeat-event-div').toggleClass('d-none');
+        })
         $('#send_reminder').change(function() {
             $('.send_reminder_div').toggleClass('d-none');
         })

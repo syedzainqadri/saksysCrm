@@ -30,8 +30,11 @@
                                    :fieldLabel="__('modules.invoices.invoiceNumber')" fieldRequired="true">
                     </x-forms.label>
                     <x-forms.input-group>
-                        <input type="text" name="invoice_number" id="invoice_number" class="form-control height-35 f-15 readonly-background" readonly
-                               value="{{ $invoice->invoice_number }}">
+                        <x-slot name="prepend">
+                            <span class="input-group-text">{{ invoice_setting()->invoice_prefix }}{{ invoice_setting()->invoice_number_separator }}</span>
+                        </x-slot>
+                        <input type="number" name="invoice_number" id="invoice_number" class="form-control height-35 f-15"
+                               value="{{ $invoice->original_invoice_number }}">
                     </x-forms.input-group>
                 </div>
             </div>
@@ -87,7 +90,7 @@
                 </x-forms.label>
                 <input type="number" id="exchange_rate" name="exchange_rate"
                        class="px-6 position-relative text-dark font-weight-normal form-control height-35 rounded p-0 text-left f-15" value="{{$invoice->exchange_rate}}" @if($companyCurrency->id == $invoice->currency_id) readonly @endif>
-                <small id="currency_exchange" class="form-text text-muted">@if (company()->currency->currency_code != $invoice->currency->currency_code) ( {{company()->currency->currency_code}} @lang('app.to') {{$invoice->currency->currency_code}} ) @endif </small>
+                <small id="currency_exchange" class="form-text text-muted">( {{company()->currency->currency_code}} @lang('app.to') {{$invoice->currency->currency_code}} )</small>
             </div>
         </div>
         <!-- INVOICE NUMBER, DATE, DUE DATE, FREQUENCY END -->
@@ -150,7 +153,7 @@
                                     @foreach ($bankDetails as $bankDetail)
                                         <option value="{{ $bankDetail->id }}" @if($bankDetail->id == $invoice->bank_account_id) selected @endif>@if($bankDetail->type == 'bank')
                                                 {{ $bankDetail->bank_name }} | @endif
-                                            {{ $bankDetail->account_name }}
+                                            {{ mb_ucwords($bankDetail->account_name) }}
                                         </option>
                                     @endforeach
                                 @endif
@@ -243,7 +246,7 @@
                             <option value="null">{{ __('app.select') . ' ' . __('app.product') . ' ' . __('app.category')  }}</option>
                             @foreach ($categories as $category)
                                 <option value="{{ $category->id }}">
-                                    {{ $category->category_name }}</option>
+                                    {{ mb_ucwords($category->category_name) }}</option>
                             @endforeach
                         </select>
                     </x-forms.input-group>
@@ -347,9 +350,9 @@
                                                 name="taxes[{{ $key }}][]" multiple="multiple"
                                                 class="select-picker type customSequence border-0" data-size="3">
                                             @foreach ($taxes as $tax)
-                                                <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ $tax->tax_name .':'. $tax->rate_percent }}%"
+                                                <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ strtoupper($tax->tax_name) .':'. $tax->rate_percent }}%"
                                                         @if (isset($item->taxes) && array_search($tax->id, json_decode($item->taxes)) !== false) selected @endif value="{{ $tax->id }}">
-                                                    {{ $tax->tax_name }}:
+                                                    {{ strtoupper($tax->tax_name) }}:
                                                     {{ $tax->rate_percent }}%</option>
                                             @endforeach
                                         </select>
@@ -372,7 +375,7 @@
                                     <input type="file"
                                            class="dropify"
                                            name="invoice_item_image[]"
-                                           data-allowed-file-extensions="png jpg jpeg bmp"
+                                           data-allowed-file-extensions="png jpg jpeg"
                                            data-messages-default="test"
                                            data-height="70"
                                            data-id="{{ $item->id }}"
@@ -382,7 +385,7 @@
                                                data-show-remove="false"
                                         @endif
                                     />
-                                    <input type="hidden" name="invoice_item_image_url[]" value="{{ $item->invoiceItemImage ? $item->invoiceItemImage->file : '' }}">
+                                    <input type="hidden" name="invoice_item_image_url[]" value="{{ $item->invoiceItemImage ? $item->invoiceItemImage->external_link : '' }}">
                                 </td>
                             </tr>
                             </tbody>
@@ -629,6 +632,7 @@
 </div>
 <!-- CREATE INVOICE END -->
 
+<script src="{{ asset('vendor/jquery/dropzone.min.js') }}"></script>
 <script>
     $(document).ready(function() {
         $('.toggle-product-category').click(function() {
@@ -946,8 +950,8 @@
                 '<select id="multiselect' + i + '" name="taxes[' + i +
                 '][]" multiple="multiple" class="select-picker type customSequence" data-size="3">'
                 @foreach ($taxes as $tax)
-                +'<option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ $tax->tax_name .':'. $tax->rate_percent }}%" value="{{ $tax->id }}">'
-                +'{{ $tax->tax_name }}:{{ $tax->rate_percent }}%</option>'
+                +'<option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ strtoupper($tax->tax_name) .':'. $tax->rate_percent }}%" value="{{ $tax->id }}">'
+                +'{{ strtoupper($tax->tax_name) }}:{{ $tax->rate_percent }}%</option>'
                 @endforeach
                 +
                 '</select>' +
@@ -963,7 +967,7 @@
                 '<textarea class="f-14 border-0 w-100 desktop-description" name="item_summary[]" placeholder="@lang("placeholders.invoices.description")"></textarea>' +
                 '</td>' +
                 '<td td class="border-left-0">' +
-                '<input type="file" class="dropify" id="dropify'+i+'" name="invoice_item_image[]" data-allowed-file-extensions="png jpg jpeg bmp" data-messages-default="test" data-height="70""/><input type="hidden" name="invoice_item_image_url[]">' +
+                '<input type="file" class="dropify" id="dropify'+i+'" name="invoice_item_image[]" data-allowed-file-extensions="png jpg jpeg" data-messages-default="test" data-height="70""/><input type="hidden" name="invoice_item_image_url[]">' +
                 '</td>' +
                 '</tr>' +
                 '</tbody>' +
@@ -1121,8 +1125,7 @@
                     $('#bank_account_id').html(response.data);
                     $('#bank_account_id').selectpicker('refresh');
                     $('#exchange_rate').val(response.exchangeRate);
-                    let currencyExchange = (companyCurrencyName != currentCurrencyName) ? '( '+companyCurrencyName+' @lang('app.to') '+currentCurrencyName+' )' : '';
-                    $('#currency_exchange').html(currencyExchange);
+                    $('#currency_exchange').html('( '+companyCurrencyName+' @lang('app.to') '+currentCurrencyName+' )');
                 }
             }
         });

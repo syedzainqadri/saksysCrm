@@ -19,7 +19,6 @@ use App\Http\Requests\Events\StoreEvent;
 use App\Http\Requests\Events\UpdateEvent;
 use App\Models\MentionUser;
 use App\Models\TaskboardColumn;
-use Illuminate\Http\Request;
 
 class EventCalendarController extends AccountBaseController
 {
@@ -27,7 +26,7 @@ class EventCalendarController extends AccountBaseController
     public function __construct()
     {
         parent::__construct();
-        $this->pageTitle = 'app.menu.events';
+        $this->pageTitle = 'app.menu.Events';
         $this->middleware(function ($request, $next) {
             abort_403(!in_array('events', $this->user->modules));
             return $next($request);
@@ -101,7 +100,7 @@ class EventCalendarController extends AccountBaseController
             foreach ($events as $key => $event) {
                 $eventData[] = [
                     'id' => $event->id,
-                    'title' => $event->event_name,
+                    'title' => ucfirst($event->event_name),
                     'start' => $event->start_date_time,
                     'end' => $event->end_date_time,
                     'color' => $event->label_color
@@ -202,69 +201,55 @@ class EventCalendarController extends AccountBaseController
             $startDate = Carbon::createFromFormat($this->company->date_format, $request->start_date);
             $dueDate = Carbon::createFromFormat($this->company->date_format, $request->end_date);
 
-            if ($repeatType == 'monthly-on-same-day') {
+            for ($i = 1; $i < $repeatCycles; $i++) {
+                $startDate = $startDate->add($repeatCount, str_plural($repeatType));
+                $dueDate = $dueDate->add($repeatCount, str_plural($repeatType));
 
-                $startDateOriginal = $startDate->copy();
-                $dueDateDiff = $dueDate->diffInDays($startDate);
-                $weekOfMonth = $startDateOriginal->weekOfMonth;
-                $weekDay = $startDateOriginal->dayOfWeek;
-                $startDateOriginal->startOfMonth();
+                $event = new Event();
+                $event->event_name = $request->event_name;
+                $event->where = $request->where;
+                $event->description = trim_editor($request->description);
+                $event->start_date_time = $startDate->format('Y-m-d') . '' . Carbon::parse($request->start_time)->format('H:i:s');
+                $event->end_date_time = $dueDate->format('Y-m-d') . ' ' . Carbon::parse($request->end_time)->format('H:i:s');
 
-                for ($i = 1; $i < $repeatCycles; $i++) {
-                    $eventStartDate = $startDateOriginal->addMonths($repeatCount)->copy();
-
-                    if ($weekOfMonth == 1) {
-                        $eventStartDate->startOfMonth();
-                        $eventStartDateCopy = $eventStartDate->copy();
-                        $eventStartDate->addWeeks($weekOfMonth - 1);
-                        $eventStartDate->startOfWeek();
-                        $eventStartDate->addDays($weekDay - 1);
-
-                        if ($eventStartDateCopy->month != $eventStartDate->month) {
-                            $eventStartDate->addWeek();
-                        }
-                    }
-                    elseif ($weekOfMonth == 5) {
-                        $eventStartDate->endOfMonth();
-                        $eventStartDate->startOfWeek();
-                        $eventStartDateCopy = $eventStartDate->copy();
-                        $eventStartDate->addDays($weekDay - 1);
-
-                        if ($eventStartDateCopy->month != $eventStartDate->month) {
-                            $eventStartDate->subWeek();
-                        }
-
-                        if ($eventStartDate->copy()->addWeek()->month == $eventStartDate->month) {
-                            $eventStartDate->addWeek();
-                        }
-                    }
-                    else {
-                        $eventStartDate->startOfMonth();
-                        $eventStartDate->addWeeks($weekOfMonth - 1);
-                        $eventStartDate->startOfWeek();
-                        $eventStartDate->addDays($weekDay - 1);
-
-                        if ($eventStartDate->weekOfMonth != $weekOfMonth && $eventStartDate->copy()->addWeek()->month == $eventStartDate->month) {
-                            $eventStartDate->addWeek();
-                        }
-                    }
-
-                    $eventDueDate = $eventStartDate->copy()->addDays($dueDateDiff);
-
-                    $this->addRepeatEvent($event, $request, $eventStartDate, $eventDueDate);
-
+                if ($request->repeat) {
+                    $event->repeat = $request->repeat;
+                }
+                else {
+                    $event->repeat = 'no';
                 }
 
-            }
-            else {
-                for ($i = 1; $i < $repeatCycles; $i++) {
-                    $startDate = $startDate->add($repeatCount, str_plural($repeatType));
-                    $dueDate = $dueDate->add($repeatCount, str_plural($repeatType));
+                if ($request->send_reminder) {
+                    $event->send_reminder = $request->send_reminder;
+                }
+                else {
+                    $event->send_reminder = 'no';
+                }
 
-                    $this->addRepeatEvent($event, $request, $startDate, $dueDate);
+                $event->repeat_every = $request->repeat_count;
+                $event->repeat_cycles = $request->repeat_cycles;
+                $event->repeat_type = $request->repeat_type;
+
+                $event->remind_time = $request->remind_time;
+                $event->remind_type = $request->remind_type;
+
+                $event->label_color = $request->label_color;
+                $event->save();
+
+                if ($request->all_employees) {
+                    $attendees = User::allEmployees(null, true);
+
+                    foreach ($attendees as $attendee) {
+                        EventAttendee::create(['user_id' => $attendee->id, 'event_id' => $event->id]);
+                    }
+                }
+
+                if ($request->user_id) {
+                    foreach ($request->user_id as $userId) {
+                        EventAttendee::firstOrCreate(['user_id' => $userId, 'event_id' => $event->id]);
+                    }
                 }
             }
-
         }
 
         if ($request->mention_user_ids != '' || $request->mention_user_ids != null){
@@ -277,55 +262,6 @@ class EventCalendarController extends AccountBaseController
 
         return Reply::successWithData(__('messages.recordSaved'), ['redirectUrl' => route('events.index'), 'eventId' => $event->id]);
 
-    }
-
-    private function addRepeatEvent($parentEvent, $request, $startDate, $dueDate)
-    {
-        $event = new Event();
-        $event->parent_id = $parentEvent->id;
-        $event->event_name = $request->event_name;
-        $event->where = $request->where;
-        $event->description = trim_editor($request->description);
-        $event->start_date_time = $startDate->format('Y-m-d') . '' . Carbon::parse($request->start_time)->format('H:i:s');
-        $event->end_date_time = $dueDate->format('Y-m-d') . ' ' . Carbon::parse($request->end_time)->format('H:i:s');
-
-        if ($request->repeat) {
-            $event->repeat = $request->repeat;
-        }
-        else {
-            $event->repeat = 'no';
-        }
-
-        if ($request->send_reminder) {
-            $event->send_reminder = $request->send_reminder;
-        }
-        else {
-            $event->send_reminder = 'no';
-        }
-
-        $event->repeat_every = $request->repeat_count;
-        $event->repeat_cycles = $request->repeat_cycles;
-        $event->repeat_type = $request->repeat_type;
-
-        $event->remind_time = $request->remind_time;
-        $event->remind_type = $request->remind_type;
-
-        $event->label_color = $request->label_color;
-        $event->save();
-
-        if ($request->all_employees) {
-            $attendees = User::allEmployees(null, true);
-
-            foreach ($attendees as $attendee) {
-                EventAttendee::create(['user_id' => $attendee->id, 'event_id' => $event->id]);
-            }
-        }
-
-        if ($request->user_id) {
-            foreach ($request->user_id as $userId) {
-                EventAttendee::firstOrCreate(['user_id' => $userId, 'event_id' => $event->id]);
-            }
-        }
     }
 
     public function edit($id)
@@ -397,6 +333,12 @@ class EventCalendarController extends AccountBaseController
         $event->start_date_time = Carbon::createFromFormat($this->company->date_format, $request->start_date)->format('Y-m-d') . ' ' . Carbon::createFromFormat($this->company->time_format, $request->start_time)->format('H:i:s');
         $event->end_date_time = Carbon::createFromFormat($this->company->date_format, $request->end_date)->format('Y-m-d') . ' ' . Carbon::createFromFormat($this->company->time_format, $request->end_time)->format('H:i:s');
 
+        if ($request->repeat) {
+            $event->repeat = $request->repeat;
+        }
+        else {
+            $event->repeat = 'no';
+        }
 
         if ($request->send_reminder) {
             $event->send_reminder = $request->send_reminder;
@@ -404,6 +346,10 @@ class EventCalendarController extends AccountBaseController
         else {
             $event->send_reminder = 'no';
         }
+
+        $event->repeat_every = $request->repeat_count;
+        $event->repeat_cycles = $request->repeat_cycles;
+        $event->repeat_type = $request->repeat_type;
 
         $event->remind_time = $request->remind_time;
         $event->remind_type = $request->remind_type;
@@ -501,7 +447,7 @@ class EventCalendarController extends AccountBaseController
         ));
 
 
-        $this->pageTitle = __('app.menu.events') . ' ' . __('app.details');
+        $this->pageTitle = __('app.menu.Events') . ' ' . __('app.details');
 
         if (request()->ajax()) {
             $html = view('event-calendar.ajax.show', $this->data)->render();
@@ -526,23 +472,9 @@ class EventCalendarController extends AccountBaseController
         || ($this->deletePermission == 'both' && (in_array(user()->id, $attendeesIds) || $event->added_by == user()->id))
         ));
 
-        if ($event->parent_id && request()->delete == 'all') {
-            $id = $event->parent_id;
-        }
-
         Event::destroy($id);
         return Reply::successWithData(__('messages.deleteSuccess'), ['redirectUrl' => route('events.index')]);
 
-    }
-
-    public function monthlyOn(Request $request)
-    {
-        $date = Carbon::createFromFormat($this->company->date_format, $request->date);
-
-        $week = __('app.eventDay.' . $date->weekOfMonth);
-        $day = $date->translatedFormat('l');
-
-        return Reply::dataOnly(['message' => __('app.eventMonthlyOn', ['week' => $week, 'day' => $day])]);
     }
 
 }

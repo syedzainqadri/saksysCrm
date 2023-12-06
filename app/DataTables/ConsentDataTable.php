@@ -69,7 +69,7 @@ class ConsentDataTable extends BaseDataTable
      */
     public function html()
     {
-        $dataTable = $this->setBuilder('consent-table')
+        return $this->setBuilder('consent-table')
             ->parameters([
                 'initComplete' => 'function () {
                    window.LaravelDataTables["consent-table"].buttons().container()
@@ -78,13 +78,8 @@ class ConsentDataTable extends BaseDataTable
                 'fnDrawCallback' => 'function( oSettings ) {
 
                 }',
-            ]);
-
-        if (canDataTableExport()) {
-            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
-        }
-
-        return $dataTable;
+            ])
+            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
     }
 
     /**
