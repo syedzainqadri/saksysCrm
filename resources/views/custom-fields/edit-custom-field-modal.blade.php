@@ -7,7 +7,8 @@
         <x-form id="editForm" method="PUT" class="form-horizontal">
 
             <div class="row">
-
+                <input type="hidden" name="id" value="{{$field->id}}" />
+                <input type="hidden" name="module" value="{{$field->custom_field_group_id}}" />
                 <div class="col-md-4">
                     <div class="form-group my-3">
                         <label class="control-label required" for="display_name">@lang('app.module')</label>

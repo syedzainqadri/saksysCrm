@@ -58,7 +58,6 @@ use Illuminate\Notifications\Notifiable;
  * @property-read mixed $extras
  * @property-read mixed $icon
  * @property-read mixed $issue_on
- * @property-read mixed $original_invoice_number
  * @property-read mixed $total_amount
  * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\InvoiceItems[] $items
  * @property-read int|null $items_count
@@ -146,7 +145,8 @@ use Illuminate\Notifications\Notifiable;
  * @method static \Illuminate\Database\Eloquent\Builder|Invoice whereOfflineMethodId($value)
  * @method static \Illuminate\Database\Eloquent\Builder|Invoice wherePaymentStatus($value)
  * @method static \Illuminate\Database\Eloquent\Builder|Invoice whereTransactionId($value)
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\InvoiceFiles> $files
+ * @property string|null $original_invoice_number
+ * @method static \Illuminate\Database\Eloquent\Builder|Invoice whereOriginalInvoiceNumber($value)
  * @mixin \Eloquent
  */
 class Invoice extends BaseModel
@@ -161,7 +161,7 @@ class Invoice extends BaseModel
         'due_date' => 'datetime',
         'last_viewed' => 'datetime',
     ];
-    protected $appends = ['total_amount', 'issue_on', 'original_invoice_number'];
+    protected $appends = ['total_amount', 'issue_on'];
     protected $with = ['currency', 'address'];
 
     const CUSTOM_FIELD_MODEL = 'App\Models\Invoice';
@@ -198,7 +198,7 @@ class Invoice extends BaseModel
 
     public function payment(): HasMany
     {
-        return $this->hasMany(Payment::class, 'invoice_id')->orderBy('paid_on', 'desc');
+        return $this->hasMany(Payment::class, 'invoice_id')->orderByDesc('paid_on');
     }
 
     public function currency(): BelongsTo
@@ -244,7 +244,7 @@ class Invoice extends BaseModel
 
     public static function lastInvoiceNumber()
     {
-        return (int)Invoice::max('invoice_number');
+        return (int)Invoice::orderBy('id', 'desc')->first()?->original_invoice_number ?? 0;
     }
 
     public function appliedCredits()
@@ -287,44 +287,12 @@ class Invoice extends BaseModel
 
         return Carbon::parse($this->issue_date)->format('d F, Y');
 
-
     }
 
-    public function getOriginalInvoiceNumberAttribute()
+    public function formatInvoiceNumber()
     {
-        $invoiceSettings = (company()) ? company()->invoiceSetting : $this->company->invoiceSetting;
-        $zero = '';
-
-        if (strlen($this->attributes['invoice_number']) < $invoiceSettings->invoice_digit) {
-            $condition = $invoiceSettings->invoice_digit - strlen($this->attributes['invoice_number']);
-
-            for ($i = 0; $i < $condition; $i++) {
-                $zero = '0' . $zero;
-            }
-        }
-
-        return $zero . $this->attributes['invoice_number'];
-    }
-
-    public function getInvoiceNumberAttribute($value)
-    {
-        if (is_null($value)) {
-            return '';
-        }
-
-        $invoiceSettings = (company()) ? company()->invoiceSetting : $this->company->invoiceSetting;
-        $zero = '';
-
-        if (strlen($value) < $invoiceSettings->invoice_digit) {
-            $condition = $invoiceSettings->invoice_digit - strlen($value);
-
-            for ($i = 0; $i < $condition; $i++) {
-                $zero = '0' . $zero;
-            }
-        }
-
-        return $invoiceSettings->invoice_prefix . $invoiceSettings->invoice_number_separator . $zero . $value;
-
+        $invoiceSettings = company() ? company()->invoiceSetting : $this->company->invoiceSetting;
+        return \App\Helper\NumberFormat::invoice($this->invoice_number, $invoiceSettings);
     }
 
     public function getDownloadFileUrlAttribute()
@@ -334,7 +302,7 @@ class Invoice extends BaseModel
 
     public function files(): HasMany
     {
-        return $this->hasMany(InvoiceFiles::class, 'invoice_id')->orderBy('id', 'desc');
+        return $this->hasMany(InvoiceFiles::class, 'invoice_id')->orderByDesc('id');
     }
 
 }

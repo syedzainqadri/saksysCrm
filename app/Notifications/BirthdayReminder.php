@@ -91,21 +91,19 @@ class BirthdayReminder extends BaseNotification
 
     public function toSlack($notifiable) // phpcs:ignore
     {
-        $new = new SlackMessage;
-
-        $slack = $notifiable->company->slackSetting;
-
         $name = '';
 
         foreach ($this->birthDays->upcomingBirthdays as $key => $birthDay) {
-            $name .= '>' .($key + 1) . '. ' . $birthDay['name'] . "\n";
+            $name .= '>' . ($key + 1) . '. ' . $birthDay['name'] . "\n";
         }
 
-        return $new
-            ->from(config('app.name'))
-            ->to('@' . $notifiable->employeeDetail->slack_username)
-            ->image($slack->slack_logo_url)
-            ->content('>*' . __('email.BirthdayReminder.text') . ' :birthday: *' . "\n" . $name . ' ');
+        if ($notifiable->employeeDetail->slack_username) {
+            return $this->slackBuild($notifiable)
+                ->content('>*' . __('email.BirthdayReminder.text') . ' :birthday: *' . "\n" . $name . ' ');
+        }
+
+
+        return $this->slackRedirectMessage('email.BirthdayReminder.text', $notifiable);
 
     }
 

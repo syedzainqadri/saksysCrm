@@ -44,8 +44,7 @@
                                     @if (is_null($task->due_date))
                                         --
                                     @elseif ($task->due_date->endOfDay()->isPast())
-                                        <span
-                                            class="text-danger">{{ $task->due_date->translatedFormat(company()->date_format) }}</span>
+                                        <span class="text-danger">{{ $task->due_date->translatedFormat(company()->date_format) }}</span>
                                     @elseif ($task->due_date->setTimezone(company()->timezone)->isToday())
                                         <span class="text-success">{{ __('app.today') }}</span>
                                     @else
@@ -56,7 +55,7 @@
                         @empty
                             <tr>
                                 <td colspan="4" class="shadow-none">
-                                    <x-cards.no-record icon="tasks" :message="__('messages.noRecordFound')" />
+                                    <x-cards.no-record icon="tasks" :message="__('messages.noRecordFound')"/>
                                 </td>
                             </tr>
                         @endforelse

@@ -9,7 +9,7 @@
         <!-- Add Task Export Buttons Start -->
         <div class="d-flex" id="table-actions">
             @if ($addInvoicePermission == 'all' || $addInvoicePermission == 'added')
-                <x-forms.link-primary data-redirect-url="{{ url()->full() }}" :link="route('proposals.create').'?lead_id='.$lead->id"
+                <x-forms.link-primary data-redirect-url="{{ url()->full() }}" :link="route('proposals.create').'?deal_id='.$deal->id"
                     class="mr-3 openRightModal" icon="plus">
                     @lang('modules.proposal.createProposal')
                 </x-forms.link-primary>
@@ -34,7 +34,7 @@
 <script>
     $('#invoices-table').on('preXhr.dt', function(e, settings, data) {
 
-        var leadId = "{{ $lead->id }}";
+        var leadId = "{{ $deal->id }}";
         data['leadId'] = leadId;
     });
     const showTable = () => {
@@ -42,8 +42,7 @@
     }
 
 
-    $('body').on('click', '.delete-table-row', function() {
-        var id = $(this).data('proposal-id');
+    $('body').on('click', '.delete-proposal-table-row', function() {
         Swal.fire({
             title: "@lang('messages.sweetAlertTitle')",
             text: "@lang('messages.recoverRecord')",
@@ -62,7 +61,9 @@
             },
             buttonsStyling: false
         }).then((result) => {
+
             if (result.isConfirmed) {
+                var id = $(this).data('proposal-id');
                 var url = "{{ route('proposals.destroy', ':id') }}";
                 url = url.replace(':id', id);
 

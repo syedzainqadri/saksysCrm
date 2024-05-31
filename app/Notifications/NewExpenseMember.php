@@ -42,7 +42,7 @@ class NewExpenseMember extends BaseNotification
         }
 
         if ($this->emailSetting->send_slack == 'yes' && $this->company->slackSetting->status == 'active') {
-            array_push($via, 'slack');
+            $this->slackUserNameCheck($notifiable) ? array_push($via, 'slack') : null;
         }
 
         if ($this->emailSetting->send_push == 'yes') {
@@ -64,10 +64,17 @@ class NewExpenseMember extends BaseNotification
         $url = route('expenses.show', $this->expense->id);
         $url = getDomainSpecificUrl($url, $this->company);
 
-        $content = __('email.newExpense.subject') . '.' . '<br>' . __('app.employee') . ': ' . mb_ucwords($this->expense->user->name) . '<br>' . __('modules.expenses.itemName') . ': ' . $this->expense->item_name . '<br>' . __('app.price') . ': ' . currency_format($this->expense->price, $this->expense->currency->id);
+        if ($this->expense->status == 'approved') {
+            $subject = __('email.newExpense.newSubject');
+        }
+        else {
+            $subject = __('email.newExpense.subject');
+        }
+
+        $content = $subject . '<br>' . __('app.status') . ': ' . $this->expense->status . '<br>' . __('app.employee') . ': ' . $this->expense->user->name . '<br>' . __('modules.expenses.itemName') . ': ' . $this->expense->item_name . '<br>' . __('app.price') . ': ' . currency_format($this->expense->price, $this->expense->currency->id);
 
         return $build
-            ->subject(__('email.newExpense.subject') . ' - ' . config('app.name'))
+            ->subject($subject . ' - ' . config('app.name'))
             ->markdown('mail.email', [
                 'url' => $url,
                 'content' => $content,
@@ -102,20 +109,14 @@ class NewExpenseMember extends BaseNotification
      */
     public function toSlack($notifiable)
     {
-        $slack = $notifiable->company->slackSetting;
 
-        if (count($notifiable->employee) > 0 && (!is_null($notifiable->employee[0]->slack_username) && ($notifiable->employee[0]->slack_username != ''))) {
-            return (new SlackMessage())
-                ->from(config('app.name'))
-                ->image($slack->slack_logo_url)
-                ->to('@' . $notifiable->employee[0]->slack_username)
-                ->content(__('email.newExpense.subject') . ' - ' . $this->expense->item_name . ' - ' . currency_format($this->expense->price, $this->expense->currency->id) . "\n" . url('/login'));
-        }
+        $url = route('expenses.show', $this->expense->id);
+        $url = getDomainSpecificUrl($url, $this->company);
 
-        return (new SlackMessage())
-            ->from(config('app.name'))
-            ->image($slack->slack_logo_url)
-            ->content('*' . __('email.newExpense.subject') . '*' . "\n" .'This is a redirected notification. Add slack username for *' . $notifiable->name . '*');
+        return $this->slackBuild($notifiable)
+            ->content(__('email.newExpense.subject') . ' - ' . $this->expense->item_name . ' - ' . currency_format($this->expense->price, $this->expense->currency->id) . "\n" . $url);
+
+
     }
 
     // phpcs:ignore
@@ -123,7 +124,7 @@ class NewExpenseMember extends BaseNotification
     {
         return OneSignalMessage::create()
             ->setSubject(__('email.newExpense.subject'))
-            ->setBody($this->expense->item_name . ' by ' . mb_ucwords($this->expense->user->name));
+            ->setBody($this->expense->item_name . ' by ' . $this->expense->user->name);
     }
 
 }

@@ -59,7 +59,21 @@
 
         <!-- MORE FILTERS START -->
         <x-filters.more-filter-box>
-
+            <div class="more-filter-items">
+                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('app.project')</label>
+                <div class="select-filter mb-4">
+                    <div class="select-others">
+                        <select class="form-control select-picker" name="project_id" id="filter_project_id"
+                            data-container="body" data-live-search="true" data-size="8">
+                            <option value="all">@lang('app.all')</option>
+                            @foreach ($projects as $project)
+                                <option value="{{ $project->id }}">{{ $project->project_name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
             <div class="more-filter-items">
                 <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('app.status')</label>
                 <div class="select-filter mb-4">
@@ -107,18 +121,14 @@ $addOrderPermission = user()->permission('add_order');
                 @if (in_array('client', user_roles()) && in_array('orders', $user->modules) && ($addOrderPermission == 'all' ))
                     <x-forms.link-primary :link="route('products.index')" class="mr-3 float-left"
                         icon="plus">
-                        @lang('app.add')
-                        @lang('app.new')
-                        @lang('app.order')
+                        @lang('app.addNewOrder')
                     </x-forms.link-primary>
                 @endif
 
                 @if (!in_array('client', user_roles()) && ($addOrderPermission == 'all' || $addOrderPermission == 'added'))
                     <x-forms.link-primary :link="route('orders.create')" class="mr-3 float-left"
                         icon="plus">
-                        @lang('app.add')
-                        @lang('app.new')
-                        @lang('app.order')
+                        @lang('app.addNewOrder')
                     </x-forms.link-primary>
                 @endif
             </div>
@@ -154,12 +164,17 @@ $addOrderPermission = user()->permission('add_order');
                 endDate = dateRangePicker.endDate.format('{{ company()->moment_date_format }}');
             }
 
+            var projectID = $('#filter_project_id').val();
+            if (!projectID) {
+                projectID = 0;
+            }
             var clientID = $('#clientID').val();
             var status = $('#status').val();
 
             var searchText = $('#search-text-field').val();
 
             data['clientID'] = clientID;
+            data['projectID'] = projectID;
             data['status'] = status;
             data['startDate'] = startDate;
             data['endDate'] = endDate;

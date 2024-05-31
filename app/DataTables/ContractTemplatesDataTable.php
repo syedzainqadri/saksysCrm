@@ -2,6 +2,7 @@
 
 namespace App\DataTables;
 
+use App\Helper\Common;
 use Carbon\Carbon;
 use App\Models\Project;
 use App\DataTables\BaseDataTable;
@@ -17,6 +18,7 @@ class ContractTemplatesDataTable extends BaseDataTable
     private $deleteContractPermission;
     private $addContractPermission;
     private $viewContractPermission;
+    private $manageContractTemplate;
 
     public function __construct()
     {
@@ -38,9 +40,7 @@ class ContractTemplatesDataTable extends BaseDataTable
     {
         return datatables()
             ->eloquent($query)
-            ->addColumn('check', function ($row) {
-                return '<input type="checkbox" class="select-table-row" id="datatable-row-' . $row->id . '"  name="datatable_ids[]" value="' . $row->id . '" onclick="dataTableRowCheck(' . $row->id . ')">';
-            })
+            ->addColumn('check', fn($row) => $this->checkBox($row))
             ->addColumn('action', function ($row) {
                 $action = '<div class="task_view">
                 <div class="dropdown">
@@ -80,18 +80,18 @@ class ContractTemplatesDataTable extends BaseDataTable
                 return $action;
             })
             ->addColumn('contract_subject', function ($row) {
-                return ucfirst($row->subject);
+                return $row->subject;
             })
             ->editColumn('subject', function ($row) {
                 $signed = '';
 
                 if ($row->signature) {
-                    $signed = '<span class="badge badge-secondary"><i class="fa fa-signature"></i> ' . __('app.signed') . '</span>';
+                    $signed = '`<span class="badge badge-secondary">`<i class="fa fa-signature"></i> ' . __('app.signed') . '</span>';
                 }
 
                 return '<div class="media align-items-center">
                         <div class="media-body">
-                    <h5 class="mb-0 f-13 text-darkest-grey"><a href="' . route('contract-template.show', [$row->id]) . '">' . ucfirst($row->subject) . '</a></h5>
+                    <h5 class="mb-0 f-13 text-darkest-grey"><a href="' . route('contract-template.show', [$row->id]) . '">' . $row->subject . '</a></h5>
                     <p class="mb-0">' . $signed . '</p>
                     </div>
                   </div>';
@@ -101,9 +101,7 @@ class ContractTemplatesDataTable extends BaseDataTable
             })
             ->addIndexColumn()
             ->smart(false)
-            ->setRowId(function ($row) {
-                return 'row-' . $row->id;
-            })
+            ->setRowId(fn($row) => 'row-' . $row->id)
             ->rawColumns(['action', 'check', 'subject']);
     }
 
@@ -138,7 +136,7 @@ class ContractTemplatesDataTable extends BaseDataTable
      */
     public function html()
     {
-        return $this->setBuilder('contract-template-table', 2)
+        $dataTable = $this->setBuilder('contract-template-table', 2)
             ->parameters([
                 'initComplete' => 'function () {
                     window.LaravelDataTables["contract-template-table"].buttons().container()
@@ -150,6 +148,8 @@ class ContractTemplatesDataTable extends BaseDataTable
                     })
                 }',
             ]);
+
+        return $dataTable;
     }
 
     /**

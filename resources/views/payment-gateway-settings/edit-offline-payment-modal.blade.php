@@ -1,6 +1,6 @@
 <x-form id="updateMethods" method="PUT" class="ajax-form">
     <div class="modal-header">
-        <h5 class="modal-title">@lang('app.update') @lang('app.menu.offlinePaymentMethod')</h5>
+        <h5 class="modal-title">@lang('app.updateofflinePaymentMethod')</h5>
         <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
     </div>
     <div class="modal-body">
@@ -10,12 +10,12 @@
 
                     <div class="form-group">
                         <x-forms.text class="mr-0 mr-lg-2 mr-md-2" :fieldLabel="__('modules.offlinePayment.method')"
-                            fieldPlaceholder="e.g. cash" fieldName="name" fieldId="name" :fieldValue="$method->name" fieldRequired="true"></x-forms.text>
+                        :fieldPlaceholder="__('placeholders.offlinePayment.method')" fieldName="name" fieldId="name" :fieldValue="$method->name" fieldRequired="true"></x-forms.text>
                     </div>
                     <div class="form-group">
                         <x-forms.textarea class="mr-0 mr-lg-2 mr-md-2"
                         :fieldLabel="__('modules.offlinePayment.description')" fieldName="description"
-                        fieldId="description" fieldPlaceholder="e.g. via USD dollar" :fieldValue="$method->description" fieldRequired="true">
+                        fieldId="description" :fieldPlaceholder="__('placeholders.offlinePayment.description')" :fieldValue="$method->description" fieldRequired="true">
                         </x-forms.textarea>
                     </div>
 

@@ -5,9 +5,12 @@ namespace App\Observers;
 use App\Events\NewUserEvent;
 use App\Models\TicketAgentGroups;
 use App\Models\User;
+use App\Traits\StoreHeaders;
 
 class UserObserver
 {
+
+    use StoreHeaders;
 
     public function saving(User $user)
     {
@@ -41,6 +44,9 @@ class UserObserver
         if (company()) {
             $model->company_id = company()->id;
         }
+
+        $this->storeHeaders($model);
+
     }
 
 }

@@ -3,7 +3,6 @@
 namespace App\Observers;
 
 use App\Models\Attendance;
-use App\Events\ClockInEvent;
 
 class AttendanceObserver
 {
@@ -23,12 +22,12 @@ class AttendanceObserver
             $attendance->added_by = user()->id;
         }
 
-        $attendance->company_id = $attendance->user->company_id;
-    }
+        if ($attendance->work_from_type != 'other') {
+            $attendance->working_from = $attendance->work_from_type;
+        }
+        
 
-    public function created(Attendance $attendance)
-    {
-        event(new ClockInEvent($attendance));
+        $attendance->company_id = $attendance->user->company_id;
     }
 
 }

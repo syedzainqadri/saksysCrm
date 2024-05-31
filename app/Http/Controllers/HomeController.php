@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Scopes\CompanyScope;
+use check;
 use Carbon\Carbon;
 use Stripe\Stripe;
+use App\Models\Deal;
 use App\Models\Lead;
 use App\Models\Role;
 use App\Models\Task;
@@ -19,41 +20,53 @@ use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\Product;
 use App\Models\Project;
+use App\Models\LeadNote;
 use App\Models\Proposal;
 use App\Models\TaskFile;
+
 use App\Models\LeadSource;
 use App\Models\LeadStatus;
 use App\Models\TicketType;
 use App\Models\CreditNotes;
 use App\Models\LeadProduct;
+use App\Models\TicketGroup;
 use App\Models\TicketReply;
 use App\Scopes\ActiveScope;
 use App\Models\InvoiceItems;
+use App\Models\LeadPipeline;
 use App\Models\ProposalItem;
 use App\Models\ProposalSign;
+use App\Scopes\CompanyScope;
 use Illuminate\Http\Request;
 use App\Models\ClientDetails;
+use App\Models\GlobalSetting;
+// use App\View\Components\Auth;
+use App\Models\PipelineStage;
 use App\Models\LeadCustomForm;
 use App\Models\TaskboardColumn;
 use App\Models\TicketCustomForm;
 use Froiden\RestAPI\ApiResponse;
+use App\Traits\EmployeeDashboard;
 use Illuminate\Support\Facades\DB;
 use App\Models\ProjectTimeLogBreak;
 use Illuminate\Support\Facades\App;
 use Nwidart\Modules\Facades\Module;
 use App\Traits\UniversalSearchTrait;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Artisan;
 use App\Models\PaymentGatewayCredentials;
 use App\Http\Requests\Lead\StorePublicLead;
 use App\Http\Requests\ProposalAcceptRequest;
+use App\Http\Requests\ClockIn\ClockInRequest;
 use App\Http\Requests\Stripe\StoreStripeDetail;
 use App\Http\Requests\Tickets\StoreCustomTicket;
-use App\Models\TicketGroup;
+use Illuminate\Routing\Exceptions\InvalidSignatureException;
 
 class HomeController extends Controller
 {
+    use EmployeeDashboard;
 
     use UniversalSearchTrait;
 
@@ -78,7 +91,9 @@ class HomeController extends Controller
         $this->pageTitle = 'app.menu.invoices';
         $this->pageIcon = 'icon-money';
 
-        $this->invoice = Invoice::with('currency', 'project', 'project.client', 'items.invoiceItemImage', 'items', 'items.unit')->where('hash', $hash)->firstOrFail();
+        $this->invoice = Invoice::with('currency', 'project', 'project.client', 'items.invoiceItemImage', 'items', 'items.unit')
+            ->where('hash', $hash)
+            ->firstOrFail();
         $this->paidAmount = $this->invoice->getPaidAmount();
 
         $this->discount = 0;
@@ -99,34 +114,23 @@ class HomeController extends Controller
             ->get();
 
         foreach ($items as $item) {
+            foreach (json_decode($item->taxes) as $taxId) {
+                $tax = InvoiceItems::taxbyid($taxId)->first();
 
-            foreach (json_decode($item->taxes) as $tax) {
-                $this->tax = InvoiceItems::taxbyid($tax)->first();
+                if ($tax) {
+                    $taxName = $tax->tax_name . ': ' . $tax->rate_percent . '%';
+                    $taxAmount = $this->calculateTaxAmount($item, $tax);
 
-                if ($this->tax) {
-                    if (!isset($taxList[$this->tax->tax_name . ': ' . $this->tax->rate_percent . '%'])) {
-
-                        if ($this->invoice->calculate_tax == 'after_discount' && $this->discount > 0) {
-                            $taxList[$this->tax->tax_name . ': ' . $this->tax->rate_percent . '%'] = ($item->amount - ($item->amount / $this->invoice->sub_total) * $this->discount) * ($this->tax->rate_percent / 100);
-
-                        }
-                        else {
-                            $taxList[$this->tax->tax_name . ': ' . $this->tax->rate_percent . '%'] = $item->amount * ($this->tax->rate_percent / 100);
-                        }
-
+                    if (!isset($taxList[$taxName])) {
+                        $taxList[$taxName] = $taxAmount;
                     }
                     else {
-                        if ($this->invoice->calculate_tax == 'after_discount' && $this->discount > 0) {
-                            $taxList[$this->tax->tax_name . ': ' . $this->tax->rate_percent . '%'] = $taxList[$this->tax->tax_name . ': ' . $this->tax->rate_percent . '%'] + (($item->amount - ($item->amount / $this->invoice->sub_total) * $this->discount) * ($this->tax->rate_percent / 100));
-
-                        }
-                        else {
-                            $taxList[$this->tax->tax_name . ': ' . $this->tax->rate_percent . '%'] = $taxList[$this->tax->tax_name . ': ' . $this->tax->rate_percent . '%'] + ($item->amount * ($this->tax->rate_percent / 100));
-                        }
+                        $taxList[$taxName] += $taxAmount;
                     }
                 }
             }
         }
+
 
         $this->taxes = $taxList;
         $this->company = $this->invoice->company;
@@ -147,6 +151,18 @@ class HomeController extends Controller
             'methods' => $this->methods,
             'invoiceSetting' => $this->invoiceSetting,
         ]);
+    }
+
+    private function calculateTaxAmount($item, $tax)
+    {
+        $amount = $item->amount;
+        $ratePercent = $tax->rate_percent / 100;
+
+        if ($this->invoice->calculate_tax == 'after_discount' && $this->discount > 0) {
+            $amount -= ($amount / $this->invoice->sub_total) * $this->discount;
+        }
+
+        return $amount * $ratePercent;
     }
 
     public function stripeModal(Request $request)
@@ -277,7 +293,7 @@ class HomeController extends Controller
         $this->invoice = Invoice::whereRaw('md5(id) = ?', $id)->firstOrFail();
         $this->company = $this->invoice->company;
         $this->invoiceSetting = $this->company->invoiceSetting;
-        App::setLocale($this->invoiceSetting->locale);
+        App::setLocale($this->invoiceSetting->locale ?? 'en');
         // Download file uploaded
         if ($this->invoice->file != null) {
             return response()->download(storage_path('app/public/invoice-files') . '/' . $this->invoice->file);
@@ -295,8 +311,8 @@ class HomeController extends Controller
         $this->invoice = Invoice::with('items')->findOrFail($id);
         $this->company = $this->invoice->company;
         $this->invoiceSetting = $this->company->invoiceSetting;
-        App::setLocale($this->invoiceSetting->locale);
-        Carbon::setLocale($this->invoiceSetting->locale);
+        App::setLocale($this->invoiceSetting->locale ?? 'en');
+        Carbon::setLocale($this->invoiceSetting->locale ?? 'en');
         $this->paidAmount = $this->invoice->getPaidAmount();
         $this->creditNote = 0;
 
@@ -358,7 +374,7 @@ class HomeController extends Controller
 
         $this->company = $this->invoice->company;
 
-        $this->payments = Payment::with(['offlineMethod'])->where('invoice_id', $this->invoice->id)->where('status', 'complete')->orderBy('paid_on', 'desc')->get();
+        $this->payments = Payment::with(['offlineMethod'])->where('invoice_id', $this->invoice->id)->where('status', 'complete')->orderByDesc('paid_on')->get();
 
         $pdf = app('dompdf.wrapper');
         $pdf->loadView('invoices.pdf.' . $this->invoiceSetting->template, $this->data);
@@ -412,7 +428,7 @@ class HomeController extends Controller
 
             $data[] = [
                 'id' => 'task-' . $task->id,
-                'name' => ucfirst($task->heading),
+                'name' => $task->heading,
                 'start' => ((!is_null($task->start_date)) ? $task->start_date->format('Y-m-d') : ((!is_null($task->due_date)) ? $task->due_date->format('Y-m-d') : null)),
                 'end' => ((!is_null($task->due_date)) ? $task->due_date->format('Y-m-d') : $task->start_date->format('Y-m-d')),
                 'progress' => 0,
@@ -431,6 +447,7 @@ class HomeController extends Controller
 
     public function taskDetail($hash)
     {
+
         $this->task = Task::with('company:id,timezone,favicon,light_logo,date_format,time_format,company_name', 'boardColumn', 'project', 'users', 'label', 'approvedTimeLogs', 'approvedTimeLogs.user', 'comments', 'comments.user')
             ->withCount('subtasks', 'files', 'comments', 'activeTimerAll')
             ->where('hash', $hash)
@@ -465,6 +482,8 @@ class HomeController extends Controller
 
         $tab = request('view');
 
+        $this->routeUrl = url()->full();
+
         $this->tab = match ($tab) {
             'sub_task' => 'front.tasks.ajax.sub_tasks',
             'history' => 'front.tasks.ajax.history',
@@ -476,19 +495,16 @@ class HomeController extends Controller
 
         $this->company = $this->task->company;
 
-        if (request()->ajax()) {
-            if (request('json') == true) {
-                $html = view($this->tab, $this->data)->render();
+        $this->view = 'front.tasks.ajax.show';
 
-                return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+        if (request()->ajax()) {
+            if (request('json')) {
+                return $this->returnAjax($this->tab);
             }
 
-            $html = view('front.tasks.ajax.show', $this->data)->render();
-
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
 
-        $this->view = 'front.tasks.ajax.show';
 
         return view('front.tasks.show', $this->data);
 
@@ -635,6 +651,7 @@ class HomeController extends Controller
      */
     public function leadForm($id)
     {
+     
         $this->withLogo = \request()->get('with_logo');
         $this->styled = \request()->get('styled');
 
@@ -656,7 +673,7 @@ class HomeController extends Controller
     /**
      * save lead
      *
-     * @return \Illuminate\Http\Response
+     * @return array
      */
     // public function leadStore(StorePublicLead $request)
     public function leadStore(StorePublicLead $request)
@@ -667,29 +684,53 @@ class HomeController extends Controller
             // Checking is google recaptcha is valid
             $gRecaptchaResponseInput = global_setting()->google_recaptcha_v3_status == 'active' ? 'g_recaptcha' : 'g-recaptcha-response';
             $gRecaptchaResponse = $request->{$gRecaptchaResponseInput};
-            $validateRecaptcha = $this->validateGoogleRecaptcha($gRecaptchaResponse);
+            $validateRecaptcha = GlobalSetting::validateGoogleRecaptcha($gRecaptchaResponse);
 
             if (!$validateRecaptcha) {
                 return Reply::error(__('auth.recaptchaFailed'));
             }
         }
 
-        $leadStatus = LeadStatus::where('default', '1')->where('company_id', $company->id)->first();
+        $leadPipeline = LeadPipeline::where('default', '1')->where('company_id', $company->id)->first();
+        $leadStage = PipelineStage::where('default', '1')->where('lead_pipeline_id', $leadPipeline->id)->where('company_id', $company->id)->first();
 
-        $lead = new Lead();
+        $leadContact = null;
+
+        if (request()->has('email') && !is_null($request->email)) {
+            $leadContact = Lead::where('client_email', $request->email)->first();
+        }
+
+        if (is_null($leadContact)) {
+            $leadContact = new Lead();
+        }
+
+        $leadContact->company_id = $company->id;
+        $leadContact->company_name = (request()->has('company_name') ? $request->company_name : '');
+        $leadContact->website = (request()->has('website') ? $request->website : '');
+        $leadContact->address = (request()->has('address') ? $request->address : '');
+        $leadContact->client_name = (request()->has('name') ? $request->name : '');
+        $leadContact->client_email = (request()->has('email') ? $request->email : '');
+        $leadContact->mobile = (request()->has('mobile') ? $request->mobile : '');
+        $leadContact->city = (request()->has('city') ? $request->city : '');
+        $leadContact->state = (request()->has('state') ? $request->state : '');
+        $leadContact->country = (request()->has('country') ? $request->country : '');
+        $leadContact->postal_code = (request()->has('postal_code') ? $request->postal_code : '');
+        $leadContact->save();
+
+        $note = new LeadNote();
+        $note->title = 'note';
+        $note->lead_id = $leadContact->id;
+        $note->details = (request()->has('message') ? $request->message : '');
+        $note->type = 0;
+        $note->save();
+
+        $lead = new Deal();
         $lead->company_id = $company->id;
-        $lead->company_name = (request()->has('company_name') ? $request->company_name : '');
-        $lead->website = (request()->has('website') ? $request->website : '');
-        $lead->address = (request()->has('address') ? $request->address : '');
-        $lead->client_name = (request()->has('name') ? $request->name : '');
-        $lead->client_email = (request()->has('email') ? $request->email : '');
-        $lead->mobile = (request()->has('mobile') ? $request->mobile : '');
-        $lead->city = (request()->has('city') ? $request->city : '');
-        $lead->state = (request()->has('state') ? $request->state : '');
-        $lead->country = (request()->has('country') ? $request->country : '');
-        $lead->postal_code = (request()->has('postal_code') ? $request->postal_code : '');
-        $lead->source_id = (request()->has('source') ? $request->source : '');
-        $lead->status_id = $leadStatus->id;
+        $lead->lead_id = $leadContact->id;
+        $lead->name = (request()->has('name') ? $request->name : '');
+        $lead->lead_pipeline_id = $leadPipeline->id;
+        $lead->pipeline_stage_id = $leadStage->id;
+        $lead->note = (request()->has('message') ? $request->message : null);
         $lead->value = 0;
         $lead->currency_id = $company->currency_id;
         $lead->save();
@@ -698,10 +739,9 @@ class HomeController extends Controller
 
             $products = $request->product;
 
-            foreach($products as $product)
-            {
+            foreach ($products as $product) {
                 $leadProduct = new LeadProduct();
-                $leadProduct->lead_id = $lead->id;
+                $leadProduct->deal_id = $lead->id;
                 $leadProduct->product_id = $product;
                 $leadProduct->save();
             }
@@ -709,7 +749,7 @@ class HomeController extends Controller
 
         // To add custom fields data
         if ($request->custom_fields_data) {
-            $lead->updateCustomFieldData($request->custom_fields_data);
+            $leadContact->updateCustomFieldData($request->custom_fields_data);
         }
 
         return Reply::success(__('messages.recordSaved'));
@@ -728,6 +768,11 @@ class HomeController extends Controller
 
         $this->company = Company::where('hash', $id)->firstOrFail();
 
+        App::setLocale($this->company->locale);
+        Carbon::setLocale($this->company->locale);
+        setlocale(LC_TIME, $this->company->locale . '_' . mb_strtoupper($this->company->locale));
+
+
         $this->groups = TicketGroup::where('company_id', $this->company->id)->get();
         $this->ticketFormFields = TicketCustomForm::with('customField')
             ->where('company_id', $this->company->id)
@@ -736,9 +781,7 @@ class HomeController extends Controller
             ->get();
 
         $this->types = TicketType::where('company_id', $this->company->id)->get();
-        App::setLocale($this->company->locale);
-        Carbon::setLocale($this->company->locale);
-        setlocale(LC_TIME, $this->company->locale . '_' . mb_strtoupper($this->company->locale));
+
 
         return view('ticket-form', $this->data);
     }
@@ -757,7 +800,7 @@ class HomeController extends Controller
             // Checking is google recaptcha is valid
             $gRecaptchaResponseInput = global_setting()->google_recaptcha_v3_status == 'active' ? 'g_recaptcha' : 'g-recaptcha-response';
             $gRecaptchaResponse = $request->{$gRecaptchaResponseInput};
-            $validateRecaptcha = $this->validateGoogleRecaptcha($gRecaptchaResponse);
+            $validateRecaptcha = GlobalSetting::validateGoogleRecaptcha($gRecaptchaResponse);
 
             if (!$validateRecaptcha) {
                 return Reply::error(__('auth.recaptchaFailed'));
@@ -825,31 +868,11 @@ class HomeController extends Controller
         return Reply::success(__('messages.ticketCreateSuccess'));
     }
 
-    public function validateGoogleRecaptcha($googleRecaptchaResponse)
-    {
-        $secret = global_setting()->google_recaptcha_v2_status == 'active' ? global_setting()->google_recaptcha_v2_secret_key : global_setting()->google_recaptcha_v3_secret_key;
-
-        $client = new Client();
-        $response = $client->post(
-            'https://www.google.com/recaptcha/api/siteverify',
-            [
-                'form_params' => [
-                    'secret' => $secret,
-                    'response' => $googleRecaptchaResponse,
-                    'remoteip' => $_SERVER['REMOTE_ADDR']
-                ]
-            ]
-        );
-
-        $body = json_decode((string)$response->getBody());
-
-        return $body->success;
-    }
-
     public function installedModule()
     {
         $message = '';
         $plugins = Module::allEnabled();
+        /* @phpstan-ignore-line */
 
         $applicationVersion = trim(
             preg_replace(
@@ -878,7 +901,7 @@ class HomeController extends Controller
         }
 
         if (((int)str_replace('.', '', $enableModules['worksuite'])) < 400) {
-            $message .= 'Please update' . ucfirst(config('app.name')) . ' greater then 4.0.0 version';
+            $message .= 'Please update' . config('app.name') . ' greater then 4.0.0 version';
         }
 
         $enableModules['message'] = $message;
@@ -894,6 +917,8 @@ class HomeController extends Controller
         $this->proposal = Proposal::with(['items', 'unit'])->where('hash', $hash)->firstOrFail();
         $this->company = $this->proposal->company;
 
+        $this->discount = 0;
+
         if ($this->proposal->discount > 0) {
             if ($this->proposal->discount_type == 'percent') {
                 $this->discount = (($this->proposal->discount / 100) * $this->proposal->sub_total);
@@ -901,9 +926,6 @@ class HomeController extends Controller
             else {
                 $this->discount = $this->proposal->discount;
             }
-        }
-        else {
-            $this->discount = 0;
         }
 
         $this->taxes = ProposalItem::where('type', 'tax')
@@ -1016,6 +1038,7 @@ class HomeController extends Controller
 
         $this->proposal = Proposal::where('hash', $id)->firstOrFail();
         $this->company = $this->proposal->company;
+        $this->discount = 0;
 
         if ($this->proposal->discount > 0) {
             if ($this->proposal->discount_type == 'percent') {
@@ -1024,9 +1047,6 @@ class HomeController extends Controller
             else {
                 $this->discount = $this->proposal->discount;
             }
-        }
-        else {
-            $this->discount = 0;
         }
 
         $this->taxes = ProposalItem::where('type', 'tax')
@@ -1072,8 +1092,8 @@ class HomeController extends Controller
         $this->taxes = $taxList;
         $this->invoiceSetting = $this->company->invoiceSetting;
 
-        App::setLocale($this->invoiceSetting->locale);
-        Carbon::setLocale($this->invoiceSetting->locale);
+        App::setLocale($this->invoiceSetting->locale ?? 'en');
+        Carbon::setLocale($this->invoiceSetting->locale ?? 'en');
 
         $pdf = app('dompdf.wrapper');
 
@@ -1082,9 +1102,6 @@ class HomeController extends Controller
         $pdf->setOption('isRemoteEnabled', true);
 
         $pdf->loadView('proposals.pdf.' . $this->invoiceSetting->template, $this->data);
-        $dom_pdf = $pdf->getDomPDF();
-        $canvas = $dom_pdf->getCanvas();
-        $canvas->page_text(530, 820, 'Page {PAGE_NUM} of {PAGE_COUNT}', null, 10);
         $filename = 'proposal-' . $this->proposal->id;
 
         return [
@@ -1101,8 +1118,9 @@ class HomeController extends Controller
     {
 
         $this->proposal = Proposal::where('hash', $id)->firstOrFail();
+
         $this->company = $this->proposal->company;
-        App::setLocale(isset($this->company->locale) ? $this->company->locale : 'en');
+        App::setLocale($this->company->locale ?? 'en');
 
         $pdfOption = $this->domPdfObjectProposalDownload($id);
         $pdf = $pdfOption['pdf'];
@@ -1114,6 +1132,8 @@ class HomeController extends Controller
     public function invoicePaymentfailed($invoiceId)
     {
         $invoice = Invoice::findOrFail($invoiceId);
+
+        $errorMessage = [];
 
         if (request()->gateway == 'Razorpay') {
             $errorMessage = ['code' => request()->errorMessage['code'], 'message' => request()->errorMessage['description']];

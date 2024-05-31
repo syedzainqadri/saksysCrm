@@ -20,6 +20,8 @@ namespace Google\Service\HangoutsChat;
 class Message extends \Google\Collection
 {
   protected $collection_key = 'emojiReactionSummaries';
+  protected $accessoryWidgetsType = AccessoryWidget::class;
+  protected $accessoryWidgetsDataType = 'array';
   protected $actionResponseType = ActionResponse::class;
   protected $actionResponseDataType = '';
   protected $annotationsType = Annotation::class;
@@ -28,6 +30,8 @@ class Message extends \Google\Collection
    * @var string
    */
   public $argumentText;
+  protected $attachedGifsType = AttachedGif::class;
+  protected $attachedGifsDataType = 'array';
   protected $attachmentType = Attachment::class;
   protected $attachmentDataType = 'array';
   protected $cardsType = Card::class;
@@ -57,6 +61,10 @@ class Message extends \Google\Collection
   /**
    * @var string
    */
+  public $formattedText;
+  /**
+   * @var string
+   */
   public $lastUpdateTime;
   protected $matchedUrlType = MatchedUrl::class;
   protected $matchedUrlDataType = '';
@@ -64,6 +72,10 @@ class Message extends \Google\Collection
    * @var string
    */
   public $name;
+  protected $privateMessageViewerType = User::class;
+  protected $privateMessageViewerDataType = '';
+  protected $quotedMessageMetadataType = QuotedMessageMetadata::class;
+  protected $quotedMessageMetadataDataType = '';
   protected $senderType = User::class;
   protected $senderDataType = '';
   protected $slashCommandType = SlashCommand::class;
@@ -81,6 +93,20 @@ class Message extends \Google\Collection
    */
   public $threadReply;
 
+  /**
+   * @param AccessoryWidget[]
+   */
+  public function setAccessoryWidgets($accessoryWidgets)
+  {
+    $this->accessoryWidgets = $accessoryWidgets;
+  }
+  /**
+   * @return AccessoryWidget[]
+   */
+  public function getAccessoryWidgets()
+  {
+    return $this->accessoryWidgets;
+  }
   /**
    * @param ActionResponse
    */
@@ -122,6 +148,20 @@ class Message extends \Google\Collection
   public function getArgumentText()
   {
     return $this->argumentText;
+  }
+  /**
+   * @param AttachedGif[]
+   */
+  public function setAttachedGifs($attachedGifs)
+  {
+    $this->attachedGifs = $attachedGifs;
+  }
+  /**
+   * @return AttachedGif[]
+   */
+  public function getAttachedGifs()
+  {
+    return $this->attachedGifs;
   }
   /**
    * @param Attachment[]
@@ -252,6 +292,20 @@ class Message extends \Google\Collection
   /**
    * @param string
    */
+  public function setFormattedText($formattedText)
+  {
+    $this->formattedText = $formattedText;
+  }
+  /**
+   * @return string
+   */
+  public function getFormattedText()
+  {
+    return $this->formattedText;
+  }
+  /**
+   * @param string
+   */
   public function setLastUpdateTime($lastUpdateTime)
   {
     $this->lastUpdateTime = $lastUpdateTime;
@@ -290,6 +344,34 @@ class Message extends \Google\Collection
   public function getName()
   {
     return $this->name;
+  }
+  /**
+   * @param User
+   */
+  public function setPrivateMessageViewer(User $privateMessageViewer)
+  {
+    $this->privateMessageViewer = $privateMessageViewer;
+  }
+  /**
+   * @return User
+   */
+  public function getPrivateMessageViewer()
+  {
+    return $this->privateMessageViewer;
+  }
+  /**
+   * @param QuotedMessageMetadata
+   */
+  public function setQuotedMessageMetadata(QuotedMessageMetadata $quotedMessageMetadata)
+  {
+    $this->quotedMessageMetadata = $quotedMessageMetadata;
+  }
+  /**
+   * @return QuotedMessageMetadata
+   */
+  public function getQuotedMessageMetadata()
+  {
+    return $this->quotedMessageMetadata;
   }
   /**
    * @param User

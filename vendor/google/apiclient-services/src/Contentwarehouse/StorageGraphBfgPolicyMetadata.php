@@ -32,6 +32,8 @@ class StorageGraphBfgPolicyMetadata extends \Google\Collection
   protected $legalAllowedRegionsDataType = 'array';
   protected $legalRemovalRegionsType = KeGovernanceTypedRegions::class;
   protected $legalRemovalRegionsDataType = 'array';
+  protected $llmPolicyMetadataType = StorageGraphBfgLlmPolicyMetadata::class;
+  protected $llmPolicyMetadataDataType = '';
   protected $lmsPolicyMetadataType = StorageGraphBfgLmsPolicyMetadata::class;
   protected $lmsPolicyMetadataDataType = '';
   /**
@@ -42,6 +44,8 @@ class StorageGraphBfgPolicyMetadata extends \Google\Collection
    * @var string
    */
   public $policySourceType;
+  protected $rwjPolicyMetadataType = StorageGraphBfgRwjPolicyMetadata::class;
+  protected $rwjPolicyMetadataDataType = '';
   protected $umpPolicyMetadataType = StorageGraphBfgUmpPolicyMetadata::class;
   protected $umpPolicyMetadataDataType = '';
 
@@ -102,6 +106,20 @@ class StorageGraphBfgPolicyMetadata extends \Google\Collection
     return $this->legalRemovalRegions;
   }
   /**
+   * @param StorageGraphBfgLlmPolicyMetadata
+   */
+  public function setLlmPolicyMetadata(StorageGraphBfgLlmPolicyMetadata $llmPolicyMetadata)
+  {
+    $this->llmPolicyMetadata = $llmPolicyMetadata;
+  }
+  /**
+   * @return StorageGraphBfgLlmPolicyMetadata
+   */
+  public function getLlmPolicyMetadata()
+  {
+    return $this->llmPolicyMetadata;
+  }
+  /**
    * @param StorageGraphBfgLmsPolicyMetadata
    */
   public function setLmsPolicyMetadata(StorageGraphBfgLmsPolicyMetadata $lmsPolicyMetadata)
@@ -142,6 +160,20 @@ class StorageGraphBfgPolicyMetadata extends \Google\Collection
   public function getPolicySourceType()
   {
     return $this->policySourceType;
+  }
+  /**
+   * @param StorageGraphBfgRwjPolicyMetadata
+   */
+  public function setRwjPolicyMetadata(StorageGraphBfgRwjPolicyMetadata $rwjPolicyMetadata)
+  {
+    $this->rwjPolicyMetadata = $rwjPolicyMetadata;
+  }
+  /**
+   * @return StorageGraphBfgRwjPolicyMetadata
+   */
+  public function getRwjPolicyMetadata()
+  {
+    return $this->rwjPolicyMetadata;
   }
   /**
    * @param StorageGraphBfgUmpPolicyMetadata

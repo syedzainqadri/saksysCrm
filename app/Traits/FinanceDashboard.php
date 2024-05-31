@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\DB;
  */
 trait FinanceDashboard
 {
+
     use CurrencyExchange, ClientDashboard;
 
     /**
@@ -26,7 +27,7 @@ trait FinanceDashboard
     {
         abort_403($this->viewFinanceDashboard !== 'all');
 
-        $this->startDate  = (request('startDate') != '') ? Carbon::createFromFormat($this->company->date_format, request('startDate')) : now($this->company->timezone)->startOfMonth();
+        $this->startDate = (request('startDate') != '') ? Carbon::createFromFormat($this->company->date_format, request('startDate')) : now($this->company->timezone)->startOfMonth();
         $this->endDate = (request('endDate') != '') ? Carbon::createFromFormat($this->company->date_format, request('endDate')) : now($this->company->timezone);
         $startDate = $this->startDate->toDateString();
         $endDate = $this->endDate->toDateString();
@@ -47,7 +48,7 @@ trait FinanceDashboard
                 ->orWhere('status', 'partial');
         })
             ->whereBetween(DB::raw('DATE(`issue_date`)'), [$startDate, $endDate])
-             ->select('id')
+            ->select('id')
             ->count();
 
         // Total Expense
@@ -67,17 +68,22 @@ trait FinanceDashboard
         $totalExpenses = 0;
 
         foreach ($expenses as $expense) {
+
             if (isset($expense->currency) && $expense->currency->currency_code != $this->company->currency->currency_code && $expense->exchange_rate != 0) {
+
                 if ($expense->currency->is_cryptocurrency == 'yes') {
                     $usdTotal = ($expense->price * $expense->currency->usd_price);
-                        $totalExpenses += floor($usdTotal / $expense->exchange_rate);
-
-                } else {
+                    $totalExpenses += floor(floatval($usdTotal) / floatval($expense->exchange_rate));
+                }
+                else {
                     $totalExpenses += floor($expense->price / $expense->currency->exchange_rate);
                 }
-            } else {
+
+            }
+            else {
                 $totalExpenses += round($expense->price, 2);
             }
+
         }
 
         $this->totalExpenses = $totalExpenses;
@@ -101,17 +107,22 @@ trait FinanceDashboard
         $totalEarnings = 0;
 
         foreach ($payments as $payment) {
-            if (isset($payment->currency) && $payment->currency->currency_code != $this->company->currency->currency_code && $payment->exchange_rate != 0) {
-                if ($payment->currency->is_cryptocurrency == 'yes') {
-                    $usdTotal = ($payment->total * $payment->currency->usd_price);
-                    $totalEarnings += floor($usdTotal / $payment->currency->exchange_rate);
 
-                } else {
-                    $totalEarnings += floor($payment->total / $payment->currency->exchange_rate);
+            if (isset($payment->currency) && $payment->currency->currency_code != $this->company->currency->currency_code && $payment->exchange_rate != 0) {
+
+                if ($payment->currency->is_cryptocurrency == 'yes') {
+                    $usdTotal = (floatval($payment->total) * floatval($payment->currency->usd_price));
+                    $totalEarnings += floor(floatval($usdTotal) / floatval($payment->currency->exchange_rate));
                 }
-            } else {
+                else {
+                    $totalEarnings += floor(floatval($payment->total) / floatval($payment->currency->exchange_rate));
+                }
+
+            }
+            else {
                 $totalEarnings += round($payment->total, 2);
             }
+
         }
 
         $this->totalEarnings = $totalEarnings;
@@ -140,7 +151,8 @@ trait FinanceDashboard
                     $usdTotal = ($invoice->due_amount * $invoice->currency->usd_price);
                     $totalPendingAmount += floor($usdTotal / $invoice->currency->exchange_rate);
 
-                } else {
+                }
+                else {
                     $totalPendingAmount += floor($invoice->due_amount / $invoice->currency->exchange_rate);
                 }
             }
@@ -326,13 +338,15 @@ trait FinanceDashboard
 
             if (isset($invoice->currency) && $invoice->currency->currency_code != $this->company->currency->currency_code && $invoice->currency->exchange_rate != 0) {
                 if ($invoice->currency->is_cryptocurrency == 'yes') {
-                    $usdTotal = ($invoice->total * $invoice->currency->usd_price);
+                    $usdTotal = (floatval($invoice->total) * floatval($invoice->currency->usd_price));
                     $earningsByProjects[$invoice->project_name] = $earningsByProjects[$invoice->project_name] + floor($usdTotal / $invoice->currency->exchange_rate);
 
-                } else {
-                    $earningsByProjects[$invoice->project_name] = $earningsByProjects[$invoice->project_name] + floor($invoice->total / $invoice->currency->exchange_rate);
                 }
-            } else {
+                else {
+                    $earningsByProjects[$invoice->project_name] = $earningsByProjects[$invoice->project_name] + floor(floatval($invoice->total) / floatval($invoice->currency->exchange_rate));
+                }
+            }
+            else {
                 $earningsByProjects[$invoice->project_name] = $earningsByProjects[$invoice->project_name] + round($invoice->total, 2);
             }
         }

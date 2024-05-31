@@ -20,6 +20,7 @@ use Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport;
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property int $verified
+ * @property int $email_verified
  * @property-read mixed $icon
  * @property-read mixed $set_smtp_message
  * @method static \Illuminate\Database\Eloquent\Builder|SmtpSetting newModelQuery()
@@ -39,6 +40,7 @@ use Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport;
  * @method static \Illuminate\Database\Eloquent\Builder|SmtpSetting whereVerified($value)
  * @property string $mail_connection
  * @method static \Illuminate\Database\Eloquent\Builder|SmtpSetting whereMailConnection($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|SmtpSetting whereEmailVerified($value)
  * @mixin \Eloquent
  */
 class SmtpSetting extends BaseModel
@@ -46,6 +48,10 @@ class SmtpSetting extends BaseModel
 
     protected $guarded = ['id'];
     protected $appends = ['set_smtp_message'];
+
+    protected $casts = [
+        'mail_password' => 'encrypted'
+    ];
 
     public function verifySmtp()
     {
@@ -58,13 +64,12 @@ class SmtpSetting extends BaseModel
         }
 
         try {
-
             $tls = $this->mail_encryption === 'ssl';
+//            dd($this->mail_password,$this->mail_username,$this->mail_host,$this->mail_port,$tls);
             $transport = new EsmtpTransport($this->mail_host, $this->mail_port, $tls);
             $transport->setUsername($this->mail_username);
             $transport->setPassword($this->mail_password);
             $transport->start();
-
 
             if ($this->verified == 0) {
                 $this->verified = 1;
@@ -75,6 +80,7 @@ class SmtpSetting extends BaseModel
                 'success' => true,
                 'message' => __('messages.smtpSuccess')
             ];
+
         } catch (TransportException | \Exception $e) {
             $this->verified = 0;
             $this->save();
@@ -90,11 +96,11 @@ class SmtpSetting extends BaseModel
     public function getSetSmtpMessageAttribute()
     {
         if ($this->verified === 0 && $this->mail_driver == 'smtp') {
-            return ' <div class="alert alert-danger">
-                    ' . __('messages.smtpNotSet') . '
-                    <a href="" class="btn btn-info btn-small">Visit SMTP Settings <i
-                                class="fa fa-arrow-right"></i></a>
-                </div>';
+            return '
+            <div class="alert alert-danger">
+                ' . __('messages.smtpNotSet') . '
+                <a href="" class="btn btn-info btn-small">Visit SMTP Settings <i class="fa fa-arrow-right"></i></a>
+            </div>';
         }
 
         return null;

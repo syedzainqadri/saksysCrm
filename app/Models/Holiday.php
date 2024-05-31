@@ -35,6 +35,8 @@ use Illuminate\Support\Facades\DB;
  * @property int|null $company_id
  * @property-read \App\Models\Company|null $company
  * @method static \Illuminate\Database\Eloquent\Builder|Holiday whereCompanyId($value)
+ * @property-read \App\Models\Holiday|null $hdate
+ * @property-read \App\Models\Leave|null $ldate
  * @mixin \Eloquent
  */
 class Holiday extends BaseModel
@@ -56,7 +58,6 @@ class Holiday extends BaseModel
 
     const SATURDAY = 6;
 
-
     // Don't forget to fill this array
     protected $fillable = ['date', 'occassion'];
 
@@ -65,12 +66,38 @@ class Holiday extends BaseModel
         'date' => 'datetime',
     ];
 
-    public static function getHolidayByDates($startDate, $endDate)
+    public static function getHolidayByDates($startDate, $endDate, $userId = null)
     {
-        return Holiday::select(DB::raw('DATE_FORMAT(date, "%Y-%m-%d") as holiday_date'), 'occassion')
+
+        // dd($user);
+        $holiday = Holiday::select(DB::raw('DATE_FORMAT(date, "%Y-%m-%d") as holiday_date'), 'occassion')
             ->where('date', '>=', $startDate)
-            ->where('date', '<=', $endDate)
-            ->get();
+            ->where('date', '<=', $endDate);
+
+        if (is_null($userId)) {
+            return $holiday->get();
+        }
+
+        $user = User::find($userId);
+
+        $holiday = $holiday->where(function ($query) use ($user) {
+            $query->where(function ($subquery) use ($user) {
+                $subquery->where(function ($q) use ($user) {
+                    $q->where('department_id_json', 'like', '%"' . $user->employeeDetails->department_id . '"%')
+                        ->orWhereNull('department_id_json');
+                });
+                $subquery->where(function ($q) use ($user) {
+                    $q->where('designation_id_json', 'like', '%"' . $user->employeeDetails->designation_id . '"%')
+                        ->orWhereNull('designation_id_json');
+                });
+                $subquery->where(function ($q) use ($user) {
+                    $q->where('employment_type_json', 'like', '%"' . $user->employeeDetails->employment_type . '"%')
+                        ->orWhereNull('employment_type_json');
+                });
+            });
+        });
+
+        return $holiday->get();
     }
 
     public static function checkHolidayByDate($date)
@@ -83,7 +110,7 @@ class Holiday extends BaseModel
         return $this->belongsTo(User::class, 'added_by')->withoutGlobalScope(ActiveScope::class);
     }
 
-    public static function weekMap($format='l')
+    public static function weekMap($format = 'l')
     {
         return [
             Holiday::MONDAY => now()->startOfWeek(1)->translatedFormat($format),
@@ -94,6 +121,28 @@ class Holiday extends BaseModel
             Holiday::SATURDAY => now()->startOfWeek(6)->translatedFormat($format),
             Holiday::SUNDAY => now()->startOfWeek(7)->translatedFormat($format),
         ];
+    }
+
+    public static function designation($ids)
+    {
+        $designation = null;
+
+        if ($ids != null) {
+            $designation = Designation::whereIn('id', $ids)->pluck('name')->toArray();
+        }
+
+        return $designation;
+    }
+
+    public static function department($ids)
+    {
+        $department = null;
+
+        if ($ids != null) {
+            $department = Team::whereIn('id', $ids)->pluck('team_name')->toArray();
+        }
+
+        return $department;
     }
 
 }

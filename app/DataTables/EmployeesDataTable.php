@@ -2,7 +2,7 @@
 
 namespace App\DataTables;
 
-use App\Models\BaseModel;
+use App\Helper\Common;
 use App\Models\EmployeeDetails;
 use App\Scopes\ActiveScope;
 use Carbon\Carbon;
@@ -10,8 +10,6 @@ use App\Models\Role;
 use App\Models\User;
 use App\Models\CustomField;
 use App\Models\CustomFieldGroup;
-use App\DataTables\BaseDataTable;
-use Illuminate\Database\Eloquent\Model;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
 use Illuminate\Support\Facades\DB;
@@ -42,21 +40,22 @@ class EmployeesDataTable extends BaseDataTable
     public function dataTable($query)
     {
 
-        $roles = Role::where('name', '<>', 'client')->get();
+        $roles = Role::whereNotIn('name', ['client'])->get();
         $datatables = datatables()->eloquent($query);
         $datatables->addColumn('check', function ($row) {
             if (!$row->hasRole('admin') && $row->id != user()->id) {
-                return '<input type="checkbox" class="select-table-row" id="datatable-row-' . $row->id . '"  name="datatable_ids[]" value="' . $row->id . '" onclick="dataTableRowCheck(' . $row->id . ')">';
+                return $this->checkBox($row);
             }
 
             return '--';
         });
 
+
         $datatables->editColumn('current_role_name', function ($row) {
             $userRole = $row->roles->pluck('name')->toArray();
 
             if (in_array('admin', $userRole)) {
-                return __('app.admin');
+                return $row->roles()->withoutGlobalScopes()->latest()->first()->display_name;
             }
 
             return $row->current_role_name;
@@ -65,8 +64,7 @@ class EmployeesDataTable extends BaseDataTable
             $userRole = $row->roles->pluck('name')->toArray();
 
             if (in_array('admin', $userRole)) {
-                $uRole = __('app.admin');
-
+                $uRole = $row->roles()->withoutGlobalScopes()->latest()->first()->display_name;
             }
             else {
                 $uRole = $row->current_role_name;
@@ -97,7 +95,7 @@ class EmployeesDataTable extends BaseDataTable
                         $role .= 'selected';
                     }
 
-                    $role .= ' value="' . $item->id . '">' . ((in_array($item->name, ['admin', 'client', 'employee'])) ? __('app.' . $item->name) : ucfirst($item->name)) . '</option>';
+                    $role .= ' value="' . $item->id . '">' . $item->display_name . '</option>';
 
                 }
             }
@@ -146,42 +144,66 @@ class EmployeesDataTable extends BaseDataTable
 
             return $action;
         });
-        $datatables->addColumn('employee_name', function ($row) {
-            return $row->name;
-        });
+        $datatables->addColumn('employee_name', fn($row) => $row->name);
+        $datatables->editColumn('created_at', fn($row) => Carbon::parse($row->created_at)->translatedFormat($this->company->date_format));
+        $datatables->editColumn('status', fn($row) => $row->status == 'active' ? Common::active() : Common::inactive());
 
-        $datatables->editColumn(
-            'created_at',
-            function ($row) {
-                return Carbon::parse($row->created_at)->translatedFormat($this->company->date_format);
-            }
-        );
-        $datatables->editColumn(
-            'status',
-            function ($row) {
-                if ($row->status == 'active') {
-                    return ' <i class="fa fa-circle mr-1 text-light-green f-10"></i>' . __('app.active');
-                }
-
-                return '<i class="fa fa-circle mr-1 text-red f-10"></i>' . __('app.inactive');
-
-            }
-        );
         $datatables->editColumn('name', function ($row) {
-            return view('components.employee', [
-                'user' => $row
-            ]);
+            $employmentTypeBadge = '';
+
+            if ($row->employeeDetail->probation_end_date > now()->toDateString()) {
+                $employmentTypeBadge .= '<span class="badge badge-info">' . __('app.onProbation') . '</span> ';
+            }
+            if ($row->employeeDetail->employment_type == 'internship' || $row->employeeDetail->internship_end_date > now()->toDateString()) {
+                $employmentTypeBadge .= '<span class="badge badge-info">' . __('app.onInternship') . '</span> ';
+            }
+            if ($row->employeeDetail->notice_period_end_date > now()->toDateString()) {
+                $employmentTypeBadge .= '<span class="badge badge-info">' . __('app.onNoticePeriod') . '</span> ';
+            }
+            if ($row->employeeDetail->joining_date >= now()->subDays(30)->toDateString() && $row->employeeDetail->joining_date <= now()->addDay()->toDateString()) {
+                $employmentTypeBadge .= '<span class="badge badge-info">' . __('app.newHires') . '</span> ';
+            }
+            if ($row->employeeDetail->joining_date <= now()->subYears(2)->toDateString()) {
+                $employmentTypeBadge .= '<span class="badge badge-info">' . __('app.longStanding') . '</span> ';
+            }
+
+            $view = view('components.employee', ['user' => $row])->render();
+            $view .= $employmentTypeBadge;
+
+            return $view;
         });
-        $datatables->editColumn('employee_id', function ($row) {
-            return '<a href="' . route('employees.show', [$row->id]) . '" class="text-darkest-grey">' . $row->employee_id . '</a>';
+
+        $datatables->addColumn('employment_type', function ($row) {
+            $employmentType = '';
+
+            if ($row->employeeDetail->probation_end_date > now()->toDateString()) {
+                $employmentType .= __('app.onProbation').' ';
+            }
+            if ($row->employeeDetail->employment_type == 'internship' || $row->employeeDetail->internship_end_date > now()->toDateString()) {
+                $employmentType .= __('app.onInternship').' ';
+            }
+            if ($row->employeeDetail->notice_period_end_date > now()->toDateString()) {
+                $employmentType .= __('app.onNoticePeriod').' ';
+            }
+            if ($row->employeeDetail->joining_date >= now()->subDays(30)->toDateString() && $row->employeeDetail->joining_date <= now()->addDay()->toDateString()) {
+                $employmentType .= __('app.newHires').' ';
+            }
+            if ($row->employeeDetail->joining_date <= now()->subYears(2)->toDateString()) {
+                $employmentType .= __('app.longStanding').' ';
+            }
+
+            return $employmentType;
         });
-        $datatables->editColumn('joining_date', function ($row) {
-            return Carbon::parse($row->joining_date)->translatedFormat('Y-m-d');
+
+        $datatables->editColumn('employee_id', fn($row) => '<a href="' . route('employees.show', [$row->id]) . '" class="text-darkest-grey">' . $row->employee_id . '</a>');
+        $datatables->editColumn('joining_date', fn($row) => Carbon::parse($row->joining_date)->translatedFormat('Y-m-d'));
+
+        $datatables->addColumn('reporting_to', function ($row) {
+            return $row->employeeDetail->reportingTo->name ?? '--';
         });
+
         $datatables->addIndexColumn();
-        $datatables->setRowId(function ($row) {
-            return 'row-' . $row->id;
-        });
+        $datatables->setRowId(fn($row) => 'row-' . $row->id);
         $datatables->removeColumn('roleId');
         $datatables->removeColumn('roleName');
         $datatables->removeColumn('current_role');
@@ -208,26 +230,33 @@ class EmployeesDataTable extends BaseDataTable
             $userRoles = Role::findOrFail($request->role);
         }
 
-        $users = $model->with('role', 'roles', 'employeeDetail', 'session')
+        $users = $model->with('role', 'roles', 'employeeDetail', 'session', 'employeeDetail.reportingTo')
             ->withoutGlobalScope(ActiveScope::class)
             ->join('role_user', 'role_user.user_id', '=', 'users.id')
             ->leftJoin('employee_details', 'employee_details.user_id', '=', 'users.id')
             ->leftJoin('designations', 'employee_details.designation_id', '=', 'designations.id')
             ->join('roles', 'roles.id', '=', 'role_user.role_id')
-            ->select('users.id', 'employee_details.added_by', 'users.name', 'users.email', 'users.created_at', 'roles.name as roleName', 'roles.id as roleId', 'users.image', 'users.gender', 'users.status', DB::raw('(select user_roles.role_id from role_user as user_roles where user_roles.user_id = users.id ORDER BY user_roles.role_id DESC limit 1) as `current_role`'), DB::raw('(select roles.name from roles as roles where roles.id = current_role limit 1) as `current_role_name`'), 'designations.name as designation_name', 'employee_details.employee_id', 'employee_details.joining_date')
+            ->select('users.id', 'employee_details.added_by', 'users.salutation', 'users.name', 'users.email', 'users.created_at', 'roles.name as roleName', 'roles.id as roleId', 'users.image', 'users.gender', 'users.inactive_date', DB::raw('(select user_roles.role_id from role_user as user_roles where user_roles.user_id = users.id ORDER BY user_roles.role_id DESC limit 1) as `current_role`'), DB::raw('(select roles.name from roles as roles where roles.id = current_role limit 1) as `current_role_name`'), 'designations.name as designation_name', 'employee_details.employee_id', 'employee_details.joining_date', DB::raw('CASE WHEN users.status = "deactive" THEN "inactive" WHEN users.inactive_date IS NULL THEN "active" WHEN users.inactive_date <= CURDATE() THEN "inactive" ELSE "active" END as status'))
             ->onlyEmployee();
 
-
         if ($request->status != 'all' && $request->status != '') {
+            if ($request->status == 'active') {
+                // Check if the inactive_date is today or in the past
+                $expireDate = now()->toDateString();
+                $users = $users->where('users.status', 'active');
 
-            if ($request->status === 'ex_employee') {
-                $users = $users->whereNotNull('employee_details.last_date');
-                $users->whereRaw('Date(employee_details.last_date) <= ?', [now()]);
-            }
-            else {
-                $users = $users->where('users.status', $request->status);
+                $users = $users->where(function ($query) use ($expireDate) {
+                    $query->orWhereNull('users.inactive_date') // Consider users with null inactive_date
+                        ->orWhere('users.inactive_date', '>', $expireDate); // Or users with inactive_date in the future
+                });
+            } elseif ($request->status == 'deactive') {
+                // Check if the inactive_date is in the past
+                $expireDate = now()->toDateString();
+                $users = $users->where('users.status', 'deactive')
+                    ->orWhere('users.inactive_date', '<=', $expireDate);
             }
         }
+
 
         if ($request->gender != 'all' && $request->gender != '') {
             $users = $users->where('users.gender', $request->gender);
@@ -279,16 +308,10 @@ class EmployeesDataTable extends BaseDataTable
         }
 
         if ($request->startDate != '' && $request->endDate != '') {
-            $startDate = Carbon::createFromFormat($this->company->date_format, $request->startDate)->toDateString();
-            $endDate = Carbon::createFromFormat($this->company->date_format, $request->endDate)->toDateString();
+            $startDate = companyToDateString($request->startDate);
+            $endDate = companyToDateString($request->endDate);
 
             $users = $users->whereRaw('Date(employee_details.joining_date) >= ?', [$startDate])->whereRaw('Date(employee_details.joining_date) <= ?', [$endDate]);
-        }
-
-        if ($request->status == 'ex_employee' && isset($request->lastStartDate) && isset($request->lastEndDate) && $request->lastStartDate != '' && $request->lastEndDate != '') {
-            $startDate = Carbon::createFromFormat($this->company->date_format, $request->lastStartDate)->toDateString();
-            $endDate = Carbon::createFromFormat($this->company->date_format, $request->lastEndDate)->toDateString();
-            $users = $users->whereNotNull('last_date')->whereRaw('Date(employee_details.last_date) >= ?', [$startDate])->whereRaw('Date(employee_details.last_date) <= ?', [$endDate]);
         }
 
         if ($request->searchText != '') {
@@ -298,6 +321,34 @@ class EmployeesDataTable extends BaseDataTable
                     ->orWhere('employee_details.employee_id', 'like', '%' . request('searchText') . '%');
             });
         }
+
+        if ($request->employmentType != 'all' && $request->employmentType != '') {
+
+            if ($request->employmentType == 'probation') {
+                $today = now()->toDateString();
+                $users = $users->where('employee_details.probation_end_date', '>', $today);
+            }
+            if($request->employmentType == 'internship'){
+                $today = now()->toDateString();
+                $users = $users->where('employee_details.employment_type', $request->employmentType)
+                    ->orWhere('employee_details.internship_end_date', '>', $today);
+            }
+            if ($request->employmentType == 'notice_period') {
+                $today = now()->toDateString();
+                $users = $users->where('employee_details.notice_period_end_date', '>', $today);
+            }
+            if ($request->employmentType == 'new_hires') {
+                $thirtyDaysAgo = now()->subDays(30)->toDateString();
+                $today = now()->toDateString();
+                $users = $users->whereBetween('employee_details.joining_date', [$thirtyDaysAgo, $today]);
+            }
+            if($request->employmentType == 'long_standing'){
+                $twoYearsAgo = now()->subYears(2)->toDateString();
+                $users = $users->where('employee_details.joining_date', '<=', $twoYearsAgo);
+            }
+
+        }
+
 
         return $users->groupBy('users.id');
     }
@@ -309,7 +360,7 @@ class EmployeesDataTable extends BaseDataTable
      */
     public function html()
     {
-        return $this->setBuilder('employees-table', 2)
+        $dataTable = $this->setBuilder('employees-table', 2)
             ->parameters([
                 'initComplete' => 'function () {
                     window.LaravelDataTables["employees-table"].buttons().container()
@@ -318,8 +369,13 @@ class EmployeesDataTable extends BaseDataTable
                 'fnDrawCallback' => 'function( oSettings ) {
                    $(".select-picker").selectpicker();
                  }',
-            ])
-            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+            ]);
+
+        if (canDataTableExport()) {
+            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+        }
+
+        return $dataTable;
     }
 
     /**
@@ -341,10 +397,12 @@ class EmployeesDataTable extends BaseDataTable
             __('app.id') => ['data' => 'id', 'name' => 'id', 'title' => __('app.id'), 'visible' => false],
             __('modules.employees.employeeId') => ['data' => 'employee_id', 'name' => 'employee_id', 'title' => __('modules.employees.employeeId')],
             __('app.name') => ['data' => 'name', 'name' => 'name', 'exportable' => false, 'title' => __('app.name')],
+            __('modules.employees.employmentType') => ['data' => 'employment_type', 'name' => 'employment_type', 'visible' => false, 'title' => __('modules.employees.employmentType')],
             __('app.employee') => ['data' => 'employee_name', 'name' => 'name', 'visible' => false, 'title' => __('app.employee')],
             __('app.email') => ['data' => 'email', 'name' => 'email', 'title' => __('app.email')],
             __('app.role') => ['data' => 'role', 'name' => 'role', 'width' => '20%', 'orderable' => false, 'exportable' => false, 'title' => __('app.role'), 'visible' => ($this->changeEmployeeRolePermission == 'all')],
             __('modules.employees.role') => ['data' => 'current_role_name', 'name' => 'current_role_name', 'visible' => false, 'title' => __('modules.employees.role')],
+            __('modules.employees.reportingTo') => ['data' => 'reporting_to', 'name' => 'reporting_to', 'title' => __('modules.employees.reportingTo')],
             __('modules.employees.joiningDate') => ['data' => 'joining_date', 'name' => 'joining_date', 'visible' => false, 'title' => __('modules.employees.joiningDate')],
             __('app.status') => ['data' => 'status', 'name' => 'status', 'title' => __('app.status')]
         ];

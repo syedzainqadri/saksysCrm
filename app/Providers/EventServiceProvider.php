@@ -7,8 +7,10 @@ use App\Events\AttendanceReminderEvent;
 use App\Events\AutoFollowUpReminderEvent;
 use App\Events\AutoTaskReminderEvent;
 use App\Events\BirthdayReminderEvent;
-use App\Events\ClockInEvent;
+use App\Events\BulkShiftEvent;
 use App\Events\ContractSignedEvent;
+use App\Events\DailyTimeLogReportEvent;
+use App\Events\DealEvent;
 use App\Events\DiscussionEvent;
 use App\Events\DiscussionReplyEvent;
 use App\Events\EmployeeShiftChangeEvent;
@@ -63,19 +65,25 @@ use App\Events\TicketRequesterEvent;
 use App\Events\TimeTrackerReminderEvent;
 use App\Events\DiscussionMentionEvent;
 use App\Events\EventInviteMentionEvent;
+use App\Events\EventStatusNoteEvent;
 use App\Events\HolidayEvent;
+use App\Events\MailTicketReplyEvent;
+use App\Events\MonthlyAttendanceEvent;
 use App\Events\NewMentionChatEvent;
 use App\Events\ProjectNoteEvent;
 use App\Events\ProjectNoteMentionEvent;
 use App\Events\TaskNoteMentionEvent;
 use App\Events\TwoFactorCodeEvent;
+use App\Events\DailyScheduleEvent;
 use App\Listeners\AppreciationListener;
 use App\Listeners\AttendanceReminderListener;
 use App\Listeners\AutoFollowUpReminderListener;
 use App\Listeners\AutoTaskReminderListener;
 use App\Listeners\BirthdayReminderListener;
-use App\Listeners\ClockInListener;
+use App\Listeners\BulkShiftListener;
 use App\Listeners\ContractSignedListener;
+use App\Listeners\DailyTimeLogReportListener;
+use App\Listeners\DealListener;
 use App\Listeners\DiscussionListener;
 use App\Listeners\DiscussionReplyListener;
 use App\Listeners\EmployeeShiftChangeListener;
@@ -132,11 +140,15 @@ use App\Listeners\TicketRequesterListener;
 use App\Listeners\TimeTrackerReminderListener;
 use App\Listeners\DiscussionMentionListener;
 use App\Listeners\EventInviteMentionListener;
+use App\Listeners\EventStatusNoteListener;
+use App\Listeners\MailTicketReplyListener;
+use App\Listeners\MonthlyAttendanceListener;
 use App\Listeners\NewMentionChatListener;
 use App\Listeners\ProjectNoteListener;
 use App\Listeners\ProjectNoteMentionListener;
 use App\Listeners\TaskNoteMentionListener;
 use App\Listeners\TwoFactorCodeListener;
+use App\Listeners\DailyScheduleListener;
 use App\Models\AcceptEstimate;
 use App\Models\Appreciation;
 use App\Models\Attendance;
@@ -200,14 +212,18 @@ use App\Models\Issue;
 use App\Models\KnowledgeBase;
 use App\Models\KnowledgeBaseCategory;
 use App\Models\LanguageSetting;
-use App\Models\Lead;
+use App\Models\Deal;
 use App\Models\LeadAgent;
 use App\Models\LeadCategory;
 use App\Models\LeadCustomForm;
-use App\Models\LeadFiles;
-use App\Models\LeadFollowUp;
+use App\Models\DealFile;
+use App\Models\DealFollowUp;
+use App\Models\DealNote;
+use App\Models\Lead;
 use App\Models\LeadNote;
+use App\Models\LeadPipeline;
 use App\Models\LeadSource;
+use App\Models\PipelineStage;
 use App\Models\LeadStatus;
 use App\Models\Leave;
 use App\Models\LeaveFile;
@@ -312,6 +328,8 @@ use App\Observers\CustomFieldGroupObserver;
 use App\Observers\CustomFieldsObserver;
 use App\Observers\CustomLinkSettingObserver;
 use App\Observers\DashboardWidgetObserver;
+use App\Observers\DealNoteObserver;
+use App\Observers\DealObserver;
 use App\Observers\DesignationObserver;
 use App\Observers\DiscussionCategoryObserver;
 use App\Observers\DiscussionFileObserver;
@@ -399,6 +417,8 @@ use App\Observers\TaskCategoryObserver;
 use App\Observers\TaskCommentObserver;
 use App\Observers\TaskFileObserver;
 use App\Observers\InvoiceFileObserver;
+use App\Observers\LeadPipelineObserver;
+use App\Observers\LeadStageObserver;
 use App\Observers\TaskLabelListObserver;
 use App\Observers\TaskNoteObserver;
 use App\Observers\TaskObserver;
@@ -504,12 +524,16 @@ class EventServiceProvider extends ServiceProvider
         BirthdayReminderEvent::class => [BirthdayReminderListener::class],
         AppreciationEvent::class => [AppreciationListener::class],
         TimeTrackerReminderEvent::class => [TimeTrackerReminderListener::class],
-        ClockInEvent::class => [ClockInListener::class],
         HolidayEvent::class => [HolidayListener::class],
         EstimateAcceptedEvent::class => [EstimateAcceptedListener::class],
         EventInviteMentionEvent::class => [EventInviteMentionListener::class],
-
-
+        DealEvent::class => [DealListener::class],
+        EventStatusNoteEvent::class => [EventStatusNoteListener::class],
+        BulkShiftEvent::class => [BulkShiftListener::class],
+        MonthlyAttendanceEvent::class => [MonthlyAttendanceListener::class],
+        DailyTimeLogReportEvent::class => [DailyTimeLogReportListener::class],
+        MailTicketReplyEvent::class => [MailTicketReplyListener::class],
+        DailyScheduleEvent::class => [DailyScheduleListener::class]
     ];
 
     protected $observers = [
@@ -542,13 +566,14 @@ class EventServiceProvider extends ServiceProvider
         Invoice::class => [InvoiceObserver::class],
         InvoiceSetting::class => [InvoiceSettingObserver::class],
         Issue::class => [IssueObserver::class],
-        Lead::class => [LeadObserver::class],
+        Deal::class => [DealObserver::class],
         LeadAgent::class => [LeadAgentObserver::class],
         LeadCategory::class => [LeadCategoryObserver::class],
         LeadCustomForm::class => [LeadCustomFormObserver::class],
-        LeadFiles::class => [LeadFileObserver::class],
-        LeadFollowUp::class => [LeadFollowUpObserver::class],
+        DealFile::class => [LeadFileObserver::class],
+        DealFollowUp::class => [LeadFollowUpObserver::class],
         LeadNote::class => [LeadNoteObserver::class],
+        DealNote::class => [DealNoteObserver::class],
         LeadSource::class => [LeadSourceObserver::class],
         LeadStatus::class => [LeadStatusObserver::class],
         Leave::class => [LeaveObserver::class],
@@ -574,7 +599,7 @@ class EventServiceProvider extends ServiceProvider
         Proposal::class => [ProposalObserver::class],
         RecurringInvoice::class => [InvoiceRecurringObserver::class],
         RemovalRequest::class => [RemovalRequestObserver::class],
-        RemovalRequestLead::class => [RemovalRequestLeadObserver::class],
+        // RemovalRequestDeal::class => [RemovalRequestLeadObserver::class],
         SubTask::class => [SubTaskObserver::class],
         Task::class => [TaskObserver::class],
         TaskboardColumn::class => [TaskBoardColumnObserver::class],
@@ -658,6 +683,9 @@ class EventServiceProvider extends ServiceProvider
         LanguageSetting::class => [LanguageSettingObserver::class],
         GlobalSetting::class => [GlobalSettingObserver::class],
         CustomLinkSetting::class => [CustomLinkSettingObserver::class],
+        PipelineStage::class => [LeadStageObserver::class],
+        LeadPipeline::class => [LeadPipelineObserver::class],
+        Lead::class => [LeadObserver::class],
 
     ];
 

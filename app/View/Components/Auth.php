@@ -6,6 +6,7 @@ use App\Models\Company;
 use App\Models\GlobalSetting;
 use App\Models\LanguageSetting;
 use App\Models\User;
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\App;
 use Illuminate\View\Component;
 
@@ -25,7 +26,7 @@ class Auth extends Component
     /**
      * Get the view / contents that represent the component.
      *
-     * @return \Illuminate\Contracts\View\View|string
+     * @return View|string
      */
     public function render()
     {

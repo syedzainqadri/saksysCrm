@@ -129,17 +129,16 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Contract> $contracts
  * @property-read int|null $contracts_count
  * @property-read int|null $project_members_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Contract> $contracts
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Contract> $contracts
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Contract> $contracts
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Contract> $contracts
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Contract> $contracts
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Contract> $contracts
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Contract> $contracts
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\MentionUser> $mentionNote
  * @property-read int|null $mention_note_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\User> $mentionUser
  * @property-read int|null $mention_user_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ProjectMilestone> $incompleteMilestones
+ * @property-read int|null $incomplete_milestones_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\MentionUser> $mentionProject
+ * @property-read int|null $mention_project_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\User> $mentionUser
+ * @property-read \App\Models\Project|null $due_date
  * @mixin \Eloquent
  */
 class Project extends BaseModel
@@ -188,52 +187,57 @@ class Project extends BaseModel
 
     public function tasks(): HasMany
     {
-        return $this->hasMany(Task::class, 'project_id')->orderBy('id', 'desc');
+        return $this->hasMany(Task::class, 'project_id')->orderByDesc('id');
     }
 
     public function files(): HasMany
     {
-        return $this->hasMany(ProjectFile::class, 'project_id')->orderBy('id', 'desc');
+        return $this->hasMany(ProjectFile::class, 'project_id')->orderByDesc('id');
     }
 
     public function invoices(): HasMany
     {
-        return $this->hasMany(Invoice::class, 'project_id')->orderBy('id', 'desc');
+        return $this->hasMany(Invoice::class, 'project_id')->orderByDesc('id');
     }
 
     public function contracts(): HasMany
     {
-        return $this->hasMany(Contract::class, 'project_id')->orderBy('id', 'desc');
+        return $this->hasMany(Contract::class, 'project_id')->orderByDesc('id');
     }
 
     public function issues(): HasMany
     {
-        return $this->hasMany(Issue::class, 'project_id')->orderBy('id', 'desc');
+        return $this->hasMany(Issue::class, 'project_id')->orderByDesc('id');
     }
 
     public function times(): HasMany
     {
-        return $this->hasMany(ProjectTimeLog::class, 'project_id')->with('breaks')->orderBy('id', 'desc');
+        return $this->hasMany(ProjectTimeLog::class, 'project_id')->with('breaks')->orderByDesc('id');
     }
 
     public function milestones(): HasMany
     {
-        return $this->hasMany(ProjectMilestone::class, 'project_id')->orderBy('id', 'desc');
+        return $this->hasMany(ProjectMilestone::class, 'project_id')->orderByDesc('id');
+    }
+
+    public function incompleteMilestones(): HasMany
+    {
+        return $this->hasMany(ProjectMilestone::class, 'project_id')->whereNot('status', 'complete')->orderByDesc('id');
     }
 
     public function expenses(): HasMany
     {
-        return $this->hasMany(Expense::class, 'project_id')->orderBy('id', 'desc');
+        return $this->hasMany(Expense::class, 'project_id')->orderByDesc('id');
     }
 
     public function notes(): HasMany
     {
-        return $this->hasMany(ProjectNote::class, 'project_id')->orderBy('id', 'desc');
+        return $this->hasMany(ProjectNote::class, 'project_id')->orderByDesc('id');
     }
 
     public function payments(): HasMany
     {
-        return $this->hasMany(Payment::class, 'project_id')->orderBy('id', 'desc');
+        return $this->hasMany(Payment::class, 'project_id')->orderByDesc('id');
     }
 
     public function currency(): BelongsTo
@@ -243,7 +247,7 @@ class Project extends BaseModel
 
     public function discussions(): HasMany
     {
-        return $this->hasMany(Discussion::class, 'project_id')->orderBy('id', 'desc');
+        return $this->hasMany(Discussion::class, 'project_id')->orderByDesc('id');
     }
 
     public function rating(): HasOne
@@ -278,20 +282,31 @@ class Project extends BaseModel
     }
 
     /**
-     * @param  string $search
+     * @param boolean $notFinished
      * Search Parameter is passed the get only search results and 20
      * @return \Illuminate\Support\Collection
      */
-    public static function allProjects($search = '')
+    public static function allProjects($notFinished = false)
     {
-        $projects = Project::leftJoin('project_members', 'project_members.project_id', 'projects.id')
+        $projects = Project::query();
+
+        if ($notFinished) {
+            $projects->notFinished();
+        }
+
+        $projects = $projects->leftJoin('project_members', 'project_members.project_id', 'projects.id')
             ->select('projects.*')
             ->orderBy('project_name');
+
 
         if (!isRunningInConsoleOrSeeding()) {
 
             if (user()->permission('view_projects') == 'added') {
                 $projects->where('projects.added_by', user()->id);
+            }
+
+            if (user()->permission('view_projects') == 'both') {
+                $projects->where('projects.added_by', user()->id)->orWhere('project_members.user_id', user()->id);
             }
 
             if (user()->permission('view_projects') == 'owned' && in_array('employee', user_roles())) {
@@ -305,11 +320,13 @@ class Project extends BaseModel
 
         $projects = $projects->groupBy('projects.id');
 
-        if ($search !== '') {
-            return $projects->where('project_name', 'like', '%' . $search . '%')
-                ->take(GlobalSetting::SELECT2_SHOW_COUNT)
-                ->get();
-        }
+        // @codingStandardsIgnoreStart
+        //        if ($search !== '') {
+        //            return $projects->where('project_name', 'like', '%' . $search . '%')
+        //                ->take(GlobalSetting::SELECT2_SHOW_COUNT)
+        //                ->get();
+        //        }
+        // @codingStandardsIgnoreEnd
 
         return $projects->get();
     }
@@ -365,6 +382,11 @@ class Project extends BaseModel
     public function scopeFinished($query)
     {
         return $query->where('status', 'finished');
+    }
+
+    public function scopeNotFinished($query)
+    {
+        return $query->where('status', '<>', 'finished');
     }
 
     public function scopeNotStarted($query)

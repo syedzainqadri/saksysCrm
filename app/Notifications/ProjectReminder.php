@@ -60,14 +60,14 @@ class ProjectReminder extends BaseNotification
         $url = getDomainSpecificUrl($url, $this->company);
 
         $list = $this->projectList();
-        $content = __('email.projectReminder.text') . ' ' . Carbon::now($this->data['company']->timezone)->addDays($this->data['project_setting']->remind_time)->toFormattedDateString() . '<br>' . new HtmlString($list) . '<br>' . __('email.messages.loginForMoreDetails');
+        $content = __('email.projectReminder.text') . ' ' . now($this->data['company']->timezone)->addDays($this->data['project_setting']->remind_time)->toFormattedDateString() . '<br>' . new HtmlString($list) . '<br>' . __('email.messages.loginForMoreDetails');
 
         return $build
             ->subject(__('email.projectReminder.subject') . ' - ' . config('app.name'))
             ->markdown('mail.email', [
                 'url' => $url,
                 'content' => $content,
-                'themeColor' => $this->company->header_color,
+                'themeColor' => $this->company?->header_color,
                 'actionText' => __('email.projectReminder.action'),
                 'notifiableName' => $notifiable->name
             ]);
@@ -90,7 +90,7 @@ class ProjectReminder extends BaseNotification
         $list = '<ol>';
 
         foreach ($this->projects as $project) {
-            $list .= '<li>' . $project->project_name . '</li>';
+            $list .= '<li><strong>' . $project->project_short_code . '</strong> ' . $project->project_name . '</li>';
         }
 
         $list .= '</ol>';

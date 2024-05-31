@@ -3,6 +3,7 @@
 namespace App\DataTables;
 
 use App\DataTables\BaseDataTable;
+use App\Models\GlobalSetting;
 use App\Models\Invoice;
 use App\Models\InvoiceSetting;
 use Carbon\Carbon;
@@ -83,7 +84,9 @@ class RecurringInvoicesDataTable extends BaseDataTable
                     }
                 }
 
-                if ($row->status != 'canceled' && isset($row->client) && isset($row->client->clientDetails) && is_null($row->client->clientDetails->shipping_address) && $row->credit_note == 0) {
+                $creditNote = $row->credit_note;
+
+                if ($row->status != 'canceled' && isset($row->client) && isset($row->client->clientDetails) && is_null($row->client->clientDetails->shipping_address) && $creditNote == 0) {
                     /** @phpstan-ignore-next-line */
                     $action .= '<a class="dropdown-item" href="javascript:addShippingAddress(' . $row->id . ');"><i class="fa fa-plus"></i> ' . __('app.addShippingAddress') . '</a>';
                 }
@@ -111,7 +114,7 @@ class RecurringInvoicesDataTable extends BaseDataTable
                 }
 
                 if ($row->status != 'paid' && $row->credit_note == 0 && $row->status != 'draft' && $row->status != 'canceled') {
-                    $action .= '<a class="dropdown-item" href="' . route('front.invoice', $row->hash) . '" target="_blank"><i class="fa fa-external-link-alt mr-2"></i>' . trans('modules.payments.paymentLink') . '</a>';
+                    $action .= '<a class="dropdown-item" href="' . url()->temporarySignedRoute('front.invoice', now()->addDays(GlobalSetting::SIGNED_ROUTE_EXPIRY), $row->hash) . '" target="_blank"><i class="fa fa-external-link-alt mr-2"></i>' . trans('modules.payments.paymentLink') . '</a>';
                 }
 
                 if ($row->credit_note == 0 && $row->status == 'paid' && !in_array('client', user_roles())) {
@@ -139,20 +142,20 @@ class RecurringInvoicesDataTable extends BaseDataTable
             })
             ->editColumn('project_name', function ($row) {
                 if ($row->project_id != null) {
-                    return '<a href="' . route('projects.show', $row->project_id) . '" class="text-darkest-grey">' . ucfirst($row->project->project_name) . '</a>';
+                    return '<a href="' . route('projects.show', $row->project_id) . '" class="text-darkest-grey">' . $row->project->project_name . '</a>';
                 }
 
                 return '--';
             })
             ->addColumn('client_name', function ($row) {
                 if ($row->project && $row->project->client) {
-                    return ucfirst($row->project->client->name);
+                    return $row->project->client->name;
                 }
                 else if ($row->client_id != '') {
-                    return ucfirst($row->client->name);
+                    return $row->client->name;
                 }
                 else if ($row->estimate && $row->estimate->client) {
-                    return ucfirst($row->estimate->client->name);
+                    return $row->estimate->client->name;
                 }
                 else {
                     return '--';
@@ -189,7 +192,7 @@ class RecurringInvoicesDataTable extends BaseDataTable
 
                 return '<div class="media align-items-center">
                         <div class="media-body">
-                    <h5 class="mb-0 f-13 text-darkest-grey"><a href="' . route('invoices.show', [$row->id]) . '">' . ucfirst($row->invoice_number) . '</a></h5>
+                    <h5 class="mb-0 f-13 text-darkest-grey"><a href="' . route('invoices.show', [$row->id]) . '">' . $row->invoice_number . '</a></h5>
                     <p class="mb-0">' . $recurring . '</p>
                     </div>
                   </div>';
@@ -260,12 +263,12 @@ class RecurringInvoicesDataTable extends BaseDataTable
             ->select('invoices.id', 'invoices.project_id', 'invoices.client_id', 'invoices.invoice_number', 'invoices.currency_id', 'invoices.total', 'invoices.status', 'invoices.issue_date', 'invoices.credit_note', 'invoices.show_shipping_address', 'invoices.send_status', 'invoices.invoice_recurring_id', 'invoices.hash', 'invoices.company_id');
 
         if ($request->startDate !== null && $request->startDate != 'null' && $request->startDate != '') {
-            $startDate = Carbon::createFromFormat($this->company->date_format, $request->startDate)->toDateString();
+            $startDate = companyToDateString($request->startDate);
             $model = $model->where(DB::raw('DATE(invoices.`issue_date`)'), '>=', $startDate);
         }
 
         if ($request->endDate !== null && $request->endDate != 'null' && $request->endDate != '') {
-            $endDate = Carbon::createFromFormat($this->company->date_format, $request->endDate)->toDateString();
+            $endDate = companyToDateString($request->endDate);
             $model = $model->where(DB::raw('DATE(invoices.`issue_date`)'), '<=', $endDate);
         }
 
@@ -305,7 +308,7 @@ class RecurringInvoicesDataTable extends BaseDataTable
      */
     public function html()
     {
-        return $this->setBuilder('recurring-invoices-table', 0)
+        $dataTable = $this->setBuilder('recurring-invoices-table', 0)
             ->parameters([
                 'initComplete' => 'function () {
                    window.LaravelDataTables["recurring-invoices-table"].buttons().container()
@@ -316,8 +319,13 @@ class RecurringInvoicesDataTable extends BaseDataTable
                         selector: \'[data-toggle="tooltip"]\'
                     })
                 }',
-            ])
-            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+            ]);
+
+        if (canDataTableExport()) {
+            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+        }
+
+        return $dataTable;
     }
 
     /**

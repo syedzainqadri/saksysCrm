@@ -39,7 +39,7 @@ class NewUserViaLink extends BaseNotification
         }
 
         if ($this->emailSetting->send_slack == 'yes' && $this->company->slackSetting->status == 'active') {
-            array_push($via, 'slack');
+            $this->slackUserNameCheck($notifiable) ? array_push($via, 'slack') : null;
         }
 
         return $via;
@@ -96,19 +96,12 @@ class NewUserViaLink extends BaseNotification
      */
     public function toSlack($notifiable)
     {
-        $slack = $notifiable->company->slackSetting;
 
         try {
-            return (new SlackMessage())
-                ->from(config('app.name'))
-                ->image($slack->slack_logo_url)
-                ->to('@' . $notifiable->slack_username)
+            return $this->slackBuild($notifiable)
                 ->content('*' . __('email.newUserViaLink.subject') . ' ' . config('app.name') . '!*' . "\n" . __('email.newUserViaLink.text'));
         } catch (\Exception $e) {
-            return (new SlackMessage())
-                ->from(config('app.name'))
-                ->image($slack->slack_logo_url)
-                ->content('*' . __('email.newUserViaLink.subject') . '*' . "\n" .'This is a redirected notification. Add slack username for *' . $notifiable->name . '*');
+            return $this->slackRedirectMessage('email.newUserViaLink.subject', $notifiable);
         }
 
     }

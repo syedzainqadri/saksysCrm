@@ -43,6 +43,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @property-read int|null $mention_discussion_reply_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\User> $mentionUser
  * @property-read int|null $mention_user_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\MentionUser> $mentionDiscussionReply
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\User> $mentionUser
  * @mixin \Eloquent
  */
 class DiscussionReply extends BaseModel

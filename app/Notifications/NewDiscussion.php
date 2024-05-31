@@ -42,7 +42,7 @@ class NewDiscussion extends BaseNotification
         }
 
         if ($this->emailSetting->send_slack == 'yes' && $this->company->slackSetting->status == 'active') {
-            array_push($via, 'slack');
+            $this->slackUserNameCheck($notifiable) ? array_push($via, 'slack') : null;
         }
 
         if ($this->emailSetting->send_push == 'yes') {
@@ -101,20 +101,10 @@ class NewDiscussion extends BaseNotification
      */
     public function toSlack($notifiable)
     {
-        $slack = $notifiable->company->slackSetting;
 
-        if (count($notifiable->employee) > 0 && (!is_null($notifiable->employee[0]->slack_username) && ($notifiable->employee[0]->slack_username != ''))) {
-            return (new SlackMessage())
-                ->from(config('app.name'))
-                ->image($slack->slack_logo_url)
-                ->to('@' . $notifiable->employee[0]->slack_username)
-                ->content('*' . __('email.discussion.subject') . '*' . "\n" . $this->discussion->title);
-        }
+        return $this->slackBuild($notifiable)
+            ->content('*' . __('email.discussion.subject') . '*' . "\n" . $this->discussion->title);
 
-        return (new SlackMessage())
-            ->from(config('app.name'))
-            ->image($slack->slack_logo_url)
-            ->content('*' . __('email.discussion.subject') . '*' . "\n" .'This is a redirected notification. Add slack username for *' . $notifiable->name . '*');
     }
 
     // phpcs:ignore
@@ -122,7 +112,7 @@ class NewDiscussion extends BaseNotification
     {
         return OneSignalMessage::create()
             ->setSubject(__('email.discussion.subject'))
-            ->setBody(ucfirst($this->discussion->title));
+            ->setBody($this->discussion->title);
     }
 
 }

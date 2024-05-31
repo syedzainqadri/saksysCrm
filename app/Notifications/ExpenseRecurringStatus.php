@@ -42,7 +42,7 @@ class ExpenseRecurringStatus extends BaseNotification
         }
 
         if ($this->emailSetting->send_slack == 'yes' && $this->company->slackSetting->status == 'active') {
-            array_push($via, 'slack');
+            $this->slackUserNameCheck($notifiable) ? array_push($via, 'slack') : null;
         }
 
         if ($this->emailSetting->send_push == 'yes') {
@@ -97,20 +97,10 @@ class ExpenseRecurringStatus extends BaseNotification
      */
     public function toSlack($notifiable)
     {
-        $slack = $notifiable->company->slackSetting;
 
-        if (count($notifiable->employee) > 0 && (!is_null($notifiable->employee[0]->slack_username) && ($notifiable->employee[0]->slack_username != ''))) {
-            return (new SlackMessage())
-                ->from(config('app.name'))
-                ->image($slack->slack_logo_url)
-                ->to('@' . $notifiable->employee[0]->slack_username)
-                ->content(__('email.expenseRecurringStatus.text') . ' ' . $this->expense->status . ' - ' . $this->expense->item_name . ' - ' . $this->expense->currency->currency_symbol . $this->expense->price);
-        }
+        return $this->slackBuild($notifiable)
+            ->content(__('email.expenseRecurringStatus.text') . ' ' . $this->expense->status . ' - ' . $this->expense->item_name . ' - ' . $this->expense->currency->currency_symbol . $this->expense->price);
 
-        return (new SlackMessage())
-            ->from(config('app.name'))
-            ->image($slack->slack_logo_url)
-            ->content('*' . __('email.expenseRecurringStatus.subject') . '*' . "\n" .'This is a redirected notification. Add slack username for *' . $notifiable->name . '*');
     }
 
     // phpcs:ignore

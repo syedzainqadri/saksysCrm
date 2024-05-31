@@ -30,7 +30,7 @@ class StoreRequest extends CoreRequest
         $rules = [
             'employee_id' => 'required|unique:employee_details,employee_id,null,id,company_id,' . company()->id.'|max:100',
             'name' => 'required|max:50',
-            'email' => 'required|email:rfc|unique:users,email,null,id,company_id,' . company()->id.'|max:100',
+            'email' => 'required|email:rfc,strict|unique:users,email,null,id,company_id,' . company()->id.'|max:100',
             'password' => 'required|min:8|max:50',
             'slack_username' => 'nullable|unique:employee_details,slack_username,null,id,company_id,' . company()->id.'|max:30',
             'hourly_rate' => 'nullable|numeric',

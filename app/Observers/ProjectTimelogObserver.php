@@ -8,9 +8,11 @@ use App\Models\LogTimeFor;
 use App\Models\ProjectMember;
 use App\Models\ProjectTimeLog;
 use Illuminate\Support\Str;
+use App\Traits\EmployeeActivityTrait;
 
 class ProjectTimelogObserver
 {
+    use EmployeeActivityTrait;
 
     public function saving(ProjectTimeLog $projectTimeLog)
     {
@@ -76,4 +78,36 @@ class ProjectTimelogObserver
         }
     }
 
+    public function created(ProjectTimeLog $projectTimeLog)
+    {
+        if (!isRunningInConsoleOrSeeding() && user()) {
+            self::createEmployeeActivity(user()->id, 'timelog-created', $projectTimeLog->id, 'timelog');
+
+        }
+
+
+    }
+
+    public function updated(ProjectTimeLog $projectTimeLog)
+    {
+        if (!isRunningInConsoleOrSeeding() && user()) {
+            self::createEmployeeActivity(user()->id, 'timelog-updated', $projectTimeLog->id, 'timelog');
+
+        }
+
+
+    }
+
+    public function deleted(ProjectTimeLog $projectTimeLog)
+    {
+        if (user()) {
+            self::createEmployeeActivity(user()->id, 'timelog-deleted');
+
+        }
+    }
+
 }
+
+
+
+

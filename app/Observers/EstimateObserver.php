@@ -18,9 +18,14 @@ use App\Traits\UnitTypeSaveTrait;
 use App\Events\EstimateAcceptedEvent;
 use App\Events\EstimateDeclinedEvent;
 use App\Models\EstimateTemplateItemImage;
+use App\Models\Product;
+use function user;
+use App\Traits\EmployeeActivityTrait;
 
 class EstimateObserver
 {
+    use EmployeeActivityTrait;
+
 
     use UnitTypeSaveTrait;
 
@@ -28,7 +33,7 @@ class EstimateObserver
     {
         if (!isRunningInConsoleOrSeeding()) {
 
-            if (\user()) {
+            if (user()) {
                 $estimate->last_updated_by = user()->id;
             }
 
@@ -43,7 +48,7 @@ class EstimateObserver
     {
         $estimate->hash = md5(microtime());
 
-        if (\user()) {
+        if (user()) {
             $estimate->added_by = user()->id;
         }
 
@@ -58,12 +63,23 @@ class EstimateObserver
         if (company()) {
             $estimate->company_id = company()->id;
         }
+
+
+        if (is_numeric($estimate->estimate_number)) {
+            $estimate->estimate_number = $estimate->formatEstimateNumber();
+        }
+
+        $invoiceSettings = (company()) ? company()->invoiceSetting : $estimate->company->invoiceSetting;
+        $estimate->original_estimate_number = str($estimate->estimate_number)->replace($invoiceSettings->estimate_prefix . $invoiceSettings->estimate_number_separator, '');
+
     }
 
     public function created(Estimate $estimate)
     {
 
         if (!isRunningInConsoleOrSeeding()) {
+            self::createEmployeeActivity(user()->id, 'estimate-created', $estimate->id, 'estimate');
+
             if (!empty(request()->item_name)) {
 
                 $itemsSummary = request()->item_summary;
@@ -101,15 +117,14 @@ class EstimateObserver
 
                         /* Invoice file save here */
 
-                        if ((isset($invoice_item_image[$key]) && $invoice_item_image[$key] != 'yes') || isset($invoice_item_image_url[$key]))
-                        {
+                        if ((isset($invoice_item_image[$key]) && $invoice_item_image[$key] != 'yes') || isset($invoice_item_image_url[$key])) {
                             EstimateItemImage::create(
                                 [
                                     'estimate_item_id' => $estimateItem->id,
-                                    'filename' => !isset($invoice_item_image_url[$key]) ? $invoice_item_image[$key]->getClientOriginalName() : '',
-                                    'hashname' => !isset($invoice_item_image_url[$key]) ? Files::uploadLocalOrS3($invoice_item_image[$key], EstimateItemImage::FILE_PATH . '/' . $estimateItem->id . '/') : '',
-                                    'size' => !isset($invoice_item_image_url[$key]) ? $invoice_item_image[$key]->getSize() : '',
-                                    'external_link' => $invoice_item_image_url[$key] ?? ''
+                                    'filename' => isset($invoice_item_image[$key]) ? $invoice_item_image[$key]->getClientOriginalName() : null,
+                                    'hashname' => isset($invoice_item_image[$key]) ? Files::uploadLocalOrS3($invoice_item_image[$key], EstimateItemImage::FILE_PATH . '/' . $estimateItem->id . '/') : null,
+                                    'size' => isset($invoice_item_image[$key]) ? $invoice_item_image[$key]->getSize() : null,
+                                    'external_link' => isset($invoice_item_image[$key]) ? null : ($invoice_item_image_url[$key] ?? null),
                                 ]
                             );
 
@@ -117,20 +132,17 @@ class EstimateObserver
 
                         $image = true;
 
-                        if(isset($invoice_item_image_delete[$key]))
-                        {
+                        if (isset($invoice_item_image_delete[$key])) {
                             $image = false;
                         }
 
-                        if($image && (isset(request()->image_id[$key]) && $invoiceOldImage[$key] != ''))
-                        {
+                        if ($image && (isset(request()->image_id[$key]) && $invoiceOldImage[$key] != '')) {
                             $estimateOldImg = EstimateItemImage::with('item')->where('id', request()->image_id[$key])->first();
 
                             $this->duplicateImageStore($estimateOldImg, $estimateItem);
                         }
 
-                        if($image && (isset(request()->templateImage_id[$key]) && $invoiceTemplateImage[$key] != ''))
-                        {
+                        if ($image && (isset(request()->templateImage_id[$key]) && $invoiceTemplateImage[$key] != '')) {
                             $estimateTemplateImg = EstimateTemplateItemImage::where('id', request()->templateImage_id[$key])->first();
 
                             $this->duplicateTemplateImageStore($estimateTemplateImg, $estimateItem);
@@ -142,7 +154,6 @@ class EstimateObserver
             }
 
 
-
             if (request()->type != 'save' && request()->type != 'draft') {
                 event(new NewEstimateEvent($estimate));
             }
@@ -152,6 +163,8 @@ class EstimateObserver
     public function updated(Estimate $estimate)
     {
         if (!isRunningInConsoleOrSeeding()) {
+            self::createEmployeeActivity(user()->id, 'estimate-updated', $estimate->id, 'estimate');
+
             if ($estimate->status == 'declined') {
                 event(new EstimateDeclinedEvent($estimate));
             }
@@ -172,20 +185,28 @@ class EstimateObserver
         }
 
         $notifyData = ['App\Notifications\NewEstimate'];
-        \App\Models\Notification::deleteNotification($notifyData, $estimate->id);
+        Notification::deleteNotification($notifyData, $estimate->id);
 
+    }
+
+    public function deleted(Estimate $estimate)
+    {
+        if (user()) {
+            self::createEmployeeActivity(user()->id, 'estimate-deleted');
+
+        }
     }
 
     /**
      * duplicateImageStore
      *
-     * @param  mixed $estimateOldImg
-     * @param  mixed $estimateItem
+     * @param mixed $estimateOldImg
+     * @param mixed $estimateItem
      * @return void
      */
     public function duplicateImageStore($estimateOldImg, $estimateItem)
     {
-        if(!is_null($estimateOldImg)) {
+        if (!is_null($estimateOldImg)) {
 
             $file = new EstimateItemImage();
 
@@ -205,7 +226,7 @@ class EstimateObserver
 
     public function duplicateTemplateImageStore($estimateTemplateImg, $estimateItem)
     {
-        if(!is_null($estimateTemplateImg)) {
+        if (!is_null($estimateTemplateImg)) {
 
             $file = new EstimateItemImage();
 
@@ -213,7 +234,7 @@ class EstimateObserver
 
             $fileName = Files::generateNewFileName($estimateTemplateImg->filename);
 
-            Files::copy(EstimateItemImage::FILE_PATH . '/' . $estimateTemplateImg->id . '/' . $estimateTemplateImg->hashname, EstimateTemplateItemImage::FILE_PATH . '/' . $estimateItem->id . '/' . $fileName);
+            Files::copy(EstimateTemplateItemImage::FILE_PATH . '/' . $estimateTemplateImg->estimate_template_item_id . '/' . $estimateTemplateImg->hashname, EstimateItemImage::FILE_PATH . '/' . $estimateItem->id . '/' . $fileName);
 
             $file->filename = $estimateTemplateImg->filename;
             $file->hashname = $fileName;

@@ -57,6 +57,8 @@ class KnowledgeBaseFileController extends AccountBaseController
 
     public function destroy(Request $request, $id)
     {
+        abort_403(!in_array(user()->permission('edit_knowledgebase'), ['all', 'added']));
+
         $file = KnowledgeBaseFile::findOrFail($id);
         $this->knowledge = KnowledgeBase::findOrFail($file->knowledge_base_id);
         $this->categories = KnowledgeBaseCategory::findOrFail($this->knowledge->category_id);
@@ -65,7 +67,7 @@ class KnowledgeBaseFileController extends AccountBaseController
 
         KnowledgeBaseFile::destroy($id);
 
-        $this->files = KnowledgeBaseFile::where('knowledge_base_id', $file->knowledge_base_id)->orderBy('id', 'desc')->get();
+        $this->files = KnowledgeBaseFile::where('knowledge_base_id', $file->knowledge_base_id)->orderByDesc('id')->get();
 
         $view = view('knowledge-base.files.show', $this->data)->render();
 

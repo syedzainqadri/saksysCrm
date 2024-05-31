@@ -64,6 +64,7 @@ class DashboardWidget extends BaseModel
         ['dashboard_type' => 'admin-client-dashboard', 'widget_name' => 'lead_vs_source',  'status' => 1],
         ['dashboard_type' => 'admin-client-dashboard', 'widget_name' => 'latest_client',  'status' => 1],
         ['dashboard_type' => 'admin-client-dashboard', 'widget_name' => 'recent_login_activities',  'status' => 1],
+        ['dashboard_type' => 'admin-client-dashboard', 'widget_name' => 'total_deals',  'status' => 1],
 
         ['dashboard_type' => 'admin-finance-dashboard', 'widget_name' => 'total_paid_invoices',  'status' => 1],
         ['dashboard_type' => 'admin-finance-dashboard', 'widget_name' => 'total_expenses',  'status' => 1],

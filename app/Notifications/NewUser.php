@@ -9,7 +9,6 @@ use Illuminate\Notifications\Messages\SlackMessage;
 class NewUser extends BaseNotification
 {
 
-
     /**
      * Create a new notification instance.
      *
@@ -52,7 +51,7 @@ class NewUser extends BaseNotification
 
 
         if ($this->emailSetting->send_slack == 'yes' && $this->company->slackSetting->status == 'active') {
-            array_push($via, 'slack');
+            $this->slackUserNameCheck($notifiable) ? array_push($via, 'slack') : null;
         }
 
         return $via;
@@ -71,7 +70,7 @@ class NewUser extends BaseNotification
         $url = route('login');
         $url = getDomainSpecificUrl($url, $this->company);
 
-        $content = __('email.newUser.text') . '<br><br>' . __('app.email') . ': <b>' . $notifiable->email . '</b><br>' . __('app.password') . ': <b>' . $this->password.'</b>';
+        $content = __('email.newUser.text') . '<br><br>' . __('app.email') . ': <b>' . $notifiable->email . '</b><br>' . __('app.password') . ': <b>' . $this->password . '</b>';
 
         return $build
             ->subject(__('email.newUser.subject') . ' ' . config('app.name') . '.')
@@ -105,26 +104,18 @@ class NewUser extends BaseNotification
     public function toSlack($notifiable)
     {
 
-        $slack = $notifiable->company->slackSetting;
-
-        $slackMessage = (new SlackMessage())
-            ->from(config('app.name'))
-            ->image($slack->slack_logo_url);
-
         try {
 
             $url = route('login');
             $url = getDomainSpecificUrl($url, $this->company);
 
-            //phpcs:ignore
-            return $slackMessage
-                    //phpcs:ignore
-                ->to('@' . $notifiable->employee[0]->slack_username)
-                //phpcs:ignore
-                ->content('*' . __('email.newUser.subject') . ' ' . config('app.name') . '!*' . "\n" . __('email.newUser.text')) . "\n" . '<' . $url . '|' . __('email.newUser.action') . '>';
+            $content = '*' . __('email.newUser.subject') . ' ' . config('app.name') . '!*' . "\n" . __('email.newUser.text');
+            $url = "\n" . '<' . $url . '|' . __('email.newUser.action') . '>';
+
+            return $this->slackBuild($notifiable)->content($content . $url);
 
         } catch (\Exception $e) {
-            return $slackMessage->content('*' . __('email.newUser.subject') . '*' . "\n" .'This is a redirected notification. Add slack username for *' . $notifiable->name . '*');
+            return $this->slackRedirectMessage('email.newUser.subject', $notifiable);
         }
 
     }

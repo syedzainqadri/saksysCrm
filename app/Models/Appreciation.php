@@ -54,7 +54,7 @@ class Appreciation extends BaseModel
 
     public function getImageUrlAttribute()
     {
-        return ($this->image) ? asset_url_local_s3('appreciation/' . $this->image) : '';
+        return $this->image ? asset_url_local_s3('appreciation/' . $this->image) : '';
     }
 
     public function awardTo(): BelongsTo

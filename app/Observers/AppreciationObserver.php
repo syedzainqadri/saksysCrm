@@ -12,7 +12,7 @@ class AppreciationObserver
 
     public function creating(Appreciation $userAppreciation)
     {
-        if(company()) {
+        if (company()) {
             $userAppreciation->company_id = company()->id;
         }
     }

@@ -9,13 +9,18 @@ $deleteLeadFollowUpPermission = user()->permission('delete_lead_follow_up');
 <div class="row">
     <!--  USER CARDS START -->
     <div class="col-lg-12 col-md-12 mb-4 mb-xl-0 mb-lg-4">
+        @if ($deal->leadStage->slug == 'win' || $deal->leadStage->slug == 'lost')
+        <x-alert type="info" icon="info-circle">@lang('messages.cantAddFollowup') </x-alert>
+    @endif
        <div class="d-flex" id="table-actions">
 
-            @if (($addLeadFollowUpPermission == 'all' || $addLeadFollowUpPermission == 'added') && $lead->next_follow_up == 'yes')
-         <x-forms.button-primary icon="plus" id="add-lead-followup" class="mr-3">
-                @lang('modules.followup.newFollowUp')
-            </x-forms.button-primary>
+            @if ($deal->leadStage->slug != 'win' && $deal->leadStage->slug != 'lost' && ($addLeadFollowUpPermission == 'all' || $addLeadFollowUpPermission == 'added'))
+                <x-forms.button-primary icon="plus" id="add-lead-followup" class="mr-3">
+                    @lang('modules.followup.newFollowUp')
+                </x-forms.button-primary>
             @endif
+
+
         </div>
         @if ($viewLeadFollowUpPermission == 'all' || $viewLeadFollowUpPermission == 'added')
             <div class="d-flex flex-column w-tables rounded mt-3 bg-white">
@@ -32,7 +37,7 @@ $deleteLeadFollowUpPermission = user()->permission('delete_lead_follow_up');
 
     $('#leadfollowup-table').on('preXhr.dt', function(e, settings, data) {
 
-    var leadId = "{{ $lead->id }}";
+    var leadId = "{{ $deal->id }}";
     data['leadId'] = leadId;
     });
     const showTable = () => {
@@ -59,7 +64,7 @@ $deleteLeadFollowUpPermission = user()->permission('delete_lead_follow_up');
             buttonsStyling: false
         }).then((result) => {
             if (result.isConfirmed) {
-                var url = "{{ route('leads.follow_up_delete', ':id') }}";
+                var url = "{{ route('deals.follow_up_delete', ':id') }}";
                 url = url.replace(':id', id);
 
                 var token = "{{ csrf_token() }}";
@@ -81,14 +86,14 @@ $deleteLeadFollowUpPermission = user()->permission('delete_lead_follow_up');
     });
 
     $('#add-lead-followup').click(function() {
-        const url = "{{ route('leads.follow_up', $leadId) }}";
+        const url = "{{ route('deals.follow_up', $leadId) }}";
         $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
         $.ajaxModal(MODAL_LG, url);
     })
 
     $('body').on('click', '.edit-table-row-lead', function() {
         var id = $(this).data('followup-id');
-        var url = "{{ route('leads.follow_up_edit', ':id') }}";
+        var url = "{{ route('deals.follow_up_edit', ':id') }}";
         url = url.replace(':id', id);
         $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
         $.ajaxModal(MODAL_LG, url);
@@ -97,7 +102,7 @@ $deleteLeadFollowUpPermission = user()->permission('delete_lead_follow_up');
         var status = $(this).val();
         var followUpId = $(this).data('followup-id');
         console.log(followUpId);
-        var url = "{{ route('leads.change_follow_up_status') }}";
+        var url = "{{ route('deals.change_follow_up_status') }}";
         var token = "{{ csrf_token() }}";
 
         $.easyAjax({

@@ -7,7 +7,7 @@
 <x-cards.notification :notification="$notification"
                       :link="route('appreciations.show', $notification->data['id'])"
                       :image="$iconCode"
-                      :title="__('messages.congratulationNewAward', ['award' => ucfirst($notification->data['heading'])]) "
+                      :title="__('messages.congratulationNewAward', ['award' => $notification->data['heading']]) "
                       :time="$notification->created_at"
                       :type="$type"
 />

@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use Client;
 use Carbon\Carbon;
 use App\Models\User;
 use App\Helper\Reply;
@@ -21,6 +20,7 @@ use App\DataTables\TicketDataTable;
 use App\Models\TicketReplyTemplate;
 use App\Http\Requests\Tickets\StoreTicket;
 use App\Http\Requests\Tickets\UpdateTicket;
+use App\Models\Project;
 
 class TicketController extends AccountBaseController
 {
@@ -64,6 +64,7 @@ class TicketController extends AccountBaseController
 
             $this->types = TicketType::all();
             $this->tags = TicketTagList::all();
+            $this->projects = Project::allProjects();
         }
 
         return $dataTable->render('tickets.index', $this->data);
@@ -114,6 +115,7 @@ class TicketController extends AccountBaseController
         $this->countries = countries();
         $this->lastTicket = Ticket::orderBy('id', 'desc')->first();
         $this->pageTitle = __('modules.tickets.addTicket');
+
         $ticket = new Ticket();
 
         if ($ticket->getCustomFieldGroupsWithFields()) {
@@ -124,13 +126,11 @@ class TicketController extends AccountBaseController
             $this->client = User::find(request()->default_client);
         }
 
-        if (request()->ajax()) {
-            $html = view('tickets.ajax.create', $this->data)->render();
-
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
-        }
-
         $this->view = 'tickets.ajax.create';
+
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
+        }
 
         return view('tickets.create', $this->data);
 
@@ -149,6 +149,7 @@ class TicketController extends AccountBaseController
         $ticket->priority = $request->priority;
         $ticket->channel_id = $request->channel_id;
         $ticket->group_id = $request->group_id;
+        $ticket->project_id = $request->project_id;
         $ticket->save();
 
         // Save first message
@@ -174,7 +175,7 @@ class TicketController extends AccountBaseController
         }
 
         // Log search
-        $this->logSearchEntry($ticket->id, $ticket->subject, 'tickets.show', 'ticket');
+        $this->logSearchEntry($ticket->ticket_number, $ticket->subject, 'tickets.show', 'ticket');
 
         $redirectUrl = urldecode($request->redirect_url);
 
@@ -187,21 +188,15 @@ class TicketController extends AccountBaseController
 
     public function show($ticketNumber)
     {
-        $this->viewTicketPermission = user()->permission('view_tickets');
-        $this->ticket = Ticket::where('ticket_number', $ticketNumber)
-            ->first();
 
-        abort_if(!$this->ticket, 404);
+        $this->ticket = Ticket::with('project')
+            ->where('ticket_number', $ticketNumber)
+            ->firstOrFail();
+
+        abort_403(!$this->ticket->canViewTicket());
 
         $this->ticket = $this->ticket->withCustomFields();
         $this->pageTitle = __('app.menu.ticket') . '#' . $this->ticket->ticket_number;
-
-        abort_403(!(
-            $this->viewTicketPermission == 'all'
-            || ($this->viewTicketPermission == 'added' && user()->id == $this->ticket->added_by)
-            || ($this->viewTicketPermission == 'owned' && (user()->id == $this->ticket->user_id || $this->ticket->agent_id == user()->id))
-            || ($this->viewTicketPermission == 'both' && (user()->id == $this->ticket->user_id || $this->ticket->agent_id == user()->id || $this->ticket->added_by == user()->id))
-        ));
 
         $this->groups = TicketGroup::with('enabledAgents', 'enabledAgents.user')->get();
         $this->types = TicketType::all();
@@ -256,13 +251,7 @@ class TicketController extends AccountBaseController
     {
         $ticket = Ticket::findOrFail($id);
 
-        $this->deleteTicketPermission = user()->permission('delete_tickets');
-        abort_403(!(
-            $this->deleteTicketPermission == 'all'
-            || ($this->deleteTicketPermission == 'added' && user()->id == $ticket->added_by)
-            || ($this->deleteTicketPermission == 'owned' && (user()->id == $ticket->agent_id || user()->id == $ticket->user_id))
-            || ($this->deleteTicketPermission == 'both' && (user()->id == $ticket->agent_id || user()->id == $ticket->added_by || user()->id == $ticket->user_id))
-        ));
+        abort_403(!$ticket->canDeleteTicket());
 
         Ticket::destroy($id);
 
@@ -284,6 +273,7 @@ class TicketController extends AccountBaseController
             ->where('group_id', request()->group_id)
             ->pluck('agent_id')
             ->toArray();
+
         $ticketData = $ticket->where('company_id', company()->id)
             ->where('group_id', request()->group_id)
             ->whereIn('agent_id', $agentGroupData)
@@ -298,19 +288,19 @@ class TicketController extends AccountBaseController
 
             if (!empty($diffAgent)) {
                 $ticket->agent_id = current($diffAgent);
-
-            } else {
-                $agentDuplicateCount = 0;
+            }
+            else {
                 $agentDuplicateCount = array_count_values($ticketData);
 
-                if($agentDuplicateCount > 0){  /** @phpstan-ignore-line */
+                if (!empty($agentDuplicateCount)) {
                     $minVal = min($agentDuplicateCount);
                     $agentId = array_search($minVal, $agentDuplicateCount);
                     $ticket->agent_id = $agentId;
                 }
 
             }
-        } else {
+        }
+        else {
             $ticket->agent_id = request()->agent_id;
         }
 
@@ -337,12 +327,12 @@ class TicketController extends AccountBaseController
         $tickets = Ticket::with('agent');
 
         if (!is_null($request->startDate) && $request->startDate != '') {
-            $startDate = Carbon::createFromFormat($this->company->date_format, $request->startDate)->toDateString();
+            $startDate = companyToDateString($request->startDate);
             $tickets->where(DB::raw('DATE(`updated_at`)'), '>=', $startDate);
         }
 
         if (!is_null($request->endDate) && $request->endDate != '') {
-            $endDate = Carbon::createFromFormat($this->company->date_format, $request->endDate)->toDateString();
+            $endDate = companyToDateString($request->endDate);
             $tickets->where(DB::raw('DATE(`updated_at`)'), '<=', $endDate);
         }
 
@@ -367,15 +357,17 @@ class TicketController extends AccountBaseController
         }
 
         if ($viewPermission == 'owned') {
-            $tickets->where('user_id', '=', user()->id)
-                ->orWhere('tickets.agent_id', '=', user()->id);
+            $tickets->where(function ($query) {
+                $query->where('user_id', '=', user()->id)
+                    ->orWhere('agent_id', '=', user()->id);
+            });
         }
 
         if ($viewPermission == 'both') {
             $tickets->where(function ($query) {
-                $query->where('tickets.user_id', '=', user()->id)
-                    ->orWhere('tickets.added_by', '=', user()->id)
-                    ->orWhere('tickets.agent_id', '=', user()->id);
+                $query->where('user_id', '=', user()->id)
+                    ->orWhere('added_by', '=', user()->id)
+                    ->orWhere('agent_id', '=', user()->id);
             });
         }
 
@@ -412,15 +404,9 @@ class TicketController extends AccountBaseController
 
     public function changeStatus(Request $request)
     {
-        $ticket = Ticket::find($request->ticketId);
-        $this->editTicketPermission = user()->permission('edit_tickets');
+        $ticket = Ticket::findOrFail($request->ticketId);
 
-        abort_403(!(
-            $this->editTicketPermission == 'all'
-            || ($this->editTicketPermission == 'added' && user()->id == $ticket->added_by)
-            || ($this->editTicketPermission == 'owned' && (user()->id == $ticket->user_id || $ticket->agent_id == user()->id))
-            || ($this->editTicketPermission == 'both' && (user()->id == $ticket->user_id || $ticket->agent_id == user()->id || $ticket->added_by == user()->id))
-        ));
+        abort_403(!$ticket->canEditTicket());
 
         $ticket->update(['status' => $request->status]);
 
@@ -436,16 +422,14 @@ class TicketController extends AccountBaseController
         $groupData = [];
         $userData = [];
 
-        if (isset($groups) && count($groups->enabledAgents) > 0)
-        {
+        if (isset($groups) && count($groups->enabledAgents) > 0) {
             $data = [];
 
-            foreach ($groups->enabledAgents as $agent)
-            {
-                    $selected = (!is_null($ticket) && $agent->user->id == $ticket->agent_id) ? true : false;
+            foreach ($groups->enabledAgents as $agent) {
+                $selected = !is_null($ticket) && $agent->user->id == $ticket->agent_id;
 
-                    $url = route('employees.show', [$agent->user->id]);
-                    $userData[] = ['id' => $agent->user->id, 'value' => $agent->user->name, 'image' => $agent->user->image_url, 'link' => $url];
+                $url = route('employees.show', [$agent->user->id]);
+                $userData[] = ['id' => $agent->user->id, 'value' => $agent->user->name, 'image' => $agent->user->image_url, 'link' => $url];
 
                 $data[] = view('components.user-option', [
                     'user' => $agent->user,
@@ -457,12 +441,11 @@ class TicketController extends AccountBaseController
 
             $groupData = $userData;
         }
-        else
-        {
+        else {
             $data = '<option value="">--</option>';
         }
 
-        return Reply::dataOnly(['data' => $data , 'groupData' => $groupData]);
+        return Reply::dataOnly(['data' => $data, 'groupData' => $groupData]);
 
 
     }

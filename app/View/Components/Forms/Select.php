@@ -2,6 +2,7 @@
 
 namespace App\View\Components\Forms;
 
+use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
 
 class Select extends Component
@@ -32,12 +33,12 @@ class Select extends Component
         $popover = null
     )
     {
-        $this->fieldName    = $fieldName;
-        $this->fieldLabel   = $fieldLabel;
+        $this->fieldName = $fieldName;
+        $this->fieldLabel = $fieldLabel;
         $this->fieldId = $fieldId;
         $this->fieldRequired = $fieldRequired;
-        $this->multiple   = $multiple;
-        $this->search   = $search;
+        $this->multiple = $multiple;
+        $this->search = $search;
         $this->popover = $popover;
         $this->alignRight = $alignRight;
     }
@@ -45,7 +46,7 @@ class Select extends Component
     /**
      * Get the view / contents that represent the component.
      *
-     * @return \Illuminate\Contracts\View\View|string
+     * @return View|string
      */
     public function render()
     {

@@ -9,7 +9,7 @@ $deletePermission = user()->permission('delete_product');
                 <div class="card-header bg-white  border-bottom-grey text-capitalize justify-content-between p-20">
                     <div class="row">
                         <div class="col-lg-10 col-10">
-                            <h3 class="heading-h1 mb-3">@lang('app.menu.products') @lang('app.details')</h3>
+                            <h3 class="heading-h1 mb-3">@lang('app.productsDetails')</h3>
                         </div>
                         <div class="col-lg-2 col-2 text-right">
                             @if (
@@ -45,9 +45,9 @@ $deletePermission = user()->permission('delete_product');
                     <div class="row">
                         <div class="col-12">
                             <x-cards.data-row :label="__('app.name')" :value="$product->name ?? '--'" />
-                            <x-cards.data-row :label="__('app.price')" :value="$product->price ? currency_format($product->price) : '--'" />
-                            <x-cards.data-row :label="__('modules.invoices.tax')" :value="!empty($taxValue) ? strtoupper($taxValue) : '--'" />
-                            <x-cards.data-row :label="__('modules.unitType.unitType')" :value="ucfirst($product->unit->unit_type ?? '--')" />
+                            <x-cards.data-row :label="__('app.price')" :value="$product->price ? currency_format($product->price, company()->currency_id) : '--'" />
+                            <x-cards.data-row :label="__('modules.invoices.tax')" :value="!empty($taxValue) ? $taxValue : '--'" />
+                            <x-cards.data-row :label="__('modules.unitType.unitType')" :value="$product->unit->unit_type ?? '--'" />
                             <x-cards.data-row :label="__('app.hsnSac')" :value="$product->hsn_sac_code ?? '--'" />
                             <x-cards.data-row :label="__('modules.productCategory.productCategory')"
                                 :value="$product->category->category_name ?? '--'" />

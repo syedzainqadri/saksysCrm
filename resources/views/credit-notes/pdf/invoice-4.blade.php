@@ -554,6 +554,7 @@
 
         .word-break {
             word-wrap: break-word;
+            word-break: break-all;
         }
 
         @if($invoiceSetting->locale == 'th')
@@ -585,7 +586,7 @@
             <section id="memo">
                 <div class="company-info">
                     <div  class="description">
-                        {{ mb_ucwords(company()->company_name) }}
+                        {{ company()->company_name }}
                     </div>
                     <br>
                     <span  class="description">{!! nl2br(default_address()->address) !!}</span>
@@ -602,7 +603,7 @@
             <section id="invoice-title-number">
 
                 <div class="title-top">
-                    <span  class="description">@lang('app.menu.issues') @lang('app.date'):</span>
+                    <span  class="description">@lang('app.issuesDate'):</span>
                     <span  class="description">{{ $creditNote->issue_date->translatedFormat(company()->date_format) }}</span>
                 </div>
 
@@ -613,11 +614,11 @@
                 <section id="client-info description">
                     <span>@lang('modules.credit-notes.billedTo'):</span>
                     <div class="client-name description">
-                        <strong>{{ mb_ucwords($creditNote->project->client->name) }}</strong>
+                        <strong>{{ $creditNote->project->client->name_salutation }}</strong>
                     </div>
 
                     <div>
-                        <span>{{ mb_ucwords($creditNote->project->clientDetails->company_name) }}</span>
+                        <span>{{ $creditNote->project->clientDetails->company_name }}</span>
                     </div>
 
                     <div>
@@ -652,7 +653,7 @@
                     </div>
                 @endif
                 <div  class="description">
-                    <span>@lang('app.status'):</span> <span>{{ mb_ucwords($creditNote->status) }}</span>
+                    <span>@lang('app.status'):</span> <span>{{ $creditNote->status }}</span>
                 </div>
             </section>
 
@@ -683,10 +684,10 @@
                             <tr data-iterate="item">
                                 <td style="text-align: right;">{{ ++$count }}</td>
                                 <!-- Don't remove this column as it's needed for the row commands -->
-                                <td>
-                                    {{ ucfirst($item->item_name) }}
+                                <td class="word-break">
+                                    {{ $item->item_name }}
                                     @if (!is_null($item->item_summary))
-                                        <p class="item-summary description">{!! nl2br(strip_tags($item->item_summary, ['p', 'b', 'strong', 'a'])) !!}</p>
+                                        <p class="item-summary description word-break">{!! nl2br(pdfStripTags($item->item_summary)) !!}</p>
                                     @endif
                                     @if ($item->creditNoteItemImage)
                                         <p class="mt-2">
@@ -702,7 +703,7 @@
 
                                 <td style="text-align: right;">{{ $item->quantity }}@if($item->unit)<br><span class="f-11 text-dark-grey">{{ $item->unit->unit_type }}</span>@endif</td>
                                 <td>{{ number_format((float) $item->unit_price, 2, '.', '') }}</td>
-                                <td>{{ strtoupper($item->tax_list) }}</td>
+                                <td>{{ $item->tax_list }}</td>
                                 <td>{{ number_format((float) $item->amount, 2, '.', '') }}</td>
                             </tr>
                         @endif
@@ -727,7 +728,7 @@
                     @endif
                     @foreach ($taxes as $key => $tax)
                         <tr data-iterate="tax">
-                            <th>{{ mb_strtoupper($key) }}:</th>
+                            <th>{{ $key }}:</th>
                             <td>{{ number_format((float) $tax, 2, '.', '') }}</td>
                         </tr>
                     @endforeach
@@ -743,7 +744,7 @@
                     </tr>
                     <tr>
                         <th>
-                            @lang('app.adjustment') @lang('app.amount'):</th>
+                            @lang('app.adjustmentAmount') :</th>
                         <td>
                             {{ number_format((float) $creditNote->adjustment_amount, 2, '.', '') }}</td>
                     </tr>
@@ -768,6 +769,9 @@
                     @endif
                     @if ($creditNote->status == 'open')
                         <br>{!! nl2br($creditNoteSetting->credit_note_terms) !!}
+                    @endif
+                    @if (isset($invoiceSetting->other_info))
+                        <br>{!! nl2br($invoiceSetting->other_info) !!}
                     @endif
                 </div>
 

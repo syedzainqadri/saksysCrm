@@ -22,7 +22,7 @@
                                     data-live-search="true" data-size="8">
                                 <option value="">--</option>
                                 @foreach ($categories as $category)
-                                    <option value="{{ $category->id }}">{{ mb_ucwords($category->category_name) }}
+                                    <option value="{{ $category->id }}">{{ $category->category_name }}
                                     </option>
                                 @endforeach
                             </select>
@@ -88,7 +88,6 @@
 </div>
 
 
-<script src="{{ asset('vendor/jquery/dropzone.min.js') }}"></script>
 <script>
     $(document).ready(function() {
 

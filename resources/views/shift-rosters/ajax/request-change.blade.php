@@ -18,7 +18,7 @@
             </div>
             <div class="col-sm-12 mt-3">
                 @if ($shift->shift->shift_name == 'Day Off')
-                    <span class="badge badge-info f-14 text-body" style="background-color: {{ $shift->shift->color }}">{{ $shift->shift->shift_name }}</span>
+                    <span class="badge badge-info f-14 text-body" style="background-color: {{ $shift->shift->color }}">{{ __('modules.attendance.' . str($shift->shift->shift_name)->camel()) }}</span>
                 @else
                     <span class="badge badge-info f-14" style="background-color: {{ $shift->shift->color }}">{{ $shift->shift->shift_name }}</span>
                 @endif
@@ -31,7 +31,7 @@
                 @if (!is_null($shift->requestChange) && $shift->requestChange->status == 'waiting')
                     <div class="col-sm-12 mt-3">
                         <p class="mb-1">@lang('modules.attendance.requestFor')</p>
-                        <span class="badge badge-info" style="background-color: {{ $shift->requestChange->shift->color }}">{{ $shift->requestChange->shift->shift_name }}</span>
+                        <span class="badge badge-info" style="background-color: {{ $shift->requestChange->shift->color }}">{{ ($shift->requestChange->shift->shift_name != 'Day Off') ? $shift->requestChange->shift->shift_name : __('modules.attendance.' . str($shift->requestChange->shift->shift_name)->camel()) }}</span>
                     </div>
                     <div class="col-sm-12 mt-3">
                         <p class="mb-1">@lang('app.reason')</p>
@@ -42,7 +42,7 @@
                         <x-forms.select fieldName="employee_shift_id" fieldId="employee_shift_id" :fieldLabel="__('modules.attendance.requestFor')">
                             @foreach ($employeeShifts as $item)
                                     @if ($shift->employee_shift_id != $item->id)
-                                        <option value="{{ $item->id }}">{{ $item->shift_name }}{{ ($item->shift_name != 'Day Off') ? ' ['.$item->office_start_time.' - '.$item->office_end_time.']' : ''}}</option>
+                                        <option value="{{ $item->id }}">{{ ($item->shift_name != 'Day Off') ? $item->shift_name : __('modules.attendance.' . str($item->shift_name)->camel()) }}{{ ($item->shift_name != 'Day Off') ? ' ['.$item->office_start_time.' - '.$item->office_end_time.']' : ''}}</option>
                                     @endif
                             @endforeach
                         </x-forms.select>

@@ -98,7 +98,7 @@
         </div>
 
 
-        <x-app-title class="d-block d-lg-none" :pageTitle="__($pageTitle)"></x-app-title>
+        <x-app-title class="d-block d-lg-none" :pageTitle="$pageTitle"></x-app-title>
 
         <!-- CONTENT WRAPPER START -->
         <div class="content-wrapper">
@@ -160,7 +160,7 @@
     const RIGHT_MODAL_CONTENT = '#right-modal-content';
     const RIGHT_MODAL_TITLE = '#right-modal-title';
     const company = @json($company??global_setting());
-
+    document.loading = '@lang('app.loading')';
 
     const datepickerConfig = {
         formatter: (input, date, instance) => {

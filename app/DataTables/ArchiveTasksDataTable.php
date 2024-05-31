@@ -3,6 +3,7 @@
 namespace App\DataTables;
 
 use App\DataTables\BaseDataTable;
+use App\Helper\Common;
 use App\Models\ProjectTimeLogBreak;
 use App\Models\Task;
 use App\Models\TaskboardColumn;
@@ -44,9 +45,7 @@ class ArchiveTasksDataTable extends BaseDataTable
 
         return datatables()
             ->eloquent($query)
-            ->addColumn('check', function ($row) {
-                return '<input type="checkbox" class="select-table-row" id="datatable-row-' . $row->id . '"  name="datatable_ids[]" value="' . $row->id . '" onclick="dataTableRowCheck(' . $row->id . ')">';
-            })
+            ->addColumn('check', fn($row) => $this->checkBox($row))
             ->addColumn('action', function ($row) {
                 $taskUsers = $row->users->pluck('id')->toArray();
 
@@ -67,10 +66,12 @@ class ArchiveTasksDataTable extends BaseDataTable
                     || ($row->project_admin == user()->id)
                     || ($this->editTaskPermission == 'both' && (in_array(user()->id, $taskUsers) || $row->added_by == user()->id))
                 ) {
-                    $action .= '<a class="dropdown-item openRightModal" href="' . route('tasks.edit', [$row->id]) . '">
+                    if (request()->trashedData != 'true') {
+                        $action .= '<a class="dropdown-item openRightModal" href="' . route('tasks.edit', [$row->id]) . '">
                                 <i class="fa fa-edit mr-2"></i>
                                 ' . trans('app.edit') . '
                             </a>';
+                    }
                 }
 
                 if ($this->deleteTaskPermission == 'all'
@@ -102,25 +103,13 @@ class ArchiveTasksDataTable extends BaseDataTable
 
                 return $action;
             })
-            ->editColumn('due_date', function ($row) {
-                if (is_null($row->due_date)) {
-                    return '--';
-                }
-
-                if ($row->due_date->endOfDay()->isPast()) {
-                    return '<span class="text-danger">' . $row->due_date->translatedFormat($this->company->date_format) . '</span>';
-                }
-                elseif ($row->due_date->isToday()) {
-                    return '<span class="text-success">' . __('app.today') . '</span>';
-                }
-
-                return '<span >' . $row->due_date->translatedFormat($this->company->date_format) . '</span>';
-            })
+            ->editColumn('due_date', fn($row) => Common::dateColor($row->due_date))
             ->editColumn('users', function ($row) {
                 if (count($row->users) == 0) {
                     return '--';
                 }
 
+                $key = '';
                 $members = '<div class="position-relative">';
 
                 foreach ($row->users as $key => $member) {
@@ -174,12 +163,8 @@ class ArchiveTasksDataTable extends BaseDataTable
                     }
                 }
             })
-            ->editColumn('clientName', function ($row) {
-                return ($row->clientName) ? mb_ucwords($row->clientName) : '-';
-            })
-            ->addColumn('task', function ($row) {
-                return ucfirst($row->heading);
-            })
+            ->editColumn('clientName', fn($row) => $row->clientName ?? '-')
+            ->addColumn('task', fn($row) => $row->heading)
             ->addColumn('timeLogged', function ($row) {
 
                 $timeLog = '--';
@@ -190,7 +175,7 @@ class ArchiveTasksDataTable extends BaseDataTable
                     $breakMinutes = ProjectTimeLogBreak::taskBreakMinutes($row->id);
                     $totalMinutes = $totalMinutes - $breakMinutes;
                     $timeLog = CarbonInterval::formatHuman($totalMinutes);
-
+                    /** @phpstan-ignore-line */
                 }
 
                 return $timeLog;
@@ -220,7 +205,7 @@ class ArchiveTasksDataTable extends BaseDataTable
 
                 return '<div class="media align-items-center">
                         <div class="media-body">
-                    <h5 class="mb-0 f-13 text-darkest-grey"><a href="' . route('tasks.show', [$row->id]) . '" class="openRightModal">' . ucfirst($row->heading) . '</a></h5>
+                    <h5 class="mb-0 f-13 text-darkest-grey"><a href="' . route('tasks.show', [$row->id]) . '" class="openRightModal">' . $row->heading . '</a></h5>
                     <p class="mb-0">' . $private . ' ' . $pin . ' ' . $timer . ' ' . $labels . '</p>
                     </div>
                   </div>';
@@ -252,24 +237,19 @@ class ArchiveTasksDataTable extends BaseDataTable
                     return $status;
 
                 }
-                else {
-                    return '<i class="fa fa-circle mr-1 text-yellow"
-                    style="color: ' . $row->boardColumn->label_color . '"></i>' . $row->boardColumn->column_name;
-                }
+
+                return '<i class="fa fa-circle mr-1 text-yellow" style="color: ' . $row->boardColumn->label_color . '"></i>' . $row->boardColumn->column_name;
             })
-            ->addColumn('status', function ($row) {
-                return ucfirst($row->boardColumn->column_name);
-            })
+            ->addColumn('status', fn ($row) => $row->boardColumn->column_name ?? '-')
+
             ->editColumn('project_name', function ($row) {
                 if (is_null($row->project_id)) {
                     return '-';
                 }
 
-                return '<a href="' . route('projects.show', $row->project_id) . '" class="text-darkest-grey">' . ucfirst($row->project_name) . '</a>';
+                return '<a href="' . route('projects.show', $row->project_id) . '" class="text-darkest-grey">' . $row->project_name . '</a>';
             })
-            ->setRowId(function ($row) {
-                return 'row-' . $row->id;
-            })
+            ->setRowId(fn($row) => 'row-' . $row->id)
             ->rawColumns(['board_column', 'action', 'project_name', 'clientName', 'due_date', 'users', 'heading', 'check', 'timeLogged', 'timer'])
             ->removeColumn('project_id')
             ->removeColumn('image')
@@ -288,11 +268,11 @@ class ArchiveTasksDataTable extends BaseDataTable
         $endDate = null;
 
         if ($request->startDate !== null && $request->startDate != 'null' && $request->startDate != '') {
-            $startDate = Carbon::createFromFormat($this->company->date_format, $request->startDate)->toDateString();
+            $startDate = companyToDateString($request->startDate);
         }
 
         if ($request->endDate !== null && $request->endDate != 'null' && $request->endDate != '') {
-            $endDate = Carbon::createFromFormat($this->company->date_format, $request->endDate)->toDateString();
+            $endDate = companyToDateString($request->endDate);
         }
 
         $projectId = $request->projectId;
@@ -509,7 +489,7 @@ class ArchiveTasksDataTable extends BaseDataTable
     public function html()
     {
 
-        return $this->setBuilder('allTasks-table')
+        $dataTable = $this->setBuilder('allTasks-table')
             ->parameters([
                 'initComplete' => 'function () {
                    window.LaravelDataTables["allTasks-table"].buttons().container()
@@ -519,8 +499,13 @@ class ArchiveTasksDataTable extends BaseDataTable
                     $("#allTasks-table .select-picker").selectpicker();
                     $(".bs-tooltip-top").removeClass("show");
                 }',
-            ])
-            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+            ]);
+
+        if (canDataTableExport()) {
+            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+        }
+
+        return $dataTable;
     }
 
     /**

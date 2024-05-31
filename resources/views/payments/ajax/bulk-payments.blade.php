@@ -9,7 +9,7 @@
             <tr>
                 <td class="border-bottom-0 btrr-mbl btlr text-dark">@lang('modules.invoices.invoiceNumber') #</td>
                 <td>@lang('modules.payments.paymentDate')<sup class="text-red f-14 mr-1">*</sup></td>
-                <td>@lang('modules.invoices.paymentMethod')<sup class="text-red f-14 mr-1">*</sup></td>
+                <td>@lang('modules.invoices.paymentMethod')</td>
                 <td>@lang('modules.payments.offlinePaymentMethod')</td>
                 @if($linkPaymentPermission == 'all') <td>@lang('app.menu.bankaccount')</td> @endif
                 <td>@lang('modules.payments.transactionId')</td>
@@ -30,45 +30,45 @@
                                 name="payment_date[]"
                                 class="payment_date px-6 position-relative text-dark font-weight-normal form-control height-35 rounded p-0 text-left f-15 w-100"
                                 placeholder="@lang('placeholders.date')"
-                                value="{{ Carbon\Carbon::now(company()->timezone)->format(company()->date_format) }}">
+                                value="{{ now(company()->timezone)->format(company()->date_format) }}">
                         </div>
                     </td>
                     <td class="border-bottom-0 btrr-mbl btlr">
                         <div class="input-group">
                             <select name="gateway[]" data-id={{ $key }}
                                 id="payment_gateway_id{{ $key }}"
-                                class="form-control select-picker payment_gateway_id" data-live-search="true"
-                                search="true">
-                                <option value="all" @if ($paymentID == 'all') selected @endif>--</option>
-                                <option value="Offline" id="offline_method" @if ($paymentID == 'Offline') selected @endif>
+                                    class="form-control select-picker payment_gateway_id" data-live-search="true"
+                                    search="true">
+                                <option value="all" @selected($paymentID == 'all')>--</option>
+                                <option value="Offline" id="offline_method" @selected ($paymentID == 'Offline')>
                                     {{ __('modules.offlinePayment.offlinePayment') }}</option>
                                 @if ($paymentGateway->paypal_status == 'active')
-                                    <option value="paypal" @if ($paymentID == 'paypal') selected @endif>{{ __('app.paypal') }}</option>
+                                    <option value="paypal" @selected($paymentID == 'paypal') >{{ __('app.paypal') }}</option>
                                 @endif
                                 @if ($paymentGateway->stripe_status == 'active')
-                                    <option value="stripe" @if ($paymentID == 'stripe') selected @endif>{{ __('app.stripe') }}</option>
+                                    <option value="stripe" @selected($paymentID == 'stripe') >{{ __('app.stripe') }}</option>
                                 @endif
                                 @if ($paymentGateway->razorpay_status == 'active')
-                                    <option value="razorpay" @if ($paymentID == 'razorpay') selected @endif>{{ __('app.razorpay') }}</option>
+                                    <option value="razorpay"  @selected($paymentID == 'razorpay')>{{ __('app.razorpay') }}</option>
                                 @endif
                                 @if ($paymentGateway->paystack_status == 'active')
-                                    <option value="paystack" @if ($paymentID == 'paystack') selected @endif>{{ __('app.paystack') }}</option>
+                                    <option value="paystack" @selected($paymentID == 'paystack')>{{ __('app.paystack') }}</option>
                                 @endif
                                 @if ($paymentGateway->mollie_status == 'active')
-                                    <option value="mollie" @if ($paymentID == 'mollie') selected @endif>{{ __('app.mollie') }}</option>
+                                    <option value="mollie" @selected($paymentID == 'mollie')>{{ __('app.mollie') }}</option>
                                 @endif
                                 @if ($paymentGateway->payfast_status == 'active')
-                                    <option value="payfast" @if ($paymentID == 'payfast') selected @endif>{{ __('app.payfast') }}</option>
+                                    <option value="payfast" @selected($paymentID == 'payfast')>{{ __('app.payfast') }}</option>
                                 @endif
                                 @if ($paymentGateway->authorize_status == 'active')
-                                    <option value="authorize" @if ($paymentID == 'authorize') selected @endif>{{ __('app.authorize') }}
+                                    <option value="authorize" @selected($paymentID == 'authorize')>{{ __('app.authorize') }}
                                     </option>
                                 @endif
                                 @if ($paymentGateway->square_status == 'active')
-                                    <option value="square" @if ($paymentID == 'square') selected @endif>{{ __('app.square') }}</option>
+                                    <option value="square" @selected($paymentID == 'square')>{{ __('app.square') }}</option>
                                 @endif
                                 @if ($paymentGateway->flutterwave_status == 'active')
-                                    <option value="flutterwave" @if ($paymentID == 'flutterwave') selected @endif>{{ __('app.flutterwave') }}
+                                    <option value="flutterwave" @selected($paymentID == 'flutterwave')>{{ __('app.flutterwave') }}
                                     </option>
                                 @endif
                             </select>
@@ -101,7 +101,7 @@
                                         @foreach ($bankDetails as $bankDetail)
                                             @if ($pendingPayment->currency->id == $bankDetail->currency_id)
                                                 <option @if ($pendingPayment->bank_account_id == $bankDetail->id) selected @endif value="{{ $bankDetail->id }}">@if($bankDetail->type == 'bank')
-                                                    {{ $bankDetail->bank_name }} | @endif {{ mb_ucwords($bankDetail->account_name) }}
+                                                    {{ $bankDetail->bank_name }} | @endif {{ $bankDetail->account_name }}
                                                 </option>
                                             @endif
                                         @endforeach
@@ -128,7 +128,7 @@
                     <td class="border-bottom-0 btrr-mbl btlr text-right pr-0">
                         <input type="hidden" id="due_amount{{ $key }}"
                             value="{{ $pendingPayment->amountDue() }}">
-                        {{ !is_null($pendingPayment->amountDue()) ? currency_format($pendingPayment->amountDue(), $pendingPayment->currency->id, $pendingPayment->currency->currency_symbol) : currency_format($pendingPayment->amountDue()) }}
+                        {{ !is_null($pendingPayment->amountDue()) ? currency_format($pendingPayment->amountDue(), $pendingPayment->currency->id, $pendingPayment->currency->currency_symbol) : currency_format($pendingPayment->amountDue(), $pendingPayment->currency->id) }}
                     </td>
                 </tr>
             @empty

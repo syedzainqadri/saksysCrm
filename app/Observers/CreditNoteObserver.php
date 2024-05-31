@@ -10,11 +10,13 @@ use App\Models\UniversalSearch;
 use App\Models\User;
 use App\Scopes\ActiveScope;
 use App\Traits\UnitTypeSaveTrait;
-use Carbon\Carbon;
+use App\Traits\EmployeeActivityTrait;
 
 class CreditNoteObserver
 {
+
     use UnitTypeSaveTrait;
+    use EmployeeActivityTrait;
 
     public function saving(CreditNotes $creditNote)
     {
@@ -32,6 +34,14 @@ class CreditNoteObserver
         if (company()) {
             $creditNote->company_id = company()->id;
         }
+
+        if (is_numeric($creditNote->cn_number)) {
+            $creditNote->cn_number = $creditNote->formatCreditNoteNumber();
+        }
+
+        $invoiceSettings = company() ? company()->invoiceSetting : $creditNote->company->invoiceSetting;
+        $creditNote->original_credit_note_number = str($creditNote->cn_number)->replace($invoiceSettings->credit_note_prefix . $invoiceSettings->credit_note_number_separator, '');
+
     }
 
     public function deleting(CreditNotes $creditNote)
@@ -45,13 +55,16 @@ class CreditNoteObserver
         }
 
         $notifyData = ['App\Notifications\NewCreditNote'];
-        \App\Models\Notification::deleteNotification($notifyData, $creditNote->id);
+        Notification::deleteNotification($notifyData, $creditNote->id);
 
     }
 
     public function created(CreditNotes $creditNote)
     {
         if (!isRunningInConsoleOrSeeding()) {
+            self::createEmployeeActivity(user()->id, 'creditNote-created', $creditNote->id, 'credit_note');
+
+
             $clientId = null;
 
             if ($creditNote->client_id) {
@@ -88,6 +101,24 @@ class CreditNoteObserver
                 $payment->paid_on = now();
                 $payment->save();
             }
+
+        }
+    }
+
+    public function updated(CreditNotes $creditNote)
+    {
+        if (!isRunningInConsoleOrSeeding()) {
+            self::createEmployeeActivity(user()->id, 'creditNote-updated', $creditNote->id, 'credit_note');
+
+
+
+        }
+    }
+
+    public function deleted(CreditNotes $creditNote)
+    {
+        if (user()) {
+            self::createEmployeeActivity(user()->id, 'creditNote-deleted');
 
         }
     }

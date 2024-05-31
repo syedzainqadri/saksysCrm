@@ -10,7 +10,7 @@
             <div class="col-md-12">
                 <x-forms.text fieldId="name" :fieldLabel="__('modules.client.clientName')" fieldName="name"
                     fieldRequired="true" :fieldPlaceholder="__('placeholders.name')"
-                    :fieldValue="$lead->client_name ?? ''"></x-forms.text>
+                    :fieldValue="$lead->client_name_salutation ?? ''"></x-forms.text>
             </div>
             <div class="col-md-12">
                 <x-forms.email fieldId="email" :fieldLabel="__('app.email')" fieldName="email"
@@ -21,7 +21,7 @@
             <div class="col-md-12">
                 <x-forms.text class="mb-3" fieldId="company_name"
                     :fieldLabel="__('modules.client.companyName')" fieldName="company_name"
-                    fieldPlaceholder="e.g. Space X" :fieldValue="$lead->company_name ?? ''"></x-forms.text>
+                    :fieldPlaceholder="__('placeholders.company')" :fieldValue="$lead->company_name ?? ''"></x-forms.text>
             </div>
             <div class="col-md-12">
                 <div class="form-group my-3">

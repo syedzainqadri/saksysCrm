@@ -40,7 +40,6 @@ class LeaveListener
         $adminUserIds = array_merge($permissionUserIds, $adminUserIds);
 
 
-
         if ($reportingTo == null) {
             $adminUsers = User::whereIn('id', $adminUserIds)->get();
         }

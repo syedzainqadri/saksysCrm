@@ -2,19 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use App\Helper\Files;
+use App\Models\Flag;
 use App\Helper\Reply;
 use Illuminate\Http\Request;
 use App\Models\LanguageSetting;
 use App\Models\TranslateSetting;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Artisan;
 use App\Http\Requests\Admin\Language\StoreRequest;
 use App\Http\Requests\Admin\Language\UpdateRequest;
 use Barryvdh\TranslationManager\Models\Translation;
 use App\Http\Requests\Admin\Language\AutoTranslateRequest;
-use App\Models\Flag;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 
 class LanguageSettingController extends AccountBaseController
 {
@@ -71,24 +71,24 @@ class LanguageSettingController extends AccountBaseController
     {
         $setting = LanguageSetting::findOrFail($request->id);
 
-        $oldLangExists = File::exists($this->langPath.'/'.strtolower($setting->language_code));
+        $oldLangExists = File::exists($this->langPath.'/'.$setting->language_code);
 
         if($oldLangExists){
             // check and create lang folder
-            $langExists = File::exists($this->langPath . '/' . strtolower($request->language_code));
+            $langExists = File::exists($this->langPath . '/' . $request->language_code);
 
             if (!$langExists) {
                 // update lang folder name
-                File::move($this->langPath . '/' . strtolower($setting->language_code), $this->langPath . '/' . strtolower($request->language_code));
+                File::move($this->langPath . '/' . $setting->language_code, $this->langPath . '/' . $request->language_code);
 
-                Translation::where('locale', strtolower($setting->language_code))->get()->map(function ($translation) {
+                Translation::where('locale', $setting->language_code)->get()->map(function ($translation) {
                     $translation->delete();
                 });
             }
         }
 
         $setting->language_name = $request->language_name;
-        $setting->language_code = strtolower($request->language_code);
+        $setting->language_code = $request->language_code;
         $setting->flag_code = strtolower($request->flag);
         $setting->status = $request->status;
         $setting->save();
@@ -104,15 +104,15 @@ class LanguageSettingController extends AccountBaseController
     public function store(StoreRequest $request)
     {
         // check and create lang folder
-        $langExists = File::exists($this->langPath . '/' . strtolower($request->language_code));
+        $langExists = File::exists($this->langPath . '/' . $request->language_code);
 
         if (!$langExists) {
-            File::makeDirectory($this->langPath . '/' . strtolower($request->language_code));
+            File::makeDirectory($this->langPath . '/' . $request->language_code);
         }
 
         $setting = new LanguageSetting();
         $setting->language_name = $request->language_name;
-        $setting->language_code = strtolower($request->language_code);
+        $setting->language_code = $request->language_code;
         $setting->flag_code = $request->flag;
         $setting->status = $request->status;
         $setting->save();
@@ -180,10 +180,10 @@ class LanguageSettingController extends AccountBaseController
 
         $language->destroy($id);
 
-        $langExists = File::exists($this->langPath . '/' . strtolower($language->language_code));
+        $langExists = File::exists($this->langPath . '/' . $language->language_code);
 
         if ($langExists) {
-            File::deleteDirectory($this->langPath . '/' . strtolower($language->language_code));
+            File::deleteDirectory($this->langPath . '/' . $language->language_code);
         }
 
         if (Schema::hasTable('ltm_translations')) {
@@ -191,6 +191,24 @@ class LanguageSettingController extends AccountBaseController
         }
 
         return Reply::success(__('messages.deleteSuccess'));
+    }
+
+    public function fixTranslation()
+    {
+        Artisan::call('translations:reset');
+        Artisan::call('translations:import');
+        return Reply::success(__('modules.languageSettings.fixTranslationSuccess'));
+    }
+
+    public function createEnLocale()
+    {
+        // copy eng folder from resources/lang to resources/lang/en
+        File::copyDirectory($this->langPath . '/eng', $this->langPath . '/en');
+
+        // copy eng.json file from resources/lang to resources/lang/en.json
+        File::copy($this->langPath . '/eng.json', $this->langPath . '/en.json');
+
+        return Reply::success(__('messages.recordSaved'));
     }
 
 }

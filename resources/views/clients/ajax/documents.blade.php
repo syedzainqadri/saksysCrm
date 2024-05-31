@@ -24,8 +24,8 @@ $deleteDocumentPermission = user()->permission('delete_client_document');
             <div class="row">
                 <div class="col-md-12">
                     <a class="f-15 f-w-500" href="javascript:;" id="add-client-file"><i
-                            class="icons icon-plus font-weight-bold mr-1"></i>@lang('app.add')
-                        @lang('app.file')</a>
+                            class="icons icon-plus font-weight-bold mr-1"></i>
+                        @lang('app.menu.addFile')</a>
                 </div>
             </div>
 

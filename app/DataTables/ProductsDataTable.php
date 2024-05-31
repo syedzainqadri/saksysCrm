@@ -34,9 +34,7 @@ class ProductsDataTable extends BaseDataTable
     {
         $datatables = datatables()->eloquent($query);
 
-        $datatables->addColumn('check', function ($row) {
-            return '<input type="checkbox" class="select-table-row" id="datatable-row-' . $row->id . '"  name="datatable_ids[]" value="' . $row->id . '" onclick="dataTableRowCheck(' . $row->id . ')">';
-        });
+        $datatables->addColumn('check', fn($row) => $this->checkBox($row));
         $datatables->addColumn('category', function ($row) {
             return ($row->category) ? $row->category->category_name : '';
         });
@@ -56,6 +54,8 @@ class ProductsDataTable extends BaseDataTable
             }
 
             $action = '<div class="task_view">
+            <a href="' . route('products.show', [$row->id]) . '"
+                class="taskView openRightModal text-darkest-grey f-w-500" data-product-id="' . $row->id . '">' . __('app.view') . '</a>
 
                     <div class="dropdown">
                         <a class="task_view_more d-flex align-items-center justify-content-center dropdown-toggle" type="link"
@@ -63,8 +63,6 @@ class ProductsDataTable extends BaseDataTable
                             <i class="icon-options-vertical icons"></i>
                         </a>
                         <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuLink-' . $row->id . '" tabindex="0">';
-
-            $action .= '<a href="' . route('products.show', [$row->id]) . '" class="dropdown-item openRightModal" data-product-id="' . $row->id . '"><i class="fa fa-eye mr-2"></i>' . __('app.view') . '</a>';
 
             if ($this->editProductPermission == 'all' || ($this->editProductPermission == 'added' && user()->id == $row->added_by)) {
                 $action .= '<a class="dropdown-item openRightModal" href="' . route('products.edit', [$row->id]) . '">
@@ -90,7 +88,7 @@ class ProductsDataTable extends BaseDataTable
 
         $datatables->editColumn('name', function ($row) {
 
-            return '<a href="' . route('products.show', [$row->id]) . '" class="openRightModal text-darkest-grey" >' . ucfirst($row->name) . '</a>';
+            return '<a href="' . route('products.show', [$row->id]) . '" class="openRightModal text-darkest-grey" >' . $row->name . '</a>';
         });
         $datatables->editColumn('default_image', function ($row) {
             return '<img src="' . $row->image_url . '" class="border rounded height-35" />';
@@ -118,16 +116,14 @@ class ProductsDataTable extends BaseDataTable
                     }
                 }
 
-                return currency_format($row->price + $totalTax);
+                return currency_format($row->price + $totalTax, company()->currency_id);
             }
 
-            return currency_format($row->price);
+            return currency_format($row->price, company()->currency_id);
         });
         $datatables->addIndexColumn();
         $datatables->smart(false);
-        $datatables->setRowId(function ($row) {
-            return 'row-' . $row->id;
-        });
+        $datatables->setRowId(fn($row) => 'row-' . $row->id);
 
         // Custom Fields For export
         $customFieldColumns = CustomField::customFieldData($datatables, Product::CUSTOM_FIELD_MODEL);
@@ -184,7 +180,7 @@ class ProductsDataTable extends BaseDataTable
      */
     public function html()
     {
-        return $this->setBuilder('products-table', 2)
+        $dataTable = $this->setBuilder('products-table', 2)
             ->parameters([
                 'initComplete' => 'function () {
                    window.LaravelDataTables["products-table"].buttons().container()
@@ -195,8 +191,13 @@ class ProductsDataTable extends BaseDataTable
                         selector: \'[data-toggle="tooltip"]\'
                     })
                 }',
-            ])
-            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+            ]);
+
+        if (canDataTableExport()) {
+            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+        }
+
+        return $dataTable;
     }
 
     /**

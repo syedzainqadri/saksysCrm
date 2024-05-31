@@ -545,7 +545,7 @@ ul.thumbnails.image_picker_selector li .thumbnail.selected {
 }
 
 .settings-box {
-    padding: 20px 28px;
+    padding: 18px 20px;
 }
 
 .sticky-note {
@@ -1033,3 +1033,22 @@ input[type="number"] {
 .mw-300 {
     max-width: 300px;
 }
+
+
+#terms_link {
+    display: contents !important;
+    color:#007bff !important;
+    font-size: 15px;
+}
+
+.dark-theme .ql-mention-list-item {
+    background-color: #29304c!important;
+}
+
+.dark-theme .ql-mention-list-item.selected {
+    background-color: #181c34!important;
+}
+.dark-theme .ql-mention-list-container {
+    border: 1px solid #4B4E69!important;
+}
+

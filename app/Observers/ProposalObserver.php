@@ -4,6 +4,8 @@ namespace App\Observers;
 
 use App\Helper\Files;
 use App\Models\Proposal;
+use Froiden\RestAPI\Exceptions\RelatedResourceNotFoundException;
+use App\Models\DealHistory;
 use Illuminate\Support\Str;
 use App\Models\Notification;
 use App\Models\ProposalItem;
@@ -11,10 +13,15 @@ use App\Events\NewProposalEvent;
 use App\Models\ProposalItemImage;
 use App\Traits\UnitTypeSaveTrait;
 use App\Models\ProposalTemplateItemImage;
+use App\Traits\DealHistoryTrait;
+use App\Traits\EmployeeActivityTrait;
 
 class ProposalObserver
 {
-    use UnitTypeSaveTrait;
+    use EmployeeActivityTrait;
+
+
+    use UnitTypeSaveTrait, DealHistoryTrait;
 
     public function saving(Proposal $proposal)
     {
@@ -57,6 +64,10 @@ class ProposalObserver
     {
 
         if (!isRunningInConsoleOrSeeding()) {
+
+            self::createDealHistory($proposal->deal_id, 'proposal-created', proposalId: $proposal->id);
+            self::createEmployeeActivity(user()->id, 'proposal-created', $proposal->id, 'proposal');
+
 
             if (!empty(request()->item_name)) {
                 $itemsSummary = request()->item_summary;
@@ -103,23 +114,21 @@ class ProposalObserver
                         ProposalItemImage::create(
                             [
                                 'proposal_item_id' => $proposalItem->id,
-                                'filename' => !isset($invoice_item_image_url[$key]) ? $invoice_item_image[$key]->getClientOriginalName() : '',
-                                'hashname' => !isset($invoice_item_image_url[$key]) ? $filename : '',
-                                'size' => !isset($invoice_item_image_url[$key]) ? $invoice_item_image[$key]->getSize() : '',
-                                'external_link' => isset($invoice_item_image_url[$key]) ? $invoice_item_image_url[$key] : ''
+                                'filename' => isset($invoice_item_image[$key]) ? $invoice_item_image[$key]->getClientOriginalName() : '',
+                                'hashname' => isset($invoice_item_image[$key]) ? $filename : '',
+                                'size' => isset($invoice_item_image[$key]) ? $invoice_item_image[$key]->getSize() : '',
+                                'external_link' => isset($invoice_item_image[$key]) ? null : (isset($invoice_item_image_url[$key]) ? $invoice_item_image_url[$key] : null)
                             ]
                         );
                     }
 
                     $image = true;
 
-                    if(isset($invoice_item_image_delete[$key]))
-                    {
+                    if (isset($invoice_item_image_delete[$key])) {
                         $image = false;
                     }
 
-                    if($image && (isset(request()->image_id[$key]) && $invoiceOldImage[$key] != ''))
-                    {
+                    if ($image && (isset(request()->image_id[$key]) && $invoiceOldImage[$key] != '')) {
                         $estimateOldImg = ProposalTemplateItemImage::where('id', request()->image_id[$key])->first();
 
                         if (isset($proposalItem)) {
@@ -134,11 +143,13 @@ class ProposalObserver
                 $type = 'new';
                 event(new NewProposalEvent($proposal, $type));
             }
+
+
         }
     }
 
     /**
-     * @throws \Froiden\RestAPI\Exceptions\RelatedResourceNotFoundException
+     * @throws RelatedResourceNotFoundException
      */
     public function updating(Proposal $proposal)
     {
@@ -152,6 +163,8 @@ class ProposalObserver
     public function updated(Proposal $proposal)
     {
         if (!isRunningInConsoleOrSeeding()) {
+
+            self::createEmployeeActivity(user()->id, 'proposal-updated', $proposal->id, 'proposal');
 
             if ($proposal->isDirty('status')) {
                 $type = 'signed';
@@ -224,8 +237,9 @@ class ProposalObserver
                             $proposalFileSize = $proposal_item_image[$key]->getSize();
                         }
 
-                        if ($filename == '') {
+                        if ($filename == '' && isset($proposal_item_image[$key])) {
                             $filename = Files::uploadLocalOrS3($proposal_item_image[$key], ProposalItemImage::FILE_PATH . '/' . $proposalItem->id . '/');
+                            $proposalFileSize = $proposal_item_image[$key]->getSize();
                         }
 
                         ProposalItemImage::updateOrCreate(
@@ -233,10 +247,10 @@ class ProposalObserver
                                 'proposal_item_id' => $proposalItem->id,
                             ],
                             [
-                                'filename' => !isset($proposal_item_image_url[$key]) ? $proposal_item_image[$key]->getClientOriginalName() : '',
-                                'hashname' => !isset($proposal_item_image_url[$key]) ? $filename : '',
-                                'size' => !isset($proposal_item_image_url[$key]) ? $proposalFileSize : '',
-                                'external_link' => $proposal_item_image_url[$key] ?? ''
+                                'filename' => isset($proposal_item_image[$key]) ? $proposal_item_image[$key]->getClientOriginalName() : '',
+                                'hashname' => isset($proposal_item_image[$key]) ? $filename : '',
+                                'size' => isset($proposal_item_image[$key]) ? $proposalFileSize : '',
+                                'external_link' => isset($proposal_item_image[$key]) ? null : ($proposal_item_image_url[$key] ?? '')
                             ]
                         );
                     }
@@ -247,17 +261,28 @@ class ProposalObserver
 
     }
 
+    public function deleted(Proposal $proposal)
+    {
+        if (user()) {
+            self::createDealHistory($proposal->deal_id, 'proposal-deleted');
+            self::createEmployeeActivity(user()->id, 'proposal-deleted');
+
+        }
+
+
+    }
+
     public function deleting(Proposal $proposal)
     {
         $notifyData = ['App\Notifications\NewProposal', 'App\Notifications\ProposalSigned'];
 
-        \App\Models\Notification::deleteNotification($notifyData, $proposal->id);
+        Notification::deleteNotification($notifyData, $proposal->id);
 
     }
 
     public function duplicateImageStore($estimateOldImg, $proposalItem)
     {
-        if(!is_null($estimateOldImg)) {
+        if (!is_null($estimateOldImg)) {
 
             $file = new ProposalItemImage();
 

@@ -124,7 +124,7 @@ class DiscussionDataTable extends BaseDataTable
             $model->where('discussion_category_id', $request->category_id);
         }
 
-        $model->orderBy('id', 'desc');
+        $model->orderByDesc('id');
 
         return $model;
     }
@@ -136,7 +136,7 @@ class DiscussionDataTable extends BaseDataTable
      */
     public function html()
     {
-        return $this->setBuilder('discussion-table', 0)
+        $dataTable = $this->setBuilder('discussion-table', 0)
             ->parameters([
                 'fnDrawCallback' => 'function( oSettings ) {
                     $("body").tooltip({
@@ -144,6 +144,8 @@ class DiscussionDataTable extends BaseDataTable
                     })
                 }',
             ]);
+
+        return $dataTable;
     }
 
     /**

@@ -13,7 +13,7 @@
         @endforeach
     </ul>
 </nav>
-<div class="progress" style="height: 7px;">
+<div class="progress" style="height: 20px;">
     @php
         $totalDayMinutes = $dateWiseTimelogs->sum('total_minutes');
         $totalDayBreakMinutes = $dateWiseTimelogBreak->sum('total_minutes');
@@ -21,7 +21,7 @@
     @endphp
     <div class="progress-bar bg-primary" role="progressbar" style="width: {{ $totalDayMinutesPercent }}%" aria-valuenow="{{ $totalDayMinutesPercent }}" aria-valuemin="0" aria-valuemax="100" data-toggle="tooltip" data-original-title="{{ minute_to_hour($totalDayMinutes - $totalDayBreakMinutes) }}"></div>
 
-    <div class="progress-bar bg-secondary" role="progressbar" style="width: {{ (100 - $totalDayMinutesPercent) }}%" aria-valuenow="{{ $totalDayMinutesPercent }}" aria-valuemin="0" aria-valuemax="100" data-toggle="tooltip" data-original-title="{{ minute_to_hour($totalDayBreakMinutes) }}"></div>
+    <div class="progress-bar bg-grey" role="progressbar" style="width: {{ (100 - $totalDayMinutesPercent) }}%" aria-valuenow="{{ $totalDayMinutesPercent }}" aria-valuemin="0" aria-valuemax="100" data-toggle="tooltip" data-original-title="{{ minute_to_hour($totalDayBreakMinutes) }}"></div>
 </div>
 
 <div class="d-flex justify-content-between mt-1 text-dark-grey f-12">

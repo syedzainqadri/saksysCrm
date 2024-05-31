@@ -7,6 +7,7 @@ use App\Models\Invoice;
 use App\Models\CustomField;
 use App\Models\CustomFieldGroup;
 use App\DataTables\BaseDataTable;
+use App\Models\GlobalSetting;
 use Illuminate\Database\Eloquent\Model;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
@@ -22,8 +23,9 @@ class InvoicesDataTable extends BaseDataTable
     private $addPaymentPermission;
     private $addInvoicesPermission;
     private $viewProjectInvoicePermission;
+    private $ignoreInvoicesWithTrashed;
 
-    public function __construct()
+    public function __construct($ignoreInvoicesWithTrashed = false)
     {
         parent::__construct();
         $this->viewInvoicePermission = user()->permission('view_invoices');
@@ -32,7 +34,7 @@ class InvoicesDataTable extends BaseDataTable
         $this->addPaymentPermission = user()->permission('add_payments');
         $this->viewProjectInvoicePermission = user()->permission('view_project_invoices');
         $this->addInvoicesPermission = user()->permission('add_invoices');
-
+        $this->ignoreInvoicesWithTrashed = $ignoreInvoicesWithTrashed;
     }
 
     /**
@@ -87,14 +89,17 @@ class InvoicesDataTable extends BaseDataTable
                                 <div><i class="fa fa-check-double mr-2"></i>
                                 ' . trans('app.markSent') . '
                                 </div>
-                                <i class="fa fa-question-circle" data-toggle="tooltip" data-original-title="'.__('messages.markSentInfo').'"></i>
+                                <i class="fa fa-question-circle" data-toggle="tooltip" data-original-title="' . __('messages.markSentInfo') . '"></i>
                             </a>';
             }
 
-            $edit = '<a class="dropdown-item" href="' . route('invoices.edit', $row->id) . '" >
+            $edit = (!is_null($row->project) && is_null($row->project->deleted_at)) ? '<a class="dropdown-item" href="' . route('invoices.edit', $row->id) . '" >
                         <i class="fa fa-edit mr-2"></i>
                         ' . trans('app.edit') . '
-                    </a>';
+                    </a>' : ((is_null($row->project_id)) ? '<a class="dropdown-item" href="' . route('invoices.edit', $row->id) . '" >
+                        <i class="fa fa-edit mr-2"></i>
+                        ' . trans('app.edit') . '
+                    </a>' : '');
 
             if ($row->status == 'paid' && !in_array('client', user_roles()) && $row->credit_note == 0) {
                 $action .= '<a class="dropdown-item invoice-upload" href="javascript:;" data-toggle="tooltip"  data-invoice-id="' . $row->id . '">
@@ -182,9 +187,9 @@ class InvoicesDataTable extends BaseDataTable
             }
 
             if ($row->credit_note == 0 && $row->status != 'draft' && $row->status != 'canceled' && $row->send_status) {
-                $action .= '<a class="dropdown-item btn-copy" href="javascript:;" data-clipboard-text="' . url()->signedRoute('front.invoice', $row->hash) . '"><i class="fa fa-copy mr-2"></i>' . trans('modules.invoices.copyPaymentLink') . '</a>';
+                $action .= '<a class="dropdown-item btn-copy" href="javascript:;" data-clipboard-text="' . url()->temporarySignedRoute('front.invoice', now()->addDays(GlobalSetting::SIGNED_ROUTE_EXPIRY), $row->hash) . '"><i class="fa fa-copy mr-2"></i>' . trans('modules.invoices.copyPaymentLink') . '</a>';
 
-                $action .= '<a class="dropdown-item" href="' . url()->signedRoute('front.invoice', $row->hash) . '" target="_blank"><i class="fa fa-external-link-alt mr-2"></i>' . trans('modules.payments.paymentLink') . '</a>';
+                $action .= '<a class="dropdown-item" href="' . url()->temporarySignedRoute('front.invoice', now()->addDays(GlobalSetting::SIGNED_ROUTE_EXPIRY), $row->hash) . '" target="_blank"><i class="fa fa-external-link-alt mr-2"></i>' . trans('modules.payments.paymentLink') . '</a>';
             }
 
             if ($row->credit_note == 0 && $row->status != 'draft' && $row->status != 'canceled' && $row->status != 'unpaid' && !in_array('client', user_roles())) {
@@ -208,7 +213,7 @@ class InvoicesDataTable extends BaseDataTable
                 || ($this->deleteInvoicePermission == 'owned' && $row->client_id == user()->id)
                 || ($this->deleteInvoicePermission == 'both' && ($row->client_id == user()->id || $row->added_by == user()->id))
             ) {
-                if ($firstInvoice->id == $row->id) {
+                if ($firstInvoice->id == $row->id && ($row->status != 'paid' && $row->status != 'partial')) {
                     $action .= '<a class="dropdown-item delete-table-row" href="javascript:;" data-toggle="tooltip"  data-invoice-id="' . $row->id . '">
                         <i class="fa fa-trash mr-2"></i>
                         ' . trans('app.delete') . '
@@ -229,7 +234,7 @@ class InvoicesDataTable extends BaseDataTable
         });
         $datatables->editColumn('project_name', function ($row) {
             if ($row->project_id != null) {
-                return '<a href="' . route('projects.show', $row->project_id) . '" class="text-darkest-grey">' . ucfirst($row->project->project_name) . '</a>';
+                return '<a href="' . route('projects.show', $row->project_id) . '" class="text-darkest-grey">' . $row->project->project_name . '</a>';
             }
 
             return '--';
@@ -244,38 +249,41 @@ class InvoicesDataTable extends BaseDataTable
         });
         $datatables->addColumn('client_name', function ($row) {
             if ($row->client) {
-                return ucfirst($row->client->name);
+                return $row->client->name;
             }
-            else if ($row->project && $row->project->client) {
-                return ucfirst($row->project->client->name);
+
+            if ($row->project && $row->project->client) {
+                return $row->project->client->name;
             }
-            else if ($row->estimate && $row->estimate->client) {
-                return ucfirst($row->estimate->client->name);
+
+            if ($row->estimate && $row->estimate->client) {
+                return $row->estimate->client->name;
             }
-            else {
-                return '--';
-            }
+
+            return '--';
         });
         $datatables->addColumn('client_email', function ($row) {
             if ($row->project && $row->project->client) {
-                return ucfirst($row->project->client->email);
+                return $row->project->client->email;
             }
-            else if ($row->client) {
-                return ucfirst($row->client->email);
+
+            if ($row->client) {
+                return $row->client->email;
             }
-            else if ($row->estimate && $row->estimate->client) {
-                return ucfirst($row->estimate->client->email);
+
+            if ($row->estimate && $row->estimate->client) {
+                return $row->estimate->client->email;
             }
-            else {
-                return '--';
-            }
+
+            return '--';
         });
 
         $datatables->editColumn('name', function ($row) {
             if ($row->client) {
                 $client = $row->client;
 
-            } else if ($row->project && $row->project->client) {
+            }
+            else if ($row->project && $row->project->client) {
                 $client = $row->project->client;
             }
             else if ($row->estimate && $row->estimate->client) {
@@ -302,7 +310,7 @@ class InvoicesDataTable extends BaseDataTable
 
             return '<div class="media align-items-center">
                         <div class="media-body">
-                    <h5 class="mb-0 f-13 text-darkest-grey"><a href="' . route('invoices.show', [$row->id]) . '">' . ucfirst($row->invoice_number) . '</a></h5>
+                    <h5 class="mb-0 f-13 text-darkest-grey"><a href="' . route('invoices.show', [$row->id]) . '">' . $row->invoice_number . '</a></h5>
                     <p class="mb-0">' . $recurring . '</p>
                     </div>
                   </div>';
@@ -373,7 +381,7 @@ class InvoicesDataTable extends BaseDataTable
             [
                 'project' => function ($q) {
                     $q->withTrashed();
-                    $q->select('id', 'project_name', 'project_short_code', 'client_id');
+                    $q->select('id', 'project_name', 'project_short_code', 'client_id', 'deleted_at');
                 },
                 'currency:id,currency_symbol,currency_code', 'project.client', 'client', 'payment', 'estimate', 'project.clientdetails'
             ]
@@ -388,12 +396,12 @@ class InvoicesDataTable extends BaseDataTable
             ->addSelect('invoices.company_id'); // Company_id is fetched so the we have fetch company relation with it)
 
         if ($request->startDate !== null && $request->startDate != 'null' && $request->startDate != '') {
-            $startDate = Carbon::createFromFormat($this->company->date_format, $request->startDate)->toDateString();
+            $startDate = companyToDateString($request->startDate);
             $model = $model->where(DB::raw('DATE(invoices.`issue_date`)'), '>=', $startDate);
         }
 
         if ($request->endDate !== null && $request->endDate != 'null' && $request->endDate != '') {
-            $endDate = Carbon::createFromFormat($this->company->date_format, $request->endDate)->toDateString();
+            $endDate = companyToDateString($request->endDate);
             $model = $model->where(DB::raw('DATE(invoices.`issue_date`)'), '<=', $endDate);
         }
 
@@ -467,9 +475,13 @@ class InvoicesDataTable extends BaseDataTable
             $model = $model->where('invoices.client_id', user()->id)->orWhere('invoices.added_by', user()->id);
         }
 
-        $model = $model->whereHas('project', function ($q) {
-            $q->whereNull('deleted_at');
-        }, '>=', 0);
+        if (!$this->ignoreInvoicesWithTrashed) {
+            $model = $model->where(function ($q) {
+                $q->whereHas('project', function ($q) {
+                    $q->whereNull('deleted_at');
+                })->orWhereNull('invoices.project_id');
+            });
+        }
 
         return $model;
     }
@@ -481,7 +493,7 @@ class InvoicesDataTable extends BaseDataTable
      */
     public function html()
     {
-        return $this->setBuilder('invoices-table', 0)
+        $dataTable = $this->setBuilder('invoices-table', 0)
             ->parameters([
                 'initComplete' => 'function () {
                     window.LaravelDataTables["invoices-table"].buttons().container()
@@ -492,8 +504,13 @@ class InvoicesDataTable extends BaseDataTable
                         selector: \'[data-toggle="tooltip"]\'
                     })
                 }',
-            ])
-            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+            ]);
+
+        if (canDataTableExport()) {
+            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+        }
+
+        return $dataTable;
     }
 
     /**
@@ -508,7 +525,7 @@ class InvoicesDataTable extends BaseDataTable
             __('modules.taskCode') => ['data' => 'short_code', 'name' => 'short_code', 'title' => __('modules.taskCode')],
             __('app.invoice') . '#' => ['data' => 'invoice_number', 'name' => 'invoice_number', 'exportable' => false, 'title' => __('app.invoice')],
             __('app.invoiceNumber') . '#' => ['data' => 'invoice', 'name' => 'invoice_number', 'visible' => false, 'title' => __('app.invoiceNumber')],
-            __('app.project') => ['data' => 'project_name', 'name' => 'project.project_name', 'title' => __('app.project')],
+            __('app.project') => ['data' => 'project_name', 'name' => 'project.project_name', 'title' => __('app.project'), 'visible' => in_array('projects', user_modules()), 'exportable' => in_array('projects', user_modules())],
             __('app.client') => ['data' => 'name', 'name' => 'project.client.name', 'exportable' => false, 'title' => __('app.client'), 'visible' => !in_array('client', user_roles())],
             __('app.customers') => ['data' => 'client_name', 'name' => 'project.client.name', 'visible' => false, 'title' => __('app.customers')],
             __('app.email') => ['data' => 'client_email', 'name' => 'project.client.email', 'visible' => false, 'title' => __('app.email')],

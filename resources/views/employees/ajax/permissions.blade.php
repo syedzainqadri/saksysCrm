@@ -6,7 +6,9 @@
 
     .permisison-table .thead-light {
         top: 107px;
+        z-index: unset;
     }
+
 
 </style>
 
@@ -15,7 +17,7 @@
         <div class="pt-2">
             <i class="fa fa-exclamation-triangle"></i> @lang('messages.customPermissionError')
         </div>
-        <x-forms.button-secondary id="reset-user-permissions" icon="sync">@lang('app.reset') @lang('modules.permission.permissions')</x-forms.button-secondary>
+        <x-forms.button-secondary id="reset-user-permissions" icon="sync">@lang('app.resetPermissions')</x-forms.button-secondary>
     </div>
 </x-alert>
 
@@ -51,8 +53,8 @@
                                 @foreach ($allowedPermissions as $key=>$item)
                                     <option @if ($permissionType == $key) selected @endif
                                     @if (!$permissionType && $item == 5) selected @endif value="{{ $item }}">
-                                    @lang('app.'.$key)</option>                            
-                                @endforeach                            
+                                    @lang('app.'.$key)</option>
+                                @endforeach
                             @endif
                         </select>
                     </td>
@@ -151,7 +153,7 @@
                 },
                 success: function(response) {
                     if (response.status == 'success') {
-                        window.location.reload();                        
+                        window.location.reload();
                     }
                 }
             });

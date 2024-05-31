@@ -11,6 +11,7 @@ class ArchiveProjectsDataTable extends BaseDataTable
 {
 
     private $viewProjectPermission;
+    private $editProjectPermission;
     private $deleteProjectPermission;
 
     public function __construct()
@@ -68,7 +69,7 @@ class ArchiveProjectsDataTable extends BaseDataTable
 
                 if (count($row->members) > 0) {
                     foreach ($row->members as $member) {
-                        $img = '<img data-toggle="tooltip" data-original-title="' . mb_ucwords($member->user->name) . '" src="' . $member->user->image_url . '">';
+                        $img = '<img data-toggle="tooltip" data-original-title="' . $member->user->name . '" src="' . $member->user->image_url . '">';
 
                         $members .= '<div class="taskEmployeeImg rounded-circle"><a href="' . route('employees.show', $member->user->id) . '">' . $img . '</a></div> ';
                     }
@@ -89,34 +90,20 @@ class ArchiveProjectsDataTable extends BaseDataTable
 
                     return implode(',', $members);
                 }
+
+                return '--';
             })
             ->editColumn('project_name', function ($row) {
 
                 return '<div class="media align-items-center">
                         <div class="media-body">
-                    <h5 class="mb-0 f-13 text-darkest-grey"><a href="' . route('projects.show', [$row->id]) . '">' . ucfirst($row->project_name) . '</a></h5>
+                    <h5 class="mb-0 f-13 text-darkest-grey"><a href="' . route('projects.show', [$row->id]) . '">' . $row->project_name . '</a></h5>
                     </div>
                 </div>';
             })
-            ->editColumn('start_date', function ($row) {
-                return $row->start_date->translatedFormat($this->company->date_format);
-            })
-            ->editColumn('deadline', function ($row) {
-                if ($row->deadline) {
-                    return $row->deadline->translatedFormat($this->company->date_format);
-                }
-
-                return '-';
-            })
-            ->editColumn('client_id', function ($row) {
-                if (is_null($row->client_id)) {
-                    return '';
-                }
-
-                return view('components.client', [
-                    'user' => $row->client
-                ]);
-            })
+            ->editColumn('start_date', fn($row) => $row->start_date ? $row->start_date->translatedFormat($this->company->date_format) : '')
+            ->editColumn('deadline', fn($row) => $row->deadline ? $row->deadline->translatedFormat($this->company->date_format) : '-')
+            ->editColumn('client_id', fn($row) => is_null($row->client_id) ? '' : view('components.client', ['user' => $row->client]))
             ->editColumn('status', function ($row) {
 
                 $projectStatus = ProjectStatusSetting::all();
@@ -125,7 +112,7 @@ class ArchiveProjectsDataTable extends BaseDataTable
                     if ($row->status == $status->status_name) {
                         $color = $status->color;
 
-                        return ' <i class="fa fa-circle mr-1 f-10" style="color:' . $color . '"></i>' . ucfirst($status->status_name);
+                        return ' <i class="fa fa-circle mr-1 f-10" style="color:' . $color . '"></i>' . $status->status_name;
                     }
                 }
             })
@@ -133,7 +120,7 @@ class ArchiveProjectsDataTable extends BaseDataTable
                 if ($row->completion_percent < 50) {
                     $statusColor = 'danger';
                 }
-                elseif ($row->completion_percent >= 50 && $row->completion_percent < 75) {
+                elseif ($row->completion_percent < 75) {
                     $statusColor = 'warning';
                 }
                 else {
@@ -144,13 +131,9 @@ class ArchiveProjectsDataTable extends BaseDataTable
                 <div class="progress-bar f-12 bg-' . $statusColor . '" role="progressbar" style="width: ' . $row->completion_percent . '%;" aria-valuenow="' . $row->completion_percent . '" aria-valuemin="0" aria-valuemax="100">' . $row->completion_percent . '%</div>
               </div>';
             })
-            ->addColumn('completion_export', function ($row) {
-                return $row->completion_percent . '% ' . __('app.complete');
-            })
+            ->addColumn('completion_export', fn($row) => $row->completion_percent . '% ' . __('app.complete'))
             ->addIndexColumn()
-            ->setRowId(function ($row) {
-                return 'row-' . $row->id;
-            })
+            ->setRowId(fn($row) => 'row-' . $row->id)
             ->rawColumns(['project_name', 'action', 'completion_percent', 'members', 'status', 'client_id', 'check'])
             ->removeColumn('project_summary')
             ->removeColumn('notes')
@@ -245,7 +228,7 @@ class ArchiveProjectsDataTable extends BaseDataTable
      */
     public function html()
     {
-        return $this->setBuilder('projects-table')
+        $dataTable = $this->setBuilder('projects-table')
             ->parameters([
                 'initComplete' => 'function () {
                     window.LaravelDataTables["projects-table"].buttons().container()
@@ -256,8 +239,13 @@ class ArchiveProjectsDataTable extends BaseDataTable
                         selector: \'[data-toggle="tooltip"]\'
                     })
                 }',
-            ])
-            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+            ]);
+
+        if (canDataTableExport()) {
+            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+        }
+
+        return $dataTable;
     }
 
     /**

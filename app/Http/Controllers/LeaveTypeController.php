@@ -6,11 +6,12 @@ use App\Helper\Reply;
 use App\Http\Requests\LeaveType\StoreLeaveType;
 use App\Models\BaseModel;
 use App\Models\Designation;
-use App\Models\LeaveSetting;
+use App\Models\EmployeeDetails;
+use App\Models\EmployeeLeaveQuota;
 use App\Models\LeaveType;
 use App\Models\Role;
 use App\Models\Team;
-use Illuminate\Http\Request;
+use Carbon\Carbon;
 
 class LeaveTypeController extends AccountBaseController
 {
@@ -82,7 +83,6 @@ class LeaveTypeController extends AccountBaseController
         $this->allDesignations = Designation::allDesignations();
         $this->allRoles = Role::where('name', '<>', 'client')->get();
         $this->allGenders = ['male', 'female', 'others'];
-        $this->allMaritalStatus = ['married', 'unmarried'];
         $this->gender = json_decode($this->leaveType->gender);
         $this->maritalStatus = json_decode($this->leaveType->marital_status);
         $this->department = json_decode($this->leaveType->department);
@@ -106,7 +106,6 @@ class LeaveTypeController extends AccountBaseController
         $leaveType->monthly_limit = $request->monthly_limit;
         $leaveType->effective_after = $request->effective_after;
         $leaveType->effective_type = $request->effective_type;
-        $leaveType->unused_leave = $request->unused_leave;
         $leaveType->encashed = $request->encashed;
         $leaveType->allowed_probation = $request->allowed_probation;
         $leaveType->allowed_notice = $request->allowed_notice;

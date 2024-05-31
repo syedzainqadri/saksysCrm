@@ -111,7 +111,7 @@ class RecurringExpenseController extends AccountBaseController
         $expenseRecurring->description         = trim_editor($request->description);
         $expenseRecurring->created_by          = $this->user->id;
         $expenseRecurring->purchase_from = $request->purchase_from;
-        $expenseRecurring->issue_date = !is_null($request->issue_date) ? Carbon::createFromFormat($this->company->date_format, $request->issue_date)->format('Y-m-d') : Carbon::now()->format('Y-m-d');
+        $expenseRecurring->issue_date = !is_null($request->issue_date) ? companyToYmd($request->issue_date) : now()->format('Y-m-d');
 
         if ($request->project_id > 0) {
             $expenseRecurring->project_id = $request->project_id;
@@ -184,10 +184,8 @@ class RecurringExpenseController extends AccountBaseController
             break;
         }
 
-
         if (request()->ajax()) {
-            $html = view($this->view, $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
 
         $this->activeTab = $tab ?: 'overview';
@@ -244,12 +242,12 @@ class RecurringExpenseController extends AccountBaseController
             $this->employees = User::allEmployees();
         }
 
+        $this->view = 'recurring-expenses.ajax.edit';
+
         if (request()->ajax()) {
-            $html = view('recurring-expenses.ajax.edit', $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
 
-        $this->view = 'recurring-expenses.ajax.edit';
         return view('expenses.show', $this->data);
     }
 

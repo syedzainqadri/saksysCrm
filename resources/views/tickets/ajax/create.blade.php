@@ -45,8 +45,9 @@
                                 @if (isset($client) && !is_null($client))
                                     <x-forms.label fieldId="requester-client" class="mt-3"
                                                    :fieldLabel="__('modules.tickets.requesterName')"/>
+                                    <input type="hidden" name="requester_type" id="requester_type" value="client">
                                     <input type="hidden" name="client_id" id="client_id" value="{{ $client->id }}">
-                                    <input type="text" value="{{ ucfirst($client->name) }}"
+                                    <input type="text" value="{{ $client->name_salutation }}"
                                            class="form-control height-35 f-15 readonly-background" readonly>
                                 @else
                                     <x-forms.select fieldId="client_id"
@@ -67,6 +68,7 @@
                                                    :fieldLabel="__('modules.tickets.requesterName')"
                                                    fieldRequired="true">
                                     </x-forms.label>
+                                    <input type="hidden" name="requester_type" id="requester_type" value="employee">
                                     <input type="hidden" name="user_id" id="user_id" value="{{ $employee->id }}">
                                     <input type="text" value="{{ $employee->name }}"
                                            class="form-control height-35 f-15 readonly-background" readonly>
@@ -88,11 +90,11 @@
                             </div>
                         @else
                             <input type="hidden" name="requester_type" value="employee">
-                            <input type="hidden" name="user_id" value="{{ user()->id }}">
+                            <input type="hidden" id="user_id" name="user_id" value="{{ user()->id }}">
                         @endif
                     @else
                         <input type="hidden" name="requester_type" value="client">
-                        <input type="hidden" name="client_id" value="{{ user()->id }}">
+                        <input type="hidden" id="client_id" name="client_id" value="{{ user()->id }}">
                     @endif
                     <div class="col-md-4 assign_group">
                         <x-forms.label class="mt-3" fieldId="ticket_group" fieldRequired="true"
@@ -102,7 +104,7 @@
                             <select class="form-control select-picker" id="ticket_group" name="group_id"
                                 data-live-search="true">
                                 @foreach ($groups as $group)
-                                    <option value="{{ $group->id }}">{{ mb_ucwords($group->group_name) }}</option>
+                                    <option value="{{ $group->id }}">{{ $group->group_name }}</option>
                                 @endforeach
                             </select>
                             @if($manageGroupPermission == 'all')
@@ -115,7 +117,7 @@
                     </div>
 
                     @if (!in_array('client', user_roles()))
-                        <div class="col-md-6 col-lg-3">
+                        <div class="col-md-6 col-lg-4">
                             <x-forms.label class="mt-3" fieldId="ticket_agent_id" :fieldLabel="__('modules.tickets.agent')">
                             </x-forms.label>
                             <x-forms.input-group>
@@ -124,7 +126,7 @@
                                     <option value="">--</option>
                                     @foreach ($groups as $group)
                                         @if (count($group->enabledAgents) > 0)
-                                            <optgroup label="{{ mb_ucwords($group->group_name) }}">
+                                            <optgroup label="{{ $group->group_name }}">
                                                 @foreach ($group->enabledAgents as $agent)
 
                                                     <x-user-option :user="$agent->user" :agent="true"></x-user-option>
@@ -145,6 +147,13 @@
                         </div>
 
                     @endif
+                    <div class="col-md-4">
+                        <x-forms.select fieldId="project_id" :fieldLabel="__('app.project')"
+                                        fieldName="project_id"
+                                        search="true" alignRight="true">
+                            <option value="">--</option>
+                        </x-forms.select>
+                    </div>
                     <div class="col-md-12">
                         <x-forms.text :fieldLabel="__('modules.tickets.ticketSubject')" fieldName="subject"
                                       fieldRequired="true" fieldId="subject"/>
@@ -205,7 +214,7 @@
                                     data-live-search="true" data-size="8">
                                 <option value="">--</option>
                                 @foreach ($types as $type)
-                                    <option value="{{ $type->id }}">{{ mb_ucwords($type->type) }}</option>
+                                    <option value="{{ $type->id }}">{{ $type->type }}</option>
                                 @endforeach
                             </select>
                             @if ($manageTypePermission == 'all')
@@ -227,7 +236,7 @@
                                     data-live-search="true" data-size="8">
                                 <option value="">--</option>
                                 @foreach ($channels as $channel)
-                                    <option value="{{ $channel->id }}">{{ mb_ucwords($channel->channel_name) }}
+                                    <option value="{{ $channel->id }}">{{ $channel->channel_name }}
                                     </option>
                                 @endforeach
                             </select>
@@ -263,7 +272,6 @@
 </div>
 
 
-<script src="{{ asset('vendor/jquery/dropzone.min.js') }}"></script>
 <script src="{{ asset('vendor/jquery/tagify.min.js') }}"></script>
 <script>
     $(document).ready(function () {
@@ -372,8 +380,16 @@
             tagify = new Tagify(input);
 
 
-        $("input[name=requester_type]").click(function () {
-            $('#client-requester, #employee-requester').toggleClass('d-none');
+        $('body').on('change', "input[name=requester_type]", function () {
+            let value = $(this).val();
+            if (value == 'client')
+            {
+                $('#client-requester').removeClass('d-none');
+                $('#employee-requester').addClass('d-none');
+            } else {
+                $('#client-requester').addClass('d-none');
+                $('#employee-requester').removeClass('d-none');
+            }
         });
 
         /* open add agent modal */
@@ -513,6 +529,52 @@
             $.ajaxModal(MODAL_LG, url);
         });
 
+        $('body').on('change', "input[name=requester_type], #client_id, #user_id", function () {
+            getProjects();
+        });
+
+        function getProjects() {
+            let requester_type = $("input[name=requester_type]:checked").val();
+            if (!requester_type) {
+                requester_type = $("input[name=requester_type]").val();
+            }
+
+            let client_id = $("#client_id").val();
+            let user_id = $("#user_id").val();
+
+            if ((requester_type == 'client' && client_id) || (requester_type == 'employee' && user_id)) {
+                let url = "{{ route('get.projects') }}";
+                $.easyAjax({
+                    url: url,
+                    type: "GET",
+                    data: {
+                        "requesterType": requester_type,
+                        "clientId": client_id,
+                        "userId": user_id
+                    },
+                    success: function(response) {
+                        let options = [];
+                        let rData = [];
+                        rData = response.projects;
+                        $.each(rData, function(index, value) {
+                            let selectData = '';
+                            selectData = '<option value="' + value.id + '">' + value.project_name + '</option>';
+                            options.push(selectData);
+                        });
+
+                        $('#project_id').html('<option value="">--</option>' +
+                            options);
+                        $('#project_id').selectpicker('refresh');
+                    }
+                })
+            } else {
+                $('#project_id').html('<option value="">--</option>');
+                $('#project_id').selectpicker('refresh');
+            }
+
+        }
+
+        getProjects();
         init(RIGHT_MODAL);
     });
 </script>

@@ -19,7 +19,7 @@
 <div class="bg-white rounded b-shadow-4 create-inv">
     <!-- HEADING START -->
     <div class="px-lg-4 px-md-4 px-3 py-3">
-        <h4 class="mb-0 f-21 font-weight-normal text-capitalize">@lang('app.invoice') @lang('app.details')</h4>
+        <h4 class="mb-0 f-21 font-weight-normal text-capitalize">@lang('app.invoiceDetails')</h4>
     </div>
     <!-- HEADING END -->
     <hr class="m-0 border-top-grey">
@@ -186,7 +186,7 @@
                                 <input type="text" id="start_date" name="issue_date"
                                     class="px-6 position-relative text-dark font-weight-normal form-control height-35 rounded p-0 text-left f-15"
                                     placeholder="@lang('placeholders.date')"
-                                    value="{{ Carbon\Carbon::now(company()->timezone)->format(company()->date_format) }}">
+                                    value="{{ now(company()->timezone)->format(company()->date_format) }}">
                             </div>
                             <small class="form-text text-muted">@lang('modules.recurringInvoice.invoiceDate')</small>
                         </div>
@@ -200,9 +200,9 @@
             </div>
 
             <div class="col-md-4 mt-4 information-box">
-                <p id="plan">@lang('modules.invoices.customerCharged') @lang('app.daily')</p>
-                <p id="current_date">@lang('modules.recurringInvoice.currentInvoiceDate') <span class="font-weight-bold">{{Carbon\Carbon::now()->translatedFormat(company()->date_format)}}</span></p>
-                <p id="next_date">@lang('modules.recurringInvoice.nextInvoiceDate') <span class="font-weight-bold">{{Carbon\Carbon::now()->addDay()->translatedFormat(company()->date_format)}}</span></p>
+                <p id="plan">@lang('app.customerChargedDaily')</p>
+                <p id="current_date">@lang('modules.recurringInvoice.currentInvoiceDate') <span class="font-weight-bold">{{now()->translatedFormat(company()->date_format)}}</span></p>
+                <p id="next_date">@lang('modules.recurringInvoice.nextInvoiceDate') <span class="font-weight-bold">{{now()->addDay()->translatedFormat(company()->date_format)}}</span></p>
                 <p>@lang('modules.recurringInvoice.soOn')</p>
                 <span id="billing"></span>
             </div>
@@ -211,27 +211,29 @@
 
         <hr class="m-0 border-top-grey">
 
-        <div class="d-flex px-4 py-3">
-            <div class="form-group">
-                <x-forms.input-group>
-                    <select class="form-control select-picker" data-live-search="true" data-size="8" id="add-products" title="{{ __('app.menu.selectProduct') }}">
-                        @foreach ($products as $item)
-                            <option data-content="{{ $item->title }}" value="{{ $item->id }}">
-                                {{ $item->title }}</option>
-                        @endforeach
-                    </select>
-                    @if ($addProductPermission == 'all' || $addProductPermission == 'added')
-                        <x-slot name="append">
-                            <a href="{{ route('products.create') }}" data-redirect-url="no"
-                               class="btn btn-outline-secondary border-grey openRightModal"
-                               data-toggle="tooltip"
-                               data-original-title="{{ __('app.add').' '.__('modules.dashboard.newproduct') }}">@lang('app.add')</a>
-                        </x-slot>
-                    @endif
-                </x-forms.input-group>
+        @if(in_array('products', user_modules()) || in_array('purchase', user_modules()))
+            <div class="d-flex px-4 py-3">
+                <div class="form-group">
+                    <x-forms.input-group>
+                        <select class="form-control select-picker" data-live-search="true" data-size="8" id="add-products" title="{{ __('app.menu.selectProduct') }}">
+                            @foreach ($products as $item)
+                                <option data-content="{{ $item->title }}" value="{{ $item->id }}">
+                                    {{ $item->title }}</option>
+                            @endforeach
+                        </select>
+                        @if ($addProductPermission == 'all' || $addProductPermission == 'added')
+                            <x-slot name="append">
+                                <a href="{{ route('products.create') }}" data-redirect-url="no"
+                                class="btn btn-outline-secondary border-grey openRightModal"
+                                data-toggle="tooltip"
+                                data-original-title="{{ __('app.add').' '.__('modules.dashboard.newproduct') }}">@lang('app.add')</a>
+                            </x-slot>
+                        @endif
+                    </x-forms.input-group>
 
+                </div>
             </div>
-        </div>
+        @endif
 
         <div id="sortable">
         @if (isset($estimate))
@@ -307,10 +309,10 @@
                                                     multiple="multiple"
                                                     class="select-picker type customSequence border-0" data-size="3">
                                                 @foreach ($taxes as $tax)
-                                                    <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ strtoupper($tax->tax_name) .':'. $tax->rate_percent }}%"
+                                                    <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ $tax->tax_name .':'. $tax->rate_percent }}%"
                                                             @if (isset($item->taxes) && array_search($tax->id, json_decode($item->taxes)) !== false) selected
                                                             @endif
-                                                            value="{{ $tax->id }}">{{ strtoupper($tax->tax_name) }}:
+                                                            value="{{ $tax->id }}">{{ $tax->tax_name }}:
                                                         {{ $tax->rate_percent }}%
                                                     </option>
                                                 @endforeach
@@ -333,7 +335,7 @@
                                     </td>
                                     <td class="border-left-0">
                                         <input type="file" class="dropify" name="invoice_item_image[]"
-                                               data-allowed-file-extensions="png jpg jpeg" data-messages-default="test"
+                                               data-allowed-file-extensions="png jpg jpeg bmp" data-messages-default="test"
                                                data-height="70"/>
                                         <input type="hidden" name="invoice_item_image_url[]">
                                     </td>
@@ -408,8 +410,8 @@
                                         <select id="multiselect" name="taxes[0][]" multiple="multiple"
                                                 class="select-picker type customSequence border-0" data-size="3">
                                             @foreach ($taxes as $tax)
-                                                <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ strtoupper($tax->tax_name) .':'. $tax->rate_percent }}%"
-                                                        value="{{ $tax->id }}">{{ strtoupper($tax->tax_name) }}:
+                                                <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ $tax->tax_name .':'. $tax->rate_percent }}%"
+                                                        value="{{ $tax->id }}">{{ $tax->tax_name }}:
                                                     {{ $tax->rate_percent }}%
                                                 </option>
                                             @endforeach
@@ -430,7 +432,7 @@
                                 </td>
                                 <td class="border-left-0">
                                     <input type="file" class="dropify" name="invoice_item_image[]"
-                                           data-allowed-file-extensions="png jpg jpeg" data-messages-default="test"
+                                           data-allowed-file-extensions="png jpg jpeg bmp" data-messages-default="test"
                                            data-height="70"/>
                                     <input type="hidden" name="invoice_item_image_url[]">
                                 </td>
@@ -559,7 +561,7 @@
         <x-form-actions>
             <x-forms.button-primary id="save-form" icon="check">@lang('app.save')</x-forms.button-primary>
 
-            <x-forms.button-cancel :link="route('recurring-invoices.index')" class="border-0 mr-3">@lang('app.cancel')
+            <x-forms.button-cancel :link="route('recurring-invoices.index')" class="border-0 ml-3">@lang('app.cancel')
             </x-forms.button-cancel>
 
         </x-form-actions>
@@ -715,10 +717,10 @@
                 </tr>` +
                 '<tr>' +
                 '<td class="border-bottom-0 btrr-mbl btlr">' +
-                '<input type="text" class="form-control f-14 border-0 w-100 item_name" name="item_name[]" placeholder="@lang("modules.expenses.itemName")">' +
+                `<input type="text" class="form-control f-14 border-0 w-100 item_name" name="item_name[]" placeholder="@lang("modules.expenses.itemName")">` +
                 '</td>' +
                 '<td class="border-bottom-0 d-block d-lg-none d-md-none">' +
-                '<textarea class="f-14 border-0 w-100 mobile-description form-control" name="item_summary[]" placeholder="@lang("placeholders.invoices.description")"></textarea>' +
+                `<textarea class="f-14 border-0 w-100 mobile-description form-control" name="item_summary[]" placeholder="@lang("placeholders.invoices.description")"></textarea>` +
                 '</td>';
 
             if (hsn_status == 1) {
@@ -745,8 +747,8 @@
                 '<select id="multiselect' + i + '" name="taxes[' + i +
                 '][]" multiple="multiple" class="select-picker type customSequence" data-size="3">'
             @foreach ($taxes as $tax)
-                +'<option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ strtoupper($tax->tax_name) .':'. $tax->rate_percent }}%" value="{{ $tax->id }}">'
-                    +'{{ strtoupper($tax->tax_name) }}:{{ $tax->rate_percent }}%</option>'
+                +'<option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ $tax->tax_name .':'. $tax->rate_percent }}%" value="{{ $tax->id }}">'
+                    +'{{ $tax->tax_name }}:{{ $tax->rate_percent }}%</option>'
             @endforeach
                 +
                 '</select>' +
@@ -762,7 +764,7 @@
                 '<textarea class="f-14 border-0 w-100 desktop-description form-control" name="item_summary[]" placeholder="@lang("placeholders.invoices.description")"></textarea>' +
                 '</td>' +
                 '<td class="border-left-0">' +
-                '<input type="file" class="dropify" id="dropify'+i+'" name="invoice_item_image[]" data-allowed-file-extensions="png jpg jpeg" data-messages-default="test" data-height="70" /><input type="hidden" name="invoice_item_image_url[]">' +
+                '<input type="file" class="dropify" id="dropify'+i+'" name="invoice_item_image[]" data-allowed-file-extensions="png jpg jpeg bmp" data-messages-default="test" data-height="70" /><input type="hidden" name="invoice_item_image_url[]">' +
                 '</td>' +
                 '</tr>' +
                 '</tbody>' +

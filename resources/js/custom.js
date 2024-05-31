@@ -33,7 +33,7 @@ const init = function (parent = "") {
     //initialise dropify
     var drEvent = $(".dropify").dropify({
         messages: dropifyMessages,
-        imgFileExtensions: ['png', 'jpg', 'jpeg', 'gif', 'bmp','svg'],
+        imgFileExtensions: ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'svg', 'webp'],
     });
 
     drEvent.on("dropify.afterClear", function (event, element) {

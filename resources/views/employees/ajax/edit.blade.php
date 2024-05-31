@@ -20,11 +20,20 @@ $changeEmployeeRolePermission = user()->permission('change_employee_role');
                 <div class="row p-20">
                     <div class="col-lg-9">
                         <div class="row">
-                            <div class="col-md-4">
+                            <div class="col-md-2">
                                 <x-forms.text fieldId="employee_id" :fieldLabel="__('modules.employees.employeeId')"
                                     fieldName="employee_id" :fieldValue="$employee->employeeDetail->employee_id"
                                     fieldRequired="true" :fieldPlaceholder="__('modules.employees.employeeIdInfo')" :popover="__('modules.employees.employeeIdHelp')">
                                 </x-forms.text>
+                            </div>
+                            <div class="col-md-2">
+                                <x-forms.select fieldId="salutation" fieldName="salutation"
+                                    :fieldLabel="__('modules.client.salutation')">
+                                    <option value="">--</option>
+                                    @foreach ($salutations as $salutation)
+                                        <option value="{{ $salutation->value }}" @selected($employee->salutation == $salutation)>{{ $salutation->label() }}</option>
+                                    @endforeach
+                                </x-forms.select>
                             </div>
                             <div class="col-md-4">
                                 <x-forms.text fieldId="name" :fieldLabel="__('modules.employees.employeeName')"
@@ -100,12 +109,10 @@ $changeEmployeeRolePermission = user()->permission('change_employee_role');
                         </div>
                     </div>
                     <div class="col-lg-3">
-                        @php
-                            $userImage = $employee->hasGravatar($employee->email) ? str_replace('?s=200&d=mp', '', $employee->image_url) : asset('img/avatar.png');
-                        @endphp
-                        <x-forms.file allowedFileExtensions="png jpg jpeg svg" class="mr-0 mr-lg-2 mr-md-2 cropper"
+
+                        <x-forms.file allowedFileExtensions="png jpg jpeg svg bmp" class="mr-0 mr-lg-2 mr-md-2 cropper"
                             :fieldLabel="__('modules.profile.profilePicture')"
-                            :fieldValue="($employee->image ? $employee->image_url : $userImage)" fieldName="image"
+                            :fieldValue="($employee->image ? $employee->masked_image_url : $employee->image_url)" fieldName="image"
                             fieldId="image" fieldHeight="119" :popover="__('messages.fileFormat.ImageFile')" />
                     </div>
                     <div class="col-md-4">
@@ -126,7 +133,7 @@ $changeEmployeeRolePermission = user()->permission('change_employee_role');
                             <x-forms.select fieldId="country_phonecode" fieldName="country_phonecode"
                                 search="true">
                                 @foreach ($countries as $item)
-                                    <option @selected($employee->country_phonecode == $item->phonecode)
+                                    <option @selected($employee->country_phonecode == $item->phonecode && !is_null($item->numcode))
                                             data-tokens="{{ $item->name }}"
                                             data-content="{{$item->flagSpanCountryCode()}}"
                                             value="{{ $item->phonecode }}">{{ $item->phonecode }}
@@ -170,7 +177,7 @@ $changeEmployeeRolePermission = user()->permission('change_employee_role');
                             fieldName="locale" search="true">
                             @foreach ($languages as $language)
                                 <option @if ($employee->locale == $language->language_code) selected @endif
-                                data-content="<span class='flag-icon flag-icon-{{ ($language->flag_code == 'en') ? 'gb' : strtolower($language->flag_code) }} flag-icon-squared'></span> {{ $language->language_name }}"
+                                data-content="<span class='flag-icon flag-icon-{{ ($language->flag_code == 'en') ? 'gb' : $language->flag_code }} flag-icon-squared'></span> {{ $language->language_name }}"
                                 value="{{ $language->language_code }}">{{ $language->language_name }}</option>
                             @endforeach
                         </x-forms.select>
@@ -198,14 +205,6 @@ $changeEmployeeRolePermission = user()->permission('change_employee_role');
                         </div>
                     @endif
 
-
-                    @if ($employee->id != user()->id)
-                        <div class="col-md-4">
-                            <x-forms.datepicker fieldId="last_date" :fieldLabel="__('modules.employees.lastDate')"
-                                fieldName="last_date" :fieldPlaceholder="__('placeholders.date')"
-                                :fieldValue="($employee->employeeDetail->last_date ? $employee->employeeDetail->last_date->format(company()->date_format) : '')" />
-                        </div>
-                    @endif
                     <div class="col-md-12">
                         <div class="form-group my-3">
                             <x-forms.textarea class="mr-0 mr-lg-2 mr-md-2" :fieldLabel="__('app.address')"
@@ -262,26 +261,6 @@ $changeEmployeeRolePermission = user()->permission('change_employee_role');
                         </div>
                     </div>
 
-                    {{-- Users cannot change their own status --}}
-                    @if ($employee->id != user()->id && $employee->id != 1)
-                        <div class="col-md-4">
-                            <div class="form-group my-3">
-                                <label class="f-14 text-dark-grey mb-12 w-100" for="usr">@lang('app.status')</label>
-                                <div class="d-flex">
-                                    <x-forms.radio fieldId="status-active" :fieldLabel="__('app.active')"
-                                        fieldValue="active" fieldName="status"
-                                        checked="($employee->status == 'active') ? 'checked' : ''">
-                                    </x-forms.radio>
-                                    <x-forms.radio fieldId="status-inactive" :fieldLabel="__('app.inactive')"
-                                        fieldValue="deactive" fieldName="status"
-                                        :checked="($employee->status == 'deactive') ? 'checked' : ''">
-                                    </x-forms.radio>
-                                </div>
-                            </div>
-                        </div>
-                    @endif
-
-
                     <div class="col-md-4">
                         <x-forms.label class="my-3" fieldId="hourly_rate"
                             :fieldLabel="__('modules.employees.hourlyRate')"></x-forms.label>
@@ -318,10 +297,20 @@ $changeEmployeeRolePermission = user()->permission('change_employee_role');
                     </div>
 
                     @if (function_exists('sms_setting') && sms_setting()->telegram_status)
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <x-forms.number fieldName="telegram_user_id" fieldId="telegram_user_id"
                                 fieldLabel="<i class='fab fa-telegram'></i> {{ __('sms::modules.telegramUserId') }}"
                                 :fieldValue="$employee->telegram_user_id" :popover="__('sms::modules.userIdInfo')" />
+                            <p class="text-bold text-danger">
+                                @lang('sms::modules.telegramBotNameInfo')
+                            </p>
+                            <p class="text-bold"><span id="telegram-link-text">https://t.me/{{ sms_setting()->telegram_bot_name }}</span>
+                                <a href="javascript:;" class="btn-copy btn-secondary f-12 rounded p-1 py-2 ml-1"
+                                    data-clipboard-target="#telegram-link-text">
+                                    <i class="fa fa-copy mx-1"></i>@lang('app.copy')</a>
+                                <a href="https://t.me/{{ sms_setting()->telegram_bot_name }}" target="_blank" class="btn-secondary f-12 rounded p-1 py-2 ml-1">
+                                    <i class="fa fa-copy mx-1"></i>@lang('app.openInNewTab')</a>
+                            </p>
                         </div>
                     @endif
                     <div class="col-lg-3 col-md-6">
@@ -371,8 +360,10 @@ $changeEmployeeRolePermission = user()->permission('change_employee_role');
                     <div class="col-lg-3 col-md-6">
                         <x-forms.select fieldId="marital_status" :fieldLabel="__('modules.employees.maritalStatus')"
                             fieldName="marital_status" :fieldPlaceholder="__('placeholders.date')">
-                            <option value="married" @if($employee->employeeDetail->marital_status == 'married') selected @endif>@lang('modules.leaves.married')</option>
-                            <option value="unmarried" @if($employee->employeeDetail->marital_status == 'unmarried') selected @endif>@lang('modules.leaves.unmarried')</option>
+                            @foreach (\App\Enums\MaritalStatus::cases() as $status)
+                                <option @selected($employee->employeeDetail->marital_status == $status)
+                                    value="{{ $status->value }}">{{ $status->label() }}</option>
+                            @endforeach
                         </x-forms.select>
                     </div>
 
@@ -383,6 +374,38 @@ $changeEmployeeRolePermission = user()->permission('change_employee_role');
                     </div>
 
 
+                </div>
+                <div class="row p-20 border-top-grey">
+                    {{-- Users cannot change their own status --}}
+                    @if ($employee->id != user()->id && $employee->id != 1)
+                        <div class="col-md-4">
+                            <div class="form-group my-3">
+                                <label class="f-14 text-dark-grey mb-12 w-100" for="usr">@lang('app.status')</label>
+                                <div class="d-flex">
+                                    <x-forms.radio fieldId="status-active" :fieldLabel="__('app.active')"
+                                                   fieldValue="active" fieldName="status"
+                                                   checked="($employee->status == 'active') ? 'checked' : ''">
+                                    </x-forms.radio>
+                                    <x-forms.radio fieldId="status-inactive" :fieldLabel="__('app.inactive')"
+                                                   fieldValue="deactive" fieldName="status"
+                                                   :checked="($employee->status == 'deactive') ? 'checked' : ''">
+                                    </x-forms.radio>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
+                    @if ($employee->id != user()->id)
+                        <div @class([
+                            'col-md-4',
+                            // 'd-none' => $employee->status != 'deactive'
+                        ]) id="employeeExitDate">
+                            <x-forms.datepicker fieldId="last_date" :fieldLabel="__('modules.employees.lastDate')"
+                                                fieldName="last_date" :fieldPlaceholder="__('placeholders.date')" fieldRequired="true"
+                                                :fieldValue="($employee->employeeDetail->last_date ? $employee->employeeDetail->last_date->format(company()->date_format) : '')"
+                                                :popover="__('messages.lastDateTooltip')" />
+                        </div>
+                    @endif
                 </div>
 
                 <x-forms.custom-field :fields="$fields" :model="$employeeDetail"></x-forms.custom-field>
@@ -400,6 +423,9 @@ $changeEmployeeRolePermission = user()->permission('change_employee_role');
 </div>
 
 <script src="{{ asset('vendor/jquery/tagify.min.js') }}"></script>
+@if (function_exists('sms_setting') && sms_setting()->telegram_status)
+    <script src="{{ asset('vendor/jquery/clipboard.min.js') }}"></script>
+@endif
 <script>
     $(document).ready(function() {
 
@@ -492,13 +518,13 @@ $changeEmployeeRolePermission = user()->permission('change_employee_role');
             });
 
         var marital_status = $('#marital_status').val();
-        if(marital_status == 'married') {
+        if(marital_status == '{{ \App\Enums\MaritalStatus::Married->value }}') {
             $('.marriage_date').removeClass('d-none');
         }
 
         $('#marital_status').change(function(){
             var value = $(this).val();
-            if(value == 'married') {
+            if(value == '{{ \App\Enums\MaritalStatus::Married->value }}') {
                 $('.marriage_date').removeClass('d-none');
             }
             else {
@@ -566,14 +592,6 @@ $changeEmployeeRolePermission = user()->permission('change_employee_role');
         init(RIGHT_MODAL);
     });
 
-    function checkboxChange(parentClass, id) {
-        var checkedData = '';
-        $('.' + parentClass).find("input[type= 'checkbox']:checked").each(function() {
-            checkedData = (checkedData !== '') ? checkedData + ', ' + $(this).val() : $(this).val();
-        });
-        $('#' + id).val(checkedData);
-    }
-
     $('.cropper').on('dropify.fileReady', function(e) {
             var inputId = $(this).find('input').attr('id');
             var url = "{{ route('cropper', ':element') }}";
@@ -582,4 +600,26 @@ $changeEmployeeRolePermission = user()->permission('change_employee_role');
             $.ajaxModal(MODAL_LG, url);
         });
 
+        @if (function_exists('sms_setting') && sms_setting()->telegram_status)
+        var clipboard = new ClipboardJS('.btn-copy');
+
+        clipboard.on('success', function(e) {
+            Swal.fire({
+                icon: 'success',
+                text: '@lang("app.urlCopied")',
+                toast: true,
+                position: 'top-end',
+                timer: 3000,
+                timerProgressBar: true,
+                showConfirmButton: false,
+                customClass: {
+                    confirmButton: 'btn btn-primary',
+                },
+                showClass: {
+                    popup: 'swal2-noanimation',
+                    backdrop: 'swal2-noanimation'
+                },
+            })
+        });
+    @endif
 </script>

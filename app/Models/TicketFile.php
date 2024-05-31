@@ -40,6 +40,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @method static \Illuminate\Database\Eloquent\Builder|TicketFile whereTicketReplyId($value)
  * @method static \Illuminate\Database\Eloquent\Builder|TicketFile whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder|TicketFile whereUserId($value)
+ * @property-read mixed $file
  * @mixin \Eloquent
  */
 class TicketFile extends BaseModel
@@ -49,11 +50,20 @@ class TicketFile extends BaseModel
 
     const FILE_PATH = 'ticket-files';
 
-    protected $appends = ['file_url', 'icon'];
+    protected $appends = ['file_url', 'icon', 'file'];
 
     public function getFileUrlAttribute()
     {
-        return (!is_null($this->external_link)) ? $this->external_link : asset_url_local_s3('ticket-files/' . $this->ticket_reply_id . '/' . $this->hashname);
+        if($this->external_link){
+            return str($this->external_link)->contains('http') ? $this->external_link : asset_url_local_s3($this->external_link);
+        }
+
+        return asset_url_local_s3(TicketFile::FILE_PATH . '/' . $this->ticket_reply_id . '/' . $this->hashname);
+    }
+
+    public function getFileAttribute()
+    {
+        return $this->external_link ?: (TicketFile::FILE_PATH . '/' . $this->ticket_reply_id . '/' . $this->hashname);
     }
 
     public function reply(): BelongsTo

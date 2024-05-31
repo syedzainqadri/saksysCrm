@@ -40,16 +40,18 @@ use App\Http\Controllers\AttendanceSettingController;
 use App\Http\Controllers\ContractSettingController;
 use App\Http\Controllers\CustomLinkSettingController;
 use App\Http\Controllers\LeadSourceSettingController;
-use App\Http\Controllers\LeadStatusSettingController;
 use App\Http\Controllers\SocialAuthSettingController;
 use App\Http\Controllers\TicketEmailSettingController;
 use App\Http\Controllers\TicketReplyTemplatesController;
 use App\Http\Controllers\DatabaseBackupSettingController;
 use App\Http\Controllers\GoogleCalendarSettingController;
+use App\Http\Controllers\LeadPipelineSettingController;
+use App\Http\Controllers\LeadStageSettingController;
 use App\Http\Controllers\OfflinePaymentSettingController;
 use App\Http\Controllers\PaymentGatewayCredentialController;
 use App\Http\Controllers\NotificationSettingController;
 use App\Http\Controllers\QuickbookSettingsController;
+use App\Http\Controllers\SignUpSettingController;
 use App\Http\Controllers\TaxSettingController;
 use App\Http\Controllers\UnitTypeController;
 use App\Http\Controllers\UpdateAppController;
@@ -131,8 +133,12 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account/settings'], function 
     Route::post('project-settings/{id?}', [ProjectSettingController::class, 'statusUpdate'])->name('project-settings.statusUpdate');
     Route::put('project-settings/change-status/{id?}', [ProjectSettingController::class, 'changeStatus'])->name('project-settings.changeStatus');
     Route::post('project-settings/set-default/{id?}', [ProjectSettingController::class, 'setDefault'])->name('project-settings.setDefault');
+    // Route::get('check-qr-login', [AttendanceSettingController::class, 'qrClockInOut'])->name('settings.qr-login');
+    // Route::post('change-qr-code-status', [AttendanceSettingController::class, 'qrCodeStatus'])->name('settings.change-qr-code-status');
 
     Route::resource('attendance-settings', AttendanceSettingController::class);
+
+
     Route::resource('leaves-settings', LeaveSettingController::class);
     Route::post('leaves-settings/change-permission', [LeaveSettingController::class, 'changePermission'])->name('leaves-settings.changePermission');
 
@@ -159,6 +165,8 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account/settings'], function 
     Route::get('language-settings/auto-translate', [LanguageSettingController::class, 'autoTranslate'])->name('language_settings.auto_translate');
     Route::post('language-settings/auto-translate', [LanguageSettingController::class, 'autoTranslateUpdate'])->name('language_settings.auto_translate_update');
     Route::post('language-settings/update-data/{id?}', [LanguageSettingController::class, 'updateData'])->name('language_settings.update_data');
+    Route::post('language-settings/fix-translation', [LanguageSettingController::class, 'fixTranslation'])->name('language_settings.fix_translation');
+    Route::post('language-settings/create-en-locale', [LanguageSettingController::class, 'createEnLocale'])->name('language_settings.create_en_locale');
     Route::resource('language-settings', LanguageSettingController::class);
 
     // Task Settings
@@ -174,10 +182,16 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account/settings'], function 
     Route::resource('lead-settings', LeadSettingController::class);
     Route::resource('lead-source-settings', LeadSourceSettingController::class);
 
-    Route::get('lead-status-update/{statusId}', [LeadStatusSettingController::class, 'statusUpdate'])->name('leadSetting.statusUpdate');
-    Route::resource('lead-status-settings', LeadStatusSettingController::class);
+    Route::get('lead-stage-update/{statusId}', [LeadStageSettingController::class, 'statusUpdate'])->name('lead-stage-setting.stageUpdate');
+    Route::resource('lead-stage-setting', LeadStageSettingController::class);
+
+    Route::get('lead-pipeline-update/{statusId}', [LeadPipelineSettingController::class, 'statusUpdate'])->name('lead-pipeline-update.stageUpdate');
+    Route::resource('lead-pipeline-setting', LeadPipelineSettingController::class);
 
     Route::resource('lead-agent-settings', LeadAgentSettingController::class);
+    Route::post('lead-agent-settings/update-category/{id}', [LeadAgentSettingController::class, 'updateCategory'])->name('lead_agents.update_category');
+    Route::post('lead-agent-settings/update-status/{id}', [LeadAgentSettingController::class, 'updateStatus'])->name('lead_agents.update_status');
+    Route::get('agent-category', [LeadAgentSettingController::class, 'agentCategories'])->name('lead_agent.categories');
 
     /* Contract Setting */
     Route::resource('contract-settings', ContractSettingController::class);
@@ -226,6 +240,8 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account/settings'], function 
 
     Route::resource('custom-link-settings', CustomLinkSettingController::class);
 
+    Route::resource('sign-up-settings', SignUpSettingController::class)->only(['index', 'update']);
+
 });
 
 Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
@@ -235,6 +251,5 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     // Update App
     Route::post('update-settings/deleteFile', [UpdateAppController::class, 'deleteFile'])->name('update-settings.deleteFile');
     Route::get('update-settings/install', [UpdateAppController::class, 'install'])->name('update-settings.install');
-    Route::get('update-settings/manual-update', [UpdateAppController::class, 'manual'])->name('update-settings.manual');
     Route::resource('update-settings', UpdateAppController::class);
 });

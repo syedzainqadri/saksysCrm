@@ -26,7 +26,7 @@ class UpdateProfile extends CoreRequest
     {
         $setting = company();
         return [
-            'email' => 'required|email:rfc|unique:users,email,'.$this->route('profile').',id,company_id,' . company()->id,
+            'email' => 'required|email:rfc,strict|unique:users,email,'.$this->route('profile').',id,company_id,' . company()->id,
             'name'  => 'required|max:50',
             'password'  => 'nullable|min:8|max:50',
             'image' => 'image|max:2048',

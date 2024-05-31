@@ -18,7 +18,7 @@
                             search="true">
                             <option value="0">--</option>
                             @foreach ($departments as $team)
-                                <option value="{{ $team->id }}">{{ mb_ucwords($team->team_name) }}</option>
+                                <option value="{{ $team->id }}">{{ $team->team_name }}</option>
                             @endforeach
                         </x-forms.select>
                     </div>
@@ -44,9 +44,9 @@
                         <x-forms.select fieldId="shift" :fieldLabel="__('modules.attendance.shift')" fieldName="shift" search="true">
                             @foreach ($employeeShifts as $item)
                                 <option
-                                data-content="<i class='fa fa-circle mr-2' style='color: {{ $item->color }}'></i> {{ mb_ucwords($item->shift_name) }}{{ ($item->shift_name != 'Day Off') ? ' ['.$item->office_start_time.' - '.$item->office_end_time.']' : ''}}"
+                                data-content="<i class='fa fa-circle mr-2' style='color: {{ $item->color }}'></i> {{ ($item->shift_name != 'Day Off') ? $item->shift_name : __('modules.attendance.' . str($item->shift_name)->camel()) }}{{ ($item->shift_name != 'Day Off') ? ' ['.$item->office_start_time.' - '.$item->office_end_time.']' : ''}}"
                                 value="{{ $item->id }}">
-                                    {{ mb_ucwords($item->shift_name) }}{{ ($item->shift_name != 'Day Off') ? ' ['.$item->office_start_time.' - '.$item->office_end_time.']' : ''}}</option>
+                                    {{ ($item->shift_name != 'Day Off') ? $item->shift_name : __('modules.attendance.' . str($item->shift_name)->camel()) }}{{ ($item->shift_name != 'Day Off') ? ' ['.$item->office_start_time.' - '.$item->office_end_time.']' : ''}}</option>
                             @endforeach
                         </x-forms.select>
                     </div>
@@ -97,9 +97,11 @@
                             :fieldValue="now(company()->timezone)->translatedFormat(company()->date_format)" />
                     </div>
 
-                    <div class="col-md-4 mt-3">
-                        <x-forms.checkbox :fieldLabel="__('modules.attendance.sendEmail')" fieldName="send_email" fieldId="sendEmail" />
-                    </div>
+                    @if ($emailSetting->send_email == 'yes')
+                        <div class="col-md-4 mt-3">
+                            <x-forms.checkbox :fieldLabel="__('modules.attendance.sendEmail')" fieldName="send_email" fieldId="sendEmail" />
+                        </div>
+                    @endif
 
                 </div>
                 <div class="row pl-20 pr-20 pb-4">

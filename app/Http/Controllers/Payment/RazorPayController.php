@@ -9,6 +9,7 @@ use Razorpay\Api\Api;
 use App\Models\Invoice;
 use App\Traits\MakePaymentTrait;
 use App\Http\Controllers\Controller;
+use App\Models\GlobalSetting;
 use App\Traits\MakeOrderInvoiceTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
@@ -120,7 +121,7 @@ class RazorPayController extends Controller
             Session::put('success', __('messages.paymentSuccessful'));
 
             if (!auth()->check() && isset($invoice)) {
-                return Reply::redirect(route('front.invoice', $invoice->hash), __('messages.paymentSuccessful'));
+                return Reply::redirect(url()->temporarySignedRoute('front.invoice', now()->addDays(GlobalSetting::SIGNED_ROUTE_EXPIRY), $invoice->hash), __('messages.paymentSuccessful'));
             }
 
             if (isset($invoice)) {

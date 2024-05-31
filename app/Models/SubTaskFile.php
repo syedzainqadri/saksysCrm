@@ -44,6 +44,7 @@ use App\Traits\IconTrait;
  * @method static \Illuminate\Database\Eloquent\Builder|TaskFile whereUserId($value)
  * @property int $sub_task_id
  * @method static \Illuminate\Database\Eloquent\Builder|SubTaskFile whereSubTaskId($value)
+ * @property-read mixed $file
  * @mixin \Eloquent
  */
 class SubTaskFile extends BaseModel
@@ -53,11 +54,20 @@ class SubTaskFile extends BaseModel
 
     const FILE_PATH = 'sub-task-files';
 
-    protected $appends = ['file_url', 'icon'];
+    protected $appends = ['file_url', 'icon', 'file'];
 
     public function getFileUrlAttribute()
     {
-        return (!is_null($this->external_link)) ? $this->external_link : asset_url_local_s3(SubTaskFile::FILE_PATH . '/' . $this->sub_task_id . '/' . $this->hashname);
+        if($this->external_link){
+            return str($this->external_link)->contains('http') ? $this->external_link : asset_url_local_s3($this->external_link);
+        }
+
+        return asset_url_local_s3(SubTaskFile::FILE_PATH . '/' . $this->sub_task_id . '/' . $this->hashname);
+    }
+
+    public function getFileAttribute()
+    {
+        return $this->external_link ?: (SubTaskFile::FILE_PATH . '/' . $this->sub_task_id . '/' . $this->hashname);
     }
 
 }

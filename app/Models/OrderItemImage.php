@@ -22,6 +22,7 @@ use App\Traits\IconTrait;
  * @method static \Illuminate\Database\Eloquent\Builder|OrderItemImage whereId($value)
  * @method static \Illuminate\Database\Eloquent\Builder|OrderItemImage whereOrderItemId($value)
  * @method static \Illuminate\Database\Eloquent\Builder|OrderItemImage whereUpdatedAt($value)
+ * @property-read mixed $file
  * @mixin \Eloquent
  */
 class OrderItemImage extends BaseModel
@@ -29,11 +30,16 @@ class OrderItemImage extends BaseModel
 
     use IconTrait;
 
-    protected $appends = ['file_url', 'icon'];
+    protected $appends = ['file_url', 'icon', 'file'];
 
     protected $fillable = ['order_item_id', 'external_link'];
 
     public function getFileUrlAttribute()
+    {
+        return str($this->external_link)->contains('http') ? $this->external_link : asset_url_local_s3($this->external_link);
+    }
+
+    public function getFileAttribute()
     {
         return $this->external_link;
     }

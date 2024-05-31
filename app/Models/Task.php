@@ -143,6 +143,8 @@ use Illuminate\Notifications\Notifiable;
  * @property-read int|null $mention_task_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\User> $mentionUser
  * @property-read int|null $mention_user_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\MentionUser> $mentionTask
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\User> $mentionUser
  * @mixin \Eloquent
  */
 class Task extends BaseModel
@@ -225,7 +227,7 @@ class Task extends BaseModel
 
     public function history(): HasMany
     {
-        return $this->hasMany(TaskHistory::class, 'task_id')->orderBy('id', 'desc');
+        return $this->hasMany(TaskHistory::class, 'task_id')->orderByDesc('id');
     }
 
     public function completedSubtasks(): HasMany
@@ -240,17 +242,17 @@ class Task extends BaseModel
 
     public function comments(): HasMany
     {
-        return $this->hasMany(TaskComment::class, 'task_id')->orderBy('id', 'desc');
+        return $this->hasMany(TaskComment::class, 'task_id')->orderByDesc('id');
     }
 
     public function notes(): HasMany
     {
-        return $this->hasMany(TaskNote::class, 'task_id')->orderBy('id', 'desc');
+        return $this->hasMany(TaskNote::class, 'task_id')->orderByDesc('id');
     }
 
     public function files(): HasMany
     {
-        return $this->hasMany(TaskFile::class, 'task_id')->orderBy('id', 'desc');
+        return $this->hasMany(TaskFile::class, 'task_id')->orderByDesc('id');
     }
 
     public function activeTimer(): HasOne
@@ -306,6 +308,11 @@ class Task extends BaseModel
     {
         if (is_null($this->due_date)) {
             return '';
+        }
+
+        // company relation is null
+        if (is_null($this->company)) {
+            return $this->due_date->format('Y-m-d');
         }
 
         return $this->due_date->format($this->company->date_format);
@@ -519,15 +526,73 @@ class Task extends BaseModel
 
     public static function projectTaskCount($projectID)
     {
-        $task = Task::where('project_id', $projectID)->orderBy('id', 'desc')->first();
+        $task = Task::where('project_id', $projectID)->orderByDesc('id')->first();
 
         if ($task) {
             $taskID = explode('-', $task->task_short_code);
-            return (isset($taskID[1]) ? $taskID[1] : 0);
+            $taskCode = array_pop($taskID);
+
+            return (int)$taskCode;
         }
 
         return 0;
 
+    }
+
+    /*
+     * Permissions
+     */
+    public function hasAllPermission($permission): bool
+    {
+        return $permission == 'all';
+    }
+
+    public function hasAddedPermission($permission): bool
+    {
+        return $permission == 'added' && user()->id == $this->added_by;
+    }
+
+    public function hasOwnedPermission($permission): bool
+    {
+        $taskUsers = $this->users->pluck('id')->toArray();
+
+        return $permission == 'owned' && (in_array(user()->id, $taskUsers) || in_array('client', user_roles()));
+    }
+
+    public function hasBothPermission($permission): bool
+    {
+        $taskUsers = $this->users->pluck('id')->toArray();
+
+        return $permission == 'both' && (in_array(user()->id, $taskUsers) || $this->added_by == user()->id || in_array('client', user_roles()));
+    }
+
+    public function projectAdmin(): bool
+    {
+        return $this->project_admin === user()->id;
+    }
+
+    public function canViewTicket(): bool
+    {
+        return $this->hasPermission(user()->permission('view_tasks'));
+    }
+
+    public function canDeleteTicket(): bool
+    {
+        return $this->hasPermission(user()->permission('delete_tasks'));
+    }
+
+    public function canEditTicket(): bool
+    {
+        return $this->hasPermission(user()->permission('edit_tasks'));
+    }
+
+    public function hasPermission($permission): bool
+    {
+        return $this->hasAllPermission($permission) ||
+            $this->hasAddedPermission($permission) ||
+            $this->hasOwnedPermission($permission) ||
+            $this->hasBothPermission($permission) ||
+            $this->projectAdmin();
     }
 
 }

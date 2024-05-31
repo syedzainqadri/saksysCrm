@@ -97,11 +97,15 @@
       0 => 'GrahamCampbell\\Markdown\\MarkdownServiceProvider',
     ),
   ),
-  'hedii/artisan-log-cleaner' => 
+  'hisorange/browser-detect' => 
   array (
     'providers' => 
     array (
-      0 => 'Hedii\\ArtisanLogCleaner\\ArtisanLogCleanerServiceProvider',
+      0 => 'hisorange\\BrowserDetect\\ServiceProvider',
+    ),
+    'aliases' => 
+    array (
+      'Browser' => 'hisorange\\BrowserDetect\\Facade',
     ),
   ),
   'intervention/image' => 
@@ -376,6 +380,17 @@
     'aliases' => 
     array (
       'Signal' => 'Spatie\\SignalAwareCommand\\Facades\\Signal',
+    ),
+  ),
+  'stevebauman/location' => 
+  array (
+    'providers' => 
+    array (
+      0 => 'Stevebauman\\Location\\LocationServiceProvider',
+    ),
+    'aliases' => 
+    array (
+      'Location' => 'Stevebauman\\Location\\Facades\\Location',
     ),
   ),
   'tanmuhittin/laravel-google-translate' => 

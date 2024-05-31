@@ -19,7 +19,7 @@ class EmployeeShiftChangeListener
     /**
      * Handle the event.
      *
-     * @param \App\Events\EmployeeShiftChangeEvent $event
+     * @param EmployeeShiftChangeEvent $event
      * @return void
      */
     public function handle(EmployeeShiftChangeEvent $event)

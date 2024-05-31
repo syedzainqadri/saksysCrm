@@ -7,7 +7,7 @@ $approveRejectPermission = user()->permission('approve_or_reject_leaves');
 
 <div class="row">
     <div class="col-sm-12">
-        <x-form id="save-lead-data-form" method="put">
+        <x-form id="save-lead-data-form" method="PUT">
             <div class="add-client bg-white rounded">
                 <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
                     @lang('app.menu.editLeaves')</h4>
@@ -46,13 +46,8 @@ $approveRejectPermission = user()->permission('approve_or_reject_leaves');
                                 data-live-search="true">
                                 <option value="">--</option>
                                 @foreach ($leaveQuotas as $leaveQuota)
-                                    @php
-                                        $leaveType = new \App\Models\LeaveType();
-                                    @endphp
-
-                                    @if($leaveType->leaveTypeCodition($leaveQuota, $userRole))
-                                        <option @if ($leave->leave_type_id == $leaveQuota->id) selected @endif value="{{ $leaveQuota->id }}">
-                                            {{ mb_ucwords($leaveQuota->type_name) }}</option>
+                                    @if($leaveQuota->leaveType->leaveTypeCondition($leaveQuota->leaveType, $leaveUser))
+                                        <option @selected($leave->leave_type_id == $leaveQuota->leaveType->id) value="{{ $leaveQuota->leaveType->id }}">{{ $leaveQuota->leaveType->type_name }} ({{ $leaveQuota->leaves_remaining }})</option>
                                     @endif
                                 @endforeach
                             </select>
@@ -71,9 +66,9 @@ $approveRejectPermission = user()->permission('approve_or_reject_leaves');
                         <div class="col-lg-3 col-md-6">
                             <x-forms.select fieldId="status" :fieldLabel="__('app.status')" fieldName="status"
                                 search="true">
-                                <option @if ($leave->status == 'approved') selected @endif value="approved">@lang('app.approved')</option>
-                                <option @if ($leave->status == 'pending') selected @endif value="pending">@lang('app.pending')</option>
-                                <option @if ($leave->status == 'rejected') selected @endif value="rejected">@lang('app.rejected')</option>
+                                <option @selected($leave->status == 'approved') value="approved">@lang('app.approved')</option>
+                                <option @selected($leave->status == 'pending') value="pending">@lang('app.pending')</option>
+                                <option @selected($leave->status == 'rejected') value="rejected">@lang('app.rejected')</option>
                             </x-forms.select>
                         </div>
                     @endif
@@ -175,7 +170,6 @@ $approveRejectPermission = user()->permission('approve_or_reject_leaves');
     </div>
 </div>
 
-<script src="{{ asset('vendor/jquery/dropzone.min.js') }}"></script>
 <script>
     $(document).ready(function() {
 
@@ -324,6 +318,25 @@ $approveRejectPermission = user()->permission('approve_or_reject_leaves');
             var url = "{{ route('leaveType.create') }}";
             $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
             $.ajaxModal(MODAL_LG, url);
+        });
+
+        $('#user_id').change(function() {
+            var id = $(this).val();
+            if (id == '') {
+                id = 0;
+            }
+            var url = "{{ route('employee-leaves.employee_leave_types', ':id') }}";
+            url = url.replace(':id', id);
+            $.easyAjax({
+                url: url,
+                type: "GET",
+                container: '#save-lead-data-form',
+                blockUI: true,
+                success: function(data) {
+                    $('#leave_type_id').html(data.data);
+                    $('#leave_type_id').selectpicker('refresh');
+                }
+            })
         });
 
         init(RIGHT_MODAL);

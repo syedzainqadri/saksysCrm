@@ -70,7 +70,6 @@ class ProductController extends AccountBaseController
         abort_403(!in_array($this->addPermission, ['all', 'added']));
         $this->taxes = Tax::all();
         $this->categories = ProductCategory::all();
-        $this->subCategories = ProductSubCategory::all();
 
         $product = new Product();
 
@@ -80,14 +79,11 @@ class ProductController extends AccountBaseController
             $this->fields = $product->getCustomFieldGroupsWithFields()->fields;
         }
 
+        $this->view = 'products.ajax.create';
 
         if (request()->ajax()) {
-            $html = view('products.ajax.create', $this->data)->render();
-
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
-
-        $this->view = 'products.ajax.create';
 
         return view('products.create', $this->data);
     }
@@ -173,13 +169,11 @@ class ProductController extends AccountBaseController
             $this->fields = $this->product->getCustomFieldGroupsWithFields()->fields;
         }
 
-        if (request()->ajax()) {
-            $html = view('products.ajax.show', $this->data)->render();
-
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
-        }
-
         $this->view = 'products.ajax.show';
+
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
+        }
 
         return view('products.create', $this->data);
 
@@ -224,13 +218,11 @@ class ProductController extends AccountBaseController
             $this->fields = $this->product->getCustomFieldGroupsWithFields()->fields;
         }
 
-        if (request()->ajax()) {
-            $html = view('products.ajax.edit', $this->data)->render();
-
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
-        }
-
         $this->view = 'products.ajax.edit';
+
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
+        }
 
         return view('products.create', $this->data);
 
@@ -408,12 +400,12 @@ class ProductController extends AccountBaseController
     public function emptyCart()
     {
 
+        $this->view = 'products.ajax.empty_cart';
+
         if (request()->ajax()) {
-            $html = view('products.ajax.empty_cart', $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
 
-        $this->view = 'products.ajax.empty_cart';
         return view('products.create', $this->data);
 
     }
@@ -428,14 +420,11 @@ class ProductController extends AccountBaseController
 
         $this->products = OrderCart::where('client_id', '=', user()->id)->get();
 
-        if (request()->ajax()) {
-
-            $html = view('products.ajax.cart', $this->data)->render();
-
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
-        }
-
         $this->view = 'products.ajax.cart';
+
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
+        }
 
         return view('products.create', $this->data);
     }

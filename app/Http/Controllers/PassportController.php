@@ -27,13 +27,13 @@ class PassportController extends Controller
         $passport->passport_number = $request->passport_number;
         $passport->user_id = $userId;
         $passport->company_id = company()->id;
-        $passport->issue_date = Carbon::createFromFormat($this->company->date_format, $request->issue_date)->format('Y-m-d');
-        $passport->expiry_date = Carbon::createFromFormat($this->company->date_format, $request->expiry_date)->format('Y-m-d');
+        $passport->issue_date = companyToYmd($request->issue_date);
+        $passport->expiry_date = companyToYmd($request->expiry_date);
         $passport->added_by = user()->id;
         $passport->country_id = $request->nationality;
 
         if ($request->hasFile('file')) {
-            $passport->file = Files::uploadLocalOrS3($request->file, Passport::FILE_PATH, 300);
+            $passport->file = Files::uploadLocalOrS3($request->file, Passport::FILE_PATH);
         }
 
         $passport->save();
@@ -52,8 +52,8 @@ class PassportController extends Controller
     {
         $passport = Passport::findOrFail($id);
         $passport->passport_number = $request->passport_number;
-        $passport->issue_date = Carbon::createFromFormat($this->company->date_format, $request->issue_date)->format('Y-m-d');
-        $passport->expiry_date = Carbon::createFromFormat($this->company->date_format, $request->expiry_date)->format('Y-m-d');
+        $passport->issue_date = companyToYmd($request->issue_date);
+        $passport->expiry_date = companyToYmd($request->expiry_date);
         $passport->country_id = $request->nationality;
 
         if($request->file_delete == 'yes')
@@ -64,7 +64,7 @@ class PassportController extends Controller
 
         if ($request->hasFile('file')) {
             Files::deleteFile($passport->file, Passport::FILE_PATH);
-            $passport->file = Files::uploadLocalOrS3($request->file, Passport::FILE_PATH, 300);
+            $passport->file = Files::uploadLocalOrS3($request->file, Passport::FILE_PATH);
         }
 
         $passport->save();

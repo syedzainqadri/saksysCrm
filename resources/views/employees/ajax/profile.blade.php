@@ -19,11 +19,11 @@
 @php
 
 $showFullProfile = false;
-
+$employeeDetail = $employee->employeeDetail;
 if ($viewPermission == 'all'
-    || ($viewPermission == 'added' && $employee->employeeDetail->added_by == user()->id)
-    || ($viewPermission == 'owned' && $employee->employeeDetail->user_id == user()->id)
-    || ($viewPermission == 'both' && ($employee->employeeDetail->user_id == user()->id || $employee->employeeDetail->added_by == user()->id))
+    || ($viewPermission == 'added' && $employeeDetail->added_by == user()->id)
+    || ($viewPermission == 'owned' && $employeeDetail->user_id == user()->id)
+    || ($viewPermission == 'both' && ($employeeDetail->user_id == user()->id || $employeeDetail->added_by == user()->id))
 ) {
     $showFullProfile = true;
 }
@@ -49,7 +49,7 @@ $viewAppreciationPermission = user()->permission('view_appreciation');
                             <div class="row">
                                 <div class="col-10">
                                     <h4 class="card-title f-15 f-w-500 text-darkest-grey mb-0">
-                                        {{ ucfirst($employee->salutation) . ' ' . $employee->name }}
+                                        {{ $employee->name_salutation }}
                                         @isset($employee->country)
                                             <x-flag :country="$employee->country" />
                                         @endisset
@@ -76,13 +76,14 @@ $viewAppreciationPermission = user()->permission('view_appreciation');
                             </div>
 
                             <p class="f-12 font-weight-normal text-dark-grey mb-0">
-                                {{ !is_null($employee->employeeDetail) && !is_null($employee->employeeDetail->designation) ? mb_ucfirst($employee->employeeDetail->designation->name) : '' }}
+                                {{ !is_null($employee->employeeDetail) && !is_null($employee->employeeDetail->designation) ? $employee->employeeDetail->designation->name : '' }}
                                 &bull;
-                                {{ isset($employee->employeeDetail) && !is_null($employee->employeeDetail->department) && !is_null($employee->employeeDetail->department) ? mb_ucfirst($employee->employeeDetail->department->team_name) : '' }}
+                                {{ isset($employee->employeeDetail) && !is_null($employee->employeeDetail->department) && !is_null($employee->employeeDetail->department) ? $employee->employeeDetail->department->team_name : '' }}
+                                 <span class="card-text f-12 text-dark-grey m-lg-2">| {{__('app.role')}}: {{$employee->roles()->withoutGlobalScopes()->latest()->first()->display_name}}</span>
                             </p>
 
-                            @if ($employee->status == 'active')
-                                <p class="card-text f-11 text-lightest">@lang('app.lastLogin')
+
+                                <p class="card-text f-11 text-lightest mb-1">@lang('app.lastLogin')
 
                                     @if (!is_null($employee->last_login))
                                         {{ $employee->last_login->timezone(company()->timezone)->translatedFormat(company()->date_format . ' ' . company()->time_format) }}
@@ -91,8 +92,9 @@ $viewAppreciationPermission = user()->permission('view_appreciation');
                                     @endif
                                 </p>
 
-                            @else
-                                <p class="card-text f-12 text-lightest">
+                            @if ($employee->status != 'active')
+
+                                <p class="card-text f-12 text-dark-grey">
                                     <x-status :value="__('app.inactive')" color="red" />
                                 </p>
                             @endif
@@ -102,7 +104,7 @@ $viewAppreciationPermission = user()->permission('view_appreciation');
                                     <div class="d-flex flex-wrap justify-content-between">
                                         <span>
                                             <label class="f-11 text-dark-grey mb-12 text-capitalize"
-                                                for="usr">@lang('app.open') @lang('app.menu.tasks')</label>
+                                                for="usr">@lang('app.openTasks')</label>
                                             <p class="mb-0 f-18 f-w-500">{{ $employee->open_tasks_count }}</p>
                                         </span>
                                         <span>
@@ -198,7 +200,7 @@ $viewAppreciationPermission = user()->permission('view_appreciation');
                                 :value="$employee->employeeDetail->notice_period_end_date ? Carbon\Carbon::parse($employee->employeeDetail->notice_period_end_date)->translatedFormat(company()->date_format) : '--'" />
 
                                 <x-cards.data-row :label="__('modules.employees.maritalStatus')"
-                                :value="$employee?->employeeDetail?->marital_status ? __('modules.leaves.' . $employee->employeeDetail->marital_status) : '--'" />
+                                :value="$employee?->employeeDetail?->marital_status ? $employee->employeeDetail->marital_status->label() : '--'" />
 
                                 <x-cards.data-row :label="__('modules.employees.marriageAnniversaryDate')"
                                 :value="$employee->employeeDetail->marriage_anniversary_date ? Carbon\Carbon::parse($employee->employeeDetail->marriage_anniversary_date)->translatedFormat('d F') : '--'" />
@@ -219,6 +221,9 @@ $viewAppreciationPermission = user()->permission('view_appreciation');
                                 <x-cards.data-row :label="__('modules.employees.joiningDate')"
                                 :value="(!is_null($employee->employeeDetail) && !is_null($employee->employeeDetail->joining_date)) ? $employee->employeeDetail->joining_date->translatedFormat(company()->date_format) : '--'" />
 
+                                <x-cards.data-row :label="__('modules.employees.lastDate')"
+                                :value="(!is_null($employee->employeeDetail) && !is_null($employee->employeeDetail->last_date)) ? $employee->employeeDetail->last_date->translatedFormat(company()->date_format) : '--'" />
+
 
                                 {{-- Custom fields data --}}
                                 <x-forms.custom-field-show :fields="$fields" :model="$employee->employeeDetail"></x-forms.custom-field-show>
@@ -235,7 +240,7 @@ $viewAppreciationPermission = user()->permission('view_appreciation');
                         @if ($showFullProfile)
                             <x-cards.data class="mb-4" :title="__('modules.appreciations.appreciation')">
                                 @forelse ($employee->appreciationsGrouped as $item)
-                                <div class="float-left position-relative mb-2" style="width: 50px" data-toggle="tooltip" data-original-title="@if(isset($item->award->title)){{  mb_ucwords($item->award->title) }} @endif">
+                                <div class="float-left position-relative mb-2" style="width: 50px" data-toggle="tooltip" data-original-title="@if(isset($item->award->title)){{  $item->award->title }} @endif">
                                     @if(isset($item->award->awardIcon->icon))
                                         <x-award-icon :award="$item->award" />
                                     @endif
@@ -266,7 +271,7 @@ $viewAppreciationPermission = user()->permission('view_appreciation');
                                                 @foreach ($employee->reportingTeam as $item)
                                                     <div class="taskEmployeeImg rounded-circle mr-1">
                                                         <a href="{{ route('employees.show', $item->user->id) }}">
-                                                            <img data-toggle="tooltip" data-original-title="{{ mb_ucwords($item->user->name) }}"
+                                                            <img data-toggle="tooltip" data-original-title="{{ $item->user->name }}"
                                                                 src="{{ $item->user->image_url }}">
                                                         </a>
                                                     </div>

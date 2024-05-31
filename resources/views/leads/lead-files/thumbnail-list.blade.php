@@ -4,7 +4,7 @@
 @endphp
 
 <div class="row">
-    @forelse($lead->files as $file)
+    @forelse($deal->files as $file)
 
         @if ($viewLeadFilePermission == 'all' || ($viewLeadFilePermission == 'added' && $file->added_by == user()->id))
             <div class="col-md-4 col-lg-3 mt-2">
@@ -28,7 +28,7 @@
                                         <a class="cursor-pointer d-block text-dark-grey f-13 pt-3 px-3 " target="_blank"
                                                 href="{{ $file->file_url }}">@lang('app.view')</a>
                                         <a class="cursor-pointer d-block text-dark-grey f-13 py-3 px-3 "
-                                            href="{{ route('lead-files.download', $file->id) }}">@lang('app.download')</a>
+                                            href="{{ route('deal-files.download', $file->id) }}">@lang('app.download')</a>
                                     @endif
 
                                     @if ($deleteTaskFilePermission == 'all' || ($deleteTaskFilePermission == 'added' && $file->added_by == user()->id))

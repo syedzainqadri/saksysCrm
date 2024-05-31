@@ -2,23 +2,26 @@
 
 namespace Sentry\Laravel;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\LazyLoadingViolationException;
+use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Routing\Route;
 use Sentry\EventHint;
 use Sentry\EventId;
 use Sentry\ExceptionMechanism;
-use Sentry\Laravel\Features\Concerns\ResolvesEventOrigin;
+use Sentry\Laravel\Integration\ModelViolations as ModelViolationReports;
 use Sentry\SentrySdk;
-use Sentry\Severity;
 use Sentry\Tracing\TransactionSource;
 use Throwable;
-use function Sentry\addBreadcrumb;
-use function Sentry\configureScope;
 use Sentry\Breadcrumb;
 use Sentry\Event;
 use Sentry\Integration\IntegrationInterface;
 use Sentry\State\Scope;
+
+use function Sentry\addBreadcrumb;
+use function Sentry\configureScope;
+use function Sentry\getBaggage;
+use function Sentry\getTraceparent;
+use function Sentry\getW3CTraceparent;
+use function Sentry\metrics;
 
 class Integration implements IntegrationInterface
 {
@@ -44,6 +47,16 @@ class Integration implements IntegrationInterface
             }
 
             return $event;
+        });
+    }
+
+    /**
+     * Convienence method to register the exception handler with Laravel 11.0 and up.
+     */
+    public static function handles(Exceptions $exceptions): void
+    {
+        $exceptions->reportable(static function (Throwable $exception) {
+            self::captureUnhandledException($exception);
         });
     }
 
@@ -96,7 +109,7 @@ class Integration implements IntegrationInterface
     }
 
     /**
-     * Block until all async events are processed for the HTTP transport.
+     * Block until all events are processed by the PHP SDK client. Also flushes metrics.
      *
      * @internal This is not part of the public API and is here temporarily until
      *  the underlying issue can be resolved, this method will be removed.
@@ -108,6 +121,8 @@ class Integration implements IntegrationInterface
         if ($client !== null) {
             $client->flush();
         }
+
+        metrics()->flush();
     }
 
     /**
@@ -165,7 +180,7 @@ class Integration implements IntegrationInterface
      */
     public static function sentryMeta(): string
     {
-        return self::sentryTracingMeta() . self::sentryBaggageMeta();
+        return self::sentryTracingMeta() . self::sentryW3CTracingMeta() . self::sentryBaggageMeta();
     }
 
     /**
@@ -175,13 +190,17 @@ class Integration implements IntegrationInterface
      */
     public static function sentryTracingMeta(): string
     {
-        $span = SentrySdk::getCurrentHub()->getSpan();
+        return sprintf('<meta name="sentry-trace" content="%s"/>', getTraceparent());
+    }
 
-        if ($span === null) {
-            return '';
-        }
-
-        return sprintf('<meta name="sentry-trace" content="%s"/>', $span->toTraceparent());
+    /**
+     * Retrieve the `traceparent` meta tag with tracing information to link this request to front-end requests.
+     *
+     * @return string
+     */
+    public static function sentryW3CTracingMeta(): string
+    {
+        return sprintf('<meta name="traceparent" content="%s"/>', getW3CTraceparent());
     }
 
     /**
@@ -192,13 +211,7 @@ class Integration implements IntegrationInterface
      */
     public static function sentryBaggageMeta(): string
     {
-        $span = SentrySdk::getCurrentHub()->getSpan();
-
-        if ($span === null) {
-            return '';
-        }
-
-        return sprintf('<meta name="baggage" content="%s"/>', $span->toBaggage());
+        return sprintf('<meta name="baggage" content="%s"/>', getBaggage());
     }
 
     /**
@@ -225,51 +238,45 @@ class Integration implements IntegrationInterface
     }
 
     /**
-     * Returns a callback that can be passed to `Model::handleLazyLoadingViolationUsing` to report lazy loading violations to Sentry.
+     * Returns a callback that can be passed to `Model::handleMissingAttributeViolationUsing` to report missing attribute violations to Sentry.
      *
-     * @param callable|null $callback Optional callback to be called after the violation is reported to Sentry.
+     * @param callable|null $callback                 Optional callback to be called after the violation is reported to Sentry.
+     * @param bool          $suppressDuplicateReports Whether to suppress duplicate reports of the same violation.
+     * @param bool          $reportAfterResponse      Whether to delay sending the report to after the response has been sent.
      *
      * @return callable
      */
-    public static function lazyLoadingViolationReporter(?callable $callback = null): callable
+    public static function missingAttributeViolationReporter(?callable $callback = null, bool $suppressDuplicateReports = true, bool $reportAfterResponse = true): callable
     {
-        return new class($callback) {
-            use ResolvesEventOrigin;
+        return new ModelViolationReports\MissingAttributeModelViolationReporter($callback, $suppressDuplicateReports, $reportAfterResponse);
+    }
 
-            /** @var callable|null $callback */
-            private $callback;
+    /**
+     * Returns a callback that can be passed to `Model::handleLazyLoadingViolationUsing` to report lazy loading violations to Sentry.
+     *
+     * @param callable|null $callback                 Optional callback to be called after the violation is reported to Sentry.
+     * @param bool          $suppressDuplicateReports Whether to suppress duplicate reports of the same violation.
+     * @param bool          $reportAfterResponse      Whether to delay sending the report to after the response has been sent.
+     *
+     * @return callable
+     */
+    public static function lazyLoadingViolationReporter(?callable $callback = null, bool $suppressDuplicateReports = true, bool $reportAfterResponse = true): callable
+    {
+        return new ModelViolationReports\LazyLoadingModelViolationReporter($callback, $suppressDuplicateReports, $reportAfterResponse);
+    }
 
-            public function __construct(?callable $callback)
-            {
-                $this->callback = $callback;
-            }
-
-            public function __invoke(Model $model, string $relation): void
-            {
-                SentrySdk::getCurrentHub()->withScope(function (Scope $scope) use ($model, $relation) {
-                    $scope->setContext('violation', [
-                        'model'    => get_class($model),
-                        'relation' => $relation,
-                        'origin'   => $this->resolveEventOrigin(),
-                    ]);
-
-                    SentrySdk::getCurrentHub()->captureEvent(
-                        tap(Event::createEvent(), static function (Event $event) {
-                            $event->setLevel(Severity::warning());
-                        }),
-                        EventHint::fromArray([
-                            'exception' => new LazyLoadingViolationException($model, $relation),
-                            'mechanism' => new ExceptionMechanism(ExceptionMechanism::TYPE_GENERIC, true),
-                        ])
-                    );
-                });
-
-                // Forward the violation to the next handler if there is one
-                if ($this->callback !== null) {
-                    call_user_func($this->callback, $model, $relation);
-                }
-            }
-        };
+    /**
+     * Returns a callback that can be passed to `Model::handleDiscardedAttributeViolationUsing` to report discarded attribute violations to Sentry.
+     *
+     * @param callable|null $callback                 Optional callback to be called after the violation is reported to Sentry.
+     * @param bool          $suppressDuplicateReports Whether to suppress duplicate reports of the same violation.
+     * @param bool          $reportAfterResponse      Whether to delay sending the report to after the response has been sent.
+     *
+     * @return callable
+     */
+    public static function discardedAttributeViolationReporter(?callable $callback = null, bool $suppressDuplicateReports = true, bool $reportAfterResponse = true): callable
+    {
+        return new ModelViolationReports\DiscardedAttributeViolationReporter($callback, $suppressDuplicateReports, $reportAfterResponse);
     }
 
     /**

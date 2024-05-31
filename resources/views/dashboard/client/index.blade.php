@@ -81,7 +81,7 @@
                 </div>
             @endif
 
-            @if (in_array('projects', user_modules()))
+            @if (in_array('projects', user_modules()) && $viewMilestonePermission != 'none')
                 <div class="col-sm-12 col-lg-6 mt-4">
                     <x-cards.data :title="__('modules.dashboard.pendingMilestone')" padding="false"
                                   otherClasses="h-200">
@@ -100,7 +100,7 @@
                                         <td class="pl-20">{{ $key + 1 }}</td>
                                         <td>
                                             <a href="javascript:;" class="milestone-detail text-darkest-grey f-w-500"
-                                               data-milestone-id="{{ $item->id }}">{{ ucfirst($item->milestone_title) }}</a>
+                                               data-milestone-id="{{ $item->id }}">{{ $item->milestone_title }}</a>
                                         </td>
                                         <td>
                                             @if (!is_null($item->currency_id))

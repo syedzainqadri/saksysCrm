@@ -2,10 +2,8 @@
 
 namespace App\Http\Controllers\Payment;
 
-use App\Helper\Reply;
 use App\Models\Company;
 use Exception;
-use Carbon\Carbon;
 use Froiden\RestAPI\Exceptions\ApiException;
 use PayPal\Api\Item;
 use App\Models\Order;
@@ -28,7 +26,6 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Session;
 use App\Models\Payment as ModelsPayment;
 use Illuminate\Support\Facades\Redirect;
-use App\Models\PaymentGatewayCredentials;
 
 class PaypalController extends Controller
 {
@@ -72,15 +69,10 @@ class PaypalController extends Controller
 
     }
 
-    public function getWebhook(Request $request)
-    {
-        return response()->json(['message' => 'This url need not to be opened directly. Only POST request is accepted. Add this url to your paypal webhook']);
-    }
-
     /**
      * Show the application paywith paypalpage.
      *
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View|\Illuminate\Foundation\Application
      */
     public function payWithPaypal()
     {
@@ -88,10 +80,10 @@ class PaypalController extends Controller
     }
 
     /**
-     * Store a details of payment with paypal.
+     * Store a details of payment with PayPal.
      *
      * @param \Illuminate\Http\Request $request
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\RedirectResponse
      */
     /* Id could be order id OR invoice id, differentiate according to type  */
     public function paymentWithpaypal(Request $request, $id)
@@ -169,7 +161,7 @@ class PaypalController extends Controller
             /** Specify return URL **/
             ->setCancelUrl(route('get_paypal_status'));
 
-        /* Make invoice of this order */
+        /* Make invoice for this order */
         if ($paymentType == 'order' && isset($order)) {
             $invoice = $this->makeOrderInvoice($order);
         }
@@ -365,7 +357,7 @@ class PaypalController extends Controller
         /** clear the session payment ID **/
         Session::forget('paypal_payment_id');
 
-        if ($requestObject->get('success') == true && $requestObject->has('token')) {
+        if ($requestObject->get('success') && $requestObject->has('token')) {
             $token = $requestObject->get('token');
             $agreement = new Agreement();
             try {
@@ -404,7 +396,7 @@ class PaypalController extends Controller
                 }
             }
         }
-        else if ($requestObject->get('fail') == true) {
+        else if ($requestObject->get('fail')) {
             Session::put('error', __('messages.paymentFailed'));
 
             return Redirect::route($redirectRoute, $enc_invoice_id);

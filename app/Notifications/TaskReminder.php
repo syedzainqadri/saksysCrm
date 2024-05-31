@@ -42,7 +42,7 @@ class TaskReminder extends BaseNotification
         }
 
         if ($this->emailSetting->send_slack == 'yes' && $this->company->slackSetting->status == 'active') {
-            array_push($via, 'slack');
+            $this->slackUserNameCheck($notifiable) ? array_push($via, 'slack') : null;
         }
 
         if ($this->emailSetting->send_push == 'yes') {
@@ -65,7 +65,7 @@ class TaskReminder extends BaseNotification
 
         $url = getDomainSpecificUrl($url, $this->company);
 
-        $content = ucfirst($this->task->heading) . ' #' . $this->task->task_short_code . '<p>';
+        $content = $this->task->heading . ' #' . $this->task->task_short_code . '<p>';
 
         if ($this->task->due_date) {
             $content .= '<b style="color: green">' . __('app.dueDate') . ' : ' . $this->task->due_date->format($this->company->date_format) . '</b>
@@ -106,18 +106,12 @@ class TaskReminder extends BaseNotification
      */
     public function toSlack($notifiable)
     {
-        $slack = $notifiable->company->slackSetting;
 
         $dueDate = (!is_null($this->task->due_date)) ? $this->task->due_date->format($this->company->date_format) : null;
 
-        $message = (new SlackMessage())->from(config('app.name'))->image($slack->slack_logo_url);
+        return $this->slackBuild($notifiable)
+            ->content('*' . __('email.reminder.subject') . '*' . "\n" . $this->task->heading . "\n" . ' #' . $this->task->task_short_code . "\n" . __('app.dueDate') . ': ' . $dueDate);
 
-        if (count($notifiable->employee) > 0 && (!is_null($notifiable->employee[0]->slack_username) && ($notifiable->employee[0]->slack_username != ''))) {
-            return $message->to('@' . $notifiable->employee[0]->slack_username)
-                ->content('*' . __('email.reminder.subject') . '*' . "\n" . ucfirst($this->task->heading) . "\n" . ' #' . $this->task->task_short_code . "\n" . __('app.dueDate') . ': ' . $dueDate);
-        }
-
-        return $message->content('*' . __('email.reminder.subject') . '*' . "\n" .'This is a redirected notification. Add slack username for *' . $notifiable->name . '*');
     }
 
     // phpcs:ignore

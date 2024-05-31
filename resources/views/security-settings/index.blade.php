@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-
+    @includeIf('sections.2fa-css')
     <!-- SETTINGS START -->
     <div class="w-100 d-flex ">
 

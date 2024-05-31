@@ -1,5 +1,5 @@
 <div class="modal-header">
-    <h5 class="modal-title" id="modelHeading">@lang('modules.projects.milestones') @lang('app.details')</h5>
+    <h5 class="modal-title" id="modelHeading">@lang('app.milestonesDetails')</h5>
     <button type="button"  class="close" data-dismiss="modal" aria-label="Close"><span
             aria-hidden="true">×</span></button>
 </div>
@@ -54,17 +54,17 @@
             @endphp
                 <tr>
                     <td>{{ $key + 1 }}</td>
-                    <td>{{ ucfirst($item->heading) }}</td>
+                    <td>{{ $item->heading }}</td>
                     <td>
                         @foreach ($item->users as $member)
                             <div class="taskEmployeeImg rounded-circle"><a
                                     href="{{ route('employees.show', $member->id) }}">
-                                    <img data-toggle="tooltip" data-original-title="{{ mb_ucwords($member->name) }}"
+                                    <img data-toggle="tooltip" data-original-title="{{ $member->name }}"
                                         src="{{ $member->image_url }}">
                                 </a></div>
                         @endforeach
                     </td>
-                    <td>{{ $item->created_by ? mb_ucwords($item->createBy->name) : '--' }}</td>
+                    <td>{{ $item->created_by ? $item->createBy->name : '--' }}</td>
                     <td>{{ $item->due_date ? $item->due_date->translatedFormat(company()->date_format) : '--' }}</td>
                     <td>{{$totalTimeLog}}</td>
                     <td>

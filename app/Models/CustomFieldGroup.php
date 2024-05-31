@@ -41,6 +41,7 @@ class CustomFieldGroup extends BaseModel
         ['name' => 'Task', 'model' => Task::CUSTOM_FIELD_MODEL],
         ['name' => 'Expense', 'model' => Expense::CUSTOM_FIELD_MODEL],
         ['name' => 'Lead', 'model' => Lead::CUSTOM_FIELD_MODEL],
+        ['name' => 'Deal', 'model' => Deal::CUSTOM_FIELD_MODEL],
         ['name' => 'Product', 'model' => Product::CUSTOM_FIELD_MODEL],
         ['name' => 'Ticket', 'model' => Ticket::CUSTOM_FIELD_MODEL],
         ['name' => 'Time Log', 'model' => ProjectTimeLog::CUSTOM_FIELD_MODEL],
@@ -65,7 +66,7 @@ class CustomFieldGroup extends BaseModel
                 $customField->name => [
                     'data' => $customField->name,
                     'name' => $customField->name,
-                    'title' => $customField->label,
+                    'title' => str($customField->label)->__toString(),
                     'visible' => $customField['visible'],
                     'orderable' => false,
                 ]
@@ -85,7 +86,7 @@ class CustomFieldGroup extends BaseModel
         return Attribute::make(
             get: function () {
                 return $this->customField->map(function ($item) {
-                    if (in_array($item->type, ['select', 'radio', 'checkbox'])) {
+                    if (in_array($item->type, ['select', 'radio'])) {
                         $item->values = json_decode($item->values);
 
                         return $item;

@@ -56,7 +56,7 @@ class EmployeeDocController extends AccountBaseController
         $file->size = $request->file->getSize();
         $file->save();
 
-        $this->files = EmployeeDocument::where('user_id', $request->user_id)->orderBy('id', 'desc')->get();
+        $this->files = EmployeeDocument::where('user_id', $request->user_id)->orderByDesc('id')->get();
         $view = view('employees.files.show', $this->data)->render();
 
         return Reply::successWithData(__('messages.recordSaved'), ['status' => 'success', 'view' => $view]);
@@ -108,7 +108,7 @@ class EmployeeDocController extends AccountBaseController
 
         EmployeeDocument::destroy($id);
 
-        $this->files = EmployeeDocument::where('user_id', $file->user_id)->orderBy('id', 'desc')->get();
+        $this->files = EmployeeDocument::where('user_id', $file->user_id)->orderByDesc('id')->get();
 
         $view = view('employees.files.show', $this->data)->render();
 

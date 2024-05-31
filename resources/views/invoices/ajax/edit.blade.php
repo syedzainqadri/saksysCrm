@@ -14,7 +14,7 @@
 <div class="bg-white rounded b-shadow-4 create-inv">
     <!-- HEADING START -->
     <div class="px-lg-4 px-md-4 px-3 py-3">
-        <h4 class="mb-0 f-21 font-weight-normal text-capitalize">@lang('app.invoice') @lang('app.details')</h4>
+        <h4 class="mb-0 f-21 font-weight-normal text-capitalize">@lang('app.invoiceDetails')</h4>
     </div>
     <!-- HEADING END -->
     <hr class="m-0 border-top-grey">
@@ -30,11 +30,8 @@
                                    :fieldLabel="__('modules.invoices.invoiceNumber')" fieldRequired="true">
                     </x-forms.label>
                     <x-forms.input-group>
-                        <x-slot name="prepend">
-                            <span class="input-group-text">{{ invoice_setting()->invoice_prefix }}{{ invoice_setting()->invoice_number_separator }}</span>
-                        </x-slot>
-                        <input type="number" name="invoice_number" id="invoice_number" class="form-control height-35 f-15"
-                               value="{{ $invoice->original_invoice_number }}">
+                        <input type="text" name="invoice_number" id="invoice_number" class="form-control height-35 f-15 readonly-background" readonly
+                               value="{{ $invoice->invoice_number }}">
                     </x-forms.input-group>
                 </div>
             </div>
@@ -90,7 +87,7 @@
                 </x-forms.label>
                 <input type="number" id="exchange_rate" name="exchange_rate"
                        class="px-6 position-relative text-dark font-weight-normal form-control height-35 rounded p-0 text-left f-15" value="{{$invoice->exchange_rate}}" @if($companyCurrency->id == $invoice->currency_id) readonly @endif>
-                <small id="currency_exchange" class="form-text text-muted">( {{company()->currency->currency_code}} @lang('app.to') {{$invoice->currency->currency_code}} )</small>
+                <small id="currency_exchange" class="form-text text-muted">@if (company()->currency->currency_code != $invoice->currency->currency_code) ( {{$invoice->currency->currency_code}} @lang('app.to') {{company()->currency->currency_code}} ) @endif </small>
             </div>
         </div>
         <!-- INVOICE NUMBER, DATE, DUE DATE, FREQUENCY END -->
@@ -153,7 +150,7 @@
                                     @foreach ($bankDetails as $bankDetail)
                                         <option value="{{ $bankDetail->id }}" @if($bankDetail->id == $invoice->bank_account_id) selected @endif>@if($bankDetail->type == 'bank')
                                                 {{ $bankDetail->bank_name }} | @endif
-                                            {{ mb_ucwords($bankDetail->account_name) }}
+                                            {{ $bankDetail->account_name }}
                                         </option>
                                     @endforeach
                                 @endif
@@ -233,6 +230,7 @@
 
         </div>
         <!-- CLIENT, PROJECT, GST, BILLING, SHIPPING ADDRESS END -->
+
         <x-forms.custom-field :fields="$fields" :model="$invoice"></x-forms.custom-field>
 
         <hr class="m-0 border-top-grey">
@@ -246,36 +244,49 @@
                             <option value="null">{{ __('app.select') . ' ' . __('app.product') . ' ' . __('app.category')  }}</option>
                             @foreach ($categories as $category)
                                 <option value="{{ $category->id }}">
-                                    {{ mb_ucwords($category->category_name) }}</option>
+                                    {{ $category->category_name }}</option>
                             @endforeach
                         </select>
                     </x-forms.input-group>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="form-group c-inv-select mb-4">
-                <x-forms.input-group>
-                    <select class="form-control select-picker" data-live-search="true" data-size="8" id="add-products" title="{{ __('app.menu.selectProduct') }}">
-                        @foreach ($products as $item)
-                            <option data-content="{{ $item->name }}" value="{{ $item->id }}">
-                                {{ $item->name }}</option>
-                        @endforeach
-                    </select>
-                    <x-slot name="preappend">
-                        <a href="javascript:;"
-                            class="btn btn-outline-secondary border-grey toggle-product-category"
-                            data-toggle="tooltip" data-original-title="{{ __('modules.productCategory.filterByCategory') }}"><i class="fa fa-filter"></i></a>
-                    </x-slot>
-                    @if ($addProductPermission == 'all' || $addProductPermission == 'added')
-                        <x-slot name="append">
-                            <a href="{{ route('products.create') }}" data-redirect-url="no"
-                                class="btn btn-outline-secondary border-grey openRightModal"
-                                data-toggle="tooltip" data-original-title="{{ __('app.add').' '.__('modules.dashboard.newproduct') }}">@lang('app.add')</a>
+            @if(in_array('products', user_modules()) || in_array('purchase', user_modules()))
+                <div class="col-md-3">
+                    <div class="form-group c-inv-select mb-4">
+                    <x-forms.input-group>
+                        <select class="form-control select-picker" data-live-search="true" data-size="8" id="add-products" title="{{ __('app.menu.selectProduct') }}">
+                            @foreach ($products as $item)
+                                <option data-content="{{ $item->name }}" value="{{ $item->id }}">
+                                    {{ $item->name }}</option>
+                            @endforeach
+                        </select>
+                        <x-slot name="preappend">
+                            <a href="javascript:;"
+                                class="btn btn-outline-secondary border-grey toggle-product-category"
+                                data-toggle="tooltip" data-original-title="{{ __('modules.productCategory.filterByCategory') }}"><i class="fa fa-filter"></i></a>
                         </x-slot>
-                    @endif
-                </x-forms.input-group>
+                        @if ($addProductPermission == 'all' || $addProductPermission == 'added')
+                            @if (module_enabled('Purchase'))
+                                <x-slot name="append">
+                                    <a href="{{ route('purchase-products.create') }}" data-redirect-url="no"
+                                        class="btn btn-outline-secondary border-grey openRightModal"
+                                        data-toggle="tooltip"
+                                        data-original-title="{{ __('app.add') . ' ' . __('modules.dashboard.newproduct') }}">@lang('app.add')</a>
+                                </x-slot>
+                            @else
+                                <x-slot name="append">
+                                    <a href="{{ route('products.create') }}" data-redirect-url="no"
+                                        class="btn btn-outline-secondary border-grey openRightModal"
+                                        data-toggle="tooltip"
+                                        data-original-title="{{ __('app.add') . ' ' . __('modules.dashboard.newproduct') }}">@lang('app.add')</a>
+                                </x-slot>
+                            @endif
+                        @endif
+                    </x-forms.input-group>
+                    </div>
                 </div>
-            </div>
+            @endif
+
         </div>
 
         <div id="sortable">
@@ -350,9 +361,9 @@
                                                 name="taxes[{{ $key }}][]" multiple="multiple"
                                                 class="select-picker type customSequence border-0" data-size="3">
                                             @foreach ($taxes as $tax)
-                                                <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ strtoupper($tax->tax_name) .':'. $tax->rate_percent }}%"
+                                                <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ $tax->tax_name .':'. $tax->rate_percent }}%"
                                                         @if (isset($item->taxes) && array_search($tax->id, json_decode($item->taxes)) !== false) selected @endif value="{{ $tax->id }}">
-                                                    {{ strtoupper($tax->tax_name) }}:
+                                                    {{ $tax->tax_name }}:
                                                     {{ $tax->rate_percent }}%</option>
                                             @endforeach
                                         </select>
@@ -375,7 +386,7 @@
                                     <input type="file"
                                            class="dropify"
                                            name="invoice_item_image[]"
-                                           data-allowed-file-extensions="png jpg jpeg"
+                                           data-allowed-file-extensions="png jpg jpeg bmp"
                                            data-messages-default="test"
                                            data-height="70"
                                            data-id="{{ $item->id }}"
@@ -385,7 +396,7 @@
                                                data-show-remove="false"
                                         @endif
                                     />
-                                    <input type="hidden" name="invoice_item_image_url[]" value="{{ $item->invoiceItemImage ? $item->invoiceItemImage->external_link : '' }}">
+                                    <input type="hidden" name="invoice_item_image_url[]" value="{{ $item->invoiceItemImage ? $item->invoiceItemImage->file : '' }}">
                                 </td>
                             </tr>
                             </tbody>
@@ -632,7 +643,6 @@
 </div>
 <!-- CREATE INVOICE END -->
 
-<script src="{{ asset('vendor/jquery/dropzone.min.js') }}"></script>
 <script>
     $(document).ready(function() {
         $('.toggle-product-category').click(function() {
@@ -950,8 +960,8 @@
                 '<select id="multiselect' + i + '" name="taxes[' + i +
                 '][]" multiple="multiple" class="select-picker type customSequence" data-size="3">'
                 @foreach ($taxes as $tax)
-                +'<option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ strtoupper($tax->tax_name) .':'. $tax->rate_percent }}%" value="{{ $tax->id }}">'
-                +'{{ strtoupper($tax->tax_name) }}:{{ $tax->rate_percent }}%</option>'
+                +'<option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ $tax->tax_name .':'. $tax->rate_percent }}%" value="{{ $tax->id }}">'
+                +'{{ $tax->tax_name }}:{{ $tax->rate_percent }}%</option>'
                 @endforeach
                 +
                 '</select>' +
@@ -967,7 +977,7 @@
                 '<textarea class="f-14 border-0 w-100 desktop-description" name="item_summary[]" placeholder="@lang("placeholders.invoices.description")"></textarea>' +
                 '</td>' +
                 '<td td class="border-left-0">' +
-                '<input type="file" class="dropify" id="dropify'+i+'" name="invoice_item_image[]" data-allowed-file-extensions="png jpg jpeg" data-messages-default="test" data-height="70""/><input type="hidden" name="invoice_item_image_url[]">' +
+                '<input type="file" class="dropify" id="dropify'+i+'" name="invoice_item_image[]" data-allowed-file-extensions="png jpg jpeg bmp" data-messages-default="test" data-height="70""/><input type="hidden" name="invoice_item_image_url[]">' +
                 '</td>' +
                 '</tr>' +
                 '</tbody>' +
@@ -1034,13 +1044,17 @@
                 file: true,  // Commented so that we dot get error of Input variables exceeded 1000
                 data: $('#saveInvoiceForm').serialize(),
                 success: function(response) {
-                    if (invoiceDropzone.getQueuedFiles().length > 0) {
-                        invoiceDropzone.processQueue();
-                    }
-                    else {
-                        window.location.href = response.redirectUrl;
-                    }
 
+                    if (response.status === 'success') {
+                        if (typeof invoiceDropzone !== 'undefined' && invoiceDropzone.getQueuedFiles().length > 0) {
+                            invoiceID = response.invoiceID;
+                            $('#invoiceID').val(response.invoiceID);
+                            invoiceDropzone.processQueue();
+                        }
+                        else {
+                            window.location.href = response.redirectUrl;
+                        }
+                    }
                 }
             })
         });
@@ -1086,14 +1100,6 @@
 
     });
 
-    function checkboxChange(parentClass, id){
-        var checkedData = '';
-        $('.'+parentClass).find("input[type= 'checkbox']:checked").each(function () {
-            checkedData = (checkedData !== '') ? checkedData+', '+$(this).val() : $(this).val();
-        });
-        $('#'+id).val(checkedData);
-    }
-
     function ucWord(str){
         str = str.toLowerCase().replace(/\b[a-z]/g, function(letter) {
             return letter.toUpperCase();
@@ -1124,8 +1130,9 @@
                 if (response.status == 'success') {
                     $('#bank_account_id').html(response.data);
                     $('#bank_account_id').selectpicker('refresh');
-                    $('#exchange_rate').val(response.exchangeRate);
-                    $('#currency_exchange').html('( '+companyCurrencyName+' @lang('app.to') '+currentCurrencyName+' )');
+                    $('#exchange_rate').val(1/response.exchangeRate);
+                    let currencyExchange = (companyCurrencyName != currentCurrencyName) ? '( '+currentCurrencyName+' @lang('app.to') '+companyCurrencyName+' )' : '';
+                    $('#currency_exchange').html(currencyExchange);
                 }
             }
         });

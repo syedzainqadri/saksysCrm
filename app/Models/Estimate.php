@@ -35,7 +35,6 @@ use Illuminate\Support\Facades\DB;
  * @property-read \App\Models\Currency|null $currency
  * @property-read mixed $extras
  * @property-read mixed $icon
- * @property-read mixed $original_estimate_number
  * @property-read mixed $total_amount
  * @property-read mixed $valid_date
  * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\EstimateItem[] $items
@@ -79,6 +78,8 @@ use Illuminate\Support\Facades\DB;
  * @method static \Illuminate\Database\Eloquent\Builder|Estimate whereIpAddress($value)
  * @method static \Illuminate\Database\Eloquent\Builder|Estimate whereLastViewed($value)
  * @method static \Illuminate\Database\Eloquent\Builder|Estimate whereUnitId($value)
+ * @property string|null $original_estimate_number
+ * @method static \Illuminate\Database\Eloquent\Builder|Estimate whereOriginalEstimateNumber($value)
  * @mixin \Eloquent
  */
 class Estimate extends BaseModel
@@ -90,7 +91,7 @@ class Estimate extends BaseModel
         'valid_till' => 'datetime',
         'last_viewed' => 'datetime',
     ];
-    protected $appends = ['total_amount', 'valid_date', 'original_estimate_number'];
+    protected $appends = ['total_amount', 'valid_date'];
     protected $with = ['currency'];
 
     const CUSTOM_FIELD_MODEL = 'App\Models\Estimate';
@@ -140,49 +141,15 @@ class Estimate extends BaseModel
         return !is_null($this->valid_till) ? Carbon::parse($this->valid_till)->format('d F, Y') : '';
     }
 
-    public function getOriginalEstimateNumberAttribute()
+    public function formatEstimateNumber()
     {
-
-        $invoiceSettings = (company()) ? company()->invoiceSetting : $this->client->company->invoiceSetting;
-
-        $zero = '';
-
-        if (strlen($this->attributes['estimate_number']) < $invoiceSettings->estimate_digit) {
-            $condition = $invoiceSettings->estimate_digit - strlen($this->attributes['estimate_number']);
-
-            for ($i = 0; $i < $condition; $i++) {
-                $zero = '0' . $zero;
-            }
-        }
-
-        return $zero . $this->attributes['estimate_number'];
-    }
-
-    public function getEstimateNumberAttribute($value)
-    {
-        if (is_null($value)) {
-            return '';
-        }
-
-        $invoiceSettings = (company()) ? company()->invoiceSetting : $this->client->company->invoiceSetting;
-
-        $zero = '';
-
-        if (strlen($value) < $invoiceSettings->estimate_digit) {
-            $condition = $invoiceSettings->estimate_digit - strlen($value);
-
-            for ($i = 0; $i < $condition; $i++) {
-                $zero = '0' . $zero;
-            }
-        }
-
-        return $invoiceSettings->estimate_prefix . $invoiceSettings->estimate_number_separator . $zero . $value;
-
+        $invoiceSettings = (company()) ? company()->invoiceSetting : $this->company->invoiceSetting;
+        return \App\Helper\NumberFormat::estimate($this->estimate_number, $invoiceSettings);
     }
 
     public static function lastEstimateNumber()
     {
-        return (int)Estimate::max('estimate_number');
+        return (int)Estimate::latest()->first()?->original_estimate_number ?? 0;
     }
 
 }

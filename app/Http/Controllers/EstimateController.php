@@ -98,19 +98,24 @@ class EstimateController extends AccountBaseController
 
         $this->client = isset(request()->default_client) ? User::findOrFail(request()->default_client) : null;
 
-        if (request()->ajax()) {
-            $html = view('estimates.ajax.create', $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+        $isClient = User::isClient(user()->id);
+
+        if ($isClient) {
+            $this->client = User::findOrFail(user()->id);
         }
 
         $this->view = 'estimates.ajax.create';
+
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
+        }
+
         return view('estimates.create', $this->data);
 
     }
 
     public function store(StoreEstimate $request)
     {
-
         $items = $request->item_name;
         $cost_per_item = $request->cost_per_item;
         $quantity = $request->quantity;
@@ -146,7 +151,7 @@ class EstimateController extends AccountBaseController
 
         $estimate = new Estimate();
         $estimate->client_id = $request->client_id;
-        $estimate->valid_till = Carbon::createFromFormat($this->company->date_format, $request->valid_till)->format('Y-m-d');
+        $estimate->valid_till = companyToYmd($request->valid_till);
         $estimate->sub_total = round($request->sub_total, 2);
         $estimate->total = round($request->total, 2);
         $estimate->currency_id = $request->currency_id;
@@ -287,12 +292,12 @@ class EstimateController extends AccountBaseController
         $this->categories = ProductCategory::all();
         $this->invoiceSetting = invoice_setting();
 
+        $this->view = 'estimates.ajax.edit';
+
         if (request()->ajax()) {
-            $html = view('estimates.ajax.edit', $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
 
-        $this->view = 'estimates.ajax.edit';
         return view('estimates.create', $this->data);
     }
 
@@ -341,7 +346,7 @@ class EstimateController extends AccountBaseController
 
         $estimate = Estimate::findOrFail($id);
         $estimate->client_id = $request->client_id;
-        $estimate->valid_till = Carbon::createFromFormat($this->company->date_format, $request->valid_till)->format('Y-m-d');
+        $estimate->valid_till = companyToYmd($request->valid_till);
         $estimate->sub_total = round($request->sub_total, 2);
         $estimate->total = round($request->total, 2);
         $estimate->discount = round($request->discount_value, 2);
@@ -409,10 +414,10 @@ class EstimateController extends AccountBaseController
                             'estimate_item_id' => $estimateItem->id,
                         ],
                         [
-                            'filename' => !isset($invoice_item_image_url[$key]) ? $invoice_item_image[$key]->getClientOriginalName() : '',
-                            'hashname' => !isset($invoice_item_image_url[$key]) ? $filename : '',
-                            'size' => !isset($invoice_item_image_url[$key]) ? $invoice_item_image[$key]->getSize() : '',
-                            'external_link' => isset($invoice_item_image_url[$key]) ? $invoice_item_image_url[$key] : ''
+                            'filename' => isset($invoice_item_image[$key]) ? $invoice_item_image[$key]->getClientOriginalName() : null,
+                            'hashname' => isset($invoice_item_image[$key]) ? $filename : null,
+                            'size' => isset($invoice_item_image[$key]) ? $invoice_item_image[$key]->getSize() : null,
+                            'external_link' => isset($invoice_item_image[$key]) ? null : (isset($invoice_item_image_url[$key]) ? $invoice_item_image_url[$key] : null),
                         ]
                     );
                 }
@@ -463,8 +468,8 @@ class EstimateController extends AccountBaseController
             || ($this->viewPermission == 'both' && ($this->estimate->client_id == user()->id || $this->estimate->added_by == user()->id))
         ));
 
-        App::setLocale($this->invoiceSetting->locale);
-        Carbon::setLocale($this->invoiceSetting->locale);
+        App::setLocale($this->invoiceSetting->locale ?? 'en');
+        Carbon::setLocale($this->invoiceSetting->locale ?? 'en');
 
         $pdfOption = $this->domPdfObjectForDownload($id);
         $pdf = $pdfOption['pdf'];
@@ -476,8 +481,8 @@ class EstimateController extends AccountBaseController
     public function domPdfObjectForDownload($id)
     {
         $this->invoiceSetting = invoice_setting();
-        App::setLocale($this->invoiceSetting->locale);
-        Carbon::setLocale($this->invoiceSetting->locale);
+        App::setLocale($this->invoiceSetting->locale ?? 'en');
+        Carbon::setLocale($this->invoiceSetting->locale ?? 'en');
         $this->estimate = Estimate::findOrFail($id)->withCustomFields();
 
         if ($this->estimate->getCustomFieldGroupsWithFields()) {
@@ -545,9 +550,6 @@ class EstimateController extends AccountBaseController
         $pdf->setOptions(['isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true]);
         $pdf->loadView('estimates.pdf.' . $this->invoiceSetting->template, $this->data);
 
-        $dom_pdf = $pdf->getDomPDF();
-        $canvas = $dom_pdf->getCanvas();
-        $canvas->page_text(530, 820, 'Page {PAGE_NUM} of {PAGE_COUNT}', null, 10);
         $filename = $this->estimate->estimate_number;
 
         return [
@@ -612,7 +614,7 @@ class EstimateController extends AccountBaseController
 
             File::put(public_path() . '/' . Files::UPLOAD_FOLDER . '/estimate/accept/' . $imageName, base64_decode($image));
             Files::uploadLocalFile($imageName, 'estimate/accept', $estimate->company_id);
-            
+
         }
         else {
             if ($request->hasFile('image')) {
@@ -633,8 +635,8 @@ class EstimateController extends AccountBaseController
             $invoice = new Invoice();
 
             $invoice->client_id = $estimate->client_id;
-            $invoice->issue_date = Carbon::now($this->company->timezone)->format('Y-m-d');
-            $invoice->due_date = Carbon::now($this->company->timezone)->addDays(invoice_setting()->due_after)->format('Y-m-d');
+            $invoice->issue_date = now($this->company->timezone)->format('Y-m-d');
+            $invoice->due_date = now($this->company->timezone)->addDays(invoice_setting()->due_after)->format('Y-m-d');
             $invoice->sub_total = round($estimate->sub_total, 2);
             $invoice->discount = round($estimate->discount, 2);
             $invoice->discount_type = $estimate->discount_type;

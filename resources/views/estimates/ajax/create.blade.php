@@ -11,7 +11,7 @@
 <div class="bg-white rounded b-shadow-4 create-inv">
     <!-- HEADING START -->
     <div class="px-lg-4 px-md-4 px-3 py-3">
-        <h4 class="mb-0 f-21 font-weight-normal text-capitalize">@lang('app.estimate') @lang('app.details')</h4>
+        <h4 class="mb-0 f-21 font-weight-normal text-capitalize">@lang('app.estimateDetails')</h4>
     </div>
     <!-- HEADING END -->
     <hr class="m-0 border-top-grey">
@@ -61,9 +61,10 @@
                         <select class="form-control select-picker" name="currency_id" id="currency_id">
                             @foreach ($currencies as $currency)
                                 <option
-                                    @if (isset($estimate)) @if ($currency->id == $estimate->currency_id) selected @endif
-                                @else @if ($currency->id == company()->currency_id) selected @endif
-                                    @if ($estimateTemplate && $currency->id == $estimateTemplate->currency_id) selected @endif @endif
+                                    @if (isset($estimate)) @selected ($currency->id == $estimate->currency_id)
+                                @else @selected ($currency->id == company()->currency_id)
+                                      @selected ($estimateTemplate && $currency->id == $estimateTemplate->currency_id)
+                                @endif
                                     value="{{ $currency->id }}">
                                     {{ $currency->currency_code . ' (' . $currency->currency_symbol . ')' }}
                                 </option>
@@ -86,16 +87,16 @@
                         </x-forms.label>
                         <div class="input-group">
                             <input type="hidden" name="client_id" id="client_id" value="{{ $client->id }}">
-                            <input type="text" value="{{ $client->name }}"
+                            <input type="text" value="{{ $client->name_salutation }}"
                                 class="form-control height-35 f-15 readonly-background" readonly>
                         </div>
                     </div>
                 @else
                     <x-client-selection-dropdown :clients="$clients" :selected="isset($estimate)
-                        ? $estimate->client_id
-                        : (request()->has('default_client')
-                            ? request()->has('default_client')
-                            : null)" />
+                    ? $estimate->client_id
+                    : (request()->has('default_client')
+                        ? request()->has('default_client')
+                        : null)" />
                 @endif
             </div>
             <!-- CLIENT END -->
@@ -108,7 +109,7 @@
                         <select class="form-control select-picker" data-live-search="true" data-size="8"
                             name="calculate_tax" id="calculate_tax">
                             <option value="after_discount">@lang('modules.invoices.afterDiscount')</option>
-                            <option value="before_discount" @if (isset($estimateTemplate->calculate_tax) && $estimateTemplate->calculate_tax == 'before_discount') selected @endif>
+                            <option value="before_discount" @selected (isset($estimateTemplate->calculate_tax) && $estimateTemplate->calculate_tax == 'before_discount')>
                                 @lang('modules.invoices.beforeDiscount')</option>
                         </select>
                     </div>
@@ -140,36 +141,38 @@
                             <option value="">{{  __('app.menu.selectProductCategory')  }}</option>
                             @foreach ($categories as $category)
                                 <option value="{{ $category->id }}">
-                                    {{ mb_ucwords($category->category_name) }}</option>
+                                    {{ $category->category_name }}</option>
                             @endforeach
                         </select>
                     </x-forms.input-group>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="form-group c-inv-select mb-4">
-                <x-forms.input-group>
-                    <select class="form-control select-picker" data-live-search="true" data-size="8" id="add-products" title="{{ __('app.menu.selectProduct') }}">
-                        @foreach ($products as $item)
-                            <option data-content="{{ $item->name }}" value="{{ $item->id }}">
-                                {{ $item->name }}</option>
-                        @endforeach
-                    </select>
-                    <x-slot name="preappend">
-                        <a href="javascript:;"
-                            class="btn btn-outline-secondary border-grey toggle-product-category"
-                            data-toggle="tooltip" data-original-title="{{ __('modules.productCategory.filterByCategory') }}"><i class="fa fa-filter"></i></a>
-                    </x-slot>
-                    @if ($addProductPermission == 'all' || $addProductPermission == 'added')
-                        <x-slot name="append">
-                            <a href="{{ route('products.create') }}" data-redirect-url="no"
-                                class="btn btn-outline-secondary border-grey openRightModal"
-                                data-toggle="tooltip" data-original-title="{{ __('modules.dashboard.addNewproduct') }}">@lang('app.add')</a>
+            @if(in_array('products', user_modules()) || in_array('purchase', user_modules()))
+                <div class="col-md-3">
+                    <div class="form-group c-inv-select mb-4">
+                    <x-forms.input-group>
+                        <select class="form-control select-picker" data-live-search="true" data-size="8" id="add-products" title="{{ __('app.menu.selectProduct') }}">
+                            @foreach ($products as $item)
+                                <option data-content="{{ $item->name }}" value="{{ $item->id }}">
+                                    {{ $item->name }}</option>
+                            @endforeach
+                        </select>
+                        <x-slot name="preappend">
+                            <a href="javascript:;"
+                                class="btn btn-outline-secondary border-grey toggle-product-category"
+                                data-toggle="tooltip" data-original-title="{{ __('modules.productCategory.filterByCategory') }}"><i class="fa fa-filter"></i></a>
                         </x-slot>
-                    @endif
-                </x-forms.input-group>
+                        @if ($addProductPermission == 'all' || $addProductPermission == 'added')
+                            <x-slot name="append">
+                                <a href="{{ route('products.create') }}" data-redirect-url="no"
+                                    class="btn btn-outline-secondary border-grey openRightModal"
+                                    data-toggle="tooltip" data-original-title="{{ __('modules.dashboard.addNewProduct') }}">@lang('app.add')</a>
+                            </x-slot>
+                        @endif
+                    </x-forms.input-group>
+                    </div>
                 </div>
-            </div>
+            @endif
         </div>
 
         <div id="sortable">
@@ -228,7 +231,7 @@
                                                 <select class="text-dark-grey float-right border-0 f-12" name="unit_id[]">
                                                     @foreach ($units as $unit)
                                                         <option
-                                                        @if ($item->unit_id == $unit->id) selected @endif
+                                                            @selected ($item->unit_id == $unit->id)
                                                         value="{{ $unit->id }}">{{ $unit->unit_type }}</option>
                                                     @endforeach
                                                 </select>
@@ -247,10 +250,10 @@
                                                     multiple="multiple"
                                                     class="select-picker type customSequence border-0" data-size="3">
                                                     @foreach ($taxes as $tax)
-                                                        <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ strtoupper($tax->tax_name) .':'. $tax->rate_percent }}%"
-                                                            @if (isset($item->taxes) && array_search($tax->id, json_decode($item->taxes)) !== false) selected @endif
+                                                        <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ $tax->tax_name .':'. $tax->rate_percent }}%"
+                                                            @selected (isset($item->taxes) && array_search($tax->id, json_decode($item->taxes)) !== false)
                                                             value="{{ $tax->id }}">
-                                                            {{ strtoupper($tax->tax_name) }}:
+                                                            {{ $tax->tax_name }}:
                                                             {{ $tax->rate_percent }}%</option>
                                                     @endforeach
                                                 </select>
@@ -278,7 +281,7 @@
                                             <input type="file" class="dropify itemImage"
                                                 name="invoice_item_image[]" id="image{{ $item->id }}"
                                                 data-index="{{ $loop->index }}"
-                                                data-allowed-file-extensions="png jpg jpeg"
+                                                data-allowed-file-extensions="png jpg jpeg bmp"
                                                 data-item-id="{{ $item->id }}"
                                                 data-default-file="{{ $item->estimateItemImage ? $item->estimateItemImage->file_url : '' }}"
                                                 data-height="70" multiple />
@@ -344,7 +347,7 @@
                                                 <select class="text-dark-grey float-right border-0 f-12" name="unit_id[]">
                                                     @foreach ($units as $unit)
                                                         <option
-                                                        @if ($item->unit_id == $unit->id) selected @endif
+                                                            @selected($item->unit_id == $unit->id)
                                                         value="{{ $unit->id }}">{{ $unit->unit_type }}</option>
                                                     @endforeach
                                                 </select>
@@ -362,10 +365,10 @@
                                                 <select id="multiselect" name="taxes[0][]" multiple="multiple"
                                                     class="select-picker type customSequence border-0" data-size="3">
                                                     @foreach ($taxes as $tax)
-                                                        <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ strtoupper($tax->tax_name) .':'. $tax->rate_percent }}%"
-                                                            @if (isset($item->taxes) && array_search($tax->id, json_decode($item->taxes)) !== false) selected @endif
+                                                        <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ $tax->tax_name .':'. $tax->rate_percent }}%"
+                                                            @selected (isset($item->taxes) && array_search($tax->id, json_decode($item->taxes)) !== false)
                                                             value="{{ $tax->id }}">
-                                                            {{ strtoupper($tax->tax_name) }}
+                                                            {{ $tax->tax_name }}
                                                             {{ $tax->rate_percent }}%</option>
                                                     @endforeach
                                                 </select>
@@ -391,13 +394,13 @@
                                             value={{ isset($item->estimateTemplateItemImage->id) ? $item->estimateTemplateItemImage->id : '' }} />
 
                                             <input type="file" class="dropify" name="invoice_item_image[]"
-                                                data-allowed-file-extensions="png jpg jpeg"
+                                                data-allowed-file-extensions="png jpg jpeg bmp"
                                                 data-messages-default="test" data-height="70"
                                                 data-id="{{ $item->id }}" id="{{ $item->id }}"
                                                 data-default-file="{{ $item->estimateTemplateItemImage ? $item->estimateTemplateItemImage->file_url : '' }}"
                                                 @if ($item->estimateTemplateItemImage && $item->estimateTemplateItemImage->external_link) data-show-remove="false" @endif />
                                             <input type="hidden" name="invoice_item_image_url[]"
-                                                value="{{ $item->proposalTemplateItemImage ? $item->proposalTemplateItemImage->external_link : '' }}">
+                                                value="{{ $item->estimateTemplateItemImage ? $item->estimateTemplateItemImage->file : '' }}">
                                         </td>
                                     </tr>
                                 </tbody>
@@ -412,6 +415,7 @@
                 @endforeach
             @else
                 <!-- DESKTOP DESCRIPTION TABLE START -->
+
                 <div class="d-flex px-4 py-3 c-inv-desc item-row">
 
                     <div class="c-inv-desc-table w-100 d-lg-flex d-md-flex d-block">
@@ -457,7 +461,7 @@
                                             <select class="text-dark-grey float-right border-0 f-12" name="unit_id[]">
                                                 @foreach ($units as $unit)
                                                     <option
-                                                    @if ($unit->default == 1) selected @endif
+                                                        @selected ($unit->default == 1)
                                                     value="{{ $unit->id }}">{{ $unit->unit_type }}</option>
                                                 @endforeach
                                             </select>
@@ -473,8 +477,8 @@
                                             <select id="multiselect" name="taxes[0][]" multiple="multiple"
                                                 class="select-picker type customSequence border-0" data-size="3">
                                                 @foreach ($taxes as $tax)
-                                                    <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ strtoupper($tax->tax_name) .':'. $tax->rate_percent }}%"
-                                                        value="{{ $tax->id }}">{{ strtoupper($tax->tax_name) }}:
+                                                    <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ $tax->tax_name .':'. $tax->rate_percent }}%"
+                                                        value="{{ $tax->id }}">{{ $tax->tax_name }}:
                                                         {{ $tax->rate_percent }}%</option>
                                                 @endforeach
                                             </select>
@@ -493,7 +497,7 @@
                                     </td>
                                     <td class="border-left-0">
                                         <input type="file" class="dropify" name="invoice_item_image[]"
-                                            data-allowed-file-extensions="png jpg jpeg" data-height="70" />
+                                            data-allowed-file-extensions="png jpg jpeg bmp" data-height="70" />
                                         <input type="hidden" name="invoice_item_image_url[]">
                                     </td>
                                 </tr>
@@ -540,7 +544,7 @@
                                         <td width="20%" class="text-dark-grey">@lang('modules.invoices.discount')
                                         </td>
                                         <td width="40%" style="padding: 5px;">
-                                            <table width="100%">
+                                            <table width="100%" class="mw-250">
                                                 <tbody>
                                                     <tr>
                                                         <td width="70%" class="c-inv-sub-padding">
@@ -556,11 +560,11 @@
                                                                 <select class="form-control select-picker"
                                                                     id="discount_type" name="discount_type">
                                                                     <option
-                                                                        @if (isset($estimateTemplate) && $estimateTemplate->discount_type == 'percent') selected @endif
+                                                                        @selected(isset($estimateTemplate) && $estimateTemplate->discount_type == 'percent')
                                                                         value="percent">%
                                                                     </option>
                                                                     <option
-                                                                        @if (isset($estimateTemplate) && $estimateTemplate->discount_type == 'fixed') selected @endif
+                                                                        @selected(isset($estimateTemplate) && $estimateTemplate->discount_type == 'fixed')
                                                                         value="fixed">
                                                                         @lang('modules.invoices.amount')</option>
                                                                 </select>
@@ -645,10 +649,9 @@
                 <x-forms.button-secondary data-type="draft" class="save-form mr-3">@lang('app.saveDraft')
                 </x-forms.button-secondary>
 
+                <x-forms.button-cancel :link="route('estimates.index')" class="border-0">@lang('app.cancel')
+                </x-forms.button-cancel>
             </div>
-
-            <x-forms.button-cancel :link="route('estimates.index')" class="border-0">@lang('app.cancel')
-            </x-forms.button-cancel>
 
         </x-form-actions>
         <!-- CANCEL SAVE SEND END -->
@@ -810,10 +813,10 @@
                 </tr>` +
                 '<tr>' +
                 '<td class="border-bottom-0 btrr-mbl btlr">' +
-                '<input type="text" class="f-14 border-0 w-100 item_name form-control" name="item_name[]" placeholder="@lang('modules.expenses.itemName')">' +
+                `<input type="text" class="f-14 border-0 w-100 item_name form-control" name="item_name[]" placeholder="@lang('modules.expenses.itemName')">` +
                 '</td>' +
                 '<td class="border-bottom-0 d-block d-lg-none d-md-none">' +
-                '<textarea class="f-14 border-0 w-100 mobile-description form-control" name="item_summary[]" placeholder="@lang('placeholders.invoices.description')"></textarea>' +
+                `<textarea class="f-14 border-0 w-100 mobile-description form-control" name="item_summary[]" placeholder="@lang('placeholders.invoices.description')"></textarea>` +
                 '</td>';
 
             if (hsn_status == 1) {
@@ -827,7 +830,7 @@
                 `<select class="text-dark-grey float-right border-0 f-12" name="unit_id[]">
                     @foreach ($units as $unit)
                         <option
-                        @if ($unit->default == 1) selected @endif
+                        @selected($unit->default == 1)
                         value="{{ $unit->id }}">{{ $unit->unit_type }}</option>
                     @endforeach
                 </select>
@@ -841,8 +844,8 @@
                 '<select id="multiselect' + i + '" name="taxes[' + i +
                 '][]" multiple="multiple" class="select-picker type customSequence" data-size="3">'
             @foreach ($taxes as $tax)
-                +'<option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ strtoupper($tax->tax_name) .':'. $tax->rate_percent }}%" value="{{ $tax->id }}">' +
-                '{{ strtoupper($tax->tax_name) }}:{{ $tax->rate_percent }}%</option>'
+                +'<option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ $tax->tax_name .':'. $tax->rate_percent }}%" value="{{ $tax->id }}">' +
+                '{{ $tax->tax_name }}:{{ $tax->rate_percent }}%</option>'
             @endforeach +
             '</select>' +
             '</div>' +
@@ -858,7 +861,7 @@
             '</td>' +
             '<td class="border-left-0">' +
             '<input type="file" class="dropify" id="dropify' + i +
-                '" name="invoice_item_image[]" data-allowed-file-extensions="png jpg jpeg" data-messages-default="test" data-height="70" /><input type="hidden" name="invoice_item_image_url[]">' +
+                '" name="invoice_item_image[]" data-allowed-file-extensions="png jpg jpeg bmp" data-messages-default="test" data-height="70" /><input type="hidden" name="invoice_item_image_url[]">' +
                 '</td>' +
                 '</tr>' +
                 '</tbody>' +
@@ -991,12 +994,5 @@
         return str;
     }
 
-    function checkboxChange(parentClass, id) {
-        var checkedData = '';
-        $('.' + parentClass).find("input[type= 'checkbox']:checked").each(function() {
-            checkedData = (checkedData !== '') ? checkedData + ', ' + $(this).val() : $(this).val();
-        });
-        $('#' + id).val(checkedData);
-    }
 </script>
 @endif

@@ -531,6 +531,7 @@
 
         .word-break {
             word-wrap: break-word;
+            word-break: break-all;
         }
 
         @if($invoiceSetting->locale == 'th')
@@ -570,7 +571,7 @@
 
             <div class="company-info">
                 <div  class="description">
-                    {{ mb_ucwords(company()->company_name) }}
+                    {{ company()->company_name }}
                 </div>
 
                 <br />
@@ -593,7 +594,7 @@
         <section id="invoice-title-number">
 
             <span
-                id="title" class="description">{{ $creditNoteSetting->credit_note_prefix }}{{ $creditNote->original_cn_number }}</span>
+                id="title" class="description">{{ $creditNote->cn_number }}</span>
 
         </section>
 
@@ -603,11 +604,11 @@
                 @if (!is_null($creditNote->project) && !is_null($creditNote->project->client))
                     <span class="description">@lang('modules.credit-notes.billedTo')</span>
                     <div>
-                        <span class="bold">{{ mb_ucwords($creditNote->project->client->name) }}</span>
+                        <span class="bold">{{ $creditNote->project->client->name_salutation }}</span>
                     </div>
 
                     <div>
-                        <span>{{ mb_ucwords($creditNote->project->clientDetails->company_name) }}</span>
+                        <span>{{ $creditNote->project->clientDetails->company_name }}</span>
                     </div>
 
                     <div>
@@ -657,9 +658,9 @@
                             <td>{{ ++$count }}</td>
                             <!-- Don't remove this column as it's needed for the row commands -->
                             <td>
-                                <div class="mb-3">{{ ucfirst($item->item_name) }}</div>
+                                <div class="mb-3 word-break">{{ $item->item_name }}</div>
                                 @if (!is_null($item->item_summary))
-                                    <p class="item-summary mb-3 description">{!! nl2br(strip_tags($item->item_summary, ['p', 'b', 'strong', 'a'])) !!}</p>
+                                    <p class="item-summary mb-3 description word-break">{!! nl2br(pdfStripTags($item->item_summary)) !!}</p>
                                 @endif
                                 @if ($item->creditNoteItemImage)
                                     <p class="mt-2">
@@ -673,7 +674,7 @@
                             @endif
                             <td>{{ $item->quantity }}@if($item->unit)<br><span class="f-11 text-dark-grey">{{ $item->unit->unit_type }}</span>@endif</td>
                             <td>{{ currency_format($item->unit_price, $creditNote->currency_id, false) }}</td>
-                            <td>{{ strtoupper($item->tax_list) }}</td>
+                            <td>{{ $item->tax_list }}</td>
                             <td>{{ currency_format($item->amount, $creditNote->currency_id, false) }}</td>
                         </tr>
                     @endif
@@ -698,7 +699,7 @@
                 @endif
                 @foreach ($taxes as $key => $tax)
                     <tr data-iterate="tax">
-                        <th>{{ mb_strtoupper($key) }}:</th>
+                        <th>{{ $key }}:</th>
                         <td>{{ currency_format($tax, $creditNote->currency_id, false) }}</td>
                     </tr>
                 @endforeach
@@ -714,7 +715,7 @@
                 </tr>
                 <tr>
                     <th>
-                        @lang('app.adjustment') @lang('app.amount'):</th>
+                        @lang('app.adjustmentAmount'):</th>
                     <td>
                         {{ currency_format($creditNote->adjustment_amount, $creditNote->currency_id, false) }}</td>
                 </tr>
@@ -735,9 +736,9 @@
 
         <section id="terms"  class="description">
 
-            <div class="notes"  class="description">
+            <div class="notes description" >
                 <div>
-                    <span>@lang('app.menu.issues') @lang('app.date'):</span>
+                    <span>@lang('app.issuesDate'):</span>
                     <span>{{ $creditNote->issue_date->translatedFormat(company()->date_format) }}</span>
                 </div>
                 @if ($invoiceNumber)
@@ -746,7 +747,7 @@
                     </div>
                 @endif
                 <div>
-                    <span>@lang('app.status'):</span> <span>{{ mb_ucwords($creditNote->status) }}</span>
+                    <span>@lang('app.status'):</span> <span>{{ $creditNote->status }}</span>
                 </div>
 
                 @if (!is_null($creditNote->note))
@@ -754,6 +755,9 @@
                 @endif
                 @if ($creditNote->status == 'open')
                     <br>{!! nl2br($creditNoteSetting->credit_note_terms) !!}
+                @endif
+                @if (isset($invoiceSetting->other_info))
+                    <br>{!! nl2br($invoiceSetting->other_info) !!}
                 @endif
             </div>
 

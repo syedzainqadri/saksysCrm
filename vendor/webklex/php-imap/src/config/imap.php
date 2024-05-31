@@ -61,7 +61,8 @@ return [
                 'username' => null,
                 'password' => null,
             ],
-            "timeout" => 30
+            "timeout" => 30,
+            "extensions" => []
         ],
 
         /*
@@ -111,6 +112,11 @@ return [
     |   -RFC822
     |       Default TRUE - Set to FALSE to prevent the usage of \imap_rfc822_parse_headers().
     |                      See https://github.com/Webklex/php-imap/issues/115 for more information.
+    |   -Debug enable to trace communication traffic
+    |   -UID cache enable the UID cache
+    |   -Fallback date is used if the given message date could not be parsed
+    |   -Boundary regex used to detect message boundaries. If you are having problems with empty messages, missing
+    |       attachments or anything like this. Be advised that it likes to break which causes new problems..
     |   -Message key identifier option
     |       You can choose between the following:
     |       'id'     - Use the MessageID as array key (default, might cause hickups with yahoo mail)
@@ -138,11 +144,15 @@ return [
     'options' => [
         'delimiter' => '/',
         'fetch' => \Webklex\PHPIMAP\IMAP::FT_PEEK,
-        'sequence' => \Webklex\PHPIMAP\IMAP::ST_MSGN,
+        'sequence' => \Webklex\PHPIMAP\IMAP::ST_UID,
         'fetch_body' => true,
         'fetch_flags' => true,
         'soft_fail' => false,
         'rfc822' => true,
+        'debug' => false,
+        'uid_cache' => true,
+        // 'fallback_date' => "01.01.1970 00:00:00",
+        'boundary' => '/boundary=(.*?(?=;)|(.*))/i',
         'message_key' => 'list',
         'fetch_order' => 'asc',
         'dispositions' => ['attachment', 'inline'],

@@ -6,6 +6,7 @@
  */
 namespace Dompdf\FrameReflower;
 
+use Dompdf\Exception;
 use Dompdf\FrameDecorator\Block as BlockFrameDecorator;
 use Dompdf\FrameDecorator\Table as TableFrameDecorator;
 use Dompdf\FrameDecorator\TableRowGroup as TableRowGroupFrameDecorator;
@@ -55,6 +56,9 @@ class TableRowGroup extends AbstractFrameReflower
         }
 
         $table = TableFrameDecorator::find_parent_table($frame);
+        if ($table === null) {
+            throw new Exception("Parent table not found for table row group");
+        }
         $cellmap = $table->get_cellmap();
 
         // Stop reflow if a page break has occurred before the frame, in which

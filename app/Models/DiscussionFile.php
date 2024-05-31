@@ -45,6 +45,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int|null $company_id
  * @property-read \App\Models\Company|null $company
  * @method static \Illuminate\Database\Eloquent\Builder|DiscussionFile whereCompanyId($value)
+ * @property-read mixed $file
  * @mixin \Eloquent
  */
 class DiscussionFile extends BaseModel
@@ -54,12 +55,20 @@ class DiscussionFile extends BaseModel
 
     const FILE_PATH = 'discussion-files';
 
-    protected $appends = ['file_url', 'icon'];
+    protected $appends = ['file_url', 'icon', 'file'];
 
     public function getFileUrlAttribute()
     {
-        // phpcs:ignore
-        return (!is_null($this->external_link)) ? $this->external_link : asset_url_local_s3(DiscussionFile::FILE_PATH . '/' . $this->hashname);
+        if($this->external_link){
+            return str($this->external_link)->contains('http') ? $this->external_link : asset_url_local_s3($this->external_link);
+        }
+
+        return asset_url_local_s3(DiscussionFile::FILE_PATH . '/' . $this->hashname);
+    }
+
+    public function getFileAttribute()
+    {
+        return $this->external_link ?: (DiscussionFile::FILE_PATH . '/' . $this->hashname);
     }
 
     public function discussion(): BelongsTo

@@ -37,7 +37,7 @@ $deleteTimelogPermission = user()->permission('delete_timelogs');
                         {{ $item->hours }}
                     </td>
                     <td>
-                        {{ currency_format($item->earnings) }}
+                        {{ currency_format($item->earnings, company()->currency_id) }}
                         @if ($item->approved)
                             <i data-toggle="tooltip" data-original-title="{{ __('app.approved') }}"
                                 class="fa fa-check-circle text-primary"></i>

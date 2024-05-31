@@ -1,5 +1,5 @@
 <div class="modal-header">
-    <h5 class="modal-title">@lang('app.addNew') @lang('app.menu.ticketAgents')</h5>
+    <h5 class="modal-title">@lang('app.addNewTicketAgents')</h5>
     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
 </div>
 <div class="modal-body">
@@ -18,7 +18,7 @@
                     <x-forms.select fieldId="ticket_group_id" :fieldLabel="__('modules.tickets.assignGroup')"
                         fieldName="group_id[]" search="true" fieldRequired="true" multiple="true">
                         @foreach ($groups as $group)
-                                <option value="{{ $group->id }}">{{ mb_ucwords($group->group_name) }}</option>
+                                <option value="{{ $group->id }}">{{ $group->group_name }}</option>
                         @endforeach
                     </x-forms.select>
                 </div>

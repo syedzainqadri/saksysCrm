@@ -35,8 +35,8 @@
                                 value="1" name="quantity[]">
                             <select class="text-dark-grey float-right border-0 f-12" name="unit_id[]">
                                 @foreach ($units as $unit)
-                                    <option 
-                                    @if ($unit->default == 1) selected @endif
+                                    <option
+                                    @selected($unit->default == 1)
                                     value="{{ $unit->id }}">{{ $unit->unit_type }}</option>
                                 @endforeach
                             </select>
@@ -51,8 +51,8 @@
                                 <select id="multiselect" name="taxes[{{ $key }}][]" multiple="multiple"
                                     class="select-picker type customSequence border-0" data-size="3">
                                     @foreach ($taxes as $tax)
-                                        <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ strtoupper($tax->tax_name) .':'. $tax->rate_percent }}%" value="{{ $tax->id }}">
-                                            {{ strtoupper($tax->tax_name) }}: {{ $tax->rate_percent }}%</option>
+                                        <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ $tax->tax_name .':'. $tax->rate_percent }}%" value="{{ $tax->id }}">
+                                            {{ $tax->tax_name }}: {{ $tax->rate_percent }}%</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -118,8 +118,8 @@
                                 name="quantity[]">
                             <select class="text-dark-grey float-right border-0 f-12" name="unit_id[]">
                                 @foreach ($units as $unit)
-                                    <option 
-                                    @if ($unit->default == 1) selected @endif
+                                    <option
+                                    @selected ($unit->default == 1)
                                     value="{{ $unit->id }}">{{ $unit->unit_type }}</option>
                                 @endforeach
                             </select>
@@ -134,8 +134,8 @@
                                 <select id="multiselect" name="taxes[0][]" multiple="multiple"
                                     class="select-picker type customSequence border-0" data-size="3">
                                     @foreach ($taxes as $tax)
-                                        <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ strtoupper($tax->tax_name) .':'. $tax->rate_percent }}%" value="{{ $tax->id }}">
-                                            {{ strtoupper($tax->tax_name) }}:
+                                        <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ $tax->tax_name .':'. $tax->rate_percent }}%" value="{{ $tax->id }}">
+                                            {{ $tax->tax_name }}:
                                             {{ $tax->rate_percent }}%</option>
                                     @endforeach
                                 </select>

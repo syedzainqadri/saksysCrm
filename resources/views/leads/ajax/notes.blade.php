@@ -1,5 +1,5 @@
 @php
-$addLeadNotePermission = user()->permission('add_lead_note');
+$addDealNotePermission = user()->permission('add_deal_note');
 @endphp
 
 <!-- ROW START -->
@@ -8,8 +8,8 @@ $addLeadNotePermission = user()->permission('add_lead_note');
         <!-- Add Task Export Buttons Start -->
         <div class="d-flex justify-content-between action-bar">
             <div id="table-actions" class="d-flex align-items-center">
-                @if ($addLeadNotePermission == 'all' || $addLeadNotePermission == 'added' || $addLeadNotePermission == 'both')
-                    <x-forms.link-primary :link="route('lead-notes.create').'?lead='.$lead->id"
+                @if ($addDealNotePermission == 'all' || $addDealNotePermission == 'added' || $addDealNotePermission == 'both')
+                    <x-forms.link-primary :link="route('deal-notes.create').'?lead='.$deal->id"
                         class="mr-3 openRightModal" icon="plus">
                         @lang('modules.client.createNote')
                     </x-forms.link-primary>
@@ -39,13 +39,13 @@ $addLeadNotePermission = user()->permission('add_lead_note');
 @include('sections.datatable_js')
 
 <script>
-    $('#lead-notes-table').on('preXhr.dt', function(e, settings, data) {
-        var leadID = "{{ $lead->id }}";
+    $('#deal-notes-table').on('preXhr.dt', function(e, settings, data) {
+        var leadID = "{{ $deal->id }}";
         data['leadID'] = leadID;
     });
 
     const showTable = () => {
-        window.LaravelDataTables["lead-notes-table"].draw(false);
+        window.LaravelDataTables["deal-notes-table"].draw(false);
     }
 
     $('#quick-action-type').change(function() {
@@ -117,7 +117,7 @@ $addLeadNotePermission = user()->permission('add_lead_note');
             buttonsStyling: false
         }).then((result) => {
             if (result.isConfirmed) {
-                var url = "{{ route('lead-notes.destroy', ':id') }}";
+                var url = "{{ route('deal-notes.destroy', ':id') }}";
                 url = url.replace(':id', id);
                 var token = "{{ csrf_token() }}";
 
@@ -139,11 +139,11 @@ $addLeadNotePermission = user()->permission('add_lead_note');
     });
 
     const applyQuickAction = () => {
-        var rowdIds = $("#lead-notes-table input:checkbox:checked").map(function() {
+        var rowdIds = $("#deal-notes-table input:checkbox:checked").map(function() {
             return $(this).val();
         }).get();
 
-        var url = "{{ route('lead-notes.apply_quick_action') }}?row_ids=" + rowdIds;
+        var url = "{{ route('deal-notes.apply_quick_action') }}?row_ids=" + rowdIds;
 
         $.easyAjax({
             url: url,
@@ -162,21 +162,11 @@ $addLeadNotePermission = user()->permission('add_lead_note');
         })
     };
 
-    $('body').on('click', '.ask-for-password', function() {
-        let leadNoteId = $(this).data('lead-note-id');
-
-        var url = "{{ route('lead_notes.ask_for_password', ':id') }}";
-        url = url.replace(':id', leadNoteId);
-
-        $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
-        $.ajaxModal(MODAL_LG, url);
-    });
-
     // show note detail in right modal
     var getNoteDetail = function(id) {
         openTaskDetail();
 
-        var url = "{{ route('lead-notes.show', ':id') }}";
+        var url = "{{ route('deal-notes.show', ':id') }}";
         url = url.replace(':id', id);
 
         $.easyAjax({

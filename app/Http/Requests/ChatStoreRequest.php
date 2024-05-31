@@ -17,6 +17,13 @@ class ChatStoreRequest extends CoreRequest
         return true;
     }
 
+    public function prepareForValidation()
+    {
+        $this->merge([
+            'message' => trim_editor($this->message),
+        ]);
+    }
+
     /**
      * Get the validation rules that apply to the request.
      *
@@ -25,11 +32,17 @@ class ChatStoreRequest extends CoreRequest
 
     public function rules()
     {
-        return [
-            'message' => 'required',
+
+        $rules = [
             'user_id' => 'required_if:user_type,employee',
             'client_id' => 'required_if:user_type,client',
         ];
+
+        if($this->types == 'modal'){
+            $rules['message'] = 'required';
+        }
+
+        return $rules;
     }
 
     public function messages()

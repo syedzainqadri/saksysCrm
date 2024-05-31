@@ -10,7 +10,7 @@
 <div class="modal-body">
     <x-form id="generateStatement">
         <input type="hidden" name="account_id" id="account_id" value="{{$accountId}}">
-        <div class="select-box d-flex pr-2 border-right-grey border-right-grey-sm-0">
+        <div class="select-box pr-2">
             <p class="mb-0 pr-3 f-14 text-dark-grey d-flex align-items-center">@lang('app.date')</p>
             <div class="select-status d-flex">
                 <input type="text" name="statement_date" class=" form-control position-relative text-dark p-2 text-left f-14"

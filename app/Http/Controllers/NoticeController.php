@@ -44,13 +44,12 @@ class NoticeController extends AccountBaseController
 
         $this->teams = Team::all();
         $this->pageTitle = __('modules.notices.addNotice');
+        $this->view = 'notices.ajax.create';
 
         if (request()->ajax()) {
-            $html = view('notices.ajax.create', $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
 
-        $this->view = 'notices.ajax.create';
         return view('notices.create', $this->data);
     }
 
@@ -111,13 +110,14 @@ class NoticeController extends AccountBaseController
             return $value->read == 0;
         });
 
-        if (request()->ajax()) {
-            $this->pageTitle = __('app.menu.noticeBoard');
-            $html = view('notices.ajax.show', $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
-        }
+        $this->pageTitle = __('app.menu.noticeBoard');
 
         $this->view = 'notices.ajax.show';
+
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
+        }
+
         return view('notices.create', $this->data);
 
     }
@@ -143,12 +143,11 @@ class NoticeController extends AccountBaseController
         $this->teams = Team::all();
         $this->pageTitle = __('modules.notices.updateNotice');
 
-        if (request()->ajax()) {
-            $html = view('notices.ajax.edit', $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
-        }
-
         $this->view = 'notices.ajax.edit';
+
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
+        }
 
         return view('notices.create', $this->data);
 

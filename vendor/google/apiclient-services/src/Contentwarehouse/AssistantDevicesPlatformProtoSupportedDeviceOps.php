@@ -29,6 +29,10 @@ class AssistantDevicesPlatformProtoSupportedDeviceOps extends \Google\Model
   protected $deviceModifySettingDataType = '';
   protected $deviceTakePhotoType = AssistantDevicesPlatformProtoDeviceTakePhotoCapability::class;
   protected $deviceTakePhotoDataType = '';
+  protected $executionWaitType = AssistantDevicesPlatformProtoExecutionWaitCapability::class;
+  protected $executionWaitDataType = '';
+  protected $getHealthObservationType = AssistantDevicesPlatformProtoGetHealthObservationCapability::class;
+  protected $getHealthObservationDataType = '';
   protected $mediaNextType = AssistantDevicesPlatformProtoMediaNextCapability::class;
   protected $mediaNextDataType = '';
   protected $mediaPauseType = AssistantDevicesPlatformProtoMediaPauseCapability::class;
@@ -49,6 +53,8 @@ class AssistantDevicesPlatformProtoSupportedDeviceOps extends \Google\Model
   protected $providerOpenDataType = '';
   protected $sendChatMessageType = AssistantDevicesPlatformProtoSendChatMessageCapability::class;
   protected $sendChatMessageDataType = '';
+  protected $uiShowInterpreterType = AssistantDevicesPlatformProtoUiShowInterpreterCapability::class;
+  protected $uiShowInterpreterDataType = '';
 
   /**
    * @param AssistantDevicesPlatformProtoCallCallCapability
@@ -119,6 +125,34 @@ class AssistantDevicesPlatformProtoSupportedDeviceOps extends \Google\Model
   public function getDeviceTakePhoto()
   {
     return $this->deviceTakePhoto;
+  }
+  /**
+   * @param AssistantDevicesPlatformProtoExecutionWaitCapability
+   */
+  public function setExecutionWait(AssistantDevicesPlatformProtoExecutionWaitCapability $executionWait)
+  {
+    $this->executionWait = $executionWait;
+  }
+  /**
+   * @return AssistantDevicesPlatformProtoExecutionWaitCapability
+   */
+  public function getExecutionWait()
+  {
+    return $this->executionWait;
+  }
+  /**
+   * @param AssistantDevicesPlatformProtoGetHealthObservationCapability
+   */
+  public function setGetHealthObservation(AssistantDevicesPlatformProtoGetHealthObservationCapability $getHealthObservation)
+  {
+    $this->getHealthObservation = $getHealthObservation;
+  }
+  /**
+   * @return AssistantDevicesPlatformProtoGetHealthObservationCapability
+   */
+  public function getGetHealthObservation()
+  {
+    return $this->getHealthObservation;
   }
   /**
    * @param AssistantDevicesPlatformProtoMediaNextCapability
@@ -259,6 +293,20 @@ class AssistantDevicesPlatformProtoSupportedDeviceOps extends \Google\Model
   public function getSendChatMessage()
   {
     return $this->sendChatMessage;
+  }
+  /**
+   * @param AssistantDevicesPlatformProtoUiShowInterpreterCapability
+   */
+  public function setUiShowInterpreter(AssistantDevicesPlatformProtoUiShowInterpreterCapability $uiShowInterpreter)
+  {
+    $this->uiShowInterpreter = $uiShowInterpreter;
+  }
+  /**
+   * @return AssistantDevicesPlatformProtoUiShowInterpreterCapability
+   */
+  public function getUiShowInterpreter()
+  {
+    return $this->uiShowInterpreter;
   }
 }
 

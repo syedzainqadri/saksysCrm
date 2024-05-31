@@ -1,5 +1,5 @@
 <div class="modal-header">
-    <h5 class="modal-title">@lang('modules.projects.projectCategory')</h5>
+    <h5 class="modal-title">@lang('modules.projectCategory.addProjectCategory')</h5>
     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
 </div>
 <x-form id="createProjectCategory" method="POST" class="ajax-form">

@@ -19,7 +19,7 @@ $addExpenseCategoryPermission = user()->permission('manage_expense_category');
         <x-form id="save-expense-data-form" method="PUT">
             <div class="add-client bg-white rounded">
                 <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
-                    @lang('app.expense') @lang('app.details')</h4>
+                    @lang('app.expenseDetails')</h4>
                 <div class="row p-20">
                     <div class="col-md-6 col-lg-4">
                         <x-forms.text class="mr-0 mr-lg-2 mr-md-2" :fieldLabel="__('modules.expenses.itemName')"
@@ -65,7 +65,7 @@ $addExpenseCategoryPermission = user()->permission('manage_expense_category');
                                         data-content="<div class='d-inline-block mr-1'><img
                                                 class='taskEmployeeImg rounded-circle' src='{{ $employee->image_url }}'></div>
                                         {{ $employee->name }}"
-                                        value="{{ $employee->id }}">{{ mb_ucwords($employee->name) }}</option>
+                                        value="{{ $employee->id }}">{{ $employee->name }}</option>
                                     @endforeach
                                 </select>
                             </x-forms.input-group>
@@ -80,7 +80,7 @@ $addExpenseCategoryPermission = user()->permission('manage_expense_category');
                         <option value="">--</option>
                         @foreach ($projects as $project)
                             <option data-currency-id="{{ $project->currency_id }}" @if ($expense->project_id == $project->id) selected @endif value="{{ $project->id }}">
-                                {{ mb_ucwords($project->project_name) }}
+                                {{ $project->project_name }}
                             </option>
                         @endforeach
                     </x-forms.select>
@@ -110,7 +110,7 @@ $addExpenseCategoryPermission = user()->permission('manage_expense_category');
                             @foreach ($bankDetails as $bankDetail)
                                 <option value="{{ $bankDetail->id }}" @if($bankDetail->id == $expense->bank_account_id) selected @endif>@if($bankDetail->type == 'bank')
                                     {{ $bankDetail->bank_name }} | @endif
-                                    {{ mb_ucwords($bankDetail->account_name) }}
+                                    {{ $bankDetail->account_name }}
                                 </option>
                             @endforeach
                         @endif
@@ -127,7 +127,7 @@ $addExpenseCategoryPermission = user()->permission('manage_expense_category');
                             <option value="">--</option>
                             @foreach ($categories as $category)
                                 <option @if ($expense->category_id == $category->id) selected @endif value="{{ $category->id }}">
-                                    {{ mb_ucwords($category->category_name) }}
+                                    {{ $category->category_name }}
                                 </option>
                             @endforeach
                         </select>
@@ -352,14 +352,6 @@ $addExpenseCategoryPermission = user()->permission('manage_expense_category');
 
         init(RIGHT_MODAL);
     });
-
-    function checkboxChange(parentClass, id) {
-        var checkedData = '';
-        $('.' + parentClass).find("input[type= 'checkbox']:checked").each(function() {
-            checkedData = (checkedData !== '') ? checkedData + ', ' + $(this).val() : $(this).val();
-        });
-        $('#' + id).val(checkedData);
-    }
 
     $('body').on('change keyup', '#rotation, #billing_cycle', function () {
         var billingCycle = $('#billing_cycle').val();

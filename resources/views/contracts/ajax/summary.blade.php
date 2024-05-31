@@ -29,15 +29,15 @@
         <div class="invoice-table-wrapper">
             <table width="100%" class="">
                 <tr class="inv-logo-heading">
-                    <td><img src="{{ invoice_setting()->logo_url }}" alt="{{ mb_ucwords(company()->company_name) }}"
-                            class="logo" /></td>
+                    <td><img src="{{ invoice_setting()->logo_url }}" alt="{{ company()->company_name }}"
+                             class="logo"/></td>
                     <td align="right" class="font-weight-bold f-21 text-dark text-uppercase mt-4 mt-lg-0 mt-md-0">
                         @lang('app.menu.contract')</td>
                 </tr>
                 <tr class="inv-num">
                     <td class="f-14 text-dark">
                         <p class="mt-3 mb-0">
-                            {{ mb_ucwords(company()->company_name) }}<br>
+                            {{ company()->company_name }}<br>
                             {!! nl2br(default_address()->address) !!}<br>
                             {{ company()->company_phone }}
                         </p><br>
@@ -81,14 +81,14 @@
                     <td class="f-14 text-dark">
                         <p class="mb-0 text-left"><span
                                 class="text-dark-grey text-capitalize">@lang("app.client")</span><br>
-                            {{ mb_ucwords($contract->client->name) }}<br>
-                            {{ mb_ucwords($contract->client->clientDetails->company_name) }}<br>
+                            {{ $contract->client->name_salutation }}<br>
+                            {{ $contract->client->clientDetails->company_name }}<br>
                             {!! nl2br($contract->client->clientDetails->address) !!}</p>
                     </td>
                     @if ($contract->client->clientDetails->company_logo)
                         <td align="right">
-                                <img src="{{ $contract->client->clientDetails->image_url }}"
-                                alt="{{ mb_ucwords($contract->client->clientDetails->company_name) }}" class="logo" />
+                            <img src="{{ $contract->client->clientDetails->image_url }}"
+                                 alt="{{ $contract->client->clientDetails->company_name }}" class="logo"/>
                         </td>
                     @endif
                 </tr>
@@ -106,7 +106,7 @@
             <p class="f-15">{{ $contract->contract_note }}</p>
 
             <h5>@lang('app.description')</h5>
-            <div class="ql-editor p-0">{!! $contract->contract_detail !!}</div>
+            <div class="ql-editor p-0 pb-3">{!! $contract->contract_detail !!}</div>
 
             @if ($contract->amount != 0)
                 <div class="text-right pt-3 border-top">
@@ -116,23 +116,23 @@
             @endif
         </div>
         <hr class="mt-1 mb-1">
-        <div class = "mt-3">
+        <div class="mt-3">
             @if ($contract->signature)
-            <div class="d-flex flex-column float-right">
-                <h6>@lang('modules.estimates.clientsignature')</h6>
-                <img src="{{$contract->signature->signature}}" style="width: 200px;">
-                <p>{{ $contract->signature->full_name }}<br>
-                    @lang('app.place'): {{ $contract->signature->place }}<br>
-                    @lang('app.date'): {{ $contract->signature->date }}</p>
-            </div>
+                <div class="d-flex flex-column float-right">
+                    <h6>@lang('modules.estimates.clientsignature')</h6>
+                    <img src="{{$contract->signature->signature}}" style="width: 200px;">
+                    <p>{{ $contract->signature->full_name }}<br>
+                        @lang('app.place'): {{ $contract->signature->place }}<br>
+                        @lang('app.date'): {{ $contract->signature->date }}</p>
+                </div>
             @endif
 
             @if ($contract->company_sign)
-            <div class="d-flex flex-column">
-                <h6>@lang('modules.estimates.companysignature')</h6>
-                <img src="{{$contract->company_signature}}" style="width: 200px;">
-                <p>@lang('app.date'): {{ $contract->sign_date }}</p>
-            </div>
+                <div class="d-flex flex-column">
+                    <h6>@lang('modules.estimates.companysignature')</h6>
+                    <img src="{{$contract->company_signature}}" style="width: 200px;">
+                    <p>@lang('app.date'): {{ $contract->sign_date }}</p>
+                </div>
             @endif
         </div>
 
@@ -143,15 +143,6 @@
                 </div>
             </div>
         </div>
-
-        <div id="sign-modal" class="modal fade" tabindex="-1" role="dialog" aria-hidden="true">
-            <div class="modal-dialog d-flex justify-content-center align-items-center modal-xl">
-                <div class="modal-content">
-                    @include('contracts.companysign.sign')
-                </div>
-            </div>
-        </div>
-
     </div>
     <!-- CARD BODY END -->
     <!-- CARD FOOTER START -->
@@ -160,32 +151,35 @@
         <div class="d-flex">
             <div class="inv-action mr-3 mr-lg-3 mr-md-3 dropup">
                 <button class="dropdown-toggle btn-secondary" type="button" id="dropdownMenuButton"
-                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">@lang('app.action')
+                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">@lang('app.action')
                     <span><i class="fa fa-chevron-down f-15 text-dark-grey"></i></span>
                 </button>
                 <!-- DROPDOWN - INFORMATION -->
                 <ul class="dropdown-menu dropdown-menu-left" aria-labelledby="dropdownMenuButton" tabindex="0">
                     @if (!$contract->signature)
                         <li>
-                            <a class="dropdown-item" href="{{ route('front.contract.show', $contract->hash) }}" target="_blank"><i class="fa fa-link mr-2"></i>@lang('modules.proposal.publicLink')</a>
+                            <a class="dropdown-item"
+                               href="{{ url()->temporarySignedRoute('front.contract.show', now()->addDays(\App\Models\GlobalSetting::SIGNED_ROUTE_EXPIRY), $contract->hash) }}"
+                               target="_blank"><i class="fa fa-link mr-2"></i>@lang('modules.proposal.publicLink')</a>
                         </li>
                     @endif
                     @if ($addContractPermission == 'all' || $addContractPermission == 'added')
                         <li>
-                            <a class="dropdown-item openRightModal" href="{{ route('contracts.create') . '?id=' . $contract->id }}">
+                            <a class="dropdown-item openRightModal"
+                               href="{{ route('contracts.create') . '?id=' . $contract->id }}">
                                 <i class="fa fa-copy mr-2"></i>
-                                @lang('app.copy') @lang('app.menu.contract')
+                                @lang('app.copyContract')
                             </a>
                         </li>
                     @endif
                     @if (!$contract->company_sign && user()->company_id == $contract->company_id)
-                    <li>
-                        <a class="dropdown-item f-14 text-dark" href="javascript:;" data-toggle="modal"
-                            data-target="#sign-modal">
-                            <i class="fa fa-check f-w-500  mr-2 f-12"></i>
-                            @lang('modules.estimates.companysignature')
-                        </a>
-                    </li>
+                        <li>
+                            <a class="dropdown-item f-14 text-dark" href="javascript:;"
+                               id="company-signature">
+                                <i class="fa fa-check f-w-500  mr-2 f-12"></i>
+                                @lang('modules.estimates.companysignature')
+                            </a>
+                        </li>
                     @endif
                     @if (
                     $editContractPermission == 'all'
@@ -194,7 +188,8 @@
                     || ($editContractPermission == 'both' && (user()->id == $contract->client_id || user()->id == $contract->added_by))
                     )
                         <li>
-                            <a class="dropdown-item openRightModal" href="{{ route('contracts.edit', [$contract->id]) }}">
+                            <a class="dropdown-item openRightModal"
+                               href="{{ route('contracts.edit', [$contract->id]) }}">
                                 <i class="fa fa-edit mr-2"></i>@lang('app.edit')
                             </a>
                         </li>
@@ -202,7 +197,7 @@
                     @if (!$contract->signature && user()->id == $contract->client->id)
                         <li>
                             <a class="dropdown-item f-14 text-dark" href="javascript:;" data-toggle="modal"
-                                data-target="#signature-mod">
+                               data-target="#signature-mod">
                                 <i class="fa fa-check f-w-500  mr-2 f-12"></i>
                                 @lang('app.sign')
                             </a>
@@ -210,7 +205,7 @@
                     @endif
                     <li>
                         <a class="dropdown-item f-14 text-dark"
-                            href="{{ route('contracts.download', $contract->id) }}">
+                           href="{{ route('contracts.download', $contract->id) }}">
                             <i class="fa fa-download f-w-500 mr-2 f-11"></i> @lang('app.download')
                         </a>
                     </li>
@@ -221,7 +216,8 @@
                     || ($deleteContractPermission == 'both' && (user()->id == $contract->client_id || user()->id == $contract->added_by))
                     )
                         <li>
-                            <a class="dropdown-item delete-table-row" href="javascript:;" data-contract-id="{{ $contract->id }}">
+                            <a class="dropdown-item delete-table-row" href="javascript:;"
+                               data-contract-id="{{ $contract->id }}">
                                 <i class="fa fa-trash mr-2"></i>@lang('app.delete')
                             </a>
                         </li>
@@ -229,8 +225,8 @@
                 </ul>
             </div>
 
-                    <x-forms.button-cancel :link="route('contracts.index')" class="border-0">@lang('app.cancel')
-        </x-forms.button-cancel>
+            <x-forms.button-cancel :link="route('contracts.index')" class="border-0">@lang('app.cancel')
+            </x-forms.button-cancel>
 
         </div>
 
@@ -255,18 +251,24 @@
 
 <script src="https://cdn.jsdelivr.net/npm/signature_pad@2.3.2/dist/signature_pad.min.js"></script>
 <script>
+
+    $('#company-signature').click(function () {
+        const url = "{{ route('contracts.company_sig', $contract->id) }}";
+        $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
+        $.ajaxModal(MODAL_LG, url);
+    });
     var canvas = document.getElementById('signature-pad');
 
     var signaturePad = new SignaturePad(canvas, {
         backgroundColor: 'rgb(255, 255, 255)' // necessary for saving image as JPEG; can be removed is only saving as PNG or SVG
     });
 
-    document.getElementById('clear-signature').addEventListener('click', function(e) {
+    document.getElementById('clear-signature').addEventListener('click', function (e) {
         e.preventDefault();
         signaturePad.clear();
     });
 
-    document.getElementById('undo-signature').addEventListener('click', function(e) {
+    document.getElementById('undo-signature').addEventListener('click', function (e) {
         e.preventDefault();
         var data = signaturePad.toData();
         if (data) {
@@ -275,7 +277,7 @@
         }
     });
 
-    $('#toggle-pad-uploader').click(function() {
+    $('#toggle-pad-uploader').click(function () {
         var text = $('.signature').hasClass('d-none') ? '{{ __("modules.estimates.uploadSignature") }}' : '{{ __("app.sign") }}';
 
         $(this).html(text);
@@ -284,7 +286,7 @@
         $('.upload-image').toggleClass('d-none');
     });
 
-    $('#save-signature').click(function() {
+    $('#save-signature').click(function () {
         var first_name = $('#first_name').val();
         var last_name = $('#last_name').val();
         var email = $('#email').val();
@@ -318,7 +320,7 @@
             blockUI: true,
             file: true,
             disableButton: true,
-            buttonSelector : '#save-signature',
+            buttonSelector: '#save-signature',
             data: {
                 first_name: first_name,
                 last_name: last_name,
@@ -331,7 +333,7 @@
         })
     });
 
-    $('body').on('click', '.delete-table-row', function() {
+    $('body').on('click', '.delete-table-row', function () {
         var id = $(this).data('contract-id');
         Swal.fire({
             title: "@lang('messages.sweetAlertTitle')",
@@ -364,7 +366,7 @@
                         '_token': token,
                         '_method': 'DELETE'
                     },
-                    success: function(response) {
+                    success: function (response) {
                         if (response.status == "success") {
                             window.location.href = "{{ route('contracts.index') }}"
                         }
@@ -375,77 +377,56 @@
     });
     var canvas = document.getElementById('sign-pad');
 
-        var signPad = new SignaturePad(canvas, {
-            backgroundColor: 'rgb(255, 255, 255)' // necessary for saving image as JPEG; can be removed is only saving as PNG or SVG
-        });
+    var signPad = new SignaturePad(canvas, {
+        backgroundColor: 'rgb(255, 255, 255)' // necessary for saving image as JPEG; can be removed is only saving as PNG or SVG
+    });
 
-        document.getElementById('clear-sign').addEventListener('click', function(e) {
-            e.preventDefault();
-            signPad.clear();
-        });
+    document.getElementById('clear-sign').addEventListener('click', function (e) {
+        e.preventDefault();
+        signPad.clear();
+    });
 
-        document.getElementById('undo-sign').addEventListener('click', function(e) {
-            e.preventDefault();
-            var data = signPad.toData();
-            if (data) {
-                data.pop(); // remove the last dot or line
-                signPad.fromData(data);
-            }
-        });
+    document.getElementById('undo-sign').addEventListener('click', function (e) {
+        e.preventDefault();
+        var data = signPad.toData();
+        if (data) {
+            data.pop(); // remove the last dot or line
+            signPad.fromData(data);
+        }
+    });
 
-        $('#toggle-pad-upload').click(function() {
-            var text = $('.signature').hasClass('d-none') ? '{{ __("modules.estimates.uploadSignature") }}' : '{{ __("app.sign") }}';
+    $('#toggle-pad-upload').click(function () {
+        var text = $('.signature').hasClass('d-none') ? '{{ __("modules.estimates.uploadSignature") }}' : '{{ __("app.sign") }}';
 
-            $(this).html(text);
+        $(this).html(text);
 
-            $('.signature').toggleClass('d-none');
-            $('.upload-img').toggleClass('d-none');
-        });
+        $('.signature').toggleClass('d-none');
+        $('.upload-img').toggleClass('d-none');
+    });
 
-        $('#save-sign').click(function() {
-            var signature = signPad.toDataURL('image/png');
-            var image = $('#sign_image').val();
+    $('#save-sign').click(function () {
+        var signature = signPad.toDataURL('image/png');
+        var image = $('#sign_image').val();
 
-            // this parameter is used for type of signature used and will be used on validation and upload signature image
-            var signature_type = !$('.signature').hasClass('d-none') ? 'signature' : 'upload';
+        // this parameter is used for type of signature used and will be used on validation and upload signature image
+        var signature_type = !$('.signature').hasClass('d-none') ? 'signature' : 'upload';
 
-            if (signPad.isEmpty() && !$('.signature').hasClass('d-none')) {
-                Swal.fire({
-                    icon: 'error',
-                    text: '{{ __('messages.signatureRequired') }}',
+        if (signPad.isEmpty() && !$('.signature').hasClass('d-none')) {
+            Swal.fire({
+                icon: 'error',
+                text: '{{ __('messages.signatureRequired') }}',
 
-                    customClass: {
-                        confirmButton: 'btn btn-primary',
-                    },
-                    showClass: {
-                        popup: 'swal2-noanimation',
-                        backdrop: 'swal2-noanimation'
-                    },
-                    buttonsStyling: false
-                });
-                return false;
-            }
-
-            $.easyAjax({
-                url: "{{ route('companySign.sign', $contract->id) }}",
-                container: '#acceptEstimate',
-                type: "POST",
-                blockUI: true,
-                file: true,
-                disableButton: true,
-                buttonSelector : '#save-sign',
-                data: {
-                    signature: signature,
-                    image: image,
-                    signature_type: signature_type,
-                    _token: '{{ csrf_token() }}'
+                customClass: {
+                    confirmButton: 'btn btn-primary',
                 },
-                success: function(response) {
-                    if (response.status == 'success') {
-                        window.location.reload();
-                    }
-                }
-            })
-        });
+                showClass: {
+                    popup: 'swal2-noanimation',
+                    backdrop: 'swal2-noanimation'
+                },
+                buttonsStyling: false
+            });
+            return false;
+        }
+    });
 
 </script>

@@ -7,7 +7,7 @@ $addProductPermission = user()->permission('add_product');
 <div class="bg-white rounded b-shadow-4 create-inv">
     <!-- HEADING START -->
     <div class="px-lg-4 px-md-4 px-3 py-3">
-        <h4 class="mb-0 f-21 font-weight-normal text-capitalize">@lang('modules.lead.proposal') @lang('app.details')
+        <h4 class="mb-0 f-21 font-weight-normal text-capitalize">@lang('app.proposalDetails')
         </h4>
     </div>
     <!-- HEADING END -->
@@ -20,9 +20,9 @@ $addProductPermission = user()->permission('add_product');
             <!-- CLIENT START -->
             <div class="col-md-6 col-lg-4">
                 <div class="form-group c-inv-select mb-4">
-                    <x-forms.label fieldId="client_id" :fieldLabel="__('app.lead')"></x-forms.label>
-                    <p class="f-w-500">{{ $proposal->lead->client_name }}</p>
-                    <input type="hidden" name="lead_id" value="{{ $proposal->lead_id }}">
+                    <x-forms.label fieldId="client_id" :fieldLabel="__('modules.deal.title')"></x-forms.label>
+                    <p class="f-w-500">{{ $proposal->lead->name }}</p>
+                    <input type="hidden" name="deal_id" value="{{ $proposal->deal_id }}">
                 </div>
             </div>
             <!-- CLIENT END -->
@@ -123,36 +123,39 @@ $addProductPermission = user()->permission('add_product');
                             <option value="">{{ __('app.select') . ' ' . __('app.product') . ' ' . __('app.category')  }}</option>
                             @foreach ($categories as $category)
                                 <option value="{{ $category->id }}">
-                                    {{ mb_ucwords($category->category_name) }}</option>
+                                    {{ $category->category_name }}</option>
                             @endforeach
                         </select>
                     </x-forms.input-group>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="form-group c-inv-select mb-4">
-                <x-forms.input-group>
-                    <select class="form-control select-picker" data-live-search="true" data-size="8" id="add-products" title="{{ __('app.menu.selectProduct') }}">
-                        @foreach ($products as $item)
-                            <option data-content="{{ $item->name }}" value="{{ $item->id }}">
-                                {{ $item->name }}</option>
-                        @endforeach
-                    </select>
-                    <x-slot name="preappend">
-                        <a href="javascript:;"
-                            class="btn btn-outline-secondary border-grey toggle-product-category"
-                            data-toggle="tooltip" data-original-title="{{ __('modules.productCategory.filterByCategory') }}"><i class="fa fa-filter"></i></a>
-                    </x-slot>
-                    @if ($addProductPermission == 'all' || $addProductPermission == 'added')
-                        <x-slot name="append">
-                            <a href="{{ route('products.create') }}" data-redirect-url="no"
-                                class="btn btn-outline-secondary border-grey openRightModal"
-                                data-toggle="tooltip" data-original-title="{{ __('app.add').' '.__('modules.dashboard.newproduct') }}">@lang('app.add')</a>
+            @if(in_array('products', user_modules()) || in_array('purchase', user_modules()))
+                <div class="col-md-3">
+                    <div class="form-group c-inv-select mb-4">
+                    <x-forms.input-group>
+                        <select class="form-control select-picker" data-live-search="true" data-size="8" id="add-products" title="{{ __('app.menu.selectProduct') }}">
+                            @foreach ($products as $item)
+                                <option data-content="{{ $item->name }}" value="{{ $item->id }}">
+                                    {{ $item->name }}</option>
+                            @endforeach
+                        </select>
+                        <x-slot name="preappend">
+                            <a href="javascript:;"
+                                class="btn btn-outline-secondary border-grey toggle-product-category"
+                                data-toggle="tooltip" data-original-title="{{ __('modules.productCategory.filterByCategory') }}"><i class="fa fa-filter"></i></a>
                         </x-slot>
-                    @endif
-                </x-forms.input-group>
+                        @if ($addProductPermission == 'all' || $addProductPermission == 'added')
+                            <x-slot name="append">
+                                <a href="{{ route('products.create') }}" data-redirect-url="no"
+                                    class="btn btn-outline-secondary border-grey openRightModal"
+                                    data-toggle="tooltip" data-original-title="{{ __('app.add').' '.__('modules.dashboard.newproduct') }}">@lang('app.add')</a>
+                            </x-slot>
+                        @endif
+                    </x-forms.input-group>
+                    </div>
                 </div>
-            </div>
+            @endif
+
         </div>
 
         <div id="sortable">
@@ -230,9 +233,9 @@ $addProductPermission = user()->permission('add_product');
                                                     name="taxes[{{ $key }}][]" multiple="multiple"
                                                     class="select-picker type customSequence border-0" data-size="3">
                                                     @foreach ($taxes as $tax)
-                                                        <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ strtoupper($tax->tax_name) .':'. $tax->rate_percent }}%"
+                                                        <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ $tax->tax_name .':'. $tax->rate_percent }}%"
                                                             @if (isset($item->taxes) && array_search($tax->id, json_decode($item->taxes)) !== false) selected @endif value="{{ $tax->id }}">
-                                                            {{ strtoupper($tax->tax_name) }}:
+                                                            {{ $tax->tax_name }}:
                                                             {{ $tax->rate_percent }}%</option>
                                                     @endforeach
                                                 </select>
@@ -256,7 +259,7 @@ $addProductPermission = user()->permission('add_product');
                                             <input type="file"
                                             class="dropify"
                                             name="invoice_item_image[]"
-                                            data-allowed-file-extensions="png jpg jpeg"
+                                            data-allowed-file-extensions="png jpg jpeg bmp"
                                             data-messages-default="test"
                                             data-height="70"
                                             data-id="{{ $item->id }}"
@@ -266,7 +269,7 @@ $addProductPermission = user()->permission('add_product');
                                                 data-show-remove="false"
                                             @endif
                                             />
-                                            <input type="hidden" name="invoice_item_image_url[]" value="{{ $item->proposalItemImage ? $item->proposalItemImage->external_link : '' }}">
+                                            <input type="hidden" name="invoice_item_image_url[]" value="{{ $item->proposalItemImage ? $item->proposalItemImage->file : '' }}">
                                         </td>
                                     </tr>
                                 </tbody>
@@ -346,8 +349,8 @@ $addProductPermission = user()->permission('add_product');
                                             <select id="multiselect" name="taxes[0][]" multiple="multiple"
                                                 class="select-picker type customSequence border-0" data-size="3">
                                                 @foreach ($taxes as $tax)
-                                                    <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ strtoupper($tax->tax_name) .':'. $tax->rate_percent }}%"
-                                                        value="{{ $tax->id }}">{{ strtoupper($tax->tax_name) }}:
+                                                    <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ $tax->tax_name .':'. $tax->rate_percent }}%"
+                                                        value="{{ $tax->id }}">{{ $tax->tax_name }}:
                                                         {{ $tax->rate_percent }}%</option>
                                                 @endforeach
                                             </select>
@@ -516,7 +519,7 @@ $addProductPermission = user()->permission('add_product');
 
                 </div>
 
-                <x-forms.button-cancel :link="route('invoices.index')" class="border-0">@lang('app.cancel')
+                <x-forms.button-cancel :link="route('proposals.index')" class="border-0">@lang('app.cancel')
                 </x-forms.button-cancel>
 
             </div>
@@ -699,10 +702,10 @@ $addProductPermission = user()->permission('add_product');
                 </tr>` +
                 '<tr>' +
                 '<td class="border-bottom-0 btrr-mbl btlr">' +
-                '<input type="text" class="form-control f-14 border-0 w-100 item_name" name="item_name[]" placeholder="@lang("modules.expenses.itemName")">' +
+                `<input type="text" class="form-control f-14 border-0 w-100 item_name" name="item_name[]" placeholder="@lang("modules.expenses.itemName")">` +
                 '</td>' +
                 '<td class="border-bottom-0 d-block d-lg-none d-md-none">' +
-                '<textarea class="f-14 border-0 w-100 mobile-description form-control" name="item_summary[]" placeholder="@lang("placeholders.invoices.description")"></textarea>' +
+                `<textarea class="f-14 border-0 w-100 mobile-description form-control" name="item_summary[]" placeholder="@lang("placeholders.invoices.description")"></textarea>` +
                 '</td>';
 
             if (hsn_status == 1) {
@@ -729,8 +732,8 @@ $addProductPermission = user()->permission('add_product');
                 '<select id="multiselect' + i + '" name="taxes[' + i +
                 '][]" multiple="multiple" class="select-picker type customSequence" data-size="3">'
             @foreach ($taxes as $tax)
-                +'<option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ strtoupper($tax->tax_name) .':'. $tax->rate_percent }}%" value="{{ $tax->id }}">'
-                    +'{{ strtoupper($tax->tax_name) }}:{{ $tax->rate_percent }}%</option>'
+                +'<option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ $tax->tax_name .':'. $tax->rate_percent }}%" value="{{ $tax->id }}">'
+                    +'{{ $tax->tax_name }}:{{ $tax->rate_percent }}%</option>'
             @endforeach
                 +
                 '</select>' +
@@ -746,7 +749,7 @@ $addProductPermission = user()->permission('add_product');
                 '<textarea class="f-14 border-0 w-100 desktop-description form-control" name="item_summary[]" placeholder="@lang("placeholders.invoices.description")"></textarea>' +
                 '</td>' +
                 '<td class="border-left-0">' +
-                '<input type="file" class="dropify" id="dropify'+i+'" name="invoice_item_image[]" data-allowed-file-extensions="png jpg jpeg" data-messages-default="test" data-height="70" /><input type="hidden" name="invoice_item_image_url[]">' +
+                '<input type="file" class="dropify" id="dropify'+i+'" name="invoice_item_image[]" data-allowed-file-extensions="png jpg jpeg bmp" data-messages-default="test" data-height="70" /><input type="hidden" name="invoice_item_image_url[]">' +
                 '</td>' +
                 '</tr>' +
                 '</tbody>' +

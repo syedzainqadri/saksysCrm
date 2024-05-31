@@ -47,7 +47,7 @@ class MentionTicketAgent extends BaseNotification
         }
 
         if ($this->emailSetting->send_slack == 'yes' && $this->company->slackSetting->status == 'active') {
-            array_push($via, 'slack');
+            $this->slackUserNameCheck($notifiable) ? array_push($via, 'slack') : null;
         }
 
         if ($this->emailSetting->send_push == 'yes') {
@@ -66,7 +66,7 @@ class MentionTicketAgent extends BaseNotification
     public function toMail($notifiable): MailMessage
     {
         $build = parent::build();
-        $url = route('tickets.show', $this->ticket->id);
+        $url = route('tickets.show', $this->ticket->ticket_number);
         $url = getDomainSpecificUrl($url, $this->company);
 
         $content = __('email.ticketAgent.mentionedText') . '<br>' . __('modules.tickets.ticket') . ' # ' . $this->ticket->id . '<br>' . __('app.subject') . ' - ' . $this->ticket->subject;
@@ -105,20 +105,9 @@ class MentionTicketAgent extends BaseNotification
      */
     public function toSlack($notifiable)
     {
-        $slack = $notifiable->company->slackSetting;
+        return $this->slackBuild($notifiable)
+            ->content('*' . __('email.ticketAgent.mentionSubject') . '*' . "\n" . $this->ticket->subject . "\n" . __('modules.tickets.requesterName') . ' - ' . $this->ticket->requester->name);
 
-        if (count($notifiable->employee) > 0 && (!is_null($notifiable->employee[0]->slack_username) && ($notifiable->employee[0]->slack_username != ''))) {
-            return (new SlackMessage())
-                ->from(config('app.name'))
-                ->image($slack->slack_logo_url)
-                ->to('@' . $notifiable->employee[0]->slack_username)
-                ->content('*' . __('email.ticketAgent.mentionSubject') . '*' . "\n" . ucfirst($this->ticket->subject) . "\n" . __('modules.tickets.requesterName') . ' - ' . mb_ucwords($this->ticket->requester->name));
-        }
-
-        return (new SlackMessage())
-            ->from(config('app.name'))
-            ->image($slack->slack_logo_url)
-            ->content('*' . __('email.ticketAgent.mentionSubject') . '*' . "\n" .'This is a redirected notification. Add slack username for *' . $notifiable->name . '*');
     }
 
     // phpcs:ignore

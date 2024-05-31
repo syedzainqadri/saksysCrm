@@ -3,6 +3,7 @@
 namespace App\Traits;
 
 use App\Models\UniversalSearch;
+use Froiden\RestAPI\Exceptions\RelatedResourceNotFoundException;
 
 trait UniversalSearchTrait
 {
@@ -12,7 +13,7 @@ trait UniversalSearchTrait
      * @param string $title
      * @param string $route
      * @param string $type
-     * @throws \Froiden\RestAPI\Exceptions\RelatedResourceNotFoundException
+     * @throws RelatedResourceNotFoundException
      */
     public function logSearchEntry($searchableId, $title, $route, $type, $company_id = null)
     {

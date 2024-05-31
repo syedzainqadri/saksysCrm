@@ -55,7 +55,7 @@ class NoticeObserver
         }
 
         $notifyData = ['App\Notifications\NewNotice', 'App\Notifications\NoticeUpdate'];
-        \App\Models\Notification::deleteNotification($notifyData, $notice->id);
+        Notification::deleteNotification($notifyData, $notice->id);
 
     }
 

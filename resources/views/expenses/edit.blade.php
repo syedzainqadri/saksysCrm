@@ -15,7 +15,7 @@
         <div class="bg-white rounded b-shadow-4 create-inv">
             <!-- HEADING START -->
             <div class="px-lg-4 px-md-4 px-3 py-3">
-                <h4 class="mb-0 f-21 font-weight-normal text-capitalize">@lang('app.estimate') @lang('app.details')</h4>
+                <h4 class="mb-0 f-21 font-weight-normal text-capitalize">@lang('app.estimateDetails')</h4>
             </div>
             <!-- HEADING END -->
             <hr class="m-0 border-top-grey">
@@ -59,7 +59,7 @@
                             <div class="select-others height-35 rounded">
                                 <select class="form-control select-picker" name="currency_id" id="currency_id">
                                     @foreach ($currencies as $currency)
-                                        <option @if($estimate->currency_id == $currency->id) selected @endif
+                                        <option @selected($estimate->currency_id == $currency->id)
                                             value="{{ $currency->id }}">
                                             {{ $currency->currency_code . ' (' . $currency->currency_symbol . ')' }}
                                         </option>
@@ -96,24 +96,18 @@
                             <x-forms.label fieldId="client_id" :fieldLabel="__('app.status')">
                             </x-forms.label>
                             <select class="form-control select-picker" name="status" id="status">
-                                    <option
-                                            @if($estimate->status == 'accepted') selected @endif
-                                    value="accepted">@lang('modules.estimates.accepted')
-                                    </option>
-                                    <option
-                                            @if($estimate->status == 'waiting') selected @endif
-                                    value="waiting">@lang('modules.estimates.waiting')
-                                    </option>
-                                    <option
-                                            @if($estimate->status == 'declined') selected @endif
-                                    value="declined">@lang('modules.estimates.declined')
-                                    </option>
-                                    @if($estimate->status == 'draft')
-                                    <option
-                                            @if($estimate->status == 'draft') selected @endif
-                                    value="draft">@lang('modules.invoices.draft')
-                                    </option>
-                                    @endif
+                                <option
+                                    @selected($estimate->status == 'accepted') value="accepted">@lang('modules.estimates.accepted')
+                                </option>
+                                <option
+                                    @selected($estimate->status == 'waiting') value="waiting">@lang('modules.estimates.waiting')
+                                </option>
+                                <option
+                                    @selected($estimate->status == 'declined') value="declined">@lang('modules.estimates.declined')
+                                </option>
+                                @if($estimate->status == 'draft')
+                                    <option selected value="draft">@lang('modules.invoices.draft')</option>
+                                @endif
                             </select>
                         </div>
                     </div>
@@ -178,7 +172,7 @@
                                                         @if (isset($item->taxes) && array_search($tax->id, json_decode($item->taxes)) !== false)
                                                         selected
                                                         @endif
-                                                        value="{{ $tax->id }}">{{ strtoupper($tax->tax_name) }}:
+                                                        value="{{ $tax->id }}">{{ $tax->tax_name }}:
                                                         {{ $tax->rate_percent }}%</option>
                                                 @endforeach
                                             </select>
@@ -248,8 +242,8 @@
                                                                         class="select-others select-tax height-35 rounded border-0">
                                                                         <select class="form-control select-picker"
                                                                             id="discount_type" name="discount_type">
-                                                                            <option @if($estimate->discount_type == 'percent') selected @endif value="percent">%</option>
-                                                                            <option @if($estimate->discount_type == 'fixed') selected @endif value="fixed">
+                                                                            <option @selected($estimate->discount_type == 'percent')  value="percent">%</option>
+                                                                            <option @selected($estimate->discount_type == 'fixed')  value="fixed">
                                                                                 @lang('modules.invoices.amount')</option>
                                                                         </select>
                                                                     </div>
@@ -376,10 +370,10 @@
                             +'</tr>'
                             +'<tr>'
                                 +'<td class="border-bottom-0 btrr-mbl btlr">'
-                                    +'<input type="text" class="f-14 border-0 w-100 item_name" name="item_name[]" placeholder="@lang('modules.expenses.itemName')">'
+                                    +`<input type="text" class="f-14 border-0 w-100 item_name" name="item_name[]" placeholder="@lang('modules.expenses.itemName')">`
                                     +'</td>'
                                     +'<td class="border-bottom-0 d-block d-lg-none d-md-none">'
-                                        +'<input type="text" class="f-14 border-0 w-100 mobile-description" name="item_summary[]" placeholder="@lang('placeholders.invoices.description')">'
+                                        +`<input type="text" class="f-14 border-0 w-100 mobile-description" name="item_summary[]" placeholder="@lang('placeholders.invoices.description')">`
                                     +'</td>'
                                     +'<td class="border-bottom-0">'
                                         +'<input type="number" min="1" class="f-14 border-0 w-100 text-right quantity" value="1" name="quantity[]">'
@@ -391,7 +385,7 @@
                                                 +'<div class="select-others height-35 rounded border-0">'
                                                     +'<select id="multiselect'+i+'" name="taxes['+i+'][]" multiple="multiple" class="select-picker type customSequence" data-size="3">'
                                                     @foreach ($taxes as $tax)
-                                                        +'<option data-rate="{{ $tax->rate_percent }}" value="{{ $tax->id }}">{{ strtoupper($tax->tax_name) }}: {{ $tax->rate_percent }}%</option>'
+                                                        +'<option data-rate="{{ $tax->rate_percent }}" value="{{ $tax->id }}">{{ $tax->tax_name }}: {{ $tax->rate_percent }}%</option>'
                                                     @endforeach
                                                     +'</select>'
                                                 +'</div>'

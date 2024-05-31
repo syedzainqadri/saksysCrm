@@ -7,10 +7,10 @@
 
     <x-filters.filter-box>
         <!-- DESIGNATION START -->
-        <div class="select-box d-flex px-0 border-right-grey border-right-grey-sm-0">
+        <div class="select-box d-flex px-0 border-right-grey border-right-grey-sm-0 align-items-center">
             <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.status')</p>
             <div class="select-filter-status">
-                <select class="form-control select-picker mt-2" name="filter_status" id="filter_status" data-container="body">
+                <select class="form-control select-picker" name="filter_status" id="filter_status" data-container="body">
                     <option selected value="all">@lang('app.all')</option>
                     <option value="active">@lang('app.active')</option>
                     <option value="inactive">@lang('app.inactive')</option>
@@ -56,7 +56,7 @@ $viewAppreciationPermission = user()->permission('view_appreciation');
     <!-- CONTENT WRAPPER START -->
     <div class="content-wrapper">
         <!-- Add Task Export Buttons Start -->
-        <div class="d-flex justify-content-between action-bar">
+        <div class="d-grid d-lg-flex d-md-flex action-bar">
             <div id="table-actions" class="flex-grow-1 align-items-center">
                 @if ($manageAppreciationTypePermission == 'all')
                     <x-forms.link-primary :link="route('awards.create')" class="mr-3 openRightModal float-left" icon="plus">
@@ -70,7 +70,7 @@ $viewAppreciationPermission = user()->permission('view_appreciation');
                     <select name="action_type" class="form-control select-picker" id="quick-action-type" disabled>
                         <option value="">@lang('app.selectAction')</option>
                         @if ($manageAppreciationTypePermission == 'all')
-                            <option value="change-leave-status">@lang('app.change') @lang('app.status')</option>
+                            <option value="change-leave-status">@lang('app.changeStatus')</option>
                         @endif
                         <option value="delete">@lang('app.delete')</option>
                     </select>
@@ -84,11 +84,11 @@ $viewAppreciationPermission = user()->permission('view_appreciation');
             </x-datatable.actions>
 
 
-            <div class="btn-group mt-3 mt-lg-0 mt-md-0 ml-lg-3" role="group">
+            <div class="btn-group mt-2 mt-lg-0 mt-md-0 ml-0 ml-lg-3 ml-md-3" role="group">
                 @if($viewAppreciationPermission != 'none')
                 <a href="{{ route('appreciations.index') }}" class="btn btn-secondary f-14 " data-toggle="tooltip"
                    data-original-title="@lang('app.menu.appreciation')"><i class="side-icon bi bi-trophy"></i></a>
-               
+
                     <a href="{{ route('awards.index') }}" class="btn btn-secondary f-14 btn-active" data-toggle="tooltip"
                        data-original-title="@lang('app.menu.award')"><i class="side-icon bi bi-award"></i></a>
                 @endif

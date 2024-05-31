@@ -52,7 +52,7 @@ $deleteOrderPermission = user()->permission('delete_order');
                             @endif
                             {{ company()->company_phone }}<br>
                             @if ($invoiceSetting && $invoiceSetting->show_gst == 'yes' && $order->address->tax_name)
-                                <br>{{ strtoupper($order->address->tax_name) }}: {{ $order->address->tax_number }}
+                                <br>{{ $order->address->tax_name }}: {{ $order->address->tax_number }}
                             @endif
                         </p><br>
                     </td>
@@ -75,13 +75,25 @@ $deleteOrderPermission = user()->permission('delete_order');
                 </tr>
             </table>
             <table width="100%">
+                @if ($order->project)
+                    <tr>
+                        <td class="f-14 text-dark">
+                            @lang('modules.invoices.project'):
+                            <p class="mb-3">
+                                @if ($order->project)
+                                    {{$order->project->project_name}}
+                                @endif
+                            </p>
+                        </td>
+                    </tr>
+                @endif
                 <tr class="inv-unpaid">
 
                     <td class="f-14 text-dark">
                         <p>@lang("modules.invoices.billedTo"):</p>
                         <p class="mt-3 mb-0">
                         @if ($order->client->name && $invoiceSetting->show_client_name == 'yes')
-                            {{ $order->client->name }}<br>
+                            {{ $order->client->name_salutation }}<br>
                         @endif
 
                         @if ($order->client->email && $invoiceSetting->show_client_email == 'yes')
@@ -89,7 +101,7 @@ $deleteOrderPermission = user()->permission('delete_order');
                         @endif
 
                         @if ($order->client->mobile && $invoiceSetting->show_client_phone == 'yes')
-                            {{ $order->client->mobile }}<br>
+                            {{ $order->client->mobile_with_phonecode }}<br>
                         @endif
 
                         @if ($order->client->clientDetails->company_name && $invoiceSetting->show_client_company_name == 'yes')
@@ -137,6 +149,9 @@ $deleteOrderPermission = user()->permission('delete_order');
                                     @lang('modules.invoices.qty')
                                 </td>
                                 <td class="border-right-0 border-left-0" align="right">
+                                    @lang('app.sku')
+                                </td>
+                                <td class="border-right-0 border-left-0" align="right">
                                     @lang("modules.invoices.unitPrice") ({{ $order->currency->currency_code }})
                                 </td>
                                 <td class="border-right-0 border-left-0" align="right">@lang("modules.invoices.tax")</td>
@@ -147,21 +162,22 @@ $deleteOrderPermission = user()->permission('delete_order');
 
                             @foreach ($order->items as $item)
                                 <tr class="text-dark">
-                                    <td>{{ ucfirst($item->item_name) }}</td>
+                                    <td>{{ $item->item_name }}</td>
                                     @if($invoiceSetting->hsn_sac_code_show)
                                         <td align="right">{{ $item->hsn_sac_code }}</td>
                                     @endif
                                     <td align="right">{{ $item->quantity }}@if($item->unit)<br><span class="f-11 text-dark-grey">{{ $item->unit->unit_type }}</span>@endif</td>
+                                    <td align="right">{{ $item->sku }}</td>
                                     <td align="right">
                                         {{ currency_format($item->unit_price, $order->currency_id, false) }}</td>
-                                    <td align="right">{{ strtoupper($item->tax_list) }}</td>
+                                    <td align="right">{{ $item->tax_list }}</td>
                                     <td align="right">{{ currency_format($item->amount, $order->currency_id, false) }}
                                     </td>
                                 </tr>
                                 @if ($item->item_summary != '' || $item->orderItemImage)
                                     <tr class="text-dark">
-                                        <td colspan="{{ $invoiceSetting->hsn_sac_code_show ? '6' : '5' }}" class="border-bottom-0">
-                                            {!! nl2br(strip_tags($item->item_summary, ['p', 'b', 'strong', 'a'])) !!}
+                                        <td colspan="{{ $invoiceSetting->hsn_sac_code_show ? '7' : '6' }}" class="border-bottom-0">
+                                            {!! nl2br(pdfStripTags($item->item_summary)) !!}
                                             @if ($item->orderItemImage)
                                                 <p class="mt-2">
                                                     <a href="javascript:;" class="img-lightbox" data-image-url="{{ $item->orderItemImage->file_url }}">
@@ -174,7 +190,7 @@ $deleteOrderPermission = user()->permission('delete_order');
                                 @endif
                                 @if ($item->has('product') && $item->product && $item->product->downloadable && $item->product->download_file_url && $order->status == 'completed')
                                     <tr class="text-dark">
-                                        <td colspan="{{ $invoiceSetting->hsn_sac_code_show ? '6' : '5' }}" class="border-bottom-0">
+                                        <td colspan="{{ $invoiceSetting->hsn_sac_code_show ? '7' : '6' }}" class="border-bottom-0">
                                             <p class="mt-2">
                                                 <x-forms.link-secondary icon="download" :link="$item->product->download_file_url" class="mr-3" download="{{ $item->product->name }}">@lang('app.download')</x-forms.link-secondary>
                                             </p>
@@ -186,7 +202,7 @@ $deleteOrderPermission = user()->permission('delete_order');
 
 
                             <tr>
-                                <td colspan="{{ $invoiceSetting->hsn_sac_code_show ? '4' : '3' }}" class="blank-td border-bottom-0 border-left-0 border-right-0"></td>
+                                <td colspan="{{ $invoiceSetting->hsn_sac_code_show ? '5' : '4' }}" class="blank-td border-bottom-0 border-left-0 border-right-0"></td>
                                 <td class="p-0 border-right-0">
                                     <table width="100%">
                                         <tr class="text-dark-grey" align="right">
@@ -202,7 +218,7 @@ $deleteOrderPermission = user()->permission('delete_order');
                                         @foreach ($taxes as $key => $tax)
                                             <tr class="text-dark-grey" align="right">
                                                 <td class="w-50 border-top-0 border-left-0">
-                                                    {{ mb_strtoupper($key) }}</td>
+                                                    {{ $key }}</td>
                                             </tr>
                                         @endforeach
                                         <tr class="bg-light-grey text-dark f-w-500 f-16" align="right">
@@ -254,12 +270,12 @@ $deleteOrderPermission = user()->permission('delete_order');
                                 <table>
                                     <tr width="100%">
                                         <td class="border-left-0 border-right-0 border-top-0">
-                                            {{ ucfirst($item->item_name) }}</td>
+                                            {{ $item->item_name }}</td>
                                     </tr>
                                     @if ($item->item_summary != '' || $item->orderItemImage)
                                         <tr>
                                             <td class="border-left-0 border-right-0 border-bottom-0">
-                                                {!! nl2br(strip_tags($item->item_summary, ['p', 'b', 'strong', 'a'])) !!}
+                                                {!! nl2br(pdfStripTags($item->item_summary)) !!}
                                                 @if ($item->orderItemImage)
                                                     <p class="mt-2">
                                                         <a href="javascript:;" class="img-lightbox" data-image-url="{{ $item->orderItemImage->file_url }}">
@@ -275,7 +291,7 @@ $deleteOrderPermission = user()->permission('delete_order');
                         </tr>
                         <tr>
                             <th width="50%" class="bg-light-grey text-dark-grey font-weight-bold">
-                                {{ ucwords($order->unit->unit_type ?? '') }}</th>
+                                {{ $order->unit->unit_type ?? '' }}</th>
                             <td width="50%">{{ $item->quantity }}</td>
                         </tr>
                         <tr>
@@ -313,7 +329,7 @@ $deleteOrderPermission = user()->permission('delete_order');
 
                 @foreach ($taxes as $key => $tax)
                     <tr>
-                        <th width="50%" class="text-dark-grey font-weight-normal">{{ mb_strtoupper($key) }}</th>
+                        <th width="50%" class="text-dark-grey font-weight-normal">{{ $key }}</th>
                         <td width="50%" class="text-dark-grey font-weight-normal">
                             {{ currency_format($tax, $order->currency_id, false) }}</td>
                     </tr>
@@ -333,11 +349,18 @@ $deleteOrderPermission = user()->permission('delete_order');
                         <table>
                             <tr>@lang('app.clientNote')</tr>
                             <tr>
-                                <p class="text-dark-grey">{!! !empty($order->note) ? $order->note : '--' !!}</p>
+                                <p class="text-dark-grey">{!! !empty($order->note) ? nl2br($order->note) : '--' !!}</p>
                             </tr>
                         </table>
                     </td>
                 </tr>
+                @if ($invoiceSetting->other_info)
+                    <tr>
+                        <td>
+                            <p class="text-dark-grey">{!! nl2br($invoiceSetting->other_info) !!}</p>
+                        </td>
+                    </tr>
+                @endif
             </table>
         </div>
     </div>
@@ -386,7 +409,7 @@ $deleteOrderPermission = user()->permission('delete_order');
                             </li>
                         @endif
 
-                        @if (!in_array($order->status, ['completed', 'canceled', 'refunded']) && ($editOrderPermission == 'all'|| ($editOrderPermission == 'both' && ($order->added_by == user()->id || $order->client_id == user()->id)) || ($editOrderPermission == 'added' && $order->added_by == user()->id) || ($editOrderPermission == 'owned' && $order->client_id == user()->id)))
+                        @if (!in_array($order->status, ['completed', 'canceled', 'refunded']) && ($editOrderPermission == 'all'|| ($editOrderPermission == 'both' && ($order->added_by == user()->id || $order->client_id == user()->id)) || ($editOrderPermission == 'added' && $order->added_by == user()->id) || ($editOrderPermission == 'owned' && $order->client_id == user()->id)) && (!is_null($order->project) && is_null($order->project->deleted_at)) )
                             <li>
                                 <a class="dropdown-item f-14 text-dark openRightModal" href="{{route('orders.edit', $order->id)}}">
                                     <i class="fa fa-edit f-w-500 mr-2 f-11"></i> @lang('app.edit')

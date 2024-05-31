@@ -20,6 +20,11 @@ class UpdateAppController extends AccountBaseController
         $this->pageTitle = 'app.menu.updates';
         $this->pageIcon = 'ti-reload';
         $this->activeSettingMenu = 'update_settings';
+        $this->middleware(function ($request, $next) {
+            abort_403(!user()->hasRole('admin'));
+
+            return $next($request);
+        });
     }
 
     public function index()
@@ -32,9 +37,9 @@ class UpdateAppController extends AccountBaseController
             if (str_contains($this->mysql_version, 'Maria')) {
                 $this->databaseType = 'Maria Version';
             }
-        }catch (\Exception $e) {
+        } catch (\Exception $e) {
             $this->mysql_version = null;
-            dd($e->getMessage());
+            $this->databaseType = 'MySQL Version';
         }
 
         $this->reviewed = file_exists(storage_path('reviewed'));
@@ -59,6 +64,7 @@ class UpdateAppController extends AccountBaseController
     {
         $filePath = $request->filePath;
         File::delete($filePath);
+
         return Reply::success(__('messages.deleteSuccess'));
     }
 

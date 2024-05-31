@@ -2,29 +2,30 @@
 
 namespace App\Providers;
 
-use App\Actions\Fortify\AttemptToAuthenticate;
-use App\Actions\Fortify\CreateNewUser;
-use App\Actions\Fortify\RedirectIfTwoFactorConfirmed;
-use App\Actions\Fortify\ResetUserPassword;
-use App\Actions\Fortify\UpdateUserPassword;
-use App\Actions\Fortify\UpdateUserProfileInformation;
+use Carbon\Carbon;
+use App\Models\User;
 use App\Models\Company;
+use App\Scopes\ActiveScope;
+use Illuminate\Http\Request;
+use Laravel\Fortify\Fortify;
 use App\Models\GlobalSetting;
+use Laravel\Fortify\Features;
 use App\Models\LanguageSetting;
 use App\Models\SocialAuthSetting;
-use App\Models\User;
-use App\Scopes\ActiveScope;
-use Carbon\Carbon;
 use Froiden\Envato\Traits\AppBoot;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Hash;
+use App\Actions\Fortify\CreateNewUser;
 use Illuminate\Support\ServiceProvider;
+use App\Actions\Fortify\ResetUserPassword;
+use App\Actions\Fortify\UpdateUserPassword;
+use Laravel\Fortify\Contracts\LogoutResponse;
+use App\Actions\Fortify\AttemptToAuthenticate;
 use Illuminate\Validation\ValidationException;
-use Laravel\Fortify\Fortify;
+use App\Actions\Fortify\RedirectIfTwoFactorConfirmed;
+use App\Actions\Fortify\UpdateUserProfileInformation;
 use Laravel\Fortify\Actions\EnsureLoginIsNotThrottled;
 use Laravel\Fortify\Actions\PrepareAuthenticatedSession;
-use Laravel\Fortify\Features;
 
 class FortifyServiceProvider extends ServiceProvider
 {
@@ -38,7 +39,15 @@ class FortifyServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        //
+        $this->app->instance(LogoutResponse::class, new class implements LogoutResponse {
+
+            public function toResponse($request)
+            {
+                session()->flush();
+                return redirect()->route('login');
+            }
+
+        });
     }
 
     /**
@@ -65,7 +74,7 @@ class FortifyServiceProvider extends ServiceProvider
         // Fortify::authenticateThrough();
         Fortify::authenticateUsing(function (Request $request) {
             $rules = [
-                'email' => 'required|email:rfc|regex:/(.+)@(.+)\.(.+)/i'
+                'email' => 'required|email:rfc,strict'
             ];
 
             $request->validate($rules);
@@ -88,6 +97,8 @@ class FortifyServiceProvider extends ServiceProvider
                         'email' => __('auth.failedLoginDisabled')
                     ]);
                 }
+
+                session()->forget('locale');
 
                 return $user;
             }
@@ -180,7 +191,7 @@ class FortifyServiceProvider extends ServiceProvider
             Carbon::setLocale($globalSetting->locale);
             setlocale(LC_TIME, $globalSetting->locale . '_' . mb_strtoupper($globalSetting->locale));
 
-                return view('auth.register', ['globalSetting' => $globalSetting]);
+            return view('auth.register', ['globalSetting' => $globalSetting]);
 
         });
 

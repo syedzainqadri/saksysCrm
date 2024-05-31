@@ -1,7 +1,7 @@
 <div class="form-check">
     <input {{ $attributes->merge(['class' => 'form-check-input']) }} type="checkbox" @isset($fieldValue)
         value="{{ $fieldValue }}" @endisset name="{{ $fieldName }}" @if ($checked) checked @endif
-        id="{{ $fieldId }}">
+        id="{{ $fieldId }}" @if ($fieldPermission) disabled @endif >
     @if ($fieldLabel != '')
         <label
             class="form-check-label form_custom_label text-dark-grey pl-2 mr-3 justify-content-start cursor-pointer checkmark-20 pt-1 text-wrap"

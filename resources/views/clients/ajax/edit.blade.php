@@ -18,8 +18,7 @@ $addClientSubCategoryPermission = user()->permission('manage_client_subcategory'
                                     :fieldLabel="__('modules.client.salutation')">
                                     <option value="">--</option>
                                     @foreach ($salutations as $salutation)
-                                        <option value="{{ $salutation }}" @if ($client->salutation == $salutation) selected @endif>@lang('app.'.$salutation)
-                                        </option>
+                                        <option value="{{ $salutation->value }}" @selected($client->salutation == $salutation)>{{ $salutation->label() }}</option>
                                     @endforeach
                                 </x-forms.select>
                             </div>
@@ -62,9 +61,9 @@ $addClientSubCategoryPermission = user()->permission('manage_client_subcategory'
                                 search="true">
                                 <option value="">--</option>
                                 @foreach ($countries as $item)
-                                    <option @if ($client->country_id == $item->id) selected @endif data-mobile="{{ $client->mobile }}" data-tokens="{{ $item->iso3 }}" data-phonecode="{{ $item->phonecode }}" data-content="<span
-                                    class='flag-icon flag-icon-{{ strtolower($item->iso) }} flag-icon-squared'></span>
-                                {{ $item->nicename }}" value="{{ $item->id }}">{{ $item->nicename }}</option>
+                                    <option @selected($client->country_id == $item->id) data-mobile="{{ $client->mobile }}" data-tokens="{{ $item->iso3 }}" data-phonecode="{{ $item->phonecode }}" data-content="<span
+                                        class='flag-icon flag-icon-{{ strtolower($item->iso) }} flag-icon-squared'></span>
+                                        {{ $item->nicename }}" value="{{ $item->id }}">{{ $item->nicename }}</option>
                                 @endforeach
                             </x-forms.select>
                         </div>
@@ -75,10 +74,10 @@ $addClientSubCategoryPermission = user()->permission('manage_client_subcategory'
                                 <x-forms.select fieldId="country_phonecode" fieldName="country_phonecode"
                                     search="true">
                                     @foreach ($countries as $item)
-                                        <option @selected($client->country_phonecode == $item->phonecode)
+                                        <option @selected($client->country_phonecode == $item->phonecode && !is_null($item->numcode))
                                                 data-tokens="{{ $item->name }}"
                                                 data-content="{{$item->flagSpanCountryCode()}}"
-                                                value="{{ $item->phonecode }}">{{ $item->phonecode }}
+                                                value="{{ $item->phonecode }}">
                                         </option>
                                     @endforeach
                                 </x-forms.select>
@@ -89,12 +88,10 @@ $addClientSubCategoryPermission = user()->permission('manage_client_subcategory'
                         </div>
                     </div>
                     <div class="col-lg-3">
-                        @php
-                            $userImage = $client->hasGravatar($client->email) ? str_replace('?s=200&d=mp', '', $client->image_url) : asset('img/avatar.png');
-                        @endphp
-                        <x-forms.file allowedFileExtensions="png jpg jpeg svg" class="mr-0 mr-lg-2 mr-md-2 cropper"
+
+                        <x-forms.file allowedFileExtensions="png jpg jpeg svg bmp" class="mr-0 mr-lg-2 mr-md-2 cropper"
                             :fieldLabel="__('modules.profile.profilePicture')"
-                            :fieldValue="($client->image ? $client->image_url : $userImage)" fieldName="image"
+                            :fieldValue="$client->image_url" fieldName="image"
                             fieldId="image" fieldHeight="119" :popover="__('messages.fileFormat.ImageFile')" />
                     </div>
                     <div class="col-lg-3 col-md-6">
@@ -113,8 +110,8 @@ $addClientSubCategoryPermission = user()->permission('manage_client_subcategory'
                         <x-forms.select fieldId="locale" :fieldLabel="__('modules.accountSettings.changeLanguage')"
                             fieldName="locale" search="true">
                             @foreach ($languages as $language)
-                                <option @if ($client->locale == $language->language_code) selected @endif
-                                data-content="<span class='flag-icon flag-icon-{{ ($language->flag_code == 'en') ? 'gb' : strtolower($language->flag_code) }} flag-icon-squared'></span> {{ $language->language_name }}"
+                                <option @selected($client->locale == $language->language_code)
+                                data-content="<span class='flag-icon flag-icon-{{ ($language->flag_code == 'en') ? 'gb' : $language->flag_code }} flag-icon-squared'></span> {{ $language->language_name }}"
                                 value="{{ $language->language_code }}">{{ $language->language_name }}</option>
                             @endforeach
                         </x-forms.select>
@@ -129,8 +126,8 @@ $addClientSubCategoryPermission = user()->permission('manage_client_subcategory'
                                 data-live-search="true">
                                 <option value="">--</option>
                                 @foreach($categories as $category)
-                                    <option @if ($client->clientDetails->category_id == $category->id) selected @endif value="{{ $category->id }}">
-                                        {{ mb_ucwords($category->category_name) }}</option>
+                                    <option @selected($client->clientDetails->category_id == $category->id) value="{{ $category->id }}">
+                                        {{ $category->category_name }}</option>
                                 @endforeach
                             </select>
 
@@ -151,8 +148,8 @@ $addClientSubCategoryPermission = user()->permission('manage_client_subcategory'
                             <select class="form-control select-picker" name="sub_category_id" id="sub_category_id"
                                 data-live-search="true">
                                 @forelse($subcategories as $subcategory)
-                                    <option @if ($client->clientDetails->sub_category_id == $subcategory->id) selected @endif value="{{ $subcategory->id }}">
-                                        {{ mb_ucwords($subcategory->category_name) }}</option>
+                                    <option  @selected($client->clientDetails->sub_category_id == $subcategory->id) value="{{ $subcategory->id }}">
+                                        {{ $subcategory->category_name }}</option>
                                 @empty
                                     <option value="">@lang('messages.noCategoryAdded')</option>
                                 @endforelse
@@ -218,43 +215,48 @@ $addClientSubCategoryPermission = user()->permission('manage_client_subcategory'
                 <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-top-grey">
                     @lang('modules.client.companyDetails')</h4>
                 <div class="row p-20">
-                    <div class="col-lg-4 col-md-6">
+                    <div class="col-lg-3 col-md-6">
                         <x-forms.text class="mb-3 mt-3 mt-lg-0 mt-md-0" fieldId="company_name"
                             :fieldLabel="__('modules.client.companyName')" fieldName="company_name"
-                            :fieldValue="$client->clientDetails->company_name" fieldPlaceholder="e.g. Acme Corporation">
+                            :fieldValue="$client->clientDetails->company_name" :fieldPlaceholder="__('placeholders.company')">
                         </x-forms.text>
                     </div>
-                    <div class="col-lg-4 col-md-6">
+                    <div class="col-lg-3 col-md-6">
                         <x-forms.text class="mb-3 mt-3 mt-lg-0 mt-md-0" fieldId="website"
                             :fieldLabel="__('modules.client.website')" fieldName="website"
                             :fieldValue="$client->clientDetails->website"
-                            fieldPlaceholder="e.g. https://www.spacex.com/">
+                            :fieldPlaceholder="__('placeholders.website')">
                         </x-forms.text>
                     </div>
-                    <div class="col-lg-4 col-md-6">
+                    <div class="col-lg-3 col-md-6">
+                        <x-forms.text class="mb-3 mt-3 mt-lg-0 mt-md-0" fieldId="tax_name"
+                            :fieldLabel="__('app.taxName')" :fieldValue="$client->clientDetails->tax_name"
+                            fieldName="tax_name" :fieldPlaceholder="__('placeholders.gst/vat')"></x-forms.text>
+                    </div>
+                    <div class="col-lg-3 col-md-6">
                         <x-forms.text class="mb-3 mt-3 mt-lg-0 mt-md-0" fieldId="gst_number"
                             :fieldLabel="__('app.gstNumber')" :fieldValue="$client->clientDetails->gst_number"
-                            fieldName="gst_number" fieldPlaceholder="e.g. 18AABCU960XXXXX"></x-forms.text>
+                            fieldName="gst_number" :fieldPlaceholder="__('placeholders.gstNumber')"></x-forms.text>
                     </div>
 
                     <div class="col-lg-3 col-md-6">
                         <x-forms.text fieldId="office" :fieldLabel="__('modules.client.officePhoneNumber')"
-                            fieldName="office" fieldPlaceholder="e.g. +19876543"
+                            fieldName="office" :fieldPlaceholder="__('placeholders.mobileWithPlus')"
                             :fieldValue="$client->clientDetails->office"></x-forms.text>
                     </div>
                     <div class="col-lg-3 col-md-6">
                         <x-forms.text fieldId="city" :fieldLabel="__('modules.stripeCustomerAddress.city')"
-                            fieldName="city" fieldPlaceholder="e.g. Hawthorne"
+                            fieldName="city" :fieldPlaceholder="__('placeholders.city')"
                             :fieldValue="$client->clientDetails->city"></x-forms.text>
                     </div>
                     <div class="col-lg-3 col-md-6">
                         <x-forms.text fieldId="state" :fieldLabel="__('modules.stripeCustomerAddress.state')"
-                            fieldName="state" fieldPlaceholder="e.g. California"
+                            fieldName="state" :fieldPlaceholder="__('placeholders.state')"
                             :fieldValue="$client->clientDetails->state"></x-forms.text>
                     </div>
                     <div class="col-lg-3 col-md-6">
                         <x-forms.text fieldId="postalCode" :fieldLabel="__('modules.stripeCustomerAddress.postalCode')"
-                            fieldName="postal_code" fieldPlaceholder="e.g. 90250"
+                            fieldName="postal_code" :fieldPlaceholder="__('placeholders.postalCode')"
                             :fieldValue="$client->clientDetails->postal_code"></x-forms.text>
                     </div>
 
@@ -262,7 +264,7 @@ $addClientSubCategoryPermission = user()->permission('manage_client_subcategory'
                         <div class="form-group my-3">
                             <x-forms.textarea class="mr-0 mr-lg-2 mr-md-2"
                                 :fieldLabel="__('modules.accountSettings.companyAddress')" fieldName="address"
-                                fieldId="address" fieldPlaceholder="e.g. Rocket Road"
+                                fieldId="address" :fieldPlaceholder="__('placeholders.address')"
                                 :fieldValue="$client->clientDetails->address">
                             </x-forms.textarea>
                         </div>
@@ -271,29 +273,29 @@ $addClientSubCategoryPermission = user()->permission('manage_client_subcategory'
                         <div class="form-group my-3">
                             <x-forms.textarea class="mr-0 mr-lg-2 mr-md-2" :fieldLabel="__('app.shippingAddress')"
                                 :fieldValue="$client->clientDetails->shipping_address" fieldName="shipping_address"
-                                fieldId="shipping_address" fieldPlaceholder="e.g. Rocket Road">
+                                fieldId="shipping_address" :fieldPlaceholder="__('placeholders.address')">
                             </x-forms.textarea>
                         </div>
                     </div>
 
                     <div class="col-lg-3 col-md-6">
                         <x-forms.text fieldId="skype" fieldLabel="Skype" fieldName="skype"
-                            fieldPlaceholder="e.g. skypeUsername" :fieldValue="$client->clientDetails->skype">
+                            :fieldPlaceholder="__('placeholders.client.skype')" :fieldValue="$client->clientDetails->skype">
                         </x-forms.text>
                     </div>
                     <div class="col-lg-3 col-md-6">
                         <x-forms.text fieldId="linkedin" fieldLabel="Linkedin" fieldName="linkedin"
-                            fieldPlaceholder="e.g. https://www.linkedin.com/XXXXXXXXXX/"
+                            :fieldPlaceholder="__('placeholders.client.linkedin')"
                             :fieldValue="$client->clientDetails->linkedin"></x-forms.text>
                     </div>
                     <div class="col-lg-3 col-md-6">
                         <x-forms.text fieldId="twitter" fieldLabel="Twitter" fieldName="twitter"
-                            fieldPlaceholder="e.g. @johndoe" :fieldValue="$client->clientDetails->twitter">
+                            :fieldPlaceholder="__('placeholders.client.twitter')" :fieldValue="$client->clientDetails->twitter">
                         </x-forms.text>
                     </div>
                     <div class="col-lg-3 col-md-6">
                         <x-forms.text fieldId="facebook" fieldLabel="Facebook" fieldName="facebook"
-                            fieldPlaceholder="e.g. https://www.facebook.com/XXXXXXXXX"
+                            :fieldPlaceholder="__('placeholders.client.facebook')"
                             :fieldValue="$client->clientDetails->facebook"></x-forms.text>
                     </div>
 
@@ -310,19 +312,30 @@ $addClientSubCategoryPermission = user()->permission('manage_client_subcategory'
                     @endif
 
                     @if (function_exists('sms_setting') && sms_setting()->telegram_status)
-                        <div class="col-lg-3 col-md-6">
+                        <div class="col-md-6">
                             <x-forms.number fieldName="telegram_user_id" fieldId="telegram_user_id"
                                 fieldLabel="<i class='fab fa-telegram'></i> {{ __('sms::modules.telegramUserId') }}"
                                 :fieldValue="$client->telegram_user_id" :popover="__('sms::modules.userIdInfo')" />
+                            <p class="text-bold text-danger">
+                                @lang('sms::modules.telegramBotNameInfo')
+                            </p>
+                            <p class="text-bold"><span id="telegram-link-text">https://t.me/{{ sms_setting()->telegram_bot_name }}</span>
+                                <a href="javascript:;" class="btn-copy btn-secondary f-12 rounded p-1 py-2 ml-1"
+                                    data-clipboard-target="#telegram-link-text">
+                                    <i class="fa fa-copy mx-1"></i>@lang('app.copy')</a>
+                                <a href="https://t.me/{{ sms_setting()->telegram_bot_name }}" target="_blank" class="btn-secondary f-12 rounded p-1 py-2 ml-1">
+                                    <i class="fa fa-copy mx-1"></i>@lang('app.openInNewTab')</a>
+                            </p>
                         </div>
                     @endif
 
                     <div class="col-lg-12">
-                        <x-forms.file allowedFileExtensions="png jpg jpeg svg" class="mr-0 mr-lg-2 mr-md-2"
+                        <x-forms.file allowedFileExtensions="png jpg jpeg svg bmp" class="mr-0 mr-lg-2 mr-md-2"
                                                :fieldLabel="__('modules.contracts.companyLogo')" fieldName="company_logo"
                                                :fieldValue=" ($client->clientDetails->company_logo ? $client->clientDetails->image_url : null)" fieldId="company_logo" :popover="__('messages.fileFormat.ImageFile')"/>
                     </div>
                 </div>
+                @includeIf('einvoice::form.client-edit')
 
                 <x-forms.custom-field :fields="$fields" :model="$clientDetail"></x-forms.custom-field>
 
@@ -338,7 +351,9 @@ $addClientSubCategoryPermission = user()->permission('manage_client_subcategory'
     </div>
 </div>
 
-
+@if (function_exists('sms_setting') && sms_setting()->telegram_status)
+    <script src="{{ asset('vendor/jquery/clipboard.min.js') }}"></script>
+@endif
 <script>
     $(document).ready(function() {
 
@@ -429,11 +444,26 @@ $addClientSubCategoryPermission = user()->permission('manage_client_subcategory'
         init(RIGHT_MODAL);
     });
 
-    function checkboxChange(parentClass, id) {
-        var checkedData = '';
-        $('.' + parentClass).find("input[type= 'checkbox']:checked").each(function() {
-            checkedData = (checkedData !== '') ? checkedData + ', ' + $(this).val() : $(this).val();
+    @if (function_exists('sms_setting') && sms_setting()->telegram_status)
+        var clipboard = new ClipboardJS('.btn-copy');
+
+        clipboard.on('success', function(e) {
+            Swal.fire({
+                icon: 'success',
+                text: '@lang("app.urlCopied")',
+                toast: true,
+                position: 'top-end',
+                timer: 3000,
+                timerProgressBar: true,
+                showConfirmButton: false,
+                customClass: {
+                    confirmButton: 'btn btn-primary',
+                },
+                showClass: {
+                    popup: 'swal2-noanimation',
+                    backdrop: 'swal2-noanimation'
+                },
+            })
         });
-        $('#' + id).val(checkedData);
-    }
+    @endif
 </script>

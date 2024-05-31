@@ -28,8 +28,30 @@
             <div class="col-lg-12 col-md-12 ntfcn-tab-content-left w-100 p-4 ">
                 <h4 class="f-21 font-weight-normal text-capitalize ">
                     @lang('modules.moduleSettings.step1')</h4>
+
+
                 <div class="row">
                     <div class="col-sm-12">
+
+                        @php
+                            $uploadMaxFilesize = \App\Helper\Files::getUploadMaxFilesize();
+                            $postMaxSize = \App\Helper\Files::getPostMaxSize();
+                        @endphp
+
+                        @if(!$uploadMaxFilesize['greater'])
+                            <span class="text-danger">
+                                    Your Server upload_max_filesize = {{\App\Helper\Files::getUploadMaxFilesize()['size']}}.
+                                    Please change to min <strong>{{\App\Helper\Files::REQUIRED_FILE_UPLOAD_SIZE}}MB</strong>
+                                    to upload big modules
+                            </span>
+                        @elseif(!$postMaxSize['greater'])
+                            <span class="text-danger">
+                                    Your Server post_max_size = {{\App\Helper\Files::getUploadMaxFilesize()['size']}}.
+                                    Please change to min <strong>{{\App\Helper\Files::REQUIRED_FILE_UPLOAD_SIZE}}MB</strong> to
+                                    upload big modules
+                            </span>
+                        @endif
+
                         <x-forms.file-multiple
                             class="mr-0 mr-lg-2 mr-md-2"
                             :fieldLabel=" __('messages.downloadFilefromCodecanyon') " fieldName="file"
@@ -57,7 +79,7 @@
                                     </div>
 
                                     <div class="col-lg-4 py-1 text-center f-12">
-                                        @lang('app.upload') @lang('app.date'):
+                                        @lang('app.uploadDate'):
                                         {{ \Carbon\Carbon::parse(\Illuminate\Support\Facades\File::lastModified($filename))->timezone(global_setting()->timezone)->translatedFormat('jS M, Y g:i A') }}
                                     </div>
 
@@ -88,9 +110,9 @@
                 <!-- Buttons Start -->
                 <div class="w-100 border-top-grey">
                     <x-setting-form-actions>
-                        <x-forms.button-cancel :link="route('custom-modules.index').'?tab=custom'" class="border-0">
+                        <a href="{{ route('custom-modules.index').'?tab=custom' }}" class="btn-secondary rounded f-14 p-2">
                             @lang('app.back')
-                        </x-forms.button-cancel>
+                        </a>
                     </x-setting-form-actions>
                     <div class="d-block d-lg-none d-md-none p-4">
                         <x-forms.button-cancel :link="route('custom-modules.index').'?tab=custom'" class="w-100 mt-3">
@@ -109,7 +131,6 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('vendor/jquery/dropzone.min.js') }}"></script>
     <script>
         Dropzone.autoDiscover = false;
         $(document).ready(function () {
@@ -144,11 +165,9 @@
                     $('#install-process').html('');
 
                     if (response.status === 'success') {
-                        $('#install-process').html('<div class="alert alert-success">Your will be logged out soon. Login and visit <b>Custom modules main page</b> again page to activate it</div>');
-
-                        setTimeout(function () {
-                            window.location.reload();
-                        }, 3000);
+                        $.easyBlockUI('body')
+                        $('#install-process').html(`<div class="alert alert-success">@lang('messages.customModuleInstalled')</div>`);
+                        window.location.href = "{{ route('custom-modules.index').'?tab=custom' }}";
                     }
 
                     if (response.status === 'fail') {

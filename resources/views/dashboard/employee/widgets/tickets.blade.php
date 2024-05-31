@@ -20,7 +20,7 @@
                                     <div class="media align-items-center">
                                         <div class="media-body">
                                             <h5 class="f-12 mb-1 text-darkest-grey">
-                                                <a href="{{ route('tickets.show', [$ticket->ticket_number]) }}">{{ ucfirst($ticket->subject) }}</a>
+                                                <a href="{{ route('tickets.show', [$ticket->ticket_number]) }}">{{ $ticket->subject }}</a>
                                             </h5>
                                         </div>
                                     </div>
@@ -31,7 +31,7 @@
                                     @else
                                         <i class="fa fa-circle mr-1 text-yellow"></i>
                                     @endif
-                                    {{ ucfirst($ticket->status) }}
+                                    {{ $ticket->status }}
                                 </td>
                                 <td class="pr-20" align="right">
                                     <span>{{ $ticket->updated_at->translatedFormat(company()->date_format) }}</span>

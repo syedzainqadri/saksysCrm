@@ -110,12 +110,12 @@ class CreditNoteController extends AccountBaseController
             $this->totalDiscount = $this->discount;
         }
 
+        $this->view = 'credit-notes.ajax.create';
+
         if (request()->ajax()) {
-            $html = view('credit-notes.ajax.create', $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
 
-        $this->view = 'credit-notes.ajax.create';
         return view('credit-notes.create', $this->data);
 
     }
@@ -174,7 +174,7 @@ class CreditNoteController extends AccountBaseController
 
         $creditNote->project_id = ($invoice->project_id) ? $invoice->project_id : null;
         $creditNote->client_id = $clientId;
-        $creditNote->cn_number = CreditNotes::count() + 1;
+        $creditNote->cn_number = $request->cn_number;
         $creditNote->invoice_id = $invoice->id;
         $creditNote->issue_date = $request->issue_date;
         $creditNote->due_date = $request->due_date;
@@ -184,6 +184,7 @@ class CreditNoteController extends AccountBaseController
         $creditNote->total = round($request->total, 2);
         $creditNote->adjustment_amount = round($request->adjustment_amount, 2);
         $creditNote->currency_id = $request->currency_id;
+        $creditNote->note = trim_editor($request->note);
         $creditNote->save();
 
         if ($invoice) {
@@ -236,19 +237,20 @@ class CreditNoteController extends AccountBaseController
                     'amount' => round($amountArray[$key], 2),
                     'taxes' => ($tax ? (array_key_exists($key, $tax) ? json_encode($tax[$key]) : null) : null)
                 ]);
-            }
 
-            /* Invoice file save here */
-            if(isset($creditNoteItem) && isset($invoice_item_image_url[$key])){
-                CreditNoteItemImage::create(
-                    [
-                        'credit_note_item_id' => $creditNoteItem->id,
-                        'external_link' => isset($invoice_item_image_url[$key]) ? $invoice_item_image_url[$key] : ''
-                    ]
-                );
+                /* Invoice file save here */
+                if(isset($invoice_item_image_url[$key])){
+                    CreditNoteItemImage::create(
+                        [
+                            'credit_note_item_id' => $creditNoteItem->id,
+                            'external_link' => isset($invoice_item_image_url[$key]) ? $invoice_item_image_url[$key] : null
+                        ]
+                    );
+                }
             }
 
         endforeach;
+        
 
         // Log search
         $this->logSearchEntry($creditNote->id, $creditNote->cn_number, 'creditnotes.show', 'creditNote');
@@ -268,8 +270,8 @@ class CreditNoteController extends AccountBaseController
             || ($this->viewPermission == 'owned' && $this->creditNote->client_id == user()->id)
         ));
 
-        App::setLocale($this->invoiceSetting->locale);
-        Carbon::setLocale($this->invoiceSetting->locale);
+        App::setLocale($this->invoiceSetting->locale ?? 'en');
+        Carbon::setLocale($this->invoiceSetting->locale ?? 'en');
 
         if ($this->creditNote->file != null) {
             return response()->download(storage_path('app/public/credit-note-files') . '/' . $this->creditNote->file);
@@ -279,15 +281,16 @@ class CreditNoteController extends AccountBaseController
         $pdf = $pdfOption['pdf'];
         $filename = $pdfOption['fileName'];
 
-        return $pdf->download($filename . '.pdf');
+        return request()->view ? $pdf->stream($filename . '.pdf') : $pdf->download($filename . '.pdf');
+
     }
 
     public function domPdfObjectForDownload($id)
     {
         $this->invoiceSetting = invoice_setting();
         $this->creditNote = CreditNotes::findOrFail($id);
-        App::setLocale($this->invoiceSetting->locale);
-        Carbon::setLocale($this->invoiceSetting->locale);
+        App::setLocale($this->invoiceSetting->locale ?? 'en');
+        Carbon::setLocale($this->invoiceSetting->locale ?? 'en');
 
         $this->invoiceNumber = 0;
 
@@ -357,11 +360,8 @@ class CreditNoteController extends AccountBaseController
 
         $pdf->loadView('credit-notes.pdf.' . $this->creditNoteSetting->template, $this->data);
 
-        $dom_pdf = $pdf->getDomPDF();
-        $canvas = $dom_pdf->getCanvas();
-        $canvas->page_text(530, 820, 'Page {PAGE_NUM} of {PAGE_COUNT}', null, 10);
         $filename = $this->creditNote->cn_number;
-        // Return $pdf->stream();
+
         return [
             'pdf' => $pdf,
             'fileName' => $filename
@@ -561,12 +561,12 @@ class CreditNoteController extends AccountBaseController
             ->where('client_id', $this->creditNote->client_id);
         $this->nonPaidInvoices = $this->nonPaidInvoices->with('payment', 'currency')->get();
 
+        $this->view = 'credit-notes.ajax.apply_to_invoices';
+
         if (request()->ajax()) {
-            $html = view('credit-notes.ajax.apply_to_invoices', $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
 
-        $this->view = 'credit-notes.ajax.apply_to_invoices';
         return view('credit-notes.create', $this->data);
     }
 
@@ -643,12 +643,12 @@ class CreditNoteController extends AccountBaseController
         $this->creditNote = CreditNotes::with('payment')->findOrFail($id);
         $this->payments = Payment::with('invoice')->where('credit_notes_id', $id)->get();
 
+        $this->view = 'credit-notes.ajax.credited_invoices';
+
         if (request()->ajax()) {
-            $html = view('credit-notes.ajax.credited_invoices', $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
 
-        $this->view = 'credit-notes.ajax.credited_invoices';
         return view('credit-notes.create', $this->data);
     }
 

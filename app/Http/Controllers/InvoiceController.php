@@ -11,6 +11,7 @@ use App\Http\Requests\Admin\Client\StoreShippingAddressRequest;
 use App\Http\Requests\InvoiceFileStore;
 use App\Http\Requests\Invoices\StoreInvoice;
 use App\Http\Requests\Invoices\UpdateInvoice;
+use App\Http\Requests\Payments\InvoicePayment;
 use App\Http\Requests\Stripe\StoreStripeDetail;
 use App\Models\BankAccount;
 use App\Models\ClientDetails;
@@ -21,27 +22,30 @@ use App\Models\Estimate;
 use App\Models\Invoice;
 use App\Models\InvoiceItemImage;
 use App\Models\InvoiceItems;
+use App\Models\InvoiceSetting;
 use App\Models\OfflinePaymentMethod;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\PaymentGatewayCredentials;
 use App\Models\Product;
+use App\Models\ProductCategory;
 use App\Models\Project;
 use App\Models\ProjectMilestone;
 use App\Models\ProjectTimeLog;
 use App\Models\Proposal;
-use App\Models\ProductCategory;
 use App\Models\Tax;
 use App\Models\UnitType;
 use App\Models\User;
 use App\Scopes\ActiveScope;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Stripe\Stripe;
 use Illuminate\Support\Facades\App;
+use Stripe\Stripe;
+use App\Traits\EmployeeActivityTrait;
 
 class InvoiceController extends AccountBaseController
 {
+    use EmployeeActivityTrait;
 
     public function __construct()
     {
@@ -103,8 +107,8 @@ class InvoiceController extends AccountBaseController
         if (request('proposal') != '') {
             $this->proposalId = request('proposal');
             $this->type = 'proposal';
-            $this->estimate = Proposal::with('items', 'lead', 'lead.client', 'lead.client.clientDetails')->findOrFail($this->proposalId);
-            $this->client = $this->estimate->lead->client;
+            $this->estimate = Proposal::with('items', 'lead', 'lead.contact')->findOrFail($this->proposalId);
+            $this->client = $this->estimate->lead->contact->client;
         }
 
         $this->currencies = Currency::all();
@@ -123,7 +127,16 @@ class InvoiceController extends AccountBaseController
 
         $this->units = UnitType::all();
         $this->taxes = Tax::all();
-        $this->products = Product::all();
+
+        if (module_enabled('Purchase')){
+            /** @phpstan-ignore-next-line */
+            $this->products = Product::with('inventory')->get();
+        }
+        else
+        {
+            $this->products = Product::all();
+        }
+
         $this->clients = User::allClients();
         $this->companyAddresses = CompanyAddress::all();
         $this->projects = Project::allProjectsHavingClient();
@@ -142,18 +155,16 @@ class InvoiceController extends AccountBaseController
 
         $this->companyCurrency = Currency::where('id', company()->currency_id)->first();
 
-        if (request('type') == 'timelog') {
+        if (request('type') == 'timelog' && in_array('projects', user_modules())) {
 
-            $this->startDate = Carbon::now($this->company->timezone)->subDays(7);
-            $this->endDate = Carbon::now($this->company->timezone);
-
-            if (request()->ajax()) {
-                $html = view('invoices.ajax.create-timelog-invoice', $this->data)->render();
-
-                return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
-            }
+            $this->startDate = now($this->company->timezone)->subDays(7);
+            $this->endDate = now($this->company->timezone);
 
             $this->view = 'invoices.ajax.create-timelog-invoice';
+
+            if (request()->ajax()) {
+                return $this->returnAjax($this->view);
+            }
 
             return view('invoices.create', $this->data);
         }
@@ -164,13 +175,11 @@ class InvoiceController extends AccountBaseController
             $this->fields = $invoice->getCustomFieldGroupsWithFields()->fields;
         }
 
-        if (request()->ajax()) {
-            $html = view('invoices.ajax.create', $this->data)->render();
-
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
-        }
-
         $this->view = 'invoices.ajax.create';
+
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
+        }
 
         return view('invoices.create', $this->data);
 
@@ -188,7 +197,6 @@ class InvoiceController extends AccountBaseController
         $cost_per_item = $request->cost_per_item;
         $quantity = $request->quantity;
         $amount = $request->amount;
-
 
         if (empty($items)) {
             return Reply::error(__('messages.addItem'));
@@ -221,8 +229,8 @@ class InvoiceController extends AccountBaseController
         $invoice = new Invoice();
         $invoice->project_id = $request->project_id ?? null;
         $invoice->client_id = ($request->client_id) ?: null;
-        $invoice->issue_date = Carbon::createFromFormat($this->company->date_format, $request->issue_date)->format('Y-m-d');
-        $invoice->due_date = Carbon::createFromFormat($this->company->date_format, $request->due_date)->format('Y-m-d');
+        $invoice->issue_date = companyToYmd($request->issue_date);
+        $invoice->due_date = companyToYmd($request->due_date);
         $invoice->sub_total = round($request->sub_total, 2);
         $invoice->discount = round($request->discount_value, 2);
         $invoice->discount_type = $request->discount_type;
@@ -245,29 +253,28 @@ class InvoiceController extends AccountBaseController
         $invoice->save();
 
         // To add custom fields data
+
         if ($request->custom_fields_data) {
             $invoice->updateCustomFieldData($request->custom_fields_data);
         }
 
         if ($request->estimate_id) {
             $estimate = Estimate::findOrFail($request->estimate_id);
-
-            if ($estimate->sign) {
-                $estimate->status = 'accepted';
-                $estimate->save();
-            }
-
+            $estimate->status = 'accepted';
+            $estimate->save();
         }
 
         if ($request->proposal_id) {
             $proposal = Proposal::findOrFail($request->proposal_id);
+            $proposalData = [
+                'invoice_convert' => 1,
+            ];
 
             if ($proposal->signature) {
-                $proposal->status = 'accepted';
+                $proposalData['status'] = 'accepted';
             }
 
-            $proposal->invoice_convert = 1;
-            $proposal->save();
+            Proposal::where('id', $request->proposal_id)->update($proposalData);
         }
 
         if ($request->has('shipping_address')) {
@@ -295,8 +302,8 @@ class InvoiceController extends AccountBaseController
 
         // Set invoice id in timelog
         if ($request->has('timelog_from') && $request->timelog_from != '' && $request->has('timelog_to') && $request->timelog_to != '') {
-            $timelogFrom = Carbon::createFromFormat($this->company->date_format, $request->timelog_from)->format('Y-m-d');
-            $timelogTo = Carbon::createFromFormat($this->company->date_format, $request->timelog_to)->format('Y-m-d');
+            $timelogFrom = companyToYmd($request->timelog_from);
+            $timelogTo = companyToYmd($request->timelog_to);
             $this->timelogs = ProjectTimeLog::where('project_time_logs.project_id', $request->project_id)
                 ->leftJoin('tasks', 'tasks.id', '=', 'project_time_logs.task_id')
                 ->where('project_time_logs.earnings', '>', 0)
@@ -315,9 +322,12 @@ class InvoiceController extends AccountBaseController
         // Log search
         $this->logSearchEntry($invoice->id, $invoice->invoice_number, 'invoices.show', 'invoice');
 
+        self::createEmployeeActivity(user()->id, 'invoice-created', $invoice->id, 'invoice');
+
         if ($invoice->send_status == 1) {
             return Reply::successWithData(__('messages.invoiceSentSuccessfully'), ['redirectUrl' => $redirectUrl, 'invoiceID' => $invoice->id]);
         }
+
 
         return Reply::successWithData(__('messages.recordSaved'), ['redirectUrl' => $redirectUrl, 'invoiceID' => $invoice->id]);
     }
@@ -404,8 +414,8 @@ class InvoiceController extends AccountBaseController
             || ($viewProjectInvoicePermission == 'owned' && $this->invoice->project_id && $this->invoice->project->client_id == user()->id)
         ));
 
-        App::setLocale($this->invoiceSetting->locale);
-        Carbon::setLocale($this->invoiceSetting->locale);
+        App::setLocale($this->invoiceSetting->locale ?? 'en');
+        Carbon::setLocale($this->invoiceSetting->locale ?? 'en');
 
         // Download file uploaded
         if ($this->invoice->file != null) {
@@ -421,10 +431,10 @@ class InvoiceController extends AccountBaseController
 
     public function domPdfObjectForDownload($id)
     {
-        $this->invoiceSetting = invoice_setting();
         $this->invoice = Invoice::with('items', 'items', 'items.unit')->findOrFail($id)->withCustomFields();
-        App::setLocale($this->invoiceSetting->locale);
-        Carbon::setLocale($this->invoiceSetting->locale);
+        $this->invoiceSetting = InvoiceSetting::withoutGlobalScopes()->where('company_id', $this->invoice->company_id)->first();
+        App::setLocale($this->invoiceSetting->locale ?? 'en');
+        Carbon::setLocale($this->invoiceSetting->locale ?? 'en');
         $this->paidAmount = $this->invoice->getPaidAmount();
         $this->creditNote = 0;
 
@@ -485,9 +495,9 @@ class InvoiceController extends AccountBaseController
 
         $this->company = $this->invoice->company;
 
-        $this->invoiceSetting = invoice_setting();
+        $this->invoiceSetting = $this->company->invoiceSetting;
 
-        $this->payments = Payment::with(['offlineMethod'])->where('invoice_id', $this->invoice->id)->where('status', 'complete')->orderBy('paid_on', 'desc')->get();
+        $this->payments = Payment::with(['offlineMethod'])->where('invoice_id', $this->invoice->id)->where('status', 'complete')->orderByDesc('paid_on')->get();
 
         $pdf = app('dompdf.wrapper');
         $pdf->setOption('enable_php', true);
@@ -505,7 +515,7 @@ class InvoiceController extends AccountBaseController
 
     public function domPdfObjectForConsoleDownload($id)
     {
-        $this->invoice = Invoice::with('items', 'unit')->findOrFail($id);
+        $this->invoice = Invoice::with('items')->findOrFail($id);
         $this->paidAmount = $this->invoice->getPaidAmount();
         $this->creditNote = 0;
 
@@ -569,20 +579,17 @@ class InvoiceController extends AccountBaseController
         $this->company = $this->invoice->company;
 
         $this->invoiceSetting = $this->company->invoiceSetting;
-        $this->payments = Payment::with(['offlineMethod'])->where('invoice_id', $this->invoice->id)->where('status', 'complete')->orderBy('paid_on', 'desc')->get();
+        $this->payments = Payment::with(['offlineMethod'])->where('invoice_id', $this->invoice->id)->where('status', 'complete')->orderByDesc('paid_on')->get();
         $this->defaultAddress = CompanyAddress::where('is_default', 1)->where('company_id', $this->invoice->company_id)->first();
 
         $pdf = app('dompdf.wrapper');
         $pdf->setOption('enable_php', true);
         $pdf->setOptions(['isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true]);
 
-        App::setLocale($this->invoiceSetting->locale);
-        Carbon::setLocale($this->invoiceSetting->locale);
-        $pdf->loadView('invoices.pdf.invoice-recurring', $this->data);
-
-        $dom_pdf = $pdf->getDomPDF();
-        $canvas = $dom_pdf->getCanvas();
-        $canvas->page_text(530, 820, 'Page {PAGE_NUM} of {PAGE_COUNT}', null, 10);
+        App::setLocale($this->invoiceSetting->locale ?? 'en');
+        Carbon::setLocale($this->invoiceSetting->locale ?? 'en');
+        // Hide  $pdf->loadView('invoices.pdf.invoice-recurring', $this->data);
+        $pdf->loadView('invoices.pdf.' . $this->invoiceSetting->template, $this->data);
 
         $filename = $this->invoice->invoice_number;
 
@@ -638,7 +645,7 @@ class InvoiceController extends AccountBaseController
 
         if ($this->invoice->project_id != '') {
             $companyName = Project::where('id', $this->invoice->project_id)->with('clientdetails')->first();
-            $this->companyName = $companyName->clientdetails ? $companyName->clientdetails->company_name : '';
+            $this->companyName = isset($companyName) ? ($companyName->clientdetails ? $companyName->clientdetails->company_name : '') : '';
         }
 
         $this->companyAddresses = CompanyAddress::all();
@@ -661,10 +668,6 @@ class InvoiceController extends AccountBaseController
         $cost_per_item = $request->cost_per_item;
         $quantity = $request->quantity;
         $amount = $request->amount;
-
-        if ($request->total == 0) {
-            return Reply::error(__('messages.amountIsZero'));
-        }
 
         foreach ($quantity as $qty) {
             if (!is_numeric($qty) && $qty < 1) {
@@ -694,8 +697,8 @@ class InvoiceController extends AccountBaseController
 
         $invoice->project_id = $request->project_id ?? null;
         $invoice->client_id = ($request->client_id) ? $request->client_id : null;
-        $invoice->issue_date = Carbon::createFromFormat($this->company->date_format, $request->issue_date)->format('Y-m-d');
-        $invoice->due_date = Carbon::createFromFormat($this->company->date_format, $request->due_date)->format('Y-m-d');
+        $invoice->issue_date = companyToYmd($request->issue_date);
+        $invoice->due_date = companyToYmd($request->due_date);
         $invoice->sub_total = round($request->sub_total, 2);
         $invoice->discount = round($request->discount_value, 2);
         $invoice->discount_type = $request->discount_type;
@@ -739,6 +742,7 @@ class InvoiceController extends AccountBaseController
                 $client->save();
             }
         }
+        self::createEmployeeActivity(user()->id, 'invoice-updated', $invoice->id, 'invoice');
 
         $redirectUrl = route('invoices.index');
 
@@ -819,7 +823,7 @@ class InvoiceController extends AccountBaseController
         }
 
         $this->taxes = $taxList;
-        $this->payments = Payment::with(['offlineMethod'])->where('invoice_id', $this->invoice->id)->where('status', 'complete')->orderBy('paid_on', 'desc')->get();
+        $this->payments = Payment::with(['offlineMethod'])->where('invoice_id', $this->invoice->id)->where('status', 'complete')->orderByDesc('paid_on')->get();
 
         $this->settings = company();
         $this->invoiceSetting = invoice_setting();
@@ -1095,7 +1099,7 @@ class InvoiceController extends AccountBaseController
         return view('invoices.offline.index', $this->data);
     }
 
-    public function storeOfflinePayment(Request $request)
+    public function storeOfflinePayment(InvoicePayment $request)
     {
         $returnUrl = '';
         $invoice = '';
@@ -1239,8 +1243,8 @@ class InvoiceController extends AccountBaseController
         $this->units = UnitType::all();
 
         if (!is_null($request->timelogFrom) && $request->timelogFrom != '') {
-            $timelogFrom = Carbon::createFromFormat($this->company->date_format, $request->timelogFrom)->format('Y-m-d');
-            $timelogTo = Carbon::createFromFormat($this->company->date_format, $request->timelogTo)->format('Y-m-d');
+            $timelogFrom = companyToYmd($request->timelogFrom);
+            $timelogTo = companyToYmd($request->timelogTo);
             $this->timelogs = ProjectTimeLog::with('task')
                 ->leftJoin('tasks', 'tasks.id', '=', 'project_time_logs.task_id')
                 ->groupBy('project_time_logs.task_id')
@@ -1348,7 +1352,7 @@ class InvoiceController extends AccountBaseController
     {
         $id = $request->id;
 
-        $offlineMethod = ($id != 'all') ? OfflinePaymentMethod::select('description')->findOrFail($id) : '';
+        $offlineMethod = $id ? OfflinePaymentMethod::select('description')->findOrFail($id) : '';
         $description = $offlineMethod ? $offlineMethod->description : '';
 
         return Reply::dataOnly(['status' => 'success', 'description' => $description]);

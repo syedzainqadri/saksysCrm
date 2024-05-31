@@ -6,24 +6,28 @@ use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Http\Kernel as HttpKernelInterface;
 use Illuminate\Foundation\Application as Laravel;
+use Illuminate\Foundation\Console\AboutCommand;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
 use Illuminate\Http\Request;
-use Illuminate\Log\LogManager;
 use Laravel\Lumen\Application as Lumen;
 use RuntimeException;
 use Sentry\ClientBuilder;
-use Sentry\ClientBuilderInterface;
 use Sentry\Event;
 use Sentry\EventHint;
 use Sentry\Integration as SdkIntegration;
+use Sentry\Laravel\Console\AboutCommandIntegration;
 use Sentry\Laravel\Console\PublishCommand;
 use Sentry\Laravel\Console\TestCommand;
 use Sentry\Laravel\Features\Feature;
+use Sentry\Laravel\Http\FlushEventsMiddleware;
 use Sentry\Laravel\Http\LaravelRequestFetcher;
 use Sentry\Laravel\Http\SetRequestIpMiddleware;
 use Sentry\Laravel\Http\SetRequestMiddleware;
+use Sentry\Laravel\Tracing\BacktraceHelper;
 use Sentry\Laravel\Tracing\ServiceProvider as TracingServiceProvider;
+use Sentry\Logger\DebugFileLogger;
 use Sentry\SentrySdk;
+use Sentry\Serializer\RepresentationSerializer;
 use Sentry\State\Hub;
 use Sentry\State\HubInterface;
 use Sentry\Tracing\TransactionMetadata;
@@ -48,12 +52,26 @@ class ServiceProvider extends BaseServiceProvider
     ];
 
     /**
+     * List of options that should be resolved from the container instead of being passed directly to the SDK.
+     */
+    protected const OPTIONS_TO_RESOLVE_FROM_CONTAINER = [
+        'logger',
+    ];
+
+    /**
      * List of features that are provided by the SDK.
      */
     protected const FEATURES = [
+        Features\LogIntegration::class,
         Features\CacheIntegration::class,
+        Features\QueueIntegration::class,
         Features\ConsoleIntegration::class,
+        Features\Storage\Integration::class,
+        Features\HttpClientIntegration::class,
+        Features\FolioPackageIntegration::class,
+        Features\NotificationsIntegration::class,
         Features\LivewirePackageIntegration::class,
+        Features\ConsoleSchedulingIntegration::class,
     ];
 
     /**
@@ -63,7 +81,7 @@ class ServiceProvider extends BaseServiceProvider
     {
         $this->app->make(HubInterface::class);
 
-        $this->setupFeatures();
+        $this->bootFeatures();
 
         if ($this->hasDsnSet()) {
             $this->bindEvents();
@@ -71,12 +89,14 @@ class ServiceProvider extends BaseServiceProvider
             if ($this->app instanceof Lumen) {
                 $this->app->middleware(SetRequestMiddleware::class);
                 $this->app->middleware(SetRequestIpMiddleware::class);
+                $this->app->middleware(FlushEventsMiddleware::class);
             } elseif ($this->app->bound(HttpKernelInterface::class)) {
                 $httpKernel = $this->app->make(HttpKernelInterface::class);
 
                 if ($httpKernel instanceof HttpKernel) {
                     $httpKernel->pushMiddleware(SetRequestMiddleware::class);
                     $httpKernel->pushMiddleware(SetRequestIpMiddleware::class);
+                    $httpKernel->pushMiddleware(FlushEventsMiddleware::class);
                 }
             }
         }
@@ -90,6 +110,8 @@ class ServiceProvider extends BaseServiceProvider
 
             $this->registerArtisanCommands();
         }
+
+        $this->registerAboutCommandIntegration();
     }
 
     /**
@@ -103,13 +125,13 @@ class ServiceProvider extends BaseServiceProvider
 
         $this->mergeConfigFrom(__DIR__ . '/../../../config/sentry.php', static::$abstract);
 
+        $this->app->singleton(DebugFileLogger::class, function () {
+            return new DebugFileLogger(storage_path('logs/sentry.log'));
+        });
+
         $this->configureAndRegisterClient();
 
-        if (($logManager = $this->app->make('log')) instanceof LogManager) {
-            $logManager->extend('sentry', function ($app, array $config) {
-                return (new LogChannel($app))($config);
-            });
-        }
+        $this->registerFeatures();
     }
 
     /**
@@ -131,10 +153,6 @@ class ServiceProvider extends BaseServiceProvider
                 $handler->subscribeOctaneEvents($dispatcher);
             }
 
-            if ($this->app->bound('queue')) {
-                $handler->subscribeQueueEvents($dispatcher);
-            }
-
             if (isset($userConfig['send_default_pii']) && $userConfig['send_default_pii'] !== false) {
                 $handler->subscribeAuthEvents($dispatcher);
             }
@@ -144,9 +162,31 @@ class ServiceProvider extends BaseServiceProvider
     }
 
     /**
-     * Setup the default SDK features.
+     * Bind and register all the features.
      */
-    protected function setupFeatures(): void
+    protected function registerFeatures(): void
+    {
+        // Register all the features as singletons, so there is only one instance of each feature in the application
+        foreach (self::FEATURES as $feature) {
+            $this->app->singleton($feature);
+        }
+
+        foreach (self::FEATURES as $feature) {
+            try {
+                /** @var Feature $featureInstance */
+                $featureInstance = $this->app->make($feature);
+
+                $featureInstance->register();
+            } catch (Throwable $e) {
+                // Ensure that features do not break the whole application
+            }
+        }
+    }
+
+    /**
+     * Boot all the features.
+     */
+    protected function bootFeatures(): void
     {
         $bootActive = $this->hasDsnSet();
 
@@ -176,12 +216,25 @@ class ServiceProvider extends BaseServiceProvider
     }
 
     /**
+     * Register the `php artisan about` command integration.
+     */
+    protected function registerAboutCommandIntegration(): void
+    {
+        // The about command is only available in Laravel 9 and up so we need to check if it's available to us
+        if (!class_exists(AboutCommand::class)) {
+            return;
+        }
+
+        AboutCommand::add('Sentry', AboutCommandIntegration::class);
+    }
+
+    /**
      * Configure and register the Sentry client with the container.
      */
     protected function configureAndRegisterClient(): void
     {
-        $this->app->bind(ClientBuilderInterface::class, function () {
-            $basePath   = base_path();
+        $this->app->bind(ClientBuilder::class, function () {
+            $basePath = base_path();
             $userConfig = $this->getUserConfig();
 
             foreach (static::LARAVEL_SPECIFIC_OPTIONS as $laravelSpecificOptionName) {
@@ -190,7 +243,7 @@ class ServiceProvider extends BaseServiceProvider
 
             $options = \array_merge(
                 [
-                    'prefixes'       => [$basePath],
+                    'prefixes' => [$basePath],
                     'in_app_exclude' => ["{$basePath}/vendor"],
                 ],
                 $userConfig
@@ -234,6 +287,12 @@ class ServiceProvider extends BaseServiceProvider
                 $options['before_send_transaction'] = $wrapBeforeSend($options['before_send_transaction'] ?? null);
             }
 
+            foreach (self::OPTIONS_TO_RESOLVE_FROM_CONTAINER as $option) {
+                if (isset($options[$option]) && is_string($options[$option])) {
+                    $options[$option] = $this->app->make($options[$option]);
+                }
+            }
+
             $clientBuilder = ClientBuilder::create($options);
 
             // Set the Laravel SDK identifier and version
@@ -244,14 +303,24 @@ class ServiceProvider extends BaseServiceProvider
         });
 
         $this->app->singleton(HubInterface::class, function () {
-            /** @var \Sentry\ClientBuilderInterface $clientBuilder */
-            $clientBuilder = $this->app->make(ClientBuilderInterface::class);
+            /** @var \Sentry\ClientBuilder $clientBuilder */
+            $clientBuilder = $this->app->make(ClientBuilder::class);
 
             $options = $clientBuilder->getOptions();
 
-            $userIntegrations = $this->resolveIntegrationsFromUserConfig();
+            $userConfig = $this->getUserConfig();
 
-            $options->setIntegrations(function (array $integrations) use ($options, $userIntegrations) {
+            /** @var array<array-key, class-string>|callable $userConfig */
+            $userIntegrationOption = $userConfig['integrations'] ?? [];
+
+            $userIntegrations = $this->resolveIntegrationsFromUserConfig(
+                \is_array($userIntegrationOption)
+                    ? $userIntegrationOption
+                    : [],
+                $userConfig['tracing']['default_integrations'] ?? true
+            );
+
+            $options->setIntegrations(static function (array $integrations) use ($options, $userIntegrations, $userIntegrationOption): array {
                 if ($options->hasDefaultIntegrations()) {
                     // Remove the default error and fatal exception listeners to let Laravel handle those
                     // itself. These event are still bubbling up through the documented changes in the users
@@ -284,7 +353,21 @@ class ServiceProvider extends BaseServiceProvider
                     );
                 }
 
-                return array_merge($integrations, $userIntegrations);
+                $integrations = array_merge(
+                    $integrations,
+                    [
+                        new Integration,
+                        new Integration\LaravelContextIntegration,
+                        new Integration\ExceptionContextIntegration,
+                    ],
+                    $userIntegrations
+                );
+
+                if (\is_callable($userIntegrationOption)) {
+                    return $userIntegrationOption($integrations);
+                }
+
+                return $integrations;
             });
 
             $hub = new Hub($clientBuilder->getClient());
@@ -295,30 +378,28 @@ class ServiceProvider extends BaseServiceProvider
         });
 
         $this->app->alias(HubInterface::class, static::$abstract);
+
+        $this->app->singleton(BacktraceHelper::class, function () {
+            $sentry = $this->app->make(HubInterface::class);
+
+            $options = $sentry->getClient()->getOptions();
+
+            return new BacktraceHelper($options, new RepresentationSerializer($options));
+        });
     }
 
     /**
      * Resolve the integrations from the user configuration with the container.
-     *
-     * @return array
      */
-    private function resolveIntegrationsFromUserConfig(): array
+    private function resolveIntegrationsFromUserConfig(array $userIntegrations, bool $enableDefaultTracingIntegrations): array
     {
-        // Default Sentry Laravel SDK integrations
-        $integrations = [
-            new Integration,
-            new Integration\ExceptionContextIntegration,
-        ];
-
-        $userConfig = $this->getUserConfig();
-
-        $integrationsToResolve = array_merge($userConfig['integrations'] ?? []);
-
-        $enableDefaultTracingIntegrations = $userConfig['tracing']['default_integrations'] ?? true;
+        $integrationsToResolve = $userIntegrations;
 
         if ($enableDefaultTracingIntegrations) {
             $integrationsToResolve = array_merge($integrationsToResolve, TracingServiceProvider::DEFAULT_INTEGRATIONS);
         }
+
+        $integrations = [];
 
         foreach ($integrationsToResolve as $userIntegration) {
             if ($userIntegration instanceof SdkIntegration\IntegrationInterface) {

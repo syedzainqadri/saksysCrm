@@ -223,7 +223,7 @@
 </head>
 
 <body class="content-wrapper">
-    <h3 class="text-center">@lang('app.payment') @lang('app.receipt')</h3>
+    <h3 class="text-center">@lang('app.paymentReceipt')</h3>
     <table class="bg-white" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation">
         <tbody>
             <!-- Table Row Start -->
@@ -260,18 +260,18 @@
                     <table border="0" cellpadding="0" cellspacing="0" width="100%">
                         <tr>
                             @if (isset($client))
-                            <td class="f-14 text-black">
+                            <td class="f-14 text-black" style="width:70%">
 
                                 <p class="line-height mb-0">
                                     <span
                                         class="text-grey text-capitalize">@lang("modules.invoices.billedTo")</span><br>
-                                    {{ $client->name }}<br>
+                                    {{ $client->name_salutation }}<br>
                                     {{ $client->clientDetails->company_name }}<br>
                                     {!! nl2br($client->clientDetails->address) !!}
                                 </p>
                             </td>
                             @endif
-                            <td align="right">
+                            <td align="right" style="width:30%">
                                 <br />
                                 <div class="text-uppercase bg-white unpaid rightaligned">
                                     @lang('app.'.$payment->status)

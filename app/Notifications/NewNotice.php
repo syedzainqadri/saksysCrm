@@ -67,7 +67,7 @@ class NewNotice extends BaseNotification
         $url = route('notices.show', $this->notice->id);
         $url = getDomainSpecificUrl($url, $this->company);
 
-        $content = __('email.newNotice.text') . '<br>' . ucfirst($this->notice->heading);
+        $content = __('email.newNotice.text') . '<br>' . $this->notice->heading;
 
 
         return $build
@@ -101,20 +101,9 @@ class NewNotice extends BaseNotification
      */
     public function toSlack($notifiable)
     {
-        $slack = $notifiable->company->slackSetting;
+        return $this->slackBuild($notifiable)
+            ->content('*' . __('email.newNotice.subject') . ' : ' . $this->notice->heading . '*' . "\n" . strip_tags($this->notice->description));
 
-        if (count($notifiable->employee) > 0 && (!is_null($notifiable->employee[0]->slack_username) && ($notifiable->employee[0]->slack_username != ''))) {
-            return (new SlackMessage())
-                ->from(config('app.name'))
-                ->image($slack->slack_logo_url)
-                ->to('@' . $notifiable->employee[0]->slack_username)
-                ->content('*' . __('email.newNotice.subject') . ' : ' . ucfirst($this->notice->heading) . '*' . "\n" . strip_tags($this->notice->description));
-        }
-
-        return (new SlackMessage())
-            ->from(config('app.name'))
-            ->image($slack->slack_logo_url)
-            ->content('*' . __('email.newNotice.subject') . '*' . "\n" .'This is a redirected notification. Add slack username for *' . $notifiable->name . '*');
     }
 
     // phpcs:ignore

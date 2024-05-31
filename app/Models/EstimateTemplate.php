@@ -60,16 +60,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @method static \Illuminate\Database\Eloquent\Builder|EstimateTemplate whereTotal($value)
  * @method static \Illuminate\Database\Eloquent\Builder|EstimateTemplate whereUnitId($value)
  * @method static \Illuminate\Database\Eloquent\Builder|EstimateTemplate whereUpdatedAt($value)
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\EstimateTemplateItem> $items
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\EstimateTemplateItem> $items
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\EstimateTemplateItem> $items
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\EstimateTemplateItem> $items
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\EstimateTemplateItem> $items
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\EstimateTemplateItem> $items
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\EstimateTemplateItem> $items
  * @mixin \Eloquent
  */
-
 
 class EstimateTemplate extends BaseModel
 {

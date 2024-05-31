@@ -5,6 +5,7 @@ namespace App\Exports;
 use App\Http\Controllers\AccountBaseController;
 use App\Models\User;
 use Carbon\Carbon;
+use Eloquent;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\FromView;
@@ -12,8 +13,18 @@ use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
+/**
+ * App\Exports\EmployeeTimelogs
+ *
+ * @property-read EmployeeTimelogs $user
+ * @property-read EmployeeTimelogs $modules
+ * @property-read EmployeeTimelogs $viewTimeLogPermission
+ * @mixin Eloquent
+ */
 class EmployeeTimelogs extends AccountBaseController implements FromView, ShouldAutoSize, WithStyles
 {
+
+    private $viewTimelogPermission;
 
     public function __construct()
     {
@@ -28,7 +39,9 @@ class EmployeeTimelogs extends AccountBaseController implements FromView, Should
     public function view(): View
     {
         $this->startDate = $startDate = Carbon::createFromFormat(company()->date_format, urldecode(request()->startDate))->toDateString();
+        /** @phpstan-ignore-line */
         $this->endDate = $endDate = Carbon::createFromFormat(company()->date_format, urldecode(request()->endDate))->toDateString();
+        /** @phpstan-ignore-line */
         $employee = request()->employee;
         $projectId = request()->projectID;
         $this->viewTimelogPermission = user()->permission('view_timelogs');

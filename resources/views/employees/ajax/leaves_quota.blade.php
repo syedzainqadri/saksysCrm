@@ -7,7 +7,7 @@ $updateLeaveQuotaPermission = user()->permission('update_leaves_quota');
 
     <div class="row mb-4">
         <div class="col-lg-4">
-            <x-cards.widget icon="sign-out-alt" :title="__('modules.leaves.remainingLeaves')" :value="($allowedLeaves - $leavesTakenByUser)" />
+            <x-cards.widget icon="sign-out-alt" :title="__('modules.leaves.remainingLeaves')" :value="$allowedLeaves" />
         </div>
     </div>
 
@@ -34,26 +34,31 @@ $updateLeaveQuotaPermission = user()->permission('update_leaves_quota');
                                 <th class="text-right">@lang('app.action')</th>
                             </x-slot>
 
-                            @forelse($leaveTypes as $key => $leave)
-                                @if($leave->leaveTypeCodition($leave, $userRole))
+                            @foreach ($employeeLeavesQuotas as $key => $leavesQuota)
+                                @if($leavesQuota->leaveType->leaveTypeCondition($leavesQuota->leaveType, $employee))
                                     <tr>
                                         <td>
-                                            <x-status :value="$leave->type_name" :style="'color:'.$leave->color" />
+                                            <x-status :value="$leavesQuota->leaveType->type_name" :style="'color:'.$leavesQuota->leaveType->color" />
                                         </td>
-                                        <td> <input type="number" min="0" value="{{ isset($employeeLeavesQuota[$key]) ? $employeeLeavesQuota[$key]->no_of_leaves : 0 }}"
-                                                class="form-control height-35 f-14 leave-count-{{ $employeeLeavesQuota[$key]->id }}">
+                                        <td> <input type="number" min="0" value="{{ $leavesQuota?->no_of_leaves ?: 0 }}"
+                                                class="form-control height-35 f-14 leave-count-{{ $leavesQuota->id }}">
                                         </td>
                                         <td class="text-right">
-                                            <button type="button" data-type-id="{{ $employeeLeavesQuota[$key]->id }}"
+                                            <button type="button" data-type-id="{{ $leavesQuota->id }}"
                                                 class="btn btn-sm btn-primary btn-outline update-category">
                                                 <i class="fa fa-check"></i>
                                             </button>
                                         </td>
                                     </tr>
                                 @endif
-                            @empty
-                                <x-cards.no-record icon="redo" :message="__('messages.noRecordFound')" />
-                            @endforelse
+                            @endforeach
+                            @if (!$hasLeaveQuotas)
+                                <tr>
+                                    <td colspan="3">
+                                        <x-cards.no-record icon="redo" :message="__('messages.noRecordFound')" />
+                                    </td>
+                                </tr>
+                            @endif
                         </x-table>
                     </div>
                 </div>

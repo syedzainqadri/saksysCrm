@@ -1,7 +1,7 @@
 <link rel="stylesheet" href="{{ asset('vendor/css/bootstrap-colorpicker.css') }}" />
 
 <div class="modal-header">
-    <h5 class="modal-title">@lang('app.addNew') @lang('modules.attendance.shift')</h5>
+    <h5 class="modal-title">@lang('app.addNewShift')</h5>
     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
 </div>
 
@@ -55,7 +55,7 @@
                     <div class="col-lg-4">
                         <div class="bootstrap-timepicker">
                             <x-forms.text :fieldLabel="__('modules.attendance.halfDayMarkTime')" :fieldPlaceholder="__('placeholders.hours')" fieldName="halfday_mark_time"
-                                fieldId="halfday_mark_time" />
+                                fieldId="halfday_mark_time" fieldRequired="true" />
                         </div>
                     </div>
 

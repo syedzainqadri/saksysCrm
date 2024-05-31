@@ -8,6 +8,7 @@ use App\Models\DashboardWidget;
 use App\Models\EmployeeDetails;
 use App\Models\Event;
 use App\Models\Holiday;
+use App\Models\LeadPipeline;
 use App\Models\Leave;
 use App\Models\ProjectTimeLog;
 use App\Models\ProjectTimeLogBreak;
@@ -57,6 +58,8 @@ class DashboardController extends AccountBaseController
      */
     public function index()
     {
+
+
         $this->isCheckScript();
 
         if (in_array('employee', user_roles())) {
@@ -163,9 +166,7 @@ class DashboardController extends AccountBaseController
             }
 
             if (request()->ajax()) {
-                $html = view($this->view, $this->data)->render();
-
-                return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+                return $this->returnAjax($this->view);
             }
 
             if (!isset($this->activeTab)) {
@@ -239,7 +240,7 @@ class DashboardController extends AccountBaseController
                 foreach ($events as $event) {
                     $eventData[] = [
                         'id' => $event->id,
-                        'title' => ucfirst($event->event_name),
+                        'title' => $event->event_name,
                         'start' => $event->start_date_time,
                         'end' => $event->end_date_time,
                         'event_type' => 'event',
@@ -249,16 +250,35 @@ class DashboardController extends AccountBaseController
             }
 
         }
-
+        $user = user();
         if (!is_null(user()->permission('view_holiday')) && user()->permission('view_holiday') != 'none') {
             if (in_array('holiday', $calendar_filter_array)) {
                 // holiday
-                $holidays = Holiday::whereBetween('date', [$startDate->toDateString(), $endDate->toDateString()])->get();
+                // $holidays = Holiday::whereBetween('date', [$startDate->toDateString(), $endDate->toDateString()])->get();
+                $holidays = Holiday::whereBetween('date', [$startDate->toDateString(), $endDate->toDateString()])
+                    ->where(function ($query) use ($user) {
+                        $query->where('added_by', $user->id)
+                            ->orWhere(function ($subquery) use ($user) {
+                                $subquery->where(function ($q) use ($user) {
+                                    $q->where('department_id_json', 'like', '%"' . $user->employeeDetails->department_id . '"%')
+                                        ->orWhereNull('department_id_json');
+                                });
+                                $subquery->where(function ($q) use ($user) {
+                                    $q->where('designation_id_json', 'like', '%"' . $user->employeeDetails->designation_id . '"%')
+                                        ->orWhereNull('designation_id_json');
+                                });
+                                $subquery->where(function ($q) use ($user) {
+                                    $q->where('employment_type_json', 'like', '%"' . $user->employeeDetails->employment_type . '"%')
+                                        ->orWhereNull('employment_type_json');
+                                });
+                            });
+                    });
+                $holidays = $holidays->get();
 
                 foreach ($holidays as $holiday) {
                     $eventData[] = [
                         'id' => $holiday->id,
-                        'title' => ucfirst($holiday->occassion),
+                        'title' => $holiday->occassion,
                         'start' => $holiday->date,
                         'end' => $holiday->date,
                         'event_type' => 'holiday',
@@ -288,7 +308,7 @@ class DashboardController extends AccountBaseController
                 foreach ($tasks as $task) {
                     $eventData[] = [
                         'id' => $task->id,
-                        'title' => ucfirst($task->heading),
+                        'title' => $task->heading,
                         'start' => $task->start_date,
                         'end' => $task->due_date ?: $task->start_date,
                         'event_type' => 'task',
@@ -308,7 +328,7 @@ class DashboardController extends AccountBaseController
                 foreach ($tickets as $key => $ticket) {
                     $eventData[] = [
                         'id' => $ticket->ticket_number,
-                        'title' => ucfirst($ticket->subject),
+                        'title' => $ticket->subject,
                         'start' => $ticket->updated_at,
                         'end' => $ticket->updated_at,
                         'event_type' => 'ticket',
@@ -335,18 +355,33 @@ class DashboardController extends AccountBaseController
 
                     $eventData[] = [
                         'id' => $leave->id,
-                        'title' => $duration . ' ' . ucfirst($leave->user->name),
+                        'title' => $duration . ' ' . $leave->user->name,
                         'start' => $leave->leave_date->toDateString(),
                         'end' => $leave->leave_date->toDateString(),
                         'event_type' => 'leave',
                         /** @phpstan-ignore-next-line */
-                        'extendedProps' => ['name' => 'Leave : ' . ucfirst($leave->user->name), 'bg_color' => $leave->color, 'color' => '#fff', 'icon' => 'fa-plane-departure']
+                        'extendedProps' => ['name' => 'Leave : ' . $leave->user->name, 'bg_color' => $leave->color, 'color' => '#fff', 'icon' => 'fa-plane-departure']
                     ];
                 }
             }
         }
 
         return $eventData;
+    }
+
+    public function getLeadStage($pipelineId)
+    {
+        $this->startDate = (request('startDate') != '') ? Carbon::createFromFormat($this->company->date_format, request('startDate')) : now($this->company->timezone)->startOfMonth();
+        $this->endDate = (request('endDate') != '') ? Carbon::createFromFormat($this->company->date_format, request('endDate')) : now($this->company->timezone);
+        $startDate = $this->startDate->toDateString();
+        $endDate = $this->endDate->toDateString();
+
+        $this->leadPipelines = LeadPipeline::all();
+
+        $this->leadStatusChart = $this->leadStatusChart($startDate, $endDate, $pipelineId);
+
+        return $this->returnAjax('dashboard.ajax.lead-by-pipeline');
+
     }
 
 }

@@ -54,15 +54,20 @@ class ShiftSeeder extends Seeder
             ->select('users.id')
             ->groupBy('users.id')->pluck('id')->toArray();
 
-        $shiftIds = EmployeeShift::where('company_id', $companyId)->where('shift_name', '<>', 'Day Off')->pluck('id')->toArray();
+        $shiftIds = EmployeeShift::where('company_id', $companyId)->where('shift_name', '<>', 'Day Off')->get();
 
         foreach ($users as $key => $value) {
             for ($i = 0; $i < 20; $i++) {
+                $empShift = $shiftIds->random();
+                $date = Carbon::parse(now()->year . '-' . now()->month . '-' . ($i + 1));
                 $schedule = EmployeeShiftSchedule::firstOrNew([
                     'user_id' => $value,
-                    'date' => Carbon::parse(now()->year . '-' . now()->month . '-' . ($i + 1)),
+
+                    'date' => $date,
+                    'shift_start_time' => $date->format('Y-m-d') . ' ' . $empShift->office_start_time,
+                    'shift_end_time' => $date->format('Y-m-d') . ' ' . $empShift->office_end_time
                 ]);
-                $schedule->employee_shift_id = $shiftIds[array_rand($shiftIds, 1)];
+                $schedule->employee_shift_id = $empShift->id;
                 $schedule->save();
             }
         }

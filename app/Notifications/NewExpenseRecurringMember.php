@@ -43,7 +43,7 @@ class NewExpenseRecurringMember extends BaseNotification
         }
 
         if ($this->emailSetting->send_slack == 'yes' && $this->company->slackSetting->status == 'active') {
-            array_push($via, 'slack');
+            $this->slackUserNameCheck($notifiable) ? array_push($via, 'slack') : null;
         }
 
         if ($this->emailSetting->send_push == 'yes') {
@@ -66,7 +66,7 @@ class NewExpenseRecurringMember extends BaseNotification
         $url = route('recurring-expenses.show', $this->expense->id);
         $url = getDomainSpecificUrl($url, $this->company);
 
-        $content = __('email.newExpenseRecurring.subject') . '.' . '<br>' . __('app.employee') . ': ' . mb_ucwords($this->expense->user->name) . '<br>' . __('modules.expenses.itemName') . ': ' . $this->expense->item_name . '<br>' . __('app.price') . ': ' . $this->expense->currency->currency_symbol . $this->expense->price;
+        $content = __('email.newExpenseRecurring.subject') . '.' . '<br>' . __('app.employee') . ': ' . $this->expense->user->name . '<br>' . __('modules.expenses.itemName') . ': ' . $this->expense->item_name . '<br>' . __('app.price') . ': ' . $this->expense->currency->currency_symbol . $this->expense->price;
 
         return $build
             ->subject(__('email.newExpenseRecurring.subject') . ' - ' . config('app.name'))
@@ -98,20 +98,10 @@ class NewExpenseRecurringMember extends BaseNotification
      */
     public function toSlack($notifiable)
     {
-        $slack = $notifiable->company->slackSetting;
+        return $this->slackBuild($notifiable)
+            ->content(__('email.newExpenseRecurring.subject') . ' - ' . $this->expense->item_name . ' - ' . $this->expense->currency->currency_symbol . $this->expense->price . "\n" . url('/login'));
 
-        if (count($notifiable->employee) > 0 && (!is_null($notifiable->employee[0]->slack_username) && ($notifiable->employee[0]->slack_username != ''))) {
-            return (new SlackMessage())
-                ->from(config('app.name'))
-                ->image($slack->slack_logo_url)
-                ->to('@' . $notifiable->employee[0]->slack_username)
-                ->content(__('email.newExpenseRecurring.subject') . ' - ' . $this->expense->item_name . ' - ' . $this->expense->currency->currency_symbol . $this->expense->price . "\n" . url('/login'));
-        }
 
-        return (new SlackMessage())
-            ->from(config('app.name'))
-            ->image($slack->slack_logo_url)
-            ->content('*' . __('email.newExpenseRecurring.subject') . '*' . "\n" .'This is a redirected notification. Add slack username for *' . $notifiable->name . '*');
     }
 
     // phpcs:ignore
@@ -119,7 +109,7 @@ class NewExpenseRecurringMember extends BaseNotification
     {
         return OneSignalMessage::create()
             ->setSubject(__('email.newExpenseRecurring.subject'))
-            ->setBody($this->expense->item_name . ' by ' . mb_ucwords($this->expense->user->name));
+            ->setBody($this->expense->item_name . ' by ' . $this->expense->user->name);
     }
 
 }

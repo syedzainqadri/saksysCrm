@@ -3,6 +3,7 @@
 namespace App\DataTables;
 
 use App\DataTables\BaseDataTable;
+use App\Helper\Common;
 use App\Models\ProjectNote;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
@@ -33,9 +34,7 @@ class ProjectNotesDataTable extends BaseDataTable
 
         return datatables()
             ->eloquent($query)
-            ->addColumn('check', function ($row) {
-                return '<input type="checkbox" class="select-table-row" id="datatable-row-' . $row->id . '"  name="datatable_ids[]" value="' . $row->id . '" onclick="dataTableRowCheck(' . $row->id . ')">';
-            })
+            ->addColumn('check', fn($row) => $this->checkBox($row))
             ->addColumn('action', function ($row) {
 
                 $action = '<div class="task_view">';
@@ -97,9 +96,7 @@ class ProjectNotesDataTable extends BaseDataTable
             })
             ->addIndexColumn()
             ->smart(false)
-            ->setRowId(function ($row) {
-                return 'row-' . $row->id;
-            })
+            ->setRowId(fn($row) => 'row-' . $row->id)
             ->rawColumns(['action', 'check', 'note_type', 'note_title']);
     }
 
@@ -166,7 +163,7 @@ class ProjectNotesDataTable extends BaseDataTable
 
     public function html()
     {
-        return $this->setBuilder('project-notes-table', 2)
+        $dataTable = $this->setBuilder('project-notes-table', 2)
             ->parameters([
                 'initComplete' => 'function () {
                    window.LaravelDataTables["project-notes-table"].buttons().container()
@@ -175,8 +172,13 @@ class ProjectNotesDataTable extends BaseDataTable
                 'fnDrawCallback' => 'function( oSettings ) {
                   //
                 }',
-            ])
-            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+            ]);
+
+        if (canDataTableExport()) {
+            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+        }
+
+        return $dataTable;
     }
 
     /**

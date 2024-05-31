@@ -5,7 +5,10 @@
 @endpush
 
 @php
-$viewClientNote = user()->permission('view_lead_note');
+$viewClientNote = user()->permission('view_deal_note');
+$viewProposalPermission = user()->permission('view_lead_proposals');
+$viewLeadFilePermission = user()->permission('view_lead_files');
+
 @endphp
 
 
@@ -19,21 +22,24 @@ $viewClientNote = user()->permission('view_lead_note');
             <a class="d-none close-it" href="javascript:;" id="close-client-detail" >
                 <i class="fa fa-times"></i>
             </a>
-            <x-tab :href="route('leads.show', $lead->id)" :text="__('modules.lead.profile')" class="profile" />
+            <x-tab :href="route('deals.show', $deal->id)" :text="__('modules.projects.overview')" class="profile" />
 
-            <x-tab :href="route('leads.show', $lead->id).'?tab=files'" :text="__('modules.lead.file')" class="files" ajax="false"/>
-
-            <x-tab :href="route('leads.show', $lead->id).'?tab=follow-up'" :text="__('modules.lead.followUp')" class="follow-up" ajax="false" />
-
-            <x-tab :href="route('leads.show', $lead->id).'?tab=proposals'" :text="__('modules.lead.proposal')" class="proposals" ajax="false" />
-
-        @if ($viewClientNote == 'all' || $viewClientNote == 'both' || $viewClientNote == 'added' || $viewClientNote == 'owned')
-            <x-tab :href="route('leads.show', $lead->id).'?tab=notes'" ajax="false" :text="__('app.notes')" class="notes" />
-        @endif
+            <x-tab :href="route('deals.show', $deal->id).'?tab=files'" :text="__('modules.lead.file')" class="files" ajax="false"/>
+            @if($viewLeadFilePermission != 'none')
+                <x-tab :href="route('deals.show', $deal->id).'?tab=follow-up'" :text="__('modules.lead.followUp')" class="follow-up" ajax="false" />
+            @endif
+            @if($viewProposalPermission != 'none')
+                <x-tab :href="route('deals.show', $deal->id).'?tab=proposals'" :text="__('modules.lead.proposal')" class="proposals" ajax="false" />
+            @endif
+            @if ($viewClientNote != 'none')
+                <x-tab :href="route('deals.show', $deal->id).'?tab=notes'" ajax="false" :text="__('app.notes')" class="notes" />
+            @endif
 
             @if ($gdpr->enable_gdpr)
-                <x-tab :href="route('leads.show', $lead->id).'?tab=gdpr'" :text="__('app.menu.gdpr')" class="gdpr" ajax="false" />
+                <x-tab :href="route('deals.show', $deal->id).'?tab=gdpr'" :text="__('app.menu.gdpr')" class="gdpr" ajax="false" />
             @endif
+
+            <x-tab :href="route('deals.show', $deal->id).'?tab=history'" :text="__('modules.tasks.history')" class="history" ajax="false" />
         </div>
         <a class="mb-0 d-block d-lg-none text-dark-grey ml-auto mr-2 border-left-grey"
             onclick="openClientDetailSidebar()"><i class="fa fa-ellipsis-v "></i></a>
@@ -81,7 +87,7 @@ $viewClientNote = user()->permission('view_lead_note');
         $('.project-menu .' + activeTab).addClass('active');
 
         $('body').on('click', '#add-files', function() {
-            const url = "{{ route('lead-files.create') }}";
+            const url = "{{ route('deal-files.create') }}";
             $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
             $.ajaxModal(MODAL_LG, url);
         });
@@ -107,7 +113,7 @@ $viewClientNote = user()->permission('view_lead_note');
                 buttonsStyling: false
             }).then((result) => {
                 if (result.isConfirmed) {
-                    var url = "{{ route('leads.destroy', ':id') }}";
+                    var url = "{{ route('deals.destroy', ':id') }}";
                     url = url.replace(':id', id);
 
                     var token = "{{ csrf_token() }}";
@@ -121,7 +127,7 @@ $viewClientNote = user()->permission('view_lead_note');
                         },
                         success: function(response) {
                             if (response.status == "success") {
-                                window.location.href = "{{ route('leads.index')}}";
+                                window.location.href = "{{ route('deals.index')}}";
                             }
                         }
                     });

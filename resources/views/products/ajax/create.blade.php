@@ -42,7 +42,7 @@
                                         <option value="">--</option>
                                         @foreach ($categories as $category)
                                             <option value="{{ $category->id }}">
-                                                {{ mb_ucwords($category->category_name) }}</option>
+                                                {{ $category->category_name }}</option>
                                         @endforeach
                                     </select>
 
@@ -64,11 +64,7 @@
                                 </x-forms.label>
                                 <x-forms.input-group>
                                     <select class="form-control select-picker" name="sub_category_id" id="sub_category_id" data-live-search="true">
-                                        <option value="">@lang('messages.noProductSubCategoryAdded')</option>
-                                        @foreach ($subCategories as $subCategory)
-                                            <option value="{{ $subCategory->id }}">
-                                                {{ mb_ucwords($subCategory->category_name) }}</option>
-                                        @endforeach
+                                        <option value="">--</option>
                                     </select>
 
                                     @if ($addProductSubCategoryPermission == 'all' || $addProductSubCategoryPermission == 'added')
@@ -86,7 +82,7 @@
                                     <select class="form-control select-picker" name="tax[]" id="tax_id"
                                             data-live-search="true" multiple="true">
                                         @foreach ($taxes as $tax)
-                                            <option value="{{ $tax->id }}">{{ strtoupper($tax->tax_name) }}:
+                                            <option value="{{ $tax->id }}">{{ $tax->tax_name }}:
                                                 {{ $tax->rate_percent }}%
                                             </option>
                                         @endforeach
@@ -117,7 +113,7 @@
                                     <select class="form-control select-picker" name="unit_type" id="unit_type_id"
                                             data-live-search="true">
                                         @foreach ($unit_types as $unit_type)
-                                            <option @if($unit_type->default == 1) selected @endif value="{{ $unit_type->id }}">{{ ucwords($unit_type->unit_type) }}
+                                            <option @if($unit_type->default == 1) selected @endif value="{{ $unit_type->id }}">{{ $unit_type->unit_type }}
                                             </option>
                                         @endforeach
                                     </select>
@@ -262,6 +258,7 @@
 
         $('#product_category_id').change(function (e) {
             let categoryId = $(this).val();
+
             let url = "{{ route('get_product_sub_categories', ':id') }}";
 
             url = (categoryId) ? url.replace(':id', categoryId) : url.replace(':id', null);
@@ -383,7 +380,8 @@
         })
 
         $('#add-sub-category').click(function () {
-            const url = "{{ route('productSubCategory.create') }}";
+            let catID = $('#product_category_id').val();
+            const url = "{{ route('productSubCategory.create') }}?catID=" + catID;
             $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
             $.ajaxModal(MODAL_LG, url);
         });

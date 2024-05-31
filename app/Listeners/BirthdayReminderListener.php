@@ -13,7 +13,7 @@ class BirthdayReminderListener
     /**
      * Handle the event.
      *
-     * @param \App\Events\BirthdayReminderEvent $event
+     * @param BirthdayReminderEvent $event
      * @return void
      */
     public function handle(BirthdayReminderEvent $event)

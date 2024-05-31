@@ -18,7 +18,7 @@
                 <div class="row">
                     <div class="col-md-12 mb-2">
                         <x-forms.button-primary icon="plus" id="addNewLeaveType" class="addNewLeaveType mb-2">
-                            @lang('app.addNew') @lang('app.address')
+                            @lang('app.addNewAddress')
                         </x-forms.button-primary>
                     </div>
                 </div>
@@ -40,6 +40,7 @@
                             <th>#</th>
                             <th>@lang('app.location') </th>
                             <th>@lang('app.address')</th>
+                            <th>@lang('app.country')</th>
                             <th>@lang('modules.invoices.taxName')</th>
                             <th>@lang('app.default')</th>
                             <th class="text-right">@lang('app.action')</th>
@@ -65,6 +66,7 @@
 
                                 </td>
                                 <td> {!! nl2br($address->address) !!}</td>
+                                <td> {{ $address->country?->nicename ?? '--' }}</td>
                                 <td> {{ ($address->tax_number) ? $address->tax_name . ' : ' . $address->tax_number : ' -- ' }}</td>
                                 <td>
                                     <x-forms.radio fieldId="company_address_{{ $address->id }}"

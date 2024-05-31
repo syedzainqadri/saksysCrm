@@ -13,26 +13,29 @@
 */
 
 use App\Helper\Files;
-use App\Http\Controllers\FileController;
+use App\Models\AttendanceSetting;
 use App\Models\Company;
 use App\Models\Currency;
-use App\Models\CurrencyFormatSetting;
+use App\Models\CustomLinkSetting;
+use App\Models\GdprSetting;
 use App\Models\InvoiceSetting;
+use App\Models\LogTimeFor;
 use App\Models\Permission;
 use App\Models\QuickBooksSetting;
+use App\Models\SocialAuthSetting;
 use App\Models\StorageSetting;
 use App\Models\ThemeSetting;
 use App\Models\UserPermission;
 use App\Scopes\CompanyScope;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 if (!function_exists('user')) {
 
     /**
-     * Return current logged in user
+     * Return current logged-in user
      */
     function user()
     {
@@ -43,7 +46,7 @@ if (!function_exists('user')) {
         $user = auth()->user();
 
         if ($user) {
-            session(['user' => $user]);
+            session(['user' => $user->load(['session'])]);
 
             return session('user');
         }
@@ -173,11 +176,11 @@ if (!function_exists('language_setting_locale')) {
     // @codingStandardsIgnoreLine
     function language_setting_locale($locale)
     {
-        if (!cache()->has('language_setting_'.$locale)) {
-            cache(['language_setting_'.$locale => \App\Models\LanguageSetting::where('language_code', $locale)->first()]);
+        if (!cache()->has('language_setting_' . $locale)) {
+            cache(['language_setting_' . $locale => \App\Models\LanguageSetting::where('language_code', $locale)->first()]);
         }
 
-        return cache('language_setting_'.$locale);
+        return cache('language_setting_' . $locale);
     }
 
 }
@@ -305,6 +308,7 @@ if (!function_exists('user_modules')) {
         }
 
         cache()->put('user_modules_' . $user->id, $moduleArray);
+
         return $moduleArray;
     }
 
@@ -318,11 +322,6 @@ if (!function_exists('worksuite_plugins')) {
 
         if (!cache()->has('worksuite_plugins')) {
             $plugins = \Nwidart\Modules\Facades\Module::allEnabled();
-
-            foreach ($plugins as $plugin) {
-                Artisan::call('module:migrate', array($plugin, '--force' => true));
-            }
-
             cache(['worksuite_plugins' => array_keys($plugins)]);
         }
 
@@ -377,16 +376,20 @@ if (!function_exists('isRunningInConsoleOrSeeding')) {
 if (!function_exists('asset_url_local_s3')) {
 
     // @codingStandardsIgnoreLine
-    function asset_url_local_s3($path, $appRoute = false, $type = 'file')
+    function asset_url_local_s3($path)
     {
         if (in_array(config('filesystems.default'), StorageSetting::S3_COMPATIBLE_STORAGE)) {
-            if ($appRoute) {
-                $filePath = FileController::encryptDecrypt($path);
-
-                return route('file.getFile', ['type' => $type, 'path' => $filePath]);
+            // Check if the URL is already cached
+            if (\Illuminate\Support\Facades\Cache::has(config('filesystems.default') . '-' . $path)) {
+                $temporaryUrl = \Illuminate\Support\Facades\Cache::get(config('filesystems.default') . '-' . $path);
+            }
+            else {
+                // Generate a new temporary URL and cache it
+                $temporaryUrl = Storage::disk(config('filesystems.default'))->temporaryUrl($path, now()->addMinutes(StorageSetting::HASH_TEMP_FILE_TIME));
+                \Illuminate\Support\Facades\Cache::put(config('filesystems.default') . '-' . $path, $temporaryUrl, StorageSetting::HASH_TEMP_FILE_TIME * 60);
             }
 
-            return Storage::disk(config('filesystems.default'))->temporaryUrl($path, now()->addMinutes(StorageSetting::HASH_TEMP_FILE_TIME));
+            return $temporaryUrl;
         }
 
         $path = Files::UPLOAD_FOLDER . '/' . $path;
@@ -432,7 +435,7 @@ if (!function_exists('gdpr_setting')) {
     function gdpr_setting()
     {
         if (!session()->has('gdpr_setting')) {
-            session(['gdpr_setting' => \App\Models\GdprSetting::first()]);
+            session(['gdpr_setting' => GdprSetting::first()]);
         }
 
         return session('gdpr_setting');
@@ -446,7 +449,7 @@ if (!function_exists('social_auth_setting')) {
     function social_auth_setting()
     {
         if (!cache()->has('social_auth_setting')) {
-            cache(['social_auth_setting' => \App\Models\SocialAuthSetting::first()]);
+            cache(['social_auth_setting' => SocialAuthSetting::first()]);
         }
 
         return cache('social_auth_setting');
@@ -460,7 +463,9 @@ if (!function_exists('invoice_setting')) {
     function invoice_setting()
     {
         if (!session()->has('invoice_setting')) {
-            return session(['invoice_setting' => InvoiceSetting::first()]);
+            $setting = InvoiceSetting::first();
+            session(['invoice_setting' => $setting]);
+            return $setting;
         }
 
         return session('invoice_setting');
@@ -476,7 +481,7 @@ if (!function_exists('time_log_setting')) {
     function time_log_setting()
     {
         if (!session()->has('time_log_setting')) {
-            session(['time_log_setting' => \App\Models\LogTimeFor::first()]);
+            session(['time_log_setting' => LogTimeFor::first()]);
         }
 
         return session('time_log_setting');
@@ -586,7 +591,7 @@ if (!function_exists('attendance_setting')) {
     function attendance_setting()
     {
         if (!session()->has('attendance_setting')) {
-            session(['attendance_setting' => \App\Models\AttendanceSetting::first()]);
+            session(['attendance_setting' => AttendanceSetting::first()]);
         }
 
         return session('attendance_setting');
@@ -800,6 +805,7 @@ if (!function_exists('sidebar_user_perms')) {
                 'manage_award',
                 'view_lead_report',
                 'view_sales_report',
+                'view_deals',
             ];
 
 
@@ -866,6 +872,7 @@ if (!function_exists('minute_to_hour')) {
     function minute_to_hour($totalMinutes)
     {
         return \Carbon\CarbonInterval::formatHuman($totalMinutes);
+        /** @phpstan-ignore-line */
     }
 
 }
@@ -938,19 +945,28 @@ if (!function_exists('getDomainSpecificUrl')) {
             return $url;
         }
 
+        config(['app.url' => config('app.main_app_url')]);
+
         // If company specific
         if ($company) {
+            $companyUrl = (config('app.redirect_https') ? 'https' : 'http') . '://' . $company->sub_domain;
+
+            config(['app.url' => $companyUrl]);
+            // Removed Illuminate\Support\Facades\URL::forceRootUrl($companyUrl);
+
             $url = str_replace(request()->getHost(), $company->sub_domain, $url);
             $url = str_replace('www.', '', $url);
 
             // Replace https to http for sub-domain to
-            if (!\config('app.redirect_https')) {
+            if (!config('app.redirect_https')) {
                 return str_replace('https', 'http', $url);
             }
 
             return $url;
         }
 
+        // Removed config(['app.url' => $url]);
+        // Comment      \Illuminate\Support\Facades\URL::forceRootUrl($url);
         // If there is no company and url has login means
         // New superadmin is created
         return str_replace('login', 'super-admin-login', $url);
@@ -981,25 +997,22 @@ if (!function_exists('getDomain')) {
     function getDomain($host = false)
     {
         if (!$host) {
-            $host = $_SERVER['SERVER_NAME'];
+            $host = $_SERVER['SERVER_NAME'] ?? 'worksuite-saas.test';
         }
 
         $shortDomain = config('app.short_domain_name');
-        $dotCount = ($shortDomain === true) ? 2 : 3;
+        $dotCount = ($shortDomain === true) ? 2 : 1;
 
         $myHost = strtolower(trim($host));
         $count = substr_count($myHost, '.');
 
-        if ($count === 2) {
-            if (strlen(explode('.', $myHost)[1]) >= $dotCount) {
-                $myHost = explode('.', $myHost, 2)[1];
-            }
-        }
-        else if ($count > 2) {
-            $myHost = getDomain(explode('.', $myHost, 2)[1]);
+        if ($count === $dotCount || $count === 1) {
+            return $myHost;
         }
 
-        return $myHost;
+        $myHost = explode('.', $myHost, 2);
+
+        return end($myHost);
     }
 
 }
@@ -1017,7 +1030,7 @@ if (!function_exists('company')) {
         if (user()) {
 
             if (user()->company) {
-                $company = \App\Models\Company::find(user()->company_id);
+                $company = user()->company;
                 session(['company' => $company]);
 
                 return $company;
@@ -1076,7 +1089,8 @@ if (!function_exists('trim_editor')) {
     // @codingStandardsIgnoreLine
     function trim_editor($text)
     {
-        return trim(str_replace('<p><br></p>', '', trim($text)));
+        $search = '/'.preg_quote('<p><br></p>', '/').'/';
+        return preg_replace($search, '', trim($text), 1);
     }
 
 }
@@ -1113,6 +1127,68 @@ if (!function_exists('user_role_ids')) {
         }
 
         return null;
+    }
+
+}
+
+if (!function_exists('canDataTableExport')) {
+
+    function canDataTableExport()
+    {
+        return in_array('admin', user_roles()) || (company()->employee_can_export_data && in_array('employee', user_roles()));
+    }
+
+}
+
+if (!function_exists('pdfStripTags')) {
+
+    function pdfStripTags($text)
+    {
+        return strip_tags($text, [
+            'p',
+            'b',
+            'strong',
+            'a',
+            'ul',
+            'li',
+            'ol',
+            'i',
+            'u',
+            'blockquote',
+            'img',
+        ]);
+    }
+
+}
+
+if (!function_exists('companyToYmd')) {
+
+    function companyToYmd($date)
+    {
+        return Carbon::createFromFormat(company()->date_format, $date)->format('Y-m-d');
+    }
+
+}
+
+if (!function_exists('companyToDateString')) {
+
+    function companyToDateString($date)
+    {
+        return Carbon::createFromFormat(company()->date_format, $date)->toDateString();
+    }
+
+}
+
+if (!function_exists('custom_link_setting')) {
+
+    // @codingStandardsIgnoreLine
+    function custom_link_setting()
+    {
+        if (!session()->has('custom_link_setting')) {
+            session(['custom_link_setting' => CustomLinkSetting::all()]);
+        }
+
+        return session('custom_link_setting');
     }
 
 }

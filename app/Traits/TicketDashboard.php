@@ -7,6 +7,7 @@ use App\Models\Ticket;
 use App\Models\TicketChannel;
 use App\Models\TicketType;
 use Carbon\Carbon;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -24,7 +25,7 @@ trait TicketDashboard
         abort_403($this->viewTicketDashboard !== 'all');
 
         $this->pageTitle = 'app.ticketDashboard';
-        $this->startDate  = (request('startDate') != '') ? Carbon::createFromFormat($this->company->date_format, request('startDate')) : now($this->company->timezone)->startOfMonth();
+        $this->startDate = (request('startDate') != '') ? Carbon::createFromFormat($this->company->date_format, request('startDate')) : now($this->company->timezone)->startOfMonth();
         $this->endDate = (request('endDate') != '') ? Carbon::createFromFormat($this->company->date_format, request('endDate')) : now($this->company->timezone);
         $startDate = $this->startDate->startOfDay()->toDateTimeString();
         $endDate = $this->endDate->endOfDay()->toDateTimeString();
@@ -62,7 +63,7 @@ trait TicketDashboard
 
         $this->newTickets = Ticket::with('requester')->where('status', 'open')
             ->whereBetween('updated_at', [$startDate, $endDate])
-            ->orderBy('updated_at', 'desc')->get();
+            ->orderByDesc('updated_at')->get();
 
         $this->view = 'dashboard.ajax.ticket';
     }
@@ -70,7 +71,7 @@ trait TicketDashboard
     /**
      * XXXXXXXXXXX
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function ticketTypeChart($startDate, $endDate)
     {

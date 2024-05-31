@@ -11,7 +11,7 @@ $addProductPermission = user()->permission('add_product');
 <div class="bg-white rounded b-shadow-4 create-inv">
     <!-- HEADING START -->
     <div class="px-lg-4 px-md-4 px-3 py-3">
-        <h4 class="mb-0 f-21 font-weight-normal text-capitalize">@lang('app.order') @lang('app.details')</h4>
+        <h4 class="mb-0 f-21 font-weight-normal text-capitalize">@lang('app.orderDetails')</h4>
     </div>
     <!-- HEADING END -->
     <hr class="m-0 border-top-grey">
@@ -94,30 +94,33 @@ $addProductPermission = user()->permission('add_product');
                     </x-forms.input-group>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="form-group c-inv-select mb-4">
-                <x-forms.input-group>
-                    <select class="form-control select-picker" data-live-search="true" data-size="8" id="add-products" title="{{ __('app.menu.selectProduct') }}">
-                        @foreach ($products as $item)
-                            <option data-content="{{ $item->name }}" value="{{ $item->id }}">
-                                {{ $item->name }}</option>
-                        @endforeach
-                    </select>
-                    <x-slot name="preappend">
-                        <a href="javascript:;"
-                            class="btn btn-outline-secondary border-grey toggle-product-category"
-                            data-toggle="tooltip" data-original-title="{{ __('modules.productCategory.filterByCategory') }}"><i class="fa fa-filter"></i></a>
-                    </x-slot>
-                    @if ($addProductPermission == 'all' || $addProductPermission == 'added')
-                        <x-slot name="append">
-                            <a href="{{ route('products.create') }}" data-redirect-url="no"
-                                class="btn btn-outline-secondary border-grey openRightModal"
-                                data-toggle="tooltip" data-original-title="{{ __('app.add').' '.__('modules.dashboard.newproduct') }}">@lang('app.add')</a>
+
+            @if(in_array('products', user_modules()) || in_array('purchase', user_modules()))
+                <div class="col-md-3">
+                    <div class="form-group c-inv-select mb-4">
+                    <x-forms.input-group>
+                        <select class="form-control select-picker" data-live-search="true" data-size="8" id="add-products" title="{{ __('app.menu.selectProduct') }}">
+                            @foreach ($products as $item)
+                                <option data-content="{{ $item->name }} @if($item->sku) ({{ $item->sku }})@endif" value="{{ $item->id }}">
+                                    {{ $item->name }}</option>
+                            @endforeach
+                        </select>
+                        <x-slot name="preappend">
+                            <a href="javascript:;"
+                                class="btn btn-outline-secondary border-grey toggle-product-category"
+                                data-toggle="tooltip" data-original-title="{{ __('modules.productCategory.filterByCategory') }}"><i class="fa fa-filter"></i></a>
                         </x-slot>
-                    @endif
-                </x-forms.input-group>
+                        @if ($addProductPermission == 'all' || $addProductPermission == 'added')
+                            <x-slot name="append">
+                                <a href="{{ route('products.create') }}" data-redirect-url="no"
+                                    class="btn btn-outline-secondary border-grey openRightModal"
+                                    data-toggle="tooltip" data-original-title="{{ __('app.add').' '.__('modules.dashboard.newproduct') }}">@lang('app.add')</a>
+                            </x-slot>
+                        @endif
+                    </x-forms.input-group>
+                    </div>
                 </div>
-            </div>
+            @endif
         </div>
 
         <div id="sortable">
@@ -136,6 +139,9 @@ $addProductPermission = user()->permission('add_product');
                                     @endif
                                     <td width="10%" class="border-0" align="right" id="type">
                                         @lang('modules.invoices.qty')
+                                    </td>
+                                    <td width="10%" class="border-0" align="right" id="type">
+                                        @lang('app.sku')
                                     </td>
                                     <td width="10%" class="border-0" align="right">
                                         @lang("modules.invoices.unitPrice")</td>
@@ -172,13 +178,16 @@ $addProductPermission = user()->permission('add_product');
                                         @else
                                             <select class="text-dark-grey float-right border-0 f-12" name="unit_id[]">
                                                 @foreach ($units as $unit)
-                                                    <option
-                                                    @if ($item->unit_id == $unit->id) selected @endif
-                                                    value="{{ $unit->id }}">{{ $unit->unit_type }}</option>
+                                                    <option @selected($item->unit_id == $unit->id) value="{{ $unit->id }}">{{ $unit->unit_type }}</option>
                                                 @endforeach
                                             </select>
                                             <input type="hidden" name="product_id[]" value="">
                                         @endif
+                                    </td>
+                                    <td class="border-bottom-0">
+                                        <input type="text" min="1"
+                                               class="f-14 border-0 w-100 text-right form-control" placeholder="0.00"
+                                               value="{{ $item->sku }}" name="sku[]" readonly>
                                     </td>
                                     <td class="border-bottom-0">
                                         <input type="number" min="1"
@@ -186,14 +195,14 @@ $addProductPermission = user()->permission('add_product');
                                             value="{{ $item->unit_price }}" name="cost_per_item[]" readonly>
                                     </td>
                                     <td class="border-bottom-0">
-                                        <input class="form-control height-35 f-14 border-0 w-100 text-right bg-additional-grey "                            value="{{ strtoupper($item->tax_list) ?: '--' }}" readonly>
+                                        <input class="form-control height-35 f-14 border-0 w-100 text-right bg-additional-grey "                            value="{{ $item->tax_list ?: '--' }}" readonly>
                                         <div class="select-others  d-none height-35 rounded border-0">
                                             <select id="multiselect{{ $key }}"
                                                 name="taxes[{{ $key }}][]" multiple="multiple"
                                                 class="select-picker type customSequence border-0" data-size="3">
                                                 @foreach ($taxes as $tax)
-                                                    <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ strtoupper($tax->tax_name) .':'. $tax->rate_percent }}%" @if (isset($item->taxes) && array_search($tax->id, json_decode($item->taxes)) !== false) selected @endif
-                                                        value="{{ $tax->id }}">{{ strtoupper($tax->tax_name) }}:
+                                                    <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ $tax->tax_name .':'. $tax->rate_percent }}%" @if (isset($item->taxes) && array_search($tax->id, json_decode($item->taxes)) !== false) selected @endif
+                                                        value="{{ $tax->id }}">{{ $tax->tax_name }}:
                                                         {{ $tax->rate_percent }}%</option>
                                                 @endforeach
                                             </select>
@@ -216,15 +225,15 @@ $addProductPermission = user()->permission('add_product');
                                         <input type="file"
                                         class="dropify"
                                         name="invoice_item_image[]"
-                                        data-allowed-file-extensions="png jpg jpeg"
+                                        data-allowed-file-extensions="png jpg jpeg bmp"
                                         data-messages-default="test"
                                         data-height="70"
                                         data-id="{{ $item->id }}"
                                         id="{{ $item->id }}"
-                                        data-default-file="{{ $item->orderItemImage ? $item->orderItemImage->external_link : '' }}"
+                                        data-default-file="{{ $item->orderItemImage ? $item->orderItemImage->file_url : null }}"
                                         disabled
                                         />
-                                        <input type="hidden" name="invoice_item_image_url[]" value="{{ $item->orderItemImage ? $item->orderItemImage->external_link : '' }}">
+                                        <input type="hidden" name="invoice_item_image_url[]" value="{{ $item->orderItemImage ? $item->orderItemImage->file : '' }}">
                                         <input type="hidden" name="item_ids[]" value="{{ $item->id }}">
                                     </td>
                                 </tr>
@@ -283,11 +292,13 @@ $addProductPermission = user()->permission('add_product');
                                                             <div class="select-others select-tax height-35 rounded border-0 {{in_array('client', user_roles()) ? 'd-none' : ''}}">
 
                                                                 <select class="form-control select-picker"
-                                                                    id="discount_type" name="discount_type">
-                                                                    <option @if ($order->discount_type == 'percent') selected @endif
-                                                                        value="percent">%</option>
-                                                                    <option @if ($order->discount_type == 'fixed') selected @endif
-                                                                        value="fixed">
+                                                                        id="discount_type" name="discount_type">
+                                                                    <option
+                                                                        @selected ($order->discount_type == 'percent')
+                                                                        value="percent">%
+                                                                    </option>
+                                                                    <option
+                                                                        @selected ($order->discount_type == 'fixed') value="fixed">
                                                                         @lang('modules.invoices.amount')</option>
                                                                 </select>
                                                             </div>

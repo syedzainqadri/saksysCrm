@@ -1,7 +1,7 @@
 @if (in_array('leave', $activeWidgets) && $sidebarUserPermissions['view_leave'] != 5 && $sidebarUserPermissions['view_leave'] != 'none' && in_array('employees', user_modules()))
     <!-- EMP DASHBOARD BIRTHDAY START -->
     <div class="col-sm-12">
-        <x-cards.data class="e-d-info mb-3" :title="__('modules.dashboard.leave')" padding="false" otherClasses="h-200">
+        <x-cards.data class="e-d-info mb-2" :title="__('modules.dashboard.leave')" padding="false" otherClasses="h-200">
             <x-table>
                 @forelse ($leave as $totalLeave)
                     <tr>
@@ -19,7 +19,7 @@
                         </td>
                         <td class="pr-20" align="right">
                             <span class="badge badge-success p-2"
-                                  style="background-color:{{$totalLeave->type->color}}">{{ucfirst($totalLeave->type->type_name)}}</span>
+                                  style="background-color:{{$totalLeave->type->color}}">{{$totalLeave->type->type_name}}</span>
                         </td>
                     </tr>
                 @empty

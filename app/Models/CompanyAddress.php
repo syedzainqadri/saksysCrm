@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Traits\HasCompany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * App\Models\CompanyAddress
@@ -29,11 +30,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
  * @method static \Illuminate\Database\Eloquent\Builder|CompanyAddress whereLocation($value)
  * @property int|null $company_id
  * @property-read \App\Models\Company|null $company
+ * @property int|null $country_id
+ * @property-read \App\Models\Country|null $country
  * @method static \Illuminate\Database\Eloquent\Builder|CompanyAddress whereCompanyId($value)
  * @property string|null $latitude
  * @property string|null $longitude
  * @method static \Illuminate\Database\Eloquent\Builder|CompanyAddress whereLatitude($value)
  * @method static \Illuminate\Database\Eloquent\Builder|CompanyAddress whereLongitude($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|CompanyAddress whereCountryId($value)
  * @mixin \Eloquent
  */
 class CompanyAddress extends BaseModel
@@ -41,11 +45,16 @@ class CompanyAddress extends BaseModel
 
     use HasFactory, HasCompany;
 
-    protected $fillable = ['address', 'is_default', 'location', 'tax_number', 'tax_name', 'longitude', 'latitude'];
+    protected $fillable = ['country_id', 'address', 'is_default', 'location', 'tax_number', 'tax_name', 'longitude', 'latitude'];
 
     public static function defaultAddress()
     {
         return CompanyAddress::where('is_default', 1)->first();
+    }
+
+    public function country(): BelongsTo
+    {
+        return $this->belongsTo(Country::class);
     }
 
 }

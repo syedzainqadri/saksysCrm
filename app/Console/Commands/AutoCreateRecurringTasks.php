@@ -31,63 +31,67 @@ class AutoCreateRecurringTasks extends Command
      */
     public function handle()
     {
-        $companies = Company::select('id', 'timezone', 'default_task_status')->get();
+        Company::active()->select('id', 'timezone', 'default_task_status')->chunk(50, function ($companies) {
 
-        foreach ($companies as $company) {
-            $now = now($company->timezone);
+            foreach ($companies as $company) {
 
-            $repeatedTasks = Task::withCount('recurrings')
-                ->with('labels', 'users')
-                ->where('repeat', 1)
-                ->whereDate('start_date', '<', $now->toDateString())
-                ->where('repeat_complete', 0)
-                ->where('company_id', $company->id)
-                ->get();
+                $now = now($company->timezone);
 
-            $repeatedTasks->each(function ($task) use ($now, $company) {
+                $repeatedTasks = Task::withCount('recurrings')
+                    ->with('labels', 'users')
+                    ->where('repeat', 1)
+                    ->whereDate('start_date', '<', $now->toDateString())
+                    ->where('repeat_complete', 0)
+                    ->where('company_id', $company->id)
+                    ->get();
 
-                if ($task->repeat_cycles == -1 || $task->recurrings_count < ($task->repeat_cycles - 1)) { // Subtract 1 to include original task
+                $repeatedTasks->each(function ($task) use ($now, $company) {
 
-                    $startDate = $task->start_date->copy();
-                    $endDate = (!is_null($task->due_date)) ? $task->due_date->copy() : null;
-                    $repeatCount = $task->repeat_count + ($task->recurrings_count * $task->repeat_count);
-                    $repeatStartDate = null;
-                    $repeatDueDate = null;
+                    if ($task->repeat_cycles == -1 || $task->recurrings_count < ($task->repeat_cycles - 1)) { // Subtract 1 to include original task
 
-                    if ($task->repeat_type == 'day' && $now->toDateString() == $startDate->copy()->addDays($repeatCount)->toDateString()) {
-                        $repeatStartDate = $startDate->copy()->addDays($repeatCount);
-                        $repeatDueDate = (!is_null($endDate)) ? $endDate->addDays($repeatCount) : null;
+                        $startDate = $task->start_date->copy();
+                        $endDate = (!is_null($task->due_date)) ? $task->due_date->copy() : null;
+                        $repeatCount = $task->repeat_count + ($task->recurrings_count * $task->repeat_count);
+                        $repeatStartDate = null;
+                        $repeatDueDate = null;
 
-                    }
-                    elseif ($task->repeat_type == 'week' && $now->toDateString() == $startDate->copy()->addWeeks($repeatCount)->toDateString()) {
-                        $repeatStartDate = $startDate->copy()->addWeeks($repeatCount);
-                        $repeatDueDate = (!is_null($endDate)) ? $endDate->addWeeks($repeatCount) : null;
+                        if ($task->repeat_type == 'day' && $now->toDateString() == $startDate->copy()->addDays($repeatCount)->toDateString()) {
+                            $repeatStartDate = $startDate->copy()->addDays($repeatCount);
+                            $repeatDueDate = (!is_null($endDate)) ? $endDate->addDays($repeatCount) : null;
 
-                    }
-                    elseif ($task->repeat_type == 'month' && $now->toDateString() == $startDate->copy()->addMonths($repeatCount)->toDateString()) {
-                        $repeatStartDate = $startDate->copy()->addMonths($repeatCount);
-                        $repeatDueDate = (!is_null($endDate)) ? $endDate->addMonths($repeatCount) : null;
+                        }
+                        elseif ($task->repeat_type == 'week' && $now->toDateString() == $startDate->copy()->addWeeks($repeatCount)->toDateString()) {
+                            $repeatStartDate = $startDate->copy()->addWeeks($repeatCount);
+                            $repeatDueDate = (!is_null($endDate)) ? $endDate->addWeeks($repeatCount) : null;
 
-                    }
-                    elseif ($task->repeat_type == 'year' && $now->toDateString() == $startDate->copy()->addYears($repeatCount)->toDateString()) {
-                        $repeatStartDate = $startDate->copy()->addYears($repeatCount);
-                        $repeatDueDate = (!is_null($endDate)) ? $endDate->addYears($repeatCount) : null;
-                    }
+                        }
+                        elseif ($task->repeat_type == 'month' && $now->toDateString() == $startDate->copy()->addMonths($repeatCount)->toDateString()) {
+                            $repeatStartDate = $startDate->copy()->addMonths($repeatCount);
+                            $repeatDueDate = (!is_null($endDate)) ? $endDate->addMonths($repeatCount) : null;
 
-                    if (isset($repeatStartDate) || isset($repeatDueDate)) {
-                        $this->createTask($task, $repeatStartDate, $repeatDueDate, $company->default_task_status);
+                        }
+                        elseif ($task->repeat_type == 'year' && $now->toDateString() == $startDate->copy()->addYears($repeatCount)->toDateString()) {
+                            $repeatStartDate = $startDate->copy()->addYears($repeatCount);
+                            $repeatDueDate = (!is_null($endDate)) ? $endDate->addYears($repeatCount) : null;
+                        }
 
-                        // Mark repeat complete if cycles are complete
-                        if ($task->repeat_cycles != -1 && ($task->recurrings_count + 2) == $task->repeat_cycles) { // Add 2 to include newly created task and the original task
-                            $task->repeat_complete = 1;
-                            $task->save();
+                        if (isset($repeatStartDate) || isset($repeatDueDate)) {
+                            $this->createTask($task, $repeatStartDate, $repeatDueDate, $company->default_task_status);
+
+                            // Mark repeat complete if cycles are complete
+                            if ($task->repeat_cycles != -1 && ($task->recurrings_count + 2) == $task->repeat_cycles) { // Add 2 to include newly created task and the original task
+                                $task->repeat_complete = 1;
+                                $task->save();
+                            }
+
                         }
 
                     }
+                });
+            }
+        });
 
-                }
-            });
-        }
+        return Command::SUCCESS;
 
     }
 

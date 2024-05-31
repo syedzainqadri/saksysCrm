@@ -134,7 +134,7 @@
                     @if($statements->type == 'bank')
                     {{ $statements->bank_name }} <br>
                     @endif
-                    {{ mb_ucwords($statements->account_name) }}
+                    {{ $statements->account_name }}
                 </div>
             </div>
 
@@ -179,11 +179,11 @@
                     @php
                     if($transaction->transaction_relation == 'payment'){
                     $title = __('modules.bankaccount.'.$transaction->title).' (
-                    '.mb_ucwords($transaction->transaction_relation).'-'.$transaction->transaction_related_to.' )';
+                    '.$transaction->transaction_relation.'-'.$transaction->transaction_related_to.' )';
                     }
                     elseif($transaction->transaction_relation == 'expense'){
                     $title = __('modules.bankaccount.'.$transaction->title).' (
-                    '.mb_ucwords($transaction->transaction_related_to).' )';
+                    '.$transaction->transaction_related_to.' )';
                     }
                     else {
                     $title = __('modules.bankaccount.'.$transaction->title);
@@ -228,7 +228,7 @@
         <section id="sums">
             <table cellpadding="0" cellspacing="0">
                 <tr>
-                    <th>@lang('app.total') @lang('modules.bankaccount.bankBalance') ({!!
+                    <th>@lang('app.totalBankBalance') ({!!
                         htmlentities($statements->currency->currency_code) !!})</th>
                     <td>{{ currency_format($statements->bank_balance, $statements->currency_id, false) }}</td>
                 </tr>

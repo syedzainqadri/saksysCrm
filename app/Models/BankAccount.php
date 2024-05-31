@@ -86,4 +86,9 @@ class BankAccount extends BaseModel
         }
     }
 
+    public function expenses()
+    {
+        return $this->hasMany(Expense::class);
+    }
+
 }

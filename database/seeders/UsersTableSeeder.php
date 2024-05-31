@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\MaritalStatus;
 use App\Models\ClientDetails;
 use App\Models\EmployeeDetails;
 use App\Models\Role;
@@ -126,7 +127,7 @@ class UsersTableSeeder extends Seeder
         $employee->designation_id = rand(1, 5);
         $employee->joining_date = now()->subMonths(9)->toDateTimeString();
         $employee->calendar_view = 'task,events,holiday,tickets,leaves';
-        $employee->marital_status = 'unmarried';
+        $employee->marital_status = MaritalStatus::Single;
         $employee->save();
 
         $search = new UniversalSearch();

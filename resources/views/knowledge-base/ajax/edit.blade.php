@@ -61,7 +61,7 @@ color: #fff !important;
                                                 <option
                                                 {{ isset($knowledge->category_id) && $knowledge->category_id == $category->id ? 'selected' : '' }}
                                                  value="{{ $category->id }}">
-                                                    {{ mb_ucwords($category->name) }}</option>
+                                                    {{ $category->name }}</option>
                                             @endforeach
                                         </select>
 
@@ -180,8 +180,6 @@ color: #fff !important;
 
     </div>
 </div>
-
-<script src="{{ asset('vendor/jquery/dropzone.min.js') }}"></script>
 
 <script>
     $(document).ready(function() {

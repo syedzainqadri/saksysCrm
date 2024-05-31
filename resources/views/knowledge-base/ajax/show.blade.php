@@ -72,9 +72,11 @@ $deletePermission = user()->permission('delete_knowledgebase');
 
                                                <a class="cursor-pointer d-block text-dark-grey f-13 py-3 px-3 "
                                                     href="{{ route('knowledgebase-files.download', md5($file->id)) }}">@lang('app.download')</a>
-                                                <a class="cursor-pointer d-block text-dark-grey f-13 pb-3 px-3 delete-file"
-                                                    data-row-id="{{ $file->id }}"
-                                                    href="javascript:;">@lang('app.delete')</a>
+                                                @if ($editPermission == 'all' || ($editPermission == 'added' && $knowledge->added_by == user()->id))
+                                                        <a class="cursor-pointer d-block text-dark-grey f-13 pb-3 px-3 delete-file"
+                                                           data-row-id="{{ $file->id }}"
+                                                           href="javascript:;">@lang('app.delete')</a>
+                                                @endif
                                         </div>
                                     </div>
                                 </x-slot>
@@ -138,47 +140,48 @@ $deletePermission = user()->permission('delete_knowledgebase');
             }
         });
     });
+    @if ($editPermission == 'all' || ($editPermission == 'added' && $knowledge->added_by == user()->id))
+        $('body').on('click', '.delete-file', function() {
+                var id = $(this).data('row-id');
+                Swal.fire({
+                    title: "@lang('messages.sweetAlertTitle')",
+                    text: "@lang('messages.recoverRecord')",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    focusConfirm: false,
+                    confirmButtonText: "@lang('messages.confirmDelete')",
+                    cancelButtonText: "@lang('app.cancel')",
+                    customClass: {
+                        confirmButton: 'btn btn-primary mr-3',
+                        cancelButton: 'btn btn-secondary'
+                    },
+                    showClass: {
+                        popup: 'swal2-noanimation',
+                        backdrop: 'swal2-noanimation'
+                    },
+                    buttonsStyling: false
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        var url = "{{ route('knowledgebase-files.destroy', ':id') }}";
+                        url = url.replace(':id', id);
 
-    $('body').on('click', '.delete-file', function() {
-            var id = $(this).data('row-id');
-            Swal.fire({
-                title: "@lang('messages.sweetAlertTitle')",
-                text: "@lang('messages.recoverRecord')",
-                icon: 'warning',
-                showCancelButton: true,
-                focusConfirm: false,
-                confirmButtonText: "@lang('messages.confirmDelete')",
-                cancelButtonText: "@lang('app.cancel')",
-                customClass: {
-                    confirmButton: 'btn btn-primary mr-3',
-                    cancelButton: 'btn btn-secondary'
-                },
-                showClass: {
-                    popup: 'swal2-noanimation',
-                    backdrop: 'swal2-noanimation'
-                },
-                buttonsStyling: false
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    var url = "{{ route('knowledgebase-files.destroy', ':id') }}";
-                    url = url.replace(':id', id);
+                        var token = "{{ csrf_token() }}";
 
-                    var token = "{{ csrf_token() }}";
-
-                    $.easyAjax({
-                        type: 'POST',
-                        url: url,
-                        data: {
-                            '_token': token,
-                            '_method': 'DELETE'
-                        },
-                        success: function(response) {
-                            if (response.status == "success") {
-                                $('#knowledgebase-file-list').html(response.view);
+                        $.easyAjax({
+                            type: 'POST',
+                            url: url,
+                            data: {
+                                '_token': token,
+                                '_method': 'DELETE'
+                            },
+                            success: function(response) {
+                                if (response.status == "success") {
+                                    $('#knowledgebase-file-list').html(response.view);
+                                }
                             }
-                        }
-                    });
-                }
+                        });
+                    }
+                });
             });
-        });
+        @endif
 </script>

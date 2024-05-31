@@ -305,7 +305,7 @@
         <tbody>
             <!-- Table Row Start -->
             <tr>
-                <td><img src="{{ $contract->company->invoiceSetting->logo_url }}" alt="{{ mb_ucwords($contract->company->company_name) }}"
+                <td><img src="{{ $contract->company->invoiceSetting->logo_url }}" alt="{{ $contract->company->company_name }}"
                         class="logo" /></td>
                 <td align="right" class="f-21 text-black font-weight-700 text-uppercase">@lang('app.menu.contract')</td>
             </tr>
@@ -314,7 +314,7 @@
             <tr>
                 <td>
                     <p class="line-height mt-1 mb-0 f-14 text-black">
-                        {{ mb_ucwords($contract->company->company_name) }}<br>
+                        {{ $contract->company->company_name }}<br>
                         @if (!is_null($contract->company))
                             {!! nl2br($contract->company->defaultAddress->address) !!}<br>
                             {{ $contract->company->company_phone }}
@@ -364,8 +364,8 @@
 
                                 <p class="line-height mb-0">
                                     <span class="text-grey text-capitalize">@lang('app.client')</span><br>
-                                    {{ mb_ucwords($contract->client->name) }}<br>
-                                    {{ mb_ucwords($contract->client->clientDetails->company_name) }}
+                                    {{ $contract->client->name_salutation }}<br>
+                                    {{ $contract->client->clientDetails->company_name }}
                                     {!! nl2br($contract->client->clientDetails->address) !!}
                                 </p>
 
@@ -375,7 +375,7 @@
                                 @if ($contract->client->clientDetails->company_logo)
                                     <div class="text-uppercase bg-white unpaid rightaligned">
                                         <img src="{{ $contract->client->clientDetails->image_url }}"
-                                            alt="{{ mb_ucwords($contract->client->clientDetails->company_name) }}"
+                                            alt="{{ $contract->client->clientDetails->company_name }}"
                                             class="logo" />
                                     </div>
                                 @endif
@@ -400,8 +400,11 @@
         <h5 class="text-grey text-capitalize">@lang('app.subject')</h5>
         <p class="f-15 text-black">{{ $contract->subject }}</p>
 
+        <h5 class="text-grey text-capitalize">@lang('modules.contracts.notes')</h5>
+        <p class="f-15 text-black">{{ $contract->contract_note }}</p>
+
         <h5 class="text-grey text-capitalize">@lang('app.description')</h5>
-        <p class="f-15 text-black">{!! nl2br(strip_tags($contract->contract_detail, ['p', 'b', 'strong', 'a'])) !!}</p>
+        <p class="f-15 text-black">{!! nl2br(pdfStripTags($contract->contract_detail)) !!}</p>
 
         @if ($contract->amount != 0)
             <div class="text-right pt-3 border-top description">
@@ -439,7 +442,7 @@
            @foreach($fields as $field)
                <tr>
                    <td style="text-align: left;background: none;" >
-                       <div class="f-14">{{ ucfirst($field->label) }}</div>
+                       <div class="f-14">{{ $field->label }}</div>
                        <p  class="f-14 line-height text-grey">
                            @if( $field->type == 'text' || $field->type == 'password' || $field->type == 'number' || $field->type == 'textarea')
                                {{$contract->custom_fields_data['field_'.$field->id] ?? '-'}}

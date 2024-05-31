@@ -6,6 +6,7 @@ use App\Scopes\ActiveScope;
 use App\Traits\HasCompany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * App\Models\LeadAgent
@@ -34,7 +35,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @method static \Illuminate\Database\Eloquent\Builder|LeadAgent whereCompanyId($value)
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Lead> $leads
  * @property-read int|null $leads_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Lead> $leads
  * @mixin \Eloquent
  */
 class LeadAgent extends BaseModel
@@ -52,7 +52,7 @@ class LeadAgent extends BaseModel
 
     public function leads(): HasMany
     {
-        return $this->hasMany(Lead::class);
+        return $this->hasMany(Deal::class, 'agent_id');
     }
 
 }

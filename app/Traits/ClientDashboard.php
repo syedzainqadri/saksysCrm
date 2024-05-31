@@ -2,11 +2,15 @@
 
 namespace App\Traits;
 
+use App\Helper\Reply;
 use App\Models\Contract;
 use App\Models\ContractSign;
 use App\Models\DashboardWidget;
+use App\Models\Deal;
 use App\Models\Lead;
+use App\Models\LeadPipeline;
 use App\Models\LeadSource;
+use App\Models\PipelineStage;
 use App\Models\LeadStatus;
 use App\Models\Payment;
 use App\Models\ProjectTimeLog;
@@ -36,6 +40,8 @@ trait ClientDashboard
         $startDate = $this->startDate->toDateString();
         $endDate = $this->endDate->toDateString();
 
+        $pipelineId = (request('pipelineId') != '') ? request('pipelineId') : null;
+
         $this->totalClient = User::withoutGlobalScope(ActiveScope::class)
             ->join('role_user', 'role_user.user_id', '=', 'users.id')
             ->join('roles', 'roles.id', '=', 'role_user.role_id')
@@ -48,9 +54,18 @@ trait ClientDashboard
         $this->totalLead = Lead::whereBetween(DB::raw('DATE(`created_at`)'), [$startDate, $endDate])
             ->count();
 
-        $this->totalLeadConversions = Lead::whereBetween(DB::raw('DATE(`updated_at`)'), [$startDate, $endDate])
-            ->whereNotNull('client_id')
+        $this->totalDeals = Deal::whereBetween(DB::raw('DATE(`created_at`)'), [$startDate, $endDate])
             ->count();
+
+        $this->totalLeadConversions = Deal::select('deals.id', 'pipeline_stages.slug')->whereBetween(DB::raw('DATE(deals.updated_at)'), [$startDate, $endDate])
+            ->leftJoin('pipeline_stages', 'pipeline_stages.id', 'deals.pipeline_stage_id')
+            ->get();
+
+        $this->convertedDeals = $this->totalLeadConversions->filter(function ($value, $key) {
+            return $value->slug == 'win';
+        })->count();
+
+        $this->convertDealPercentage = ($this->totalLeadConversions->count() > 0) ? number_format(($this->convertedDeals / $this->totalLeadConversions->count() * 100), 2) : 0;
 
         $this->totalContractsGenerated = Contract::whereBetween(DB::raw('DATE(contracts.`end_date`)'), [$startDate, $endDate])->orWhereBetween(DB::raw('DATE(contracts.`start_date`)'), [$startDate, $endDate])->count();
 
@@ -76,7 +91,15 @@ trait ClientDashboard
         $this->clientEarningChart = $this->clientEarningChart($startDate, $endDate);
         $this->clientTimelogChart = $this->clientTimelogChart($startDate, $endDate);
 
-        $this->leadStatusChart = $this->leadStatusChart($startDate, $endDate);
+        $this->leadPipelines = LeadPipeline::all();
+
+        $defaultPipeline = $this->leadPipelines->filter(function ($value, $key) {
+            return $value->default == '1';
+        })->first();
+
+        $defaultPipelineId = ($pipelineId) ? $pipelineId : $defaultPipeline->id;
+
+        $this->leadStatusChart = $this->leadStatusChart($startDate, $endDate, $defaultPipelineId);
         $this->leadSourceChart = $this->leadSourceChart($startDate, $endDate);
 
         $this->widgets = DashboardWidget::where('dashboard_type', 'admin-client-dashboard')->get();
@@ -182,23 +205,34 @@ trait ClientDashboard
      * @param $endDate
      * @return array
      */
-    public function leadStatusChart($startDate, $endDate)
+    public function leadStatusChart($startDate, $endDate, $pipelineID = null)
     {
-        $leadStatus = LeadStatus::withCount(['leads' => function ($query) use ($startDate, $endDate) {
+        $leadStatus = PipelineStage::withCount(['deals' => function ($query) use ($startDate, $endDate) {
             return $query->whereBetween(DB::raw('DATE(`created_at`)'), [$startDate, $endDate]);
-        }])->get();
+        }]);
+
+        if ($pipelineID) {
+            $leadStatus->where('lead_pipeline_id', $pipelineID);
+        }
+
+        $leadStatus = $leadStatus->get();
 
         $labelVal = [];
 
-        foreach ($leadStatus->pluck('type') as $key => $value) {
-            $labelVal[] = __('app.'.$value);
+        foreach ($leadStatus->pluck('name') as $key => $value) {
+            $labelVal[] = $value;
         }
 
-        $data['labels'] = $labelVal;
-        $data['colors'] = $leadStatus->pluck('label_color')->toArray();
-        $data['values'] = $leadStatus->pluck('leads_count')->toArray();
+        $stageData = [];
 
-        return $data;
+        foreach ($leadStatus as $key => $value) {
+            $stageData['labels'][] = $value->name;
+            $stageData['colors'][] = $value->label_color;
+            $stageData['values'][] = $value->deals_count;
+        }
+
+        return $stageData;
+
     }
 
     public function leadSourceChart($startDate, $endDate)
@@ -211,7 +245,7 @@ trait ClientDashboard
 
         foreach ($leadStatus->pluck('type') as $key => $value) {
             $labelName = current(explode(' ', $value));
-            $data['labels'][] = __('app.'.$labelName).''.strstr($value, ' ');
+            $data['labels'][] = __('app.' . strtolower($labelName)) . '' . strstr($value, ' ');
         }
 
         foreach ($data['labels'] as $key => $value) {

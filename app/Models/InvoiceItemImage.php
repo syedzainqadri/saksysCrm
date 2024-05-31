@@ -29,6 +29,7 @@ use App\Traits\IconTrait;
  * @method static \Illuminate\Database\Eloquent\Builder|InvoiceItemImage whereInvoiceItemId($value)
  * @method static \Illuminate\Database\Eloquent\Builder|InvoiceItemImage whereSize($value)
  * @method static \Illuminate\Database\Eloquent\Builder|InvoiceItemImage whereUpdatedAt($value)
+ * @property-read mixed $file
  * @mixin \Eloquent
  */
 class InvoiceItemImage extends BaseModel
@@ -38,22 +39,21 @@ class InvoiceItemImage extends BaseModel
 
     const FILE_PATH = 'invoice-files';
 
-    protected $appends = ['file_url', 'icon'];
+    protected $appends = ['file_url', 'icon', 'file'];
     protected $fillable = ['invoice_item_id', 'filename', 'hashname', 'size', 'external_link'];
 
     public function getFileUrlAttribute()
     {
-        if (empty($this->external_link)) {
-            return asset_url_local_s3(InvoiceItemImage::FILE_PATH . '/' . $this->invoice_item_id . '/' . $this->hashname);
+        if($this->external_link){
+            return str($this->external_link)->contains('http') ? $this->external_link : asset_url_local_s3($this->external_link);
         }
 
-        if (!empty($this->external_link)) {
-            return $this->external_link;
-        }
+        return asset_url_local_s3(InvoiceItemImage::FILE_PATH . '/' . $this->invoice_item_id . '/' . $this->hashname);
+    }
 
-        return '';
-
-
+    public function getFileAttribute()
+    {
+        return $this->external_link ?: (InvoiceItemImage::FILE_PATH . '/' . $this->invoice_item_id . '/' . $this->hashname);
     }
 
 }

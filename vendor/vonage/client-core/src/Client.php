@@ -1,12 +1,5 @@
 <?php
 
-/**
- * Vonage Client Library for PHP
- *
- * @copyright Copyright (c) 2016-2022 Vonage, Inc. (http://vonage.com)
- * @license https://github.com/Vonage/vonage-php-sdk-core/blob/master/LICENSE.txt Apache License 2.0
- */
-
 declare(strict_types=1);
 
 namespace Vonage;
@@ -46,11 +39,14 @@ use Vonage\Client\Factory\MapFactory;
 use Vonage\Conversion\ClientFactory as ConversionClientFactory;
 use Vonage\Entity\EntityInterface;
 use Vonage\Insights\ClientFactory as InsightsClientFactory;
+use Vonage\Meetings\ClientFactory as MeetingsClientFactory;
 use Vonage\Numbers\ClientFactory as NumbersClientFactory;
 use Vonage\Redact\ClientFactory as RedactClientFactory;
 use Vonage\Secrets\ClientFactory as SecretsClientFactory;
 use Vonage\SMS\ClientFactory as SMSClientFactory;
+use Vonage\Subaccount\ClientFactory as SubaccountClientFactory;
 use Vonage\Messages\ClientFactory as MessagesClientFactory;
+use Vonage\Users\ClientFactory as UsersClientFactory;
 use Vonage\Verify\ClientFactory as VerifyClientFactory;
 use Vonage\Verify2\ClientFactory as Verify2ClientFactory;
 use Vonage\Verify\Verification;
@@ -73,6 +69,7 @@ use function strpos;
  * Vonage API Client, allows access to the API from PHP.
  *
  * @method Account\Client account()
+ * @method Meetings\Client meetings()
  * @method Messages\Client messages()
  * @method Application\Client applications()
  * @method Conversion\Client conversion()
@@ -81,9 +78,12 @@ use function strpos;
  * @method Redact\Client redact()
  * @method Secrets\Client secrets()
  * @method SMS\Client sms()
+ * @method Subaccount\Client subaccount()
+ * @method Users\Client users()
  * @method Verify\Client  verify()
  * @method Verify2\Client  verify2()
  * @method Voice\Client voice()
+ * @method Vonage\Video\Client video()
  *
  * @property string restUrl
  * @property string apiUrl
@@ -205,26 +205,39 @@ class Client implements LoggerAwareInterface
             $this->debug = $options['debug'];
         }
 
+        $services = [
+            // Registered Services by name
+            'account' => ClientFactory::class,
+            'applications' => ApplicationClientFactory::class,
+            'conversion' => ConversionClientFactory::class,
+            'insights' => InsightsClientFactory::class,
+            'numbers' => NumbersClientFactory::class,
+            'meetings' => MeetingsClientFactory::class,
+            'messages' => MessagesClientFactory::class,
+            'redact' => RedactClientFactory::class,
+            'secrets' => SecretsClientFactory::class,
+            'sms' => SMSClientFactory::class,
+            'subaccount' => SubaccountClientFactory::class,
+            'users' => UsersClientFactory::class,
+            'verify' => VerifyClientFactory::class,
+            'verify2' => Verify2ClientFactory::class,
+            'voice' => VoiceClientFactory::class,
+
+            // Additional utility classes
+            APIResource::class => APIResource::class,
+        ];
+
+        if (class_exists('Vonage\Video\ClientFactory')) {
+            $services['video'] = 'Vonage\Video\ClientFactory';
+        } else {
+            $services['video'] = function() {
+                throw new \RuntimeException('Please install @vonage/video to use the Video API');
+            };
+        }
+
         $this->setFactory(
             new MapFactory(
-                [
-                    // Registered Services by name
-                    'account' => ClientFactory::class,
-                    'applications' => ApplicationClientFactory::class,
-                    'conversion' => ConversionClientFactory::class,
-                    'insights' => InsightsClientFactory::class,
-                    'numbers' => NumbersClientFactory::class,
-                    'messages' => MessagesClientFactory::class,
-                    'redact' => RedactClientFactory::class,
-                    'secrets' => SecretsClientFactory::class,
-                    'sms' => SMSClientFactory::class,
-                    'verify' => VerifyClientFactory::class,
-                    'verify2' => Verify2ClientFactory::class,
-                    'voice' => VoiceClientFactory::class,
-
-                    // Additional utility classes
-                    APIResource::class => APIResource::class,
-                ],
+                $services,
                 $this
             )
         );
@@ -475,7 +488,7 @@ class Client implements LoggerAwareInterface
         $response = $this->client->sendRequest($request);
 
         if ($this->debug) {
-            $id = uniqid();
+            $id = uniqid('', true);
             $request->getBody()->rewind();
             $response->getBody()->rewind();
             $this->log(

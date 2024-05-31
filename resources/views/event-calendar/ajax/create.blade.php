@@ -49,7 +49,7 @@
                     <div class="col-lg-3 col-md-6">
                         <x-forms.datepicker fieldId="start_date" fieldRequired="true"
                             :fieldLabel="__('modules.events.startOnDate')" fieldName="start_date"
-                            :fieldValue="\Carbon\Carbon::now(company()->timezone)->format(company()->date_format)"
+                            :fieldValue="now(company()->timezone)->format(company()->date_format)"
                             :fieldPlaceholder="__('placeholders.date')" />
                     </div>
 
@@ -64,7 +64,7 @@
                     <div class="col-lg-3 col-md-6">
                         <x-forms.datepicker fieldId="end_date" fieldRequired="true"
                             :fieldLabel="__('modules.events.endOnDate')" fieldName="end_date"
-                            :fieldValue="\Carbon\Carbon::now(company()->timezone)->format(company()->date_format)"
+                            :fieldValue="now(company()->timezone)->format(company()->date_format)"
                             :fieldPlaceholder="__('placeholders.date')" />
                     </div>
 
@@ -109,6 +109,37 @@
                     </div>
                 @endif
 
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <x-forms.label fieldId="host" fieldRequired="false"
+                                :fieldLabel="__('app.host')">
+                            </x-forms.label>
+                            <x-forms.input-group>
+                                <select class="form-control multiple-users" name="host"
+                                    id="selectHost" data-live-search="true" data-size="8">
+                                    <option value="">--</option>
+                                    @foreach ($employees as $item)
+                                        <x-user-option :user="$item" :pill="true"/>
+                                    @endforeach
+                                </select>
+                            </x-forms.input-group>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="form-group c-inv-select mb-4">
+                            <x-forms.label fieldId="status" :fieldLabel="__('app.status')">
+                            </x-forms.label>
+                            <div class="select-others height-35 rounded">
+                                <select class="form-control select-picker" data-size="8"
+                                    name="status" id="status">
+                                    <option data-content="<i class='fa fa-circle mr-1 f-15 text-yellow'></i> @lang('app.pending')" value="pending"></option>
+                                    <option data-content="<i class='fa fa-circle mr-1 f-15 text-light-green'></i> @lang('app.completed')" value="completed"></option>
+                                    <option data-content="<i class='fa fa-circle mr-1 f-15 text-red'></i> @lang('app.cancelled')" value="cancelled"></option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
 
                     <div class="col-lg-2 my-3">
                         <x-forms.checkbox :fieldLabel="__('modules.events.repeat')" fieldName="repeat"
@@ -120,7 +151,7 @@
                             <div class="col-lg-4">
                                 <x-forms.number class="mr-0 mr-lg-2 mr-md-2"
                                     :fieldLabel="__('modules.events.repeatEvery')" fieldName="repeat_count"
-                                    fieldId="repeat_count" fieldValue="" fieldRequired="true" />
+                                    fieldId="repeat_count" fieldValue="1" fieldRequired="true" />
                             </div>
                             <div class="col-md-4 mt-3">
                                 <x-forms.select fieldId="repeat_type" fieldLabel="" fieldName="repeat_type"
@@ -128,6 +159,7 @@
                                     <option value="day">@lang('app.day')</option>
                                     <option value="week">@lang('app.week')</option>
                                     <option value="month">@lang('app.month')</option>
+                                    <option id="monthlyOn" value="monthly-on-same-day">@lang('app.eventMonthlyOn', ['week' => __('app.eventDay.' . now()->weekOfMonth), 'day' => now()->translatedFormat('l')])</option>
                                     <option value="year">@lang('app.year')</option>
                                 </x-forms.select>
                             </div>
@@ -162,7 +194,7 @@
                     </div>
                     <div class="col-lg-6 col-md-6">
                         <x-forms.text :fieldLabel="__('modules.events.eventLink')" fieldName="event_link"
-                            fieldId="event_link" fieldPlaceholder="https://www.example.com/" />
+                            fieldId="event_link" :fieldPlaceholder="__('placeholders.website')" />
                     </div>
 
                     <div class="col-lg-12">
@@ -189,6 +221,32 @@
 <script src="{{ asset('vendor/jquery/bootstrap-colorpicker.js') }}"></script>
 
 <script>
+    function monthlyOn() {
+        let ele = $('#monthlyOn');
+        let url = '{{ route('events.monthly_on') }}';
+        setTimeout(() => {
+            $.easyAjax({
+                url: url,
+                type: "POST",
+                data: {
+                    _token: "{{ csrf_token() }}",
+                    date: $('#start_date').val()
+                },
+                success: function(response) {
+                    @if (App::environment('development'))
+                        $('#event_name').val(response.message);
+                        // $('#where').val(response.message);
+                        $('#selectAssignee').val({{ user()->id }});
+                        $('#selectAssignee').selectpicker('refresh');
+                    @endif
+                    ele.html(response.message);
+                    $('#repeat_type').selectpicker('refresh');
+                }
+            });
+        }, 100);
+
+    }
+
     $(document).ready(function() {
 
         Dropzone.autoDiscover = false;
@@ -247,6 +305,7 @@
 
         $('#repeat-event').change(function() {
             $('.repeat-event-div').toggleClass('d-none');
+            monthlyOn();
         })
         $('#send_reminder').change(function() {
             $('.send_reminder_div').toggleClass('d-none');
@@ -262,7 +321,7 @@
             "color": "#ff0000"
         });
 
-        $("#selectAssignee, #selectAssignee2").selectpicker({
+        $("#selectAssignee, #selectAssignee2, #selectHost").selectpicker({
             actionsBox: true,
             selectAllText: "{{ __('modules.permission.selectAll') }}",
             deselectAllText: "{{ __('modules.permission.deselectAll') }}",
@@ -287,6 +346,7 @@
                     dp2.setDate(date, true)
                 }
                 dp2.setMin(date);
+                monthlyOn();
             },
             ...datepickerConfig
         });
@@ -334,6 +394,8 @@
                 }
             });
         });
+
+        monthlyOn();
 
         init(RIGHT_MODAL);
     });

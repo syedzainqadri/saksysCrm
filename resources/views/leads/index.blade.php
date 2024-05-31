@@ -11,63 +11,51 @@
 @endsection
 
 @php
-$addLeadPermission = user()->permission('add_lead');
+$addLeadPermission = user()->permission('add_deals');
 $addLeadCustomFormPermission = user()->permission('manage_lead_custom_forms');
 @endphp
 
 @section('content')
-    <!-- CONTENT WRAPPER START -->
+<!-- CONTENT WRAPPER START -->
     <div class="content-wrapper">
         <!-- Add Task Export Buttons Start -->
-        <div class="d-block d-lg-flex d-md-flex justify-content-between action-bar">
+        <div class="d-grid d-lg-flex d-md-flex action-bar">
             <div id="table-actions" class="flex-grow-1 align-items-center">
                 @if ($addLeadPermission == 'all' || $addLeadPermission == 'added')
-                    <x-forms.link-primary :link="route('leads.create')" class="mr-3 float-left mb-2 mb-lg-0 mb-md-0" icon="plus">
-                        @lang('app.add')
-                        @lang('app.lead')
+                    <x-forms.link-primary :link="route('deals.create')" class="mr-3 float-left mb-2 mb-lg-0 mb-md-0 openRightModal" icon="plus">
+                        @lang('modules.deal.addDeal')
                     </x-forms.link-primary>
                 @endif
 
-                @if ($addLeadCustomFormPermission == 'all')
-                    <x-forms.button-secondary icon="pencil-alt" class="mr-3 float-left mb-2 mb-lg-0 mb-md-0" id="add-lead">
-                        @lang('modules.lead.leadForm')
-                    </x-forms.button-secondary>
-                @endif
-
                 @if ($addLeadPermission == 'all' || $addLeadPermission == 'added')
-                    <x-forms.link-secondary :link="route('leads.import')" class="mr-3 openRightModal float-left mb-2 mb-lg-0 mb-md-0" icon="file-upload">
+                    <x-forms.link-secondary :link="route('deals.import')" class="mr-3 openRightModal float-left mb-2 mb-lg-0 mb-md-0 d-none d-lg-block" icon="file-upload">
                         @lang('app.importExcel')
                     </x-forms.link-secondary>
                 @endif
             </div>
-
             <x-datatable.actions>
+
                 <div class="select-status mr-3 pl-3">
                     <select name="action_type" class="form-control select-picker" id="quick-action-type" disabled>
                         <option value="">@lang('app.selectAction')</option>
-                        <option value="change-status">@lang('modules.tasks.changeStatus')</option>
-                        <option value="change-agent">@lang('modules.lead.changeAgent')</option>
+                        <option value="change-status">@lang('modules.deal.changeStage')</option>
                         <option value="delete">@lang('app.delete')</option>
                     </select>
                 </div>
-                <div class="select-status mr-3 d-none quick-action-field" id="change-agent-action">
-                    <select name="agent_id" class="form-control select-picker">
-                        @foreach ($leadAgents as $emp)
-                            <x-user-option :user="$emp->user" :userID="$emp->id" />
-                        @endforeach
-                    </select>
-                </div>
+
                 <div class="select-status mr-3 d-none quick-action-field" id="change-status-action">
-                    <select name="status" class="form-control select-picker">
-                        @foreach ($status as $st)
-                            <option value="{{ $st->id }}">{{ $st->type }}</option>
+                    <select name="status" id="change-stage-action" class="form-control select-picker">
+                        @foreach ($stages as $st)
+                            <option data-content="<i class='fa fa-circle' style='color:{{ $st->label_color }}'></i> {{ $st->name }} " value="{{ $st->id}}"> {{ $st->name }}</option>
                         @endforeach
                     </select>
                 </div>
+
             </x-datatable.actions>
 
+
             <div class="btn-group mt-2 mt-lg-0 mt-md-0 ml-0 ml-lg-3 ml-md-3" role="group">
-                <a href="{{ route('leads.index') }}" class="btn btn-secondary f-14 btn-active" data-toggle="tooltip"
+                <a href="{{ route('deals.index') }}" class="btn btn-secondary f-14 btn-active" data-toggle="tooltip"
                     data-original-title="@lang('modules.leaves.tableView')"><i class="side-icon bi bi-list-ul"></i></a>
 
                 <a href="{{ route('leadboards.index') }}" class="btn btn-secondary f-14" data-toggle="tooltip" data-original-title="@lang('modules.lead.kanbanboard')"><i class="side-icon bi bi-kanban"></i></a>
@@ -96,13 +84,8 @@ $addLeadCustomFormPermission = user()->permission('manage_lead_custom_forms');
             var dateRangePicker = $('#datatableRange').data('daterangepicker');
             var startDate = $('#datatableRange').val();
 
-            if (startDate == '') {
                 startDate = null;
                 endDate = null;
-            } else {
-                startDate = dateRangePicker.startDate.format('{{ company()->moment_date_format }}');
-                endDate = dateRangePicker.endDate.format('{{ company()->moment_date_format }}');
-            }
 
             var searchText = $('#search-text-field').val();
             var min = $('#min').val();
@@ -112,9 +95,16 @@ $addLeadCustomFormPermission = user()->permission('manage_lead_custom_forms');
             var agent = $('#filter_agent_id').val();
             var category_id = $('#filter_category_id').val();
             var source_id = $('#filter_source_id').val();
-            var status_id = $('#filter_status_id').val();
+            var stage_id = $('#filter_status_id').val();
+            var agent_id = $('#agent_id').val();
             var date_filter_on = $('#date_filter_on').val();
+            var pipeline = $('#pipeline').val();
+            var deal_watcher_id = $('#deal_watcher_agent_id').val();
+            var lead_agent_id = $('#lead_agent_id').val();
+            
 
+            data['deal_watcher_id'] = deal_watcher_id;
+            data['lead_agent_id'] = lead_agent_id;
             data['startDate'] = startDate;
             data['endDate'] = endDate;
             data['searchText'] = searchText;
@@ -125,8 +115,10 @@ $addLeadCustomFormPermission = user()->permission('manage_lead_custom_forms');
             data['max'] = max;
             data['category_id'] = category_id;
             data['source_id'] = source_id;
-            data['status_id'] = status_id;
+            data['stage_id'] = stage_id;
+            data['agent'] = agent_id;
             data['date_filter_on'] = date_filter_on;
+            data['pipeline'] = pipeline;
         });
 
         const showTable = () => {
@@ -224,7 +216,7 @@ $addLeadCustomFormPermission = user()->permission('manage_lead_custom_forms');
                 buttonsStyling: false
             }).then((result) => {
                 if (result.isConfirmed) {
-                    var url = "{{ route('leads.destroy', ':id') }}";
+                    var url = "{{ route('deals.destroy', ':id') }}";
                     url = url.replace(':id', id);
 
                     var token = "{{ csrf_token() }}";
@@ -251,7 +243,7 @@ $addLeadCustomFormPermission = user()->permission('manage_lead_custom_forms');
                 return $(this).val();
             }).get();
 
-            var url = "{{ route('leads.apply_quick_action') }}?row_ids=" + rowdIds;
+            var url = "{{ route('deals.apply_quick_action') }}?row_ids=" + rowdIds;
 
             $.easyAjax({
                 url: url,
@@ -271,35 +263,10 @@ $addLeadCustomFormPermission = user()->permission('manage_lead_custom_forms');
             })
         };
 
-        $('#leads-table').on('change', '.change-status', function() {
-            var url = "{{ route('leads.change_status') }}";
-            var token = "{{ csrf_token() }}";
-            var id = $(this).data('task-id');
-            var status = $(this).val();
 
-            if (id != "" && status != "") {
-                $.easyAjax({
-                    url: url,
-                    type: "POST",
-                    data: {
-                        '_token': token,
-                        taskId: id,
-                        status: status,
-                        sortBy: 'id'
-                    },
-                    success: function(data) {
-                        showTable();
-                        resetActionButtons();
-                        deSelectAll();
-                    }
-                });
+        function changeStage(leadID, statusID) {
 
-            }
-        });
-
-        function changeStatus(leadID, statusID) {
-
-            var url = "{{ route('leads.change_status') }}";
+            var url = "{{ route('deals.change_stage') }}";
             var token = "{{ csrf_token() }}";
 
             $.easyAjax({
@@ -323,7 +290,7 @@ $addLeadCustomFormPermission = user()->permission('manage_lead_custom_forms');
         }
 
         function followUp(leadID) {
-            var url = '{{ route('leads.follow_up', ':id') }}';
+            var url = '{{ route('deals.follow_up', ':id') }}';
             url = url.replace(':id', leadID);
 
             $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
@@ -343,6 +310,7 @@ $addLeadCustomFormPermission = user()->permission('manage_lead_custom_forms');
                 showTable();
             @endif
         });
+
 
     </script>
 @endpush

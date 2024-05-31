@@ -8,22 +8,21 @@
 @endphp
 
 <link rel="stylesheet" href="{{ asset('vendor/css/dropzone.min.css') }}">
-
 <div class="row">
     <div class="col-sm-12">
         <x-form id="save-project-data-form">
             <div class="add-client bg-white rounded">
                 <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
-                    @lang('app.project') @lang('app.details')</h4>
+                    @lang('app.projectDetails')</h4>
                 <input type="hidden" name="template_id" value="{{ $projectTemplate->id ?? '' }}">
                 <div class="row p-20">
-                    <div class="col-lg-6 col-md-6">
+                    <div class="col-lg-4 col-md-4">
                         <x-forms.text class="mr-0 mr-lg-2 mr-md-2" :fieldLabel="__('modules.taskShortCode')"
                                       fieldName="project_code" fieldRequired="true" fieldId="project_code"
                                       :fieldPlaceholder="__('placeholders.writeshortcode')" :fieldValue="$project ? $project->project_short_code : ''"/>
                     </div>
 
-                    <div class="col-lg-6 col-md-6">
+                    <div class="col-lg-8 col-md-8">
                         <x-forms.text class="mr-0 mr-lg-2 mr-md-2" :fieldLabel="__('modules.projects.projectName')"
                                       fieldName="project_name" fieldRequired="true" fieldId="project_name"
                                       :fieldPlaceholder="__('placeholders.project')"
@@ -65,7 +64,7 @@
                                         @if (($projectTemplate && $projectTemplate->category_id == $category->id) || ($project && $project->category_id == $category->id)) selected
                                         @endif
                                         value="{{ $category->id }}">
-                                        {{ mb_ucwords($category->category_name) }}
+                                        {{ $category->category_name }}
                                     </option>
                                 @endforeach
                             </select>
@@ -80,9 +79,6 @@
                         </x-forms.input-group>
                     </div>
 
-                    @foreach ($teams as $team)
-                        {{-- @dump( $project->team_id === $team->id) --}}
-                    @endforeach
                     @if (!in_array('client', user_roles()))
                         <div class="col-md-4">
                             <x-forms.label class="my-3" fieldId="department" :fieldLabel="__('app.department')">
@@ -92,7 +88,7 @@
                                         data-live-search="true">
                                     <option value="">--</option>
                                     @foreach ($teams as $team)
-                                        <option @if ($project && $project->team_id === $team->id) selected @endif value="{{ $team->id }}">{{ mb_ucfirst($team->team_name) }}</option>
+                                        <option @if ($project && $project->team_id == $team->id) selected @endif value="{{ $team->id }}">{{ $team->team_name }}</option>
                                     @endforeach
                                 </select>
                             </x-forms.input-group>
@@ -105,7 +101,7 @@
                             </x-forms.label>
 
                             <input type="hidden" name="client_id" id="client_id" value="{{ $client->id }}">
-                            <input type="text" value="{{ ucfirst($client->name) }}"
+                            <input type="text" value="{{ $client->name_salutation }}"
                                    class="form-control height-35 f-15 readonly-background" readonly>
                         @else
                             <x-client-selection-dropdown :clients="$clients" fieldRequired="false"
@@ -306,9 +302,6 @@
     </div>
 </div>
 
-
-<script src="{{ asset('vendor/jquery/dropzone.min.js') }}"></script>
-
 <script>
 
     var add_project_files = "{{ $addProjectFilePermission }}";
@@ -334,7 +327,9 @@
 
         if (add_project_files == "all") {
 
+            let checkSize = true;
             Dropzone.autoDiscover = false;
+
             //Dropzone class
             myDropzone = new Dropzone("div#file-upload-dropzone", {
                 dictDefaultMessage: "{{ __('app.dragDrop') }}",
@@ -355,6 +350,7 @@
                 }
             });
             myDropzone.on('sending', function (file, xhr, formData) {
+                checkSize = true;
                 var ids = $('#projectID').val();
                 formData.append('project_id', ids);
             });
@@ -364,10 +360,13 @@
             myDropzone.on('queuecomplete', function () {
                 var msgs = "@lang('messages.updateSuccess')";
                 var redirect_url = $('#redirect_url').val();
-                if (redirect_url != '') {
+                if (redirect_url != '' && checkSize == true) {
                     window.location.href = decodeURIComponent(redirect_url);
                 }
-                window.location.href = "{{ route('projects.index') }}"
+
+                if (checkSize == true) {
+                    window.location.href = "{{ route('projects.index') }}"
+                }
             });
             myDropzone.on('removedfile', function () {
                 var grp = $('div#file-upload-dropzone').closest(".form-group");
@@ -386,13 +385,13 @@
                     helpBlockContainer = $(grp);
                 }
 
+                checkSize = false;
+
                 helpBlockContainer.append('<div class="help-block invalid-feedback">' + message + '</div>');
                 $(grp).addClass("has-error");
                 $(label).addClass("is-invalid");
-
             });
         }
-
 
         $("#selectEmployee").selectpicker({
             actionsBox: true,
@@ -529,14 +528,6 @@
 
         init(RIGHT_MODAL);
     });
-
-    function checkboxChange(parentClass, id) {
-        let checkedData = '';
-        $('.' + parentClass).find("input[type= 'checkbox']:checked").each(function () {
-            checkedData = (checkedData !== '') ? checkedData + ', ' + $(this).val() : $(this).val();
-        });
-        $('#' + id).val(checkedData);
-    }
 
     $('#save-project-data-form').on('change', '#employee_department', function () {
         let id = $(this).val();

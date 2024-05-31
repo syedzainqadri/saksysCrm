@@ -30,7 +30,7 @@ class StorePublicLead extends CoreRequest
         $company = Company::findOrFail($this->request->get('company_id'));
         $rules = array();
         $rules['name'] = 'required';
-        $rules['email'] = 'nullable|email:rfc|unique:leads,client_email,null,id,company_id,' . $company->id.'|unique:users,email,null,id,company_id,' . $company->id;
+        $rules['email'] = 'nullable|email:rfc,strict|unique:leads,client_email,null,id,company_id,' . $company->id.'|unique:users,email,null,id,company_id,' . $company->id;
 
         $rules = $this->customFieldRules($rules);
 

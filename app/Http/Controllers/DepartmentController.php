@@ -11,9 +11,6 @@ use App\Http\Requests\Team\UpdateDepartment;
 use App\Models\EmployeeDetails;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-
-use function PHPUnit\Framework\isNull;
 
 class DepartmentController extends AccountBaseController
 {
@@ -50,13 +47,11 @@ class DepartmentController extends AccountBaseController
     {
         $this->departments = Team::allDepartments();
 
-        if (request()->ajax()) {
-            $html = view('departments.ajax.create', $this->data)->render();
-
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
-        }
-
         $this->view = 'departments.ajax.create';
+
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
+        }
 
         return view('departments.create', $this->data);
     }
@@ -88,13 +83,12 @@ class DepartmentController extends AccountBaseController
         $this->department = Team::findOrFail($id);
         $this->parent = Team::where('id', $this->department->parent_id)->first();
 
-        if (request()->ajax()) {
-            $html = view('departments.ajax.show', $this->data)->render();
-
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
-        }
 
         $this->view = 'departments.ajax.show';
+
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
+        }
 
         return view('departments.create', $this->data);
     }
@@ -102,38 +96,22 @@ class DepartmentController extends AccountBaseController
     public function edit($id)
     {
         $this->department = Team::findOrFail($id);
-        $this->departments = Team::all();
+        $departments = Team::where('id', '!=', $this->department->id)->get();
 
-        $parentDepartments = DB::select('WITH RECURSIVE hierarchical_children AS (
-            SELECT id, parent_id
-            FROM teams
-            WHERE id = '.$id.'
-            UNION ALL
-            SELECT t.id, t.parent_id
-            FROM teams t
-            JOIN hierarchical_children h ON t.parent_id = h.id
-            )
-            SELECT id FROM hierarchical_children where id != '.$id);
+        $childDepartments = $departments->where('parent_id', $this->department->id)->pluck('id')->toArray();
 
+        $departments = $departments->where('parent_id', '!=', $this->department->id);
 
-        $allIds = [];
-
-        if($parentDepartments){
-            foreach($parentDepartments as $parentDepartment){
-
-                $allIds[] = $parentDepartment->id;
-            }
-        }
-
-        $this->parentIds = $allIds;
-
-        if (request()->ajax()) {
-            $html = view('departments.ajax.edit', $this->data)->render();
-
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
-        }
+        // remove child departments
+        $this->departments = $departments->filter(function ($value, $key) use ($childDepartments) {
+            return !in_array($value->parent_id, $childDepartments);
+        });
 
         $this->view = 'departments.ajax.edit';
+
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
+        }
 
         return view('departments.create', $this->data);
     }
@@ -154,8 +132,6 @@ class DepartmentController extends AccountBaseController
         $group->parent_id = $request->parent_id ?? null;
         $group->save();
 
-        $teams = Team::allDepartments();
-        $options = BaseModel::options($teams, null, 'team_name');
         $redirectUrl = route('departments.index');
 
         return Reply::successWithData(__('messages.updateSuccess'), ['redirectUrl' => $redirectUrl]);
@@ -188,6 +164,7 @@ class DepartmentController extends AccountBaseController
     public function applyQuickAction(Request $request)
     {
         if ($request->action_type == 'delete') {
+            $this->deleteRecords($request);
             return Reply::success(__('messages.deleteSuccess'));
         }
 

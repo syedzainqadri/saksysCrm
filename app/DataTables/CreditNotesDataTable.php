@@ -98,7 +98,7 @@ class CreditNotesDataTable extends BaseDataTable
                 return $row->client->name;
             })
             ->editColumn('cn_number', function ($row) {
-                return '<a href="' . route('creditnotes.show', $row->id) . '" class="text-darkest-grey">' . ucfirst($row->cn_number) . '</a>';
+                return '<a href="' . route('creditnotes.show', $row->id) . '" class="text-darkest-grey">' . $row->cn_number . '</a>';
             })
             ->addColumn('credit_note', function ($row) {
                 return $row->cn_number;
@@ -163,12 +163,12 @@ class CreditNotesDataTable extends BaseDataTable
             );
 
         if ($request->startDate !== null && $request->startDate != 'null' && $request->startDate != '') {
-            $startDate = Carbon::createFromFormat($this->company->date_format, $request->startDate)->toDateString();
+            $startDate = companyToDateString($request->startDate);
             $model = $model->where(DB::raw('DATE(credit_notes.`issue_date`)'), '>=', $startDate);
         }
 
         if ($request->endDate !== null && $request->endDate != 'null' && $request->endDate != '') {
-            $endDate = Carbon::createFromFormat($this->company->date_format, $request->endDate)->toDateString();
+            $endDate = companyToDateString($request->endDate);
             $model = $model->where(DB::raw('DATE(credit_notes.`issue_date`)'), '<=', $endDate);
         }
 
@@ -207,7 +207,7 @@ class CreditNotesDataTable extends BaseDataTable
      */
     public function html()
     {
-        return $this->setBuilder('invoices-table', 0)
+        $dataTable = $this->setBuilder('invoices-table', 0)
             ->parameters([
                 'initComplete' => 'function () {
                     window.LaravelDataTables["invoices-table"].buttons().container()
@@ -218,8 +218,13 @@ class CreditNotesDataTable extends BaseDataTable
                         selector: \'[data-toggle="tooltip"]\'
                     })
                 }',
-            ])
-            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+            ]);
+
+        if (canDataTableExport()) {
+            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+        }
+
+        return $dataTable;
     }
 
     /**

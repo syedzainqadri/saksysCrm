@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * App\Models\Proposal
  *
  * @property int $id
- * @property int $lead_id
+ * @property int $deal_id
  * @property \Illuminate\Support\Carbon $valid_till
  * @property int|null $unit_id
  * @property float $sub_total
@@ -71,6 +71,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @method static \Illuminate\Database\Eloquent\Builder|Proposal whereUnitId($value)
  * @property int $send_status
  * @method static \Illuminate\Database\Eloquent\Builder|Proposal whereSendStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Proposal whereDealId($value)
  * @mixin \Eloquent
  */
 class Proposal extends BaseModel
@@ -97,7 +98,12 @@ class Proposal extends BaseModel
 
     public function lead(): BelongsTo
     {
-        return $this->belongsTo(Lead::class);
+        return $this->belongsTo(Deal::class, 'deal_id');
+    }
+
+    public function deal(): BelongsTo
+    {
+        return $this->belongsTo(Deal::class);
     }
 
     public function unit(): BelongsTo

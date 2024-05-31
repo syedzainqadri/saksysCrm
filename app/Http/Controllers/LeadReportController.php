@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\DataTables\LeadReportDataTable;
 use App\Models\Company;
-use App\Models\Lead;
+use App\Models\Deal;
 use App\Models\LeadAgent;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -15,7 +15,7 @@ class LeadReportController extends AccountBaseController
     public function __construct()
     {
         parent::__construct();
-        $this->pageTitle = 'app.menu.leadReport';
+        $this->pageTitle = 'app.menu.dealReport';
     }
 
     /**

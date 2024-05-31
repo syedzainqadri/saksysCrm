@@ -19,7 +19,7 @@
                     <option value="not finished">@lang('modules.tasks.hideCompletedTask')</option>
                     <option value="all">@lang('app.all')</option>
                     @foreach ($taskBoardStatus as $status)
-                        <option value="{{ $status->id }}">{{ $status->slug == 'completed' || $status->slug == 'incomplete' ? __('app.' . $status->slug) : mb_ucwords($status->column_name) }}</option>
+                        <option value="{{ $status->id }}">{{ $status->slug == 'completed' || $status->slug == 'incomplete' ? __('app.' . $status->slug) : $status->column_name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -34,7 +34,7 @@
                     data-size="8">
                     <option value="all">@lang('app.all')</option>
                     @foreach ($projects as $project)
-                        <option value="{{ $project->id }}">{{ mb_ucwords($project->project_name) }}</option>
+                        <option value="{{ $project->id }}">{{ $project->project_name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -134,7 +134,7 @@
                         <select class="form-control select-picker" id="category_id" data-live-search="true" data-container="body" data-size="8">
                             <option value="all">@lang('app.all')</option>
                             @foreach ($taskCategories as $categ)
-                                <option value="{{ $categ->id }}">{{ mb_ucwords($categ->category_name) }}</option>
+                                <option value="{{ $categ->id }}">{{ $categ->category_name }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -167,17 +167,16 @@
 @section('content')
     <div class="content-wrapper">
         <!-- Add Task Export Buttons Start -->
-        <div class="d-flex my-3">
+        <div class="d-grid d-lg-flex d-md-flex action-bar my-3">
             <div id="table-actions" class="flex-grow-1 align-items-center">
                 @if ($addTaskPermission == 'all' || $addTaskPermission == 'added')
                     <x-forms.link-primary :link="route('tasks.create')" class="mr-3 openRightModal float-left" icon="plus">
-                        @lang('app.add')
-                        @lang('app.task')
+                        @lang('app.addTask')
                     </x-forms.link-primary>
                 @endif
             </div>
 
-            <div class="btn-group" role="group" >
+            <div class="btn-group mt-2 mt-lg-0 mt-md-0 ml-0 ml-lg-3 ml-md-3" role="group" >
                 <a href="{{ route('tasks.index') }}" class="btn btn-secondary f-14" data-toggle="tooltip"
                     data-original-title="@lang('app.menu.tasks')"><i class="side-icon bi bi-list-ul"></i></a>
 

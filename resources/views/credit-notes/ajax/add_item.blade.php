@@ -44,8 +44,8 @@
                             <select id="multiselect" name="taxes[0][]" multiple="multiple"
                                 class="select-picker type customSequence border-0" data-size="3">
                                 @foreach ($taxes as $tax)
-                                    <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ strtoupper($tax->tax_name) .':'. $tax->rate_percent }}%" @if (isset($items->taxes) && array_search($tax->id, json_decode($items->taxes)) !== false) selected @endif value="{{ $tax->id }}">
-                                        {{ strtoupper($tax->tax_name) }}:
+                                    <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ $tax->tax_name .':'. $tax->rate_percent }}%" @if (isset($items->taxes) && array_search($tax->id, json_decode($items->taxes)) !== false) selected @endif value="{{ $tax->id }}">
+                                        {{ $tax->tax_name }}:
                                         {{ $tax->rate_percent }}%</option>
                                 @endforeach
                             </select>

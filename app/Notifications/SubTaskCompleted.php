@@ -39,7 +39,7 @@ class SubTaskCompleted extends BaseNotification
         }
 
         if ($this->emailSetting->send_slack == 'yes' && $this->company->slackSetting->status == 'active') {
-            array_push($via, 'slack');
+            $this->slackUserNameCheck($notifiable) ? array_push($via, 'slack') : null;
         }
 
         return $via;
@@ -57,7 +57,7 @@ class SubTaskCompleted extends BaseNotification
         $url = route('tasks.show', [$this->subTask->task->id, 'view' => 'sub_task']);
         $url = getDomainSpecificUrl($url, $this->company);
 
-        $content = ucfirst($this->subTask->title) . ' ' . __('email.subTaskComplete.subject') . '.' . '<br>' . ((!is_null($this->subTask->task->project)) ? __('app.project') . ' - ' . ucfirst($this->subTask->task->project->project_name) : '') . '<br>';
+        $content = $this->subTask->title . ' ' . __('email.subTaskComplete.subject') . '.' . '<br>' . ((!is_null($this->subTask->task->project)) ? __('app.project') . ' - ' . $this->subTask->task->project->project_name : '') . '<br>';
 
         return $build
             ->subject(__('email.subTaskComplete.subject') . ' - ' . config('app.name') . '.')

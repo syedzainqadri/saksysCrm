@@ -72,13 +72,13 @@ use Illuminate\Support\Str;
  * @property-read \App\Models\UnitType $unit
  * @property int|null $unit_id
  * @property string|null $custom_order_number
- * @property-read mixed $original_order_number
  * @method static \Illuminate\Database\Eloquent\Builder|Order whereCustomOrderNumber($value)
+ * @property string|null $original_order_number
+ * @method static \Illuminate\Database\Eloquent\Builder|Order whereOriginalOrderNumber($value)
  * @mixin \Eloquent
  */
 class Order extends BaseModel
 {
-    protected $appends = ['original_order_number'];
 
     use HasCompany;
 
@@ -99,7 +99,7 @@ class Order extends BaseModel
 
     public function payment(): HasMany
     {
-        return $this->hasMany(Payment::class, 'invoice_id')->orderBy('paid_on', 'desc');
+        return $this->hasMany(Payment::class, 'invoice_id')->orderByDesc('paid_on');
     }
 
     public function invoice(): HasOne
@@ -119,7 +119,7 @@ class Order extends BaseModel
 
     public static function lastOrderNumber()
     {
-        return (int)Order::max('order_number');
+        return (int)Order::latest()->first()?->original_order_number ?? 0;
     }
 
     /*
@@ -134,42 +134,15 @@ class Order extends BaseModel
         return $this->belongsTo(UnitType::class, 'unit_id');
     }
 
-    public function getOriginalOrderNumberAttribute()
+    public function formatOrderNumber()
     {
         $orderSettings = (company()) ? company()->invoiceSetting : $this->company->invoiceSetting;
-        $zero = '';
-
-        if ($orderSettings && (strlen($this->attributes['order_number']) < $orderSettings->order_digit)) {
-            $condition = $orderSettings->order_digit - strlen($this->attributes['order_number']);
-
-            for ($i = 0; $i < $condition; $i++) {
-                $zero = '0' . $zero;
-            }
-        }
-
-        return $zero . $this->attributes['order_number'];
+        return \App\Helper\NumberFormat::order($this->order_number, $orderSettings);
     }
 
-    public function getOrderNumberAttribute($value)
+    public function project(): BelongsTo
     {
-        if (is_null($value)) {
-            return '';
-        }
-
-        $orderSettings = (company()) ? company()->invoiceSetting : $this->company->invoiceSetting;
-        $zero = '';
-
-        if ($orderSettings && (strlen($value) < $orderSettings->order_digit)) {
-            $condition = $orderSettings->order_digit - strlen($value);
-
-            for ($i = 0; $i < $condition; $i++) {
-                $zero = '0' . $zero;
-            }
-        }
-
-        $orderPrefix = $orderSettings ? $orderSettings->order_prefix . $orderSettings->order_number_separator . $zero . $value : $zero . $value;
-
-        return $orderPrefix;
+        return $this->belongsTo(Project::class, 'project_id')->withTrashed();
     }
 
 }

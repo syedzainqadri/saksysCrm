@@ -118,7 +118,19 @@
                 </x-slot>
             </x-forms.input-group>
         </div>
-
+        @if (isWorksuiteSaas())
+            <div class="col-lg-6 col-md-6 smtp_div">
+                <x-forms.select fieldId="email_verified" :fieldLabel="__('modules.emailSettings.emailVerified')"
+                                fieldName="email_verified" fieldRequired="true" :popover="__('modules.emailSettings.emailVerifiedInfo')">
+                    <option @if ($smtpSetting->email_verified) selected @endif value="1">
+                        @lang('app.yes')
+                    </option>
+                    <option @if (!$smtpSetting->email_verified) selected @endif value="0">
+                        @lang('app.no')
+                    </option>
+                </x-forms.select>
+            </div>
+        @endif
     </div>
 </div>
 
@@ -126,13 +138,13 @@
     <h4 class="f-16 text-capitalize f-w-500 text-dark-grey">@lang("modules.emailSettings.notificationTitle")</h4>
     <div class="mb-3 d-flex">
 
-        <x-forms.checkbox :  :checked="$checkedAll==true"
+        <x-forms.checkbox  :checked="$checkedAll==true"
                           :fieldLabel="__('modules.permission.selectAll')"
                           fieldName="select_all_checkbox" fieldId="select_all"
                           fieldValue="all"/>
     </div>
     @foreach ($emailSettings as $emailSetting)
-        <div class="mb-3 d-flex">
+        <div class="mb-3 d-flex notification">
             <x-forms.checkbox :checked="$emailSetting->send_email == 'yes'"
                               :fieldLabel="__('modules.emailNotification.'.str_slug($emailSetting->setting_name))"
                               fieldName="send_email[]" :fieldId="'send_email_'.$emailSetting->id"
@@ -154,7 +166,7 @@
 <!-- Buttons End -->
 
 <script>
-    let CHANGE_DETECTED = false;
+    var CHANGE_DETECTED = false;
     $('.field').each(function () {
         let elem = $(this);
         CHANGE_DETECTED = false
@@ -199,9 +211,9 @@
         })
     }
 
-    var checkboxes = document.querySelectorAll("input[type = 'checkbox']");
+    var checkboxes = document.querySelectorAll(".notification input[type=checkbox]");
 
-    $('#select_all').on('click', function(){
+    $('body').on('click', '#select_all', function() {
         var selectAll = $('#select_all').is(':checked');
 
         if(selectAll == true){

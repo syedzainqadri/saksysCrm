@@ -16,7 +16,7 @@
                 <select class="form-control select-picker" name="category_id" id="category_id">
                     <option value="all">@lang('app.all')</option>
                     @foreach ($categories as $category)
-                        <option value="{{ $category->id }}">{{ mb_ucwords($category->category_name) }}</option>
+                        <option value="{{ $category->id }}">{{ $category->category_name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -94,8 +94,7 @@ $addOrderPermission = user()->permission('add_order');
                 @if ($addProductPermission == 'all' || $addProductPermission == 'added')
                     <x-forms.link-primary :link="route('products.create')" class="mr-3 openRightModal float-left"
                         icon="plus">
-                        @lang('app.add')
-                        @lang('app.product')
+                        @lang('app.menu.addProducts')
                     </x-forms.link-primary>
                 @endif
             </div>
@@ -224,7 +223,7 @@ $addOrderPermission = user()->permission('add_order');
             $('#sub_category').html('<option value="all">@lang("app.all")</option>');
 
             $('#unit_type_id').val('all');
-  
+
             $('.select-picker').selectpicker("refresh");
 
             $('#reset-filters').addClass('d-none');

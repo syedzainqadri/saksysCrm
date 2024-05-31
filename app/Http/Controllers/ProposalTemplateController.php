@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Carbon\Carbon;
 use App\Models\Tax;
-use App\Models\Lead;
+use App\Models\Deal;
 use App\Helper\Files;
 use App\Helper\Reply;
 use App\Models\Product;
@@ -63,12 +63,12 @@ class ProposalTemplateController extends AccountBaseController
         $this->products = Product::all();
         $this->categories = ProductCategory::all();
 
+        $this->view = 'proposal-template.ajax.create';
+
         if (request()->ajax()) {
-            $html = view('proposal-template.ajax.create', $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
 
-        $this->view = 'proposal-template.ajax.create';
         return view('proposals.create', $this->data);
     }
 
@@ -209,12 +209,12 @@ class ProposalTemplateController extends AccountBaseController
         $this->units = UnitType::all();
         $this->invoiceSetting = invoice_setting();
 
+        $this->view = 'proposal-template.ajax.edit';
+
         if (request()->ajax()) {
-            $html = view('proposal-template.ajax.edit', $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
 
-        $this->view = 'proposal-template.ajax.edit';
         return view('proposal-template.create', $this->data);
     }
 
@@ -301,8 +301,8 @@ class ProposalTemplateController extends AccountBaseController
     {
         $this->invoiceSetting = invoice_setting();
         $this->proposalTemplate = ProposalTemplate::with('items', 'lead', 'currency')->findOrFail($id);
-        App::setLocale($this->invoiceSetting->locale);
-        Carbon::setLocale($this->invoiceSetting->locale);
+        App::setLocale($this->invoiceSetting->locale ?? 'en');
+        Carbon::setLocale($this->invoiceSetting->locale ?? 'en');
 
         if ($this->proposalTemplate->discount > 0) {
             if ($this->proposalTemplate->discount_type == 'percent') {
@@ -359,9 +359,6 @@ class ProposalTemplateController extends AccountBaseController
 
         $pdf->loadView('proposal-template.pdf.invoice-5', $this->data);
 
-        $dom_pdf = $pdf->getDomPDF();
-        $canvas = $dom_pdf->getCanvas();
-        $canvas->page_text(530, 820, 'Page {PAGE_NUM} of {PAGE_COUNT}', null, 10, array(0, 0, 0));
         $filename = __('modules.lead.proposal') . '-' . $this->proposalTemplate->id;
 
         return [

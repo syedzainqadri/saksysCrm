@@ -157,13 +157,38 @@
                     @forelse ($birthdays as $birthday)
                         <tr>
                             <td class="pl-20">
-                                <x-employee :user="$birthday->user" />
+                                <x-employee :user="$birthday->user"/>
                             </td>
-                            <td class="pr-20 text-right"><span class="badge badge-light p-2">{{ $birthday->date_of_birth->translatedFormat('d') }} {{ $birthday->date_of_birth->translatedFormat('M') }}</span></td>
+                            <td>
+                            <span class="badge badge-light p-2">
+                                <i class="fa fa-birthday-cake"></i>
+                                {{ $birthday->date_of_birth->translatedFormat('d M') }}
+                            </span>
+                            </td>
+                            <td class="pr-20" align="right">
+                                @php
+                                    $currentYear = now(company()->timezone)->year;
+                                    $year = $birthday->date_of_birth->timezone(company()->timezone)->year(date('Y'));
+                                    $dateBirth = $birthday->date_of_birth->format($currentYear . '-m-d');
+                                    $dateBirth = \Carbon\Carbon::parse($dateBirth);
+
+                                    $diffInDays = $year->copy()->diffForHumans(now()->timezone(company()->timezone),[
+                                        'syntax' => \Carbon\CarbonInterface::DIFF_RELATIVE_AUTO,
+                                        'options' => \Carbon\Carbon::JUST_NOW | \Carbon\Carbon::ONE_DAY_WORDS | \Carbon\Carbon::TWO_DAY_WORDS,
+                                    ]);
+
+                                @endphp
+
+                                @if ($dateBirth->isToday())
+                                    <span class="badge badge-light text-success p-2"><i class="fa fa-smile"></i> @lang('app.today')</span>
+                                @else
+                                    <span class="badge badge-light p-2">{{ $diffInDays }}</span>
+                                @endif
+                            </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="2" class="shadow-none">
+                            <td colspan="3" class="shadow-none">
                                 <x-cards.no-record icon="birthday-cake" :message="__('messages.noRecordFound')" />
                             </td>
                         </tr>

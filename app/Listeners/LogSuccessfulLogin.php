@@ -17,7 +17,8 @@ class LogSuccessfulLogin
     public function handle(Login $event)
     {
         $user = $event->user;
-        $user->last_login = now();  /* @phpstan-ignore-line */
+        $user->last_login = now();
+        /* @phpstan-ignore-line */
         $user->save();
     }
 

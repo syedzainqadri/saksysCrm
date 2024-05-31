@@ -19,6 +19,7 @@ class ContractRenewController extends AccountBaseController
         $this->pageTitle = 'app.menu.contracts';
         $this->middleware(function ($request, $next) {
             abort_403(!in_array('contracts', $this->user->modules));
+
             return $next($request);
         });
     }
@@ -32,8 +33,8 @@ class ContractRenewController extends AccountBaseController
         $contractRenew->amount = $request->amount;
         $contractRenew->renewed_by = $this->user->id;
         $contractRenew->contract_id = $id;
-        $contractRenew->start_date = Carbon::createFromFormat($this->company->date_format, $request->start_date)->format('Y-m-d');
-        $contractRenew->end_date = Carbon::createFromFormat($this->company->date_format, $request->end_date)->format('Y-m-d');
+        $contractRenew->start_date = companyToYmd($request->start_date);
+        $contractRenew->end_date = companyToYmd($request->end_date);
         $contractRenew->save();
 
         if (!$request->keep_customer_signature) {
@@ -72,8 +73,8 @@ class ContractRenewController extends AccountBaseController
     {
         $contractRenew = ContractRenew::findOrFail($id);
         $contractRenew->amount = $request->amount;
-        $contractRenew->start_date = Carbon::createFromFormat($this->company->date_format, $request->start_date)->format('Y-m-d');
-        $contractRenew->end_date = Carbon::createFromFormat($this->company->date_format, $request->end_date)->format('Y-m-d');
+        $contractRenew->start_date = companyToYmd($request->start_date);
+        $contractRenew->end_date = companyToYmd($request->end_date);
         $contractRenew->save();
 
         $this->contract = Contract::with('signature', 'client', 'client.clientDetails', 'files', 'renewHistory', 'renewHistory.renewedBy')->findOrFail($contractRenew->contract_id);

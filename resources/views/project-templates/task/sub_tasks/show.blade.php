@@ -4,14 +4,14 @@
 @endphp
 
 @forelse ($task->subtasks as $subtask)
-    <div class="card w-100 rounded-0 border-0 subtask mb-3">
+    <div class="card w-100 rounded-0 border-0 subtask mb-1">
 
         <div class="card-horizontal">
             <div class="card-body pt-0">
                 <div class="d-flex flex-grow-1">
                     <p class="card-title f-14 mr-3 text-dark">
-                        {!! $subtask->status == 'complete' ? '<s>' . ucfirst($subtask->title) . '</s>' :
-                        ucfirst($subtask->title) !!}
+                        {!! $subtask->status == 'complete' ? '<s>' . $subtask->title . '</s>' :
+                        $subtask->title !!}
                     </p>
                     <div class="dropdown ml-auto subtask-action">
                         <button class="btn btn-lg f-14 p-0 text-lightest text-capitalize rounded  dropdown-toggle"

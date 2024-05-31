@@ -3,13 +3,22 @@
 namespace App\Observers;
 
 use App\Models\ClientDetails;
+use App\Traits\EmployeeActivityTrait;
 
 class ClientDetailsObserver
 {
+    use EmployeeActivityTrait;
 
     /**
      * @param ClientDetails $model
      */
+    public function created(ClientDetails $model)
+    {
+        if (!isRunningInConsoleOrSeeding()) {
+            self::createEmployeeActivity(user()->id, 'client-created', $model->user_id, 'client');
+        }
+    }
+
     public function saving(ClientDetails $model)
     {
         if (user()) {

@@ -26,12 +26,12 @@
                         <div class="row">
                             <div class="col-10">
                                 <h4 class="card-title f-15 f-w-500 text-darkest-grey mb-0">
-                                    {{ mb_ucwords($creditNote->client->name) }}
+                                    {{ $creditNote->client->name_salutation }}
                                 </h4>
                             </div>
                         </div>
                         <p class="f-13 font-weight-normal text-dark-grey mb-0">
-                            {{ mb_ucwords($creditNote->client->clientDetails->company_name) }}
+                            {{ $creditNote->client->clientDetails->company_name }}
                         </p>
                         <p class="card-text f-12 text-lightest">@lang('app.lastLogin')
 
@@ -47,8 +47,8 @@
             </div>
 
 
-            <h4 class="mt-5 mb-3 f-21 text-capitalize font-weight-bold">@lang('app.client') @lang('app.unpaid')
-                @lang('app.menu.invoices')</h4>
+            <h4 class="mt-5 mb-3 f-21 text-capitalize font-weight-bold">@lang('app.clientUnpaidInvoices')
+               </h4>
 
             <x-cards.data padding="false">
                 <div class="table-responsive">

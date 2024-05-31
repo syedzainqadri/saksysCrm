@@ -42,6 +42,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property string $file
  * @property-read mixed $download_file_url
  * @property-read mixed $file_url
+ * @property-read \App\Models\EmployeeShiftSchedule|null $dates
  * @method static \Illuminate\Database\Eloquent\Builder|EmployeeShiftSchedule whereFile($value)
  * @mixin \Eloquent
  */

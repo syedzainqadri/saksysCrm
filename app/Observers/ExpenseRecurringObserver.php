@@ -74,7 +74,7 @@ class ExpenseRecurringObserver
     public function deleting(ExpenseRecurring $expense)
     {
         $notifyData = ['App\Notifications\NewExpenseRecurringMember', 'App\Notifications\ExpenseRecurringStatus'];
-        \App\Models\Notification::deleteNotification($notifyData, $expense->id);
+        Notification::deleteNotification($notifyData, $expense->id);
 
     }
 

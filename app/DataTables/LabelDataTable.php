@@ -66,7 +66,7 @@ class LabelDataTable extends BaseDataTable
      */
     public function html()
     {
-        return $this->setBuilder('taskLabelList-table', 0)
+        $dataTable = $this->setBuilder('taskLabelList-table', 0)
             ->dom("<'row'<'col-md-6'l><'col-md-6'Bf>><'row'<'col-sm-12'tr>><'row'<'col-sm-5'i><'col-sm-7'p>>")
             ->parameters([
                 'initComplete' => 'function () {
@@ -79,6 +79,8 @@ class LabelDataTable extends BaseDataTable
                     })
                 }',
             ]);
+
+        return $dataTable;
     }
 
     /**

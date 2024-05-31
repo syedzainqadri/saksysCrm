@@ -12,10 +12,10 @@
     <meta name="theme-color" content="#ffffff">
 
     <!-- Font Awesome Icons -->
-    <link rel="stylesheet" href="{{ asset('vendor/css/all.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('vendor/css/all.min.css') }}" defer="defer">
 
     <!-- Template CSS -->
-    <link href="{{ asset('vendor/froiden-helper/helper.css') }}" rel="stylesheet">
+    <link href="{{ asset('vendor/froiden-helper/helper.css') }}" rel="stylesheet" defer="defer">
     <link type="text/css" rel="stylesheet" media="all" href="{{ asset('css/main.css') }}">
 
     <title>{{ $globalSetting->global_app_name }}</title>
@@ -24,7 +24,7 @@
     @stack('styles')
     <script src="{{ asset('vendor/jquery/jquery.min.js') }}"></script>
 
-    <style>
+    <style defer="defer">
         .login_header {
             background-color: {{ $globalSetting->logo_background_color }}      !important;
         }
@@ -74,7 +74,7 @@
                                 <a href="javascript:;" class="text-dark-grey my-2 change-lang"
                                    data-lang="{{$language->language_code}}">
                                     <span
-                                        class='flag-icon flag-icon-{{ ($language->flag_code == 'en') ? 'gb' : strtolower($language->flag_code) }} flag-icon-squared'></span>
+                                        class='flag-icon flag-icon-{{ ($language->flag_code == 'en') ? 'gb' : $language->flag_code }} flag-icon-squared'></span>
                                     {{\App\Models\LanguageSetting::LANGUAGES_TRANS[$language->language_code] ?? $language->language_name}}
                                 </a>
                             </span>
@@ -91,15 +91,15 @@
 
 </section>
 <!-- Global Required Javascript -->
-<script src="{{ asset('vendor/bootstrap/javascript/bootstrap-native.js') }}"></script>
+<script src="{{ asset('vendor/bootstrap/javascript/bootstrap-native.js') }}" defer="defer"></script>
 
 <!-- Font Awesome -->
-<script src="{{ asset('vendor/jquery/all.min.js') }}"></script>
+<script src="{{ asset('vendor/jquery/all.min.js') }}" defer="defer"></script>
 
 <!-- Template JS -->
 <script src="{{ asset('js/main.js') }}"></script>
 <script>
-
+    document.loading = '@lang('app.loading')';
     const MODAL_DEFAULT = '#myModalDefault';
     const MODAL_LG = '#myModal';
     const MODAL_XL = '#myModalXl';

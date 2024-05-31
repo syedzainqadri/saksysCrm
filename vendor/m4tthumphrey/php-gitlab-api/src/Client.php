@@ -17,6 +17,7 @@ namespace Gitlab;
 use Gitlab\Api\DeployKeys;
 use Gitlab\Api\Deployments;
 use Gitlab\Api\Environments;
+use Gitlab\Api\Events;
 use Gitlab\Api\Groups;
 use Gitlab\Api\GroupsBoards;
 use Gitlab\Api\GroupsEpics;
@@ -39,6 +40,7 @@ use Gitlab\Api\ResourceMilestoneEvents;
 use Gitlab\Api\ResourceStateEvents;
 use Gitlab\Api\ResourceWeightEvents;
 use Gitlab\Api\Schedules;
+use Gitlab\Api\Search;
 use Gitlab\Api\Snippets;
 use Gitlab\Api\SystemHooks;
 use Gitlab\Api\Tags;
@@ -98,7 +100,7 @@ class Client
      *
      * @var string
      */
-    private const USER_AGENT = 'gitlab-php-api-client/11.9';
+    private const USER_AGENT = 'gitlab-php-api-client/11.13';
 
     /**
      * The HTTP client builder.
@@ -172,6 +174,14 @@ class Client
     public function environments(): Environments
     {
         return new Environments($this);
+    }
+
+    /**
+     * @return Events
+     */
+    public function events(): Events
+    {
+        return new Events($this);
     }
 
     /**
@@ -340,6 +350,14 @@ class Client
     public function repositoryFiles(): RepositoryFiles
     {
         return new RepositoryFiles($this);
+    }
+
+    /**
+     * @return Search
+     */
+    public function search(): Search
+    {
+        return new Search($this);
     }
 
     /**

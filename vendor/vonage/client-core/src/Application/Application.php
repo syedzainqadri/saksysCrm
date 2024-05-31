@@ -1,12 +1,5 @@
 <?php
 
-/**
- * Vonage Client Library for PHP
- *
- * @copyright Copyright (c) 2016-2022 Vonage, Inc. (http://vonage.com)
- * @license https://github.com/Vonage/vonage-php-sdk-core/blob/master/LICENSE.txt Apache License 2.0
- */
-
 declare(strict_types=1);
 
 namespace Vonage\Application;
@@ -264,6 +257,7 @@ class Application implements EntityInterface, JsonSerializable, ArrayHydrateInte
             $configAccessorMethod = 'get' . ucfirst($type) . 'Config';
 
             foreach ($values as $constant) {
+                /** @var Webhook|\Vonage\Voice\Webhook $webhook */
                 $webhook = $this->$configAccessorMethod()->getWebhook($constant);
 
                 if ($webhook) {
@@ -275,8 +269,29 @@ class Application implements EntityInterface, JsonSerializable, ArrayHydrateInte
                         'address' => $webhook->getUrl(),
                         'http_method' => $webhook->getMethod(),
                     ];
+
+                    if (!is_null($webhook->getConnectionTimeout())) {
+                        $capabilities[$type]['webhooks'][$constant]['connection_timeout'] = $webhook->getConnectionTimeout();
+                    }
+
+                    if (!is_null($webhook->getSocketTimeout())) {
+                        $capabilities[$type]['webhooks'][$constant]['socket_timeout'] = $webhook->getSocketTimeout();
+                    }
                 }
             }
+        }
+
+        // Handle other Voice capabilities outside of that needlessly complicated webhook loop
+        if (!is_null($this->getVoiceConfig()->getRegion())) {
+            $capabilities['voice']['region'] = $this->getVoiceConfig()->getRegion();
+        }
+
+        if (!is_null($this->getVoiceConfig()->getConversationsTtl())) {
+            $capabilities['voice']['conversations_ttl'] = $this->getVoiceConfig()->getConversationsTtl();
+        }
+
+        if (!is_null($this->getVoiceConfig()->getSignedCallbacks())) {
+            $capabilities['voice']['signed_callbacks'] = $this->getVoiceConfig()->getSignedCallbacks();
         }
 
         // Handle VBC specifically

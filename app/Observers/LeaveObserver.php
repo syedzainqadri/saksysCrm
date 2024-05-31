@@ -7,11 +7,19 @@ use App\Models\Leave;
 use App\Services\Google;
 use App\Events\LeaveEvent;
 use App\Models\Attendance;
+use App\Models\EmployeeActivity;
+use App\Models\EmployeeLeaveQuota;
 use App\Models\Notification;
 use App\Models\GoogleCalendarModule;
+use Google\Service\Exception;
+use Google_Service_Calendar_Event;
+use App\Traits\EmployeeActivityTrait;
 
 class LeaveObserver
 {
+
+
+    use EmployeeActivityTrait;
 
     public function saving(Leave $leave)
     {
@@ -23,6 +31,7 @@ class LeaveObserver
     public function creating(Leave $leave)
     {
         if (!isRunningInConsoleOrSeeding()) {
+
             $leave->added_by = user()->id;
         }
 
@@ -30,9 +39,9 @@ class LeaveObserver
             $leave->company_id = company()->id;
         }
 
-        // Remove existing attendance
         if ($leave->status == 'approved') {
-            Attendance::whereDate('clock_in_time', $leave->leave_date)->where('user_id', $leave->user_id)->delete();
+            // Deduct leave quota
+            $this->deductEmployeeLeaveQuota($leave);
         }
 
     }
@@ -40,8 +49,11 @@ class LeaveObserver
     public function created(Leave $leave)
     {
         if (!isRunningInConsoleOrSeeding()) {
+            self::createEmployeeActivity(user()->id, 'leave-created', $leave->id, 'leave');
+
             if (request()->duration == 'multiple') {
                 if (session()->has('leaves_duration')) {
+
                     event(new LeaveEvent($leave, 'created', request()->multi_date));
                 }
             }
@@ -60,12 +72,23 @@ class LeaveObserver
     public function updating(Leave $leave)
     {
         if (!isRunningInConsoleOrSeeding()) {
+
             if ($leave->isDirty('status')) {
                 $leave->approved_by = user()->id;
                 $leave->approved_at = now()->toDateTimeString();
 
                 if ($leave->status == 'approved') {
-                    Attendance::whereDate('clock_in_time', $leave->leave_date)->where('user_id', $leave->user_id)->delete();
+                    if ($leave->duration === 'half day') {
+                        Attendance::whereDate('clock_in_time', $leave->leave_date)
+                            ->where('user_id', $leave->user_id)
+                            ->update(['half_day' => true]);
+                    }
+             
+                    $this->deductEmployeeLeaveQuota($leave);
+                }
+
+                if ($leave->getOriginal('status') == 'approved' && $leave->status != 'approved') {
+                    $this->incrementEmployeeLeaveQuota($leave);
                 }
             }
         }
@@ -74,6 +97,7 @@ class LeaveObserver
     public function updated(Leave $leave)
     {
         if (!isRunningInConsoleOrSeeding()) {
+            self::createEmployeeActivity(user()->id, 'leave-updated', $leave->id, 'leave');
 
             if ($leave->isDirty('status')) {
                 event(new LeaveEvent($leave, 'statusUpdated'));
@@ -104,7 +128,7 @@ class LeaveObserver
                 if ($leave->event_id) {
                     $google->service('Calendar')->events->delete('primary', $leave->event_id);
                 }
-            } catch (\Google\Service\Exception $error) {
+            } catch (Exception $error) {
                 if (is_null($error->getErrors())) {
                     // Delete google calendar connection data i.e. token, name, google_id
                     $googleAccount->name = null;
@@ -130,6 +154,18 @@ class LeaveObserver
         $leave->files()->each(function ($file) {
             $file->delete();
         });
+
+        if ($leave->status == 'approved') {
+            $this->incrementEmployeeLeaveQuota($leave);
+        }
+    }
+
+    public function deleted(Leave $leave)
+    {
+        if (user()) {
+            self::createEmployeeActivity(user()->id, 'leave-deleted');
+
+        }
     }
 
     protected function googleCalendarEvent($leave)
@@ -153,7 +189,7 @@ class LeaveObserver
             // Create event
             $google->connectUsing($googleAccount->token);
 
-            $eventData = new \Google_Service_Calendar_Event(array(
+            $eventData = new Google_Service_Calendar_Event(array(
                 'summary' => $user->name,
                 'location' => ' ',
                 'description' => $description,
@@ -185,7 +221,7 @@ class LeaveObserver
                 }
 
                 return $results->id;
-            } catch (\Google\Service\Exception $error) {
+            } catch (Exception $error) {
                 if (is_null($error->getErrors())) {
                     // Delete google calendar connection data i.e. token, name, google_id
                     $googleAccount->name = null;
@@ -198,6 +234,34 @@ class LeaveObserver
         }
 
         return $leave->event_id;
+    }
+
+    public function deductEmployeeLeaveQuota(Leave $leave)
+    {
+        $leaveQuota = EmployeeLeaveQuota::where('user_id', $leave->user_id)
+        ->where('leave_type_id', $leave->leave_type_id)
+        ->first();
+
+        if ($leaveQuota) {
+            $leaveDuration = $leave->duration == 'half day' ? 0.5 : 1;
+            $leaveQuota->leaves_remaining = $leaveQuota->leaves_remaining - $leaveDuration;
+            $leaveQuota->leaves_used = $leaveQuota->leaves_used + $leaveDuration;
+            $leaveQuota->save();
+        }
+    }
+
+    public function incrementEmployeeLeaveQuota(Leave $leave)
+    {
+        $leaveQuota = EmployeeLeaveQuota::where('user_id', $leave->user_id)
+        ->where('leave_type_id', $leave->leave_type_id)
+        ->first();
+
+        if ($leaveQuota) {
+            $leaveDuration = $leave->duration == 'half day' ? 0.5 : 1;
+            $leaveQuota->leaves_remaining = $leaveQuota->leaves_remaining + $leaveDuration;
+            $leaveQuota->leaves_used = $leaveQuota->leaves_used - $leaveDuration;
+            $leaveQuota->save();
+        }
     }
 
 }

@@ -53,7 +53,7 @@ class TaskFileController extends AccountBaseController
                 $this->logTaskActivity($task->id, $this->user->id, 'fileActivity', $task->board_column_id);
             }
 
-            $this->files = TaskFile::where('task_id', $request->task_id)->orderBy('id', 'desc');
+            $this->files = TaskFile::where('task_id', $request->task_id)->orderByDesc('id');
             $viewTaskFilePermission = user()->permission('view_task_files');
 
             if ($viewTaskFilePermission == 'added') {
@@ -84,7 +84,7 @@ class TaskFileController extends AccountBaseController
 
         TaskFile::destroy($id);
 
-        $this->files = TaskFile::where('task_id', $file->task_id)->orderBy('id', 'desc')->get();
+        $this->files = TaskFile::where('task_id', $file->task_id)->orderByDesc('id')->get();
         $view = view('tasks.files.show', $this->data)->render();
 
         return Reply::successWithData(__('messages.deleteSuccess'), ['view' => $view]);

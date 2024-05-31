@@ -20,6 +20,11 @@ return [
     'app_name' => 'worksuite',
 
     'name' => 'Worksuite',
+
+
+    // We will use this for email copyright message
+    'global_app_name' => 'Worksuite',
+
     /*
     |--------------------------------------------------------------------------
     | Application Name
@@ -98,6 +103,7 @@ return [
     */
 
     'url' => env('APP_URL', 'http://localhost'),
+    'main_app_url' => env('APP_URL', 'http://localhost'),
 
     'asset_url' => env('ASSET_URL', null),
 
@@ -139,7 +145,7 @@ return [
     |
     */
 
-    'fallback_locale' => 'en',
+    'fallback_locale' => 'eng',
 
     /*
     |--------------------------------------------------------------------------

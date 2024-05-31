@@ -21,11 +21,12 @@ $viewImmigrationPermission = user()->permission('view_immigration');
 @php
 
 $showFullProfile = false;
+$employeeDetail = $employee->employeeDetail;
 
 if ($viewPermission == 'all'
-    || ($viewPermission == 'added' && $employee->employeeDetail->added_by == user()->id)
-    || ($viewPermission == 'owned' && $employee->employeeDetail->user_id == user()->id)
-    || ($viewPermission == 'both' && ($employee->employeeDetail->user_id == user()->id || $employee->employeeDetail->added_by == user()->id))
+    || ($viewPermission == 'added' && $employeeDetail->added_by == user()->id)
+    || ($viewPermission == 'owned' && $employeeDetail->user_id == user()->id)
+    || ($viewPermission == 'both' && ($employeeDetail->user_id == user()->id || $employeeDetail->added_by == user()->id))
 ) {
     $showFullProfile = true;
 }
@@ -72,7 +73,7 @@ if ($viewPermission == 'all'
                     </li>
                     @endif
 
-                    @if ($viewEmployeeTimelogs == 'all')
+                    @if ($viewEmployeeTimelogs == 'all' && in_array('timelogs', user_modules()))
                         <li>
                             <x-tab :href="route('employees.show', $employee->id) . '?tab=timelogs'" :text="__('app.menu.timeLogs')" ajax="false" class="timelogs" />
                         </li>
@@ -90,7 +91,7 @@ if ($viewPermission == 'all'
                         </li>
                     @endif
 
-                    @if ($viewTickets == 'all')
+                    @if ($viewTickets == 'all' && in_array('tickets', user_modules()))
                         <li>
                             <x-tab :href="route('employees.show', $employee->id) . '?tab=tickets'" :text="__('modules.tickets.ticket')" ajax="false" class="tickets" />
                         </li>
@@ -102,7 +103,7 @@ if ($viewPermission == 'all'
                         </li>
                     @endif
 
-                    @if ($manageShiftPermission == 'all')
+                    @if ($manageShiftPermission == 'all' && in_array('attendance', user_modules()))
                         <li>
                             <x-tab :href="route('employees.show', $employee->id) . '?tab=shifts'" :text="__('app.menu.shiftRoster')" class="shifts" />
                         </li>

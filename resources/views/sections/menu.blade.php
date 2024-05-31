@@ -33,15 +33,26 @@
         </x-menu-item>
     @endif
 
-<!-- NAV ITEM - CUSTOMERS COLLAPASE MENU -->
-    @if (!in_array('client', user_roles()) && in_array('leads', user_modules()) && $sidebarUserPermissions['view_lead'] != 5 && $sidebarUserPermissions['view_lead'] != 'none')
-        <x-menu-item icon="person" :text="__('app.menu.lead')" :link="route('leads.index')">
+    <!-- NAV ITEM - HR COLLAPASE MENU -->
+    @if (!in_array('client', user_roles()) && (in_array('leads', user_modules())) && (($sidebarUserPermissions['view_lead'] != 5 && $sidebarUserPermissions['view_lead'] != 'none') || ($sidebarUserPermissions['view_deals'] != 5 && $sidebarUserPermissions['view_deals'] != 'none')))
+        <x-menu-item icon="person" :text="__('app.menu.lead')">
             <x-slot name="iconPath">
                 <path
-                    d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z" />
+                    d="M15 14s1 0 1-1-1-4-5-4-5 3-5 4 1 1 1 1h8zm-7.978-1A.261.261 0 0 1 7 12.996c.001-.264.167-1.03.76-1.72C8.312 10.629 9.282 10 11 10c1.717 0 2.687.63 3.24 1.276.593.69.758 1.457.76 1.72l-.008.002a.274.274 0 0 1-.014.002H7.022zM11 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm3-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM6.936 9.28a5.88 5.88 0 0 0-1.23-.247A7.35 7.35 0 0 0 5 9c-4 0-5 3-5 4 0 .667.333 1 1 1h4.216A2.238 2.238 0 0 1 5 13c0-1.01.377-2.042 1.09-2.904.243-.294.526-.569.846-.816zM4.92 10A5.493 5.493 0 0 0 4 13H1c0-.26.164-1.03.76-1.724.545-.636 1.492-1.256 3.16-1.275zM1.5 5.5a3 3 0 1 1 6 0 3 3 0 0 1-6 0zm3-2a2 2 0 1 0 0 4 2 2 0 0 0 0-4z" />
             </x-slot>
+            @if ($sidebarUserPermissions['view_lead'] != 5 && $sidebarUserPermissions['view_lead'] != 'none')
+            <div class="accordionItemContent ">
+                <x-sub-menu-item :link="route('lead-contact.index')" :text="__('app.leadContact')" />
+            </div>
+            @endif
+            @if ($sidebarUserPermissions['view_deals'] != 5 && $sidebarUserPermissions['view_deals'] != 'none')
+                <div class="accordionItemContent ">
+                    <x-sub-menu-item :link="route('deals.index')" :text="__('app.deal')" />
+                </div>
+            @endif
         </x-menu-item>
     @endif
+
 
     @if (!in_array('client', user_roles()) && in_array('clients', user_modules()) && $sidebarUserPermissions['view_clients'] != 5 && $sidebarUserPermissions['view_clients'] != 'none')
         <x-menu-item icon="building" :text="__('app.menu.clients')" :link="route('clients.index')">
@@ -89,11 +100,15 @@
                 @if (isset($sidebarUserPermissions['view_appreciation'])  && $sidebarUserPermissions['view_appreciation'] == 5 && isset($sidebarUserPermissions['manage_award']) && $sidebarUserPermissions['manage_award'] == 4)
                     <x-sub-menu-item :link="route('awards.index')" :text="__('app.menu.appreciation')" />
                 @endif
+                <!-- NAV ITEM - CUSTOM MODULES  -->
+                @foreach ($worksuitePlugins as $item)
+                    @includeIf(strtolower($item) . '::sections.hr.sidebar')
+                @endforeach
             </div>
         </x-menu-item>
     @endif
 
-<!-- NAV ITEM - WORK COLLAPASE MENU -->
+<!-- NAV ITEM - WORK COLLAPSE MENU -->
     @if ((in_array('contracts', user_modules()) || in_array('projects', user_modules()) || in_array('tasks', user_modules()) || in_array('timelogs', user_modules())) && ($sidebarUserPermissions['view_contract'] != 5 || $sidebarUserPermissions['view_projects'] != 5 || $sidebarUserPermissions['view_tasks'] != 5 || $sidebarUserPermissions['view_timelogs'] != 5) && ($sidebarUserPermissions['view_contract'] != 'none' || $sidebarUserPermissions['view_projects'] != 'none' || $sidebarUserPermissions['view_tasks'] != 'none' || $sidebarUserPermissions['view_timelogs'] != 'none'))
         <x-menu-item icon="briefcase" :text="__('app.menu.work')">
             <x-slot name="iconPath">
@@ -115,6 +130,10 @@
                     <x-sub-menu-item :link="route('timelogs.index')" :text="__('app.menu.timeLogs')" />
                 @endif
                 {{-- @endif --}}
+                <!-- NAV ITEM - CUSTOM MODULES  -->
+                @foreach ($worksuitePlugins as $item)
+                    @includeIf(strtolower($item) . '::sections.work.sidebar')
+                @endforeach
             </div>
         </x-menu-item>
     @endif
@@ -152,19 +171,23 @@
                 @if (in_array('bankaccount', user_modules()) && $sidebarUserPermissions['view_bankaccount'] != 5 && $sidebarUserPermissions['view_bankaccount'] != 'none')
                     <x-sub-menu-item :link="route('bankaccounts.index')" :text="__('app.menu.bankaccount')" />
                 @endif
+                <!-- NAV ITEM - CUSTOM MODULES  -->
+                @foreach ($worksuitePlugins as $item)
+                    @includeIf(strtolower($item) . '::sections.finance.sidebar')
+                @endforeach
             </div>
         </x-menu-item>
     @endif
 
 <!-- NAV ITEM - PRODUCTS -->
-    @if (in_array('products', user_modules()) && $sidebarUserPermissions['view_product'] != 5 && $sidebarUserPermissions['view_product'] != 'none')
+@if (!in_array('purchase', user_modules()) && in_array('products', user_modules()) && $sidebarUserPermissions['view_product'] != 5 && $sidebarUserPermissions['view_product'] != 'none')
         <x-menu-item icon="basket" :text="__('app.menu.products')" :link="route('products.index')">
             <x-slot name="iconPath">
                 <path
                     d="M5.757 1.071a.5.5 0 0 1 .172.686L3.383 6h9.234L10.07 1.757a.5.5 0 1 1 .858-.514L13.783 6H15a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1v4.5a2.5 2.5 0 0 1-2.5 2.5h-9A2.5 2.5 0 0 1 1 13.5V9a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h1.217L5.07 1.243a.5.5 0 0 1 .686-.172zM2 9v4.5A1.5 1.5 0 0 0 3.5 15h9a1.5 1.5 0 0 0 1.5-1.5V9H2zM1 7v1h14V7H1zm3 3a.5.5 0 0 1 .5.5v3a.5.5 0 0 1-1 0v-3A.5.5 0 0 1 4 10zm2 0a.5.5 0 0 1 .5.5v3a.5.5 0 0 1-1 0v-3A.5.5 0 0 1 6 10zm2 0a.5.5 0 0 1 .5.5v3a.5.5 0 0 1-1 0v-3A.5.5 0 0 1 8 10zm2 0a.5.5 0 0 1 .5.5v3a.5.5 0 0 1-1 0v-3a.5.5 0 0 1 .5-.5zm2 0a.5.5 0 0 1 .5.5v3a.5.5 0 0 1-1 0v-3a.5.5 0 0 1 .5-.5z" />
             </x-slot>
         </x-menu-item>
-    @endif
+@endif
 
 <!-- NAV ITEM - PRODUCTS -->
     @if (in_array('orders', user_modules()) && $sidebarUserPermissions['view_order'] != 5 && $sidebarUserPermissions['view_order'] != 'none')
@@ -188,7 +211,7 @@
 
 <!-- NAV ITEM - EVENTS -->
     @if (in_array('events', user_modules()) && $sidebarUserPermissions['view_events'] != 5 && $sidebarUserPermissions['view_events'] != 'none')
-        <x-menu-item icon="calendar-event" :text="__('app.menu.Events')" :link="route('events.index')">
+        <x-menu-item icon="calendar-event" :text="__('app.menu.events')" :link="route('events.index')">
             <x-slot name="iconPath">
                 <path
                     d="M11 6.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1z" />
@@ -287,7 +310,7 @@
     @endforeach
 
 <!-- NAV ITEM - NOTICES -->
-    @if (in_array('reports', user_modules()) && ($sidebarUserPermissions['view_task_report'] == 4 || $sidebarUserPermissions['view_time_log_report'] == 4 || (isset($sidebarUserPermissions['view_expense_report']) && $sidebarUserPermissions['view_expense_report'] == 4) || $sidebarUserPermissions['view_finance_report'] != 5 || $sidebarUserPermissions['view_income_expense_report'] == 4 || $sidebarUserPermissions['view_leave_report'] == 4 || $sidebarUserPermissions['view_attendance_report'] == 4) && ($sidebarUserPermissions['view_task_report'] != 'none' || $sidebarUserPermissions['view_time_log_report'] != 'none' || $sidebarUserPermissions['view_finance_report'] != 'none' || $sidebarUserPermissions['view_income_expense_report'] != 'none' || $sidebarUserPermissions['view_leave_report'] != 'none' || $sidebarUserPermissions['view_attendance_report'] != 'none' || (isset($sidebarUserPermissions['view_expense_report']) && $sidebarUserPermissions['view_expense_report'] != 'none')))
+    @if (in_array('reports', user_modules()) && ($sidebarUserPermissions['view_task_report'] == 4 || $sidebarUserPermissions['view_time_log_report'] == 4 || (isset($sidebarUserPermissions['view_expense_report']) && $sidebarUserPermissions['view_expense_report'] == 4) || $sidebarUserPermissions['view_finance_report'] != 5 || $sidebarUserPermissions['view_income_expense_report'] == 4 || $sidebarUserPermissions['view_leave_report'] != 5 || $sidebarUserPermissions['view_attendance_report'] == 4 || $sidebarUserPermissions['view_lead_report'] == 4 || $sidebarUserPermissions['view_sales_report'] == 4) && ($sidebarUserPermissions['view_task_report'] != 'none' || $sidebarUserPermissions['view_time_log_report'] != 'none' || $sidebarUserPermissions['view_finance_report'] != 'none' || $sidebarUserPermissions['view_income_expense_report'] != 'none' || $sidebarUserPermissions['view_leave_report'] != 'none' || $sidebarUserPermissions['view_attendance_report'] != 'none' || $sidebarUserPermissions['view_lead_report'] != 'none' || $sidebarUserPermissions['view_sales_report'] != 'none' || (isset($sidebarUserPermissions['view_expense_report']) && $sidebarUserPermissions['view_expense_report'] != 'none')))
         <x-menu-item icon="graph-up" :text="__('app.menu.reports')">
             <x-slot name="iconPath">
                 <path
@@ -314,7 +337,7 @@
                                      :text="__('app.menu.incomeVsExpenseReport')" />
                 @endif
 
-                @if ($sidebarUserPermissions['view_leave_report'] == 4 && $sidebarUserPermissions['view_leave_report'] != 'none' && in_array('leaves', user_modules()))
+                @if ($sidebarUserPermissions['view_leave_report'] != 5 && $sidebarUserPermissions['view_leave_report'] != 'none' && in_array('leaves', user_modules()))
                     <x-sub-menu-item :link="route('leave-report.index')"
                                      :text="__('app.menu.leaveReport')" />
                 @endif
@@ -329,7 +352,7 @@
                 @endif
                 @if (isset($sidebarUserPermissions['view_lead_report']) && $sidebarUserPermissions['view_lead_report'] == 4 && $sidebarUserPermissions['view_lead_report'] != 'none' && in_array('leads', user_modules()))
                     <x-sub-menu-item :link="route('lead-report.index')"
-                                     :text="__('app.menu.leadReport')" />
+                                     :text="__('app.menu.dealReport')" />
                 @endif
                 @if (isset($sidebarUserPermissions['view_sales_report']) && $sidebarUserPermissions['view_sales_report'] == 4 && $sidebarUserPermissions['view_sales_report'] != 'none' && in_array('invoices', user_modules()))
                     <x-sub-menu-item :link="route('sales-report.index')"

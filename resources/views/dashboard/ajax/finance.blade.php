@@ -53,7 +53,7 @@
                         <div class="d-flex">
                             @if (in_array('total_expenses', $activeWidgets))
                                 <p class="mb-0 f-15 font-weight-bold text-blue d-grid mr-5">
-                                    {{ currency_format($totalExpenses) }}<span
+                                    {{ currency_format($totalExpenses, company()->currency_id) }}<span
                                         class="f-12 font-weight-normal text-lightest">
                                         @lang('modules.dashboard.totalExpenses') </span>
                                 </p>
@@ -61,7 +61,7 @@
 
                             @if (in_array('total_earnings', $activeWidgets))
                                 <p class="mb-0 f-15 font-weight-bold text-dark-green d-grid">
-                                    {{ currency_format($totalEarnings) }}<span
+                                    {{ currency_format($totalEarnings, company()->currency_id) }}<span
                                         class="f-12 font-weight-normal text-lightest">@lang('modules.dashboard.totalEarnings')</span>
                                 </p>
                             @endif
@@ -79,7 +79,7 @@
         <div class="col-xl-4 col-lg-6 col-md-6">
             <a href="javascript:;" id="totalPendingAmount">
                 <x-cards.widget :title="__('modules.dashboard.totalPendingAmount')"
-                    :value="currency_format($totalPendingAmount)" icon="coins" />
+                    :value="currency_format($totalPendingAmount, company()->currency_id)" icon="coins" />
             </a>
         </div>
     @endif

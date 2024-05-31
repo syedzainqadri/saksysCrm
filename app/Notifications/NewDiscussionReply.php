@@ -44,7 +44,7 @@ class NewDiscussionReply extends BaseNotification
         }
 
         if ($this->emailSetting->send_slack == 'yes' && $this->company->slackSetting->status == 'active') {
-            array_push($via, 'slack');
+            $this->slackUserNameCheck($notifiable) ? array_push($via, 'slack') : null;
         }
 
         if ($this->emailSetting->send_push == 'yes') {
@@ -69,7 +69,7 @@ class NewDiscussionReply extends BaseNotification
         $content = __('email.discussionReply.text') . ' ' . $this->discussionReply->discussion->title . ':-' . '<br>' . new HtmlString($this->discussionReply->body);
 
         return $build
-            ->subject(mb_ucwords($this->discussionReply->user->name) . ' ' . __('email.discussionReply.subject') . $this->discussionReply->discussion->title . ' - ' . config('app.name') . '.')
+            ->subject($this->discussionReply->user->name . ' ' . __('email.discussionReply.subject') . $this->discussionReply->discussion->title . ' - ' . config('app.name') . '.')
             ->markdown('mail.email', [
                 'url' => $url,
                 'content' => $content,
@@ -106,20 +106,11 @@ class NewDiscussionReply extends BaseNotification
      */
     public function toSlack($notifiable)
     {
-        $slack = $notifiable->company->slackSetting;
 
-        if (count($notifiable->employee) > 0 && (!is_null($notifiable->employee[0]->slack_username) && ($notifiable->employee[0]->slack_username != ''))) {
-            return (new SlackMessage())
-                ->from(config('app.name'))
-                ->image($slack->slack_logo_url)
-                ->to('@' . $notifiable->employee[0]->slack_username)
-                ->content('*' . mb_ucwords($this->discussionReply->user->name) . ' ' . __('email.discussionReply.subject') . $this->discussionReply->discussion->title . '*' . "\n" . $this->discussionReply->body);
-        }
+        return $this->slackBuild($notifiable)
+            ->content('*' . $this->discussionReply->user->name . ' ' . __('email.discussionReply.subject') . $this->discussionReply->discussion->title . '*' . "\n" . $this->discussionReply->body);
 
-        return (new SlackMessage())
-            ->from(config('app.name'))
-            ->image($slack->slack_logo_url)
-            ->content('*' . __('email.discussionReply.subject') . '*' . "\n" .'This is a redirected notification. Add slack username for *' . $notifiable->name . '*');
+
     }
 
     // phpcs:ignore
@@ -127,7 +118,7 @@ class NewDiscussionReply extends BaseNotification
     {
         return OneSignalMessage::create()
             ->setSubject(__('email.discussionReply.subject'))
-            ->setBody(ucfirst($this->discussionReply->discussion->title));
+            ->setBody($this->discussionReply->discussion->title);
     }
 
 }

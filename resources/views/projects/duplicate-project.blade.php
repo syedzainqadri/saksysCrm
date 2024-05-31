@@ -7,7 +7,7 @@
     $addProjectNotePermission = user()->permission('add_project_note');
 @endphp
 <div class="modal-header">
-    <h5 class="modal-title" id="modelHeading">@lang('app.copy') @lang('app.project')</h5>
+    <h5 class="modal-title" id="modelHeading">@lang('app.copyProject')</h5>
     <button type="button"  class="close" data-dismiss="modal" aria-label="Close"><span
             aria-hidden="true">×</span></button>
 </div>
@@ -54,7 +54,7 @@
         <div class="row border-top-grey mt-3 d-none" id="task-status">
             <div class="col-md-12">
                 <div class="form-group my-3">
-                    <label class="f-14 text-dark-grey mb-12 w-100" for="usr">@lang('app.task') @lang('app.status')</label>
+                    <label class="f-14 text-dark-grey mb-12 w-100" for="usr">@lang('app.taskStatus')</label>
                     @foreach ($taskboardColumns as $item)
                         <x-forms.checkbox  :fieldId="$item->slug" :fieldLabel="$item->column_name" fieldName="task_status[]"
                             :fieldValue="$item->id" :checked="($item->slug == 'incomplete') ? true : false">
@@ -136,7 +136,7 @@
                     </x-forms.label>
 
                     <input type="hidden" name="client_id" id="client_id" value="{{ $client->id }}">
-                    <input type="text" value="{{ ucfirst($client->name) }}"
+                    <input type="text" value="{{ $client->name_salutation }}"
                            class="form-control height-35 f-15 readonly-background" readonly>
                 @else
                     <x-forms.select fieldName="client_id" fieldId="client_id"
@@ -144,7 +144,7 @@
                         <option value="">--</option>
                         @foreach ($clients as $clientOpt)
                             <option data-content="<x-client-search-option :user='$clientOpt' />"
-                            value="{{ $clientOpt->id }}">{{ mb_ucwords($clientOpt->name) }} </option>
+                            value="{{ $clientOpt->id }}">{{ $clientOpt->name }} </option>
                         @endforeach
                     </x-forms.select>
                 @endif
@@ -152,7 +152,7 @@
         </div>
         <div class="modal-footer">
             <x-forms.button-cancel data-dismiss="modal" class="border-0 mr-3">@lang('app.close')</x-forms.button-cancel>
-            <x-forms.button-primary id="save-copy-project" icon="check">@lang('app.copy') @lang('app.project')</x-forms.button-primary>
+            <x-forms.button-primary id="save-copy-project" icon="check">@lang('app.copyProject')</x-forms.button-primary>
         </div>
     </x-form>
 </div>

@@ -89,7 +89,7 @@ class SmtpSettingController extends AccountBaseController
     public function sendTestEmail(Request $request)
     {
         $request->validate([
-            'test_email' => 'required|email:rfc',
+            'test_email' => 'required|email:rfc,strict',
         ]);
 
         $smtp = SmtpSetting::first();

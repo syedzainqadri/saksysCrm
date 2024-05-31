@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\EmailNotificationSetting;
+use App\Models\GlobalSetting;
 use App\Models\Proposal;
 use Illuminate\Notifications\Messages\MailMessage;
 
@@ -53,13 +54,13 @@ class ProposalSigned extends BaseNotification
 
         $build = parent::build();
 
-        $url = route('front.proposal', $this->proposal->hash);
+        $url = url()->temporarySignedRoute('front.proposal', now()->addDays(GlobalSetting::SIGNED_ROUTE_EXPIRY), $this->proposal->hash);
         $url = getDomainSpecificUrl($url, $this->company);
 
 
         if ($this->proposal->status == 'accepted') {
 
-            $content = __('app.status') . ' : ' . mb_ucwords($this->proposal->status);
+            $content = __('app.status') . ' : ' . $this->proposal->status;
 
             return $build
                 ->subject(__('email.proposalSigned.subject'))
@@ -71,7 +72,7 @@ class ProposalSigned extends BaseNotification
                 ]);
         }
 
-        $content = __('email.proposalRejected.rejected') . ' : ' . $this->proposal->client_comment . '<br>' . __('app.status') . ': ' . mb_ucwords($this->proposal->status);
+        $content = __('email.proposalRejected.rejected') . ' : ' . $this->proposal->client_comment . '<br>' . __('app.status') . ': ' . $this->proposal->status;
 
         return $build
             ->subject(__('email.proposalRejected.subject'))

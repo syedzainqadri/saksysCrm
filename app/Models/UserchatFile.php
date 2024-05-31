@@ -42,6 +42,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int|null $company_id
  * @property-read \App\Models\Company|null $company
  * @method static \Illuminate\Database\Eloquent\Builder|UserchatFile whereCompanyId($value)
+ * @property-read mixed $file
  * @mixin \Eloquent
  */
 class UserchatFile extends BaseModel
@@ -52,12 +53,21 @@ class UserchatFile extends BaseModel
 
     const FILE_PATH = 'message-files';
 
-    protected $appends = ['file_url', 'icon'];
+    protected $appends = ['file_url', 'icon', 'file'];
     protected $table = 'users_chat_files';
 
     public function getFileUrlAttribute()
     {
-        return (!is_null($this->external_link)) ? $this->external_link : asset_url_local_s3(UserchatFile::FILE_PATH . '/' . $this->hashname);
+        if($this->external_link){
+            return str($this->external_link)->contains('http') ? $this->external_link : asset_url_local_s3($this->external_link);
+        }
+
+        return asset_url_local_s3(UserchatFile::FILE_PATH . '/' . $this->hashname);
+    }
+
+    public function getFileAttribute()
+    {
+        return $this->external_link ?: (UserchatFile::FILE_PATH . '/' . $this->hashname);
     }
 
     public function chat(): BelongsTo

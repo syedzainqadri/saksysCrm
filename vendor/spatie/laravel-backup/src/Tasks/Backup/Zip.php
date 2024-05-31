@@ -39,11 +39,11 @@ class Zip
         $zipDirectory = pathinfo($pathToZip, PATHINFO_DIRNAME) . DIRECTORY_SEPARATOR;
 
         if (Str::startsWith($fileDirectory, $zipDirectory)) {
-            return str_replace($zipDirectory, '', $pathToFile);
+            return substr($pathToFile, strlen($zipDirectory));
         }
 
         if ($relativePath && $relativePath != DIRECTORY_SEPARATOR && Str::startsWith($fileDirectory, $relativePath)) {
-            return str_replace($relativePath, '', $pathToFile);
+            return substr($pathToFile, strlen($relativePath));
         }
 
         return $pathToFile;
@@ -97,13 +97,24 @@ class Zip
             $files = [$files];
         }
 
+        $compressionMethod = config('backup.backup.destination.compression_method', null);
+        $compressionLevel = config('backup.backup.destination.compression_level', 9);
+
         foreach ($files as $file) {
             if (is_dir($file)) {
                 $this->zipFile->addEmptyDir(ltrim($nameInZip ?: $file, DIRECTORY_SEPARATOR));
             }
 
             if (is_file($file)) {
-                $this->zipFile->addFile($file, ltrim($nameInZip, DIRECTORY_SEPARATOR)).PHP_EOL;
+                $this->zipFile->addFile($file, ltrim($nameInZip, DIRECTORY_SEPARATOR));
+
+                if (is_int($compressionMethod)) {
+                    $this->zipFile->setCompressionName(
+                        ltrim($nameInZip ?: $file, DIRECTORY_SEPARATOR),
+                        $compressionMethod,
+                        $compressionLevel
+                    );
+                }
             }
             $this->fileCount++;
         }

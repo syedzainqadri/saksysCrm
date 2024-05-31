@@ -6,7 +6,7 @@
         <x-form id="save-attendance-data-form">
             <div class="add-client bg-white rounded">
                 <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
-                    @lang('app.menu.attendance') @lang('app.details')</h4>
+                        @lang('app.attendanceDetails')</h4>
                 <div class="row p-20">
 
                     <div class="col-lg-3 col-md-6">
@@ -14,7 +14,7 @@
                             fieldName="department_id" search="true">
                             <option value="0">--</option>
                             @foreach ($departments as $team)
-                                <option value="{{ $team->id }}">{{ mb_ucwords($team->team_name) }}</option>
+                                <option value="{{ $team->id }}">{{ $team->team_name }}</option>
                             @endforeach
                         </x-forms.select>
                     </div>
@@ -43,7 +43,7 @@
                         search="true">
                             @foreach ($location as $locations)
                                 <option @if ($locations->is_default == 1) selected @endif value="{{ $locations->id }}">
-                                    {{ mb_ucwords($locations->location) }}</option>
+                                    {{ $locations->location }}</option>
                             @endforeach
                         </x-forms.select>
                     </div>
@@ -234,14 +234,15 @@
             });
         });
 
-        $('#save-attendance-form').click(function() {
+        const saveAttendanceForm = () => {
+
             var dateRange = $('#multi_date').data('daterangepicker');
             startDate = dateRange.startDate.format('{{ company()->moment_date_format }}');
             endDate = dateRange.endDate.format('{{ company()->moment_date_format }}');
             var multiDate = [];
             multiDate = [startDate, endDate];
             $('#multi_date').val(multiDate);
-            const url = "{{ route('attendances.bulk_mark') }}";
+            const url = "{{ route('attendances.bulk_mark')}}";
 
             $.easyAjax({
                 url: url,
@@ -251,6 +252,56 @@
                 blockUI: true,
                 buttonSelector: "#save-attendance-form",
                 data: $('#save-attendance-data-form').serialize()
+            });
+        };
+
+        $('#save-attendance-form').click(function()
+        {
+            var dateRange = $('#multi_date').data('daterangepicker');
+            startDate = dateRange.startDate.format('{{ company()->moment_date_format }}');
+            endDate = dateRange.endDate.format('{{ company()->moment_date_format }}');
+            var multiDate = [];
+            multiDate = [startDate, endDate];
+            $('#multi_date').val(multiDate);
+            var url = "{{ route('attendances.check_half_day') }}?type=bulkMark";
+
+            $.easyAjax({
+                url: url,
+                container: '#save-attendance-data-form',
+                type: "POST",
+                disableButton: true,
+                blockUI: true,
+                buttonSelector: "#save-attendance-form",
+                data: $('#save-attendance-data-form').serialize(),
+                success: function(response) {
+                        if (response.halfDayExist == true && response.requestedHalfDay == 'no') {
+                            Swal.fire({
+                                title: "@lang('messages.sweetAlertTitle')",
+                                text: "@lang('messages.halfDayAlreadyApplied')",
+                                icon: 'warning',
+                                showCancelButton: true,
+                                focusConfirm: false,
+                                confirmButtonText: "@lang('messages.rejectIt')",
+                                cancelButtonText: "@lang('app.cancel')",
+                                customClass: {
+                                    confirmButton: 'btn btn-primary mr-3',
+                                    cancelButton: 'btn btn-secondary'
+                                },
+                                showClass: {
+                                    popup: 'swal2-noanimation',
+                                    backdrop: 'swal2-noanimation'
+                                },
+                                buttonsStyling: false
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    saveAttendanceForm();
+                                }
+                            });
+
+                        } else {
+                            saveAttendanceForm();
+                        }
+                }
             });
         });
 

@@ -1,4 +1,4 @@
-<div class="d-flex justify-content-between">
+<div class="row d-flex justify-content-between">
     <div>
         <div class='input-group'>
             <div class="input-group-prepend">
@@ -7,7 +7,7 @@
                 </button>
             </div>
 
-            <input type="text" disabled class="form-control height-35 f-14 bg-white text-center" value="{{ $weekStartDate->format('d M') . ' - ' . $weekEndDate->translatedFormat('d M') }}">
+            <input type="text" disabled class="form-control height-35 f-14 bg-white text-center" value="{{ $weekStartDate->translatedFormat('d M') . ' - ' . $weekEndDate->translatedFormat('d M') }}">
 
             <div class="input-group-append">
                 <button id="week-end-date" data-date="{{ $weekEndDate->copy()->addDay()->toDateString() }}" type="button"

@@ -10,7 +10,7 @@ $approveRejectPermission = user()->permission('approve_or_reject_leaves');
             <div class="card-header bg-white  border-bottom-grey text-capitalize justify-content-between p-20">
                 <div class="row">
                     <div class="col-lg-8 col-xs-4">
-                        <h3 class="heading-h1 mb-3">@lang('modules.leaves.multiple') @lang('app.details')</h3>
+                        <h3 class="heading-h1 mb-3">@lang('app.multipleDetails')</h3>
                     </div>
                     <div class="col-lg-4 col-xs-8 text-right">
                         @php
@@ -24,7 +24,7 @@ $approveRejectPermission = user()->permission('approve_or_reject_leaves');
                             }
                         @endphp
 
-                        @if ($pendingCountLeave > 0)
+                        @if ($pendingCountLeave > 0 && $approveRejectPermission == 'all')
                             <a class="btn btn-secondary rounded f-14 p-2 leave-action-approved" data-leave-id="{{ $multipleLeaves->first()->unique_id }}"
                                 data-leave-action="approved" data-type="approveAll" class="mr-3" icon="check" href="javascript:;">
                                 <i class="fa fa-check mr-2"></i>{{$approveTitle}}</a>

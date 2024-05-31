@@ -33,6 +33,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property-read \App\Models\Company|null $company
  * @property-read \App\Models\Expense|null $expenses
  * @method static \Illuminate\Database\Eloquent\Builder|ExpensesCategory whereCompanyId($value)
+ * @property-read int|null $expenses_count
  * @mixin \Eloquent
  */
 class ExpensesCategory extends BaseModel
@@ -43,14 +44,9 @@ class ExpensesCategory extends BaseModel
     protected $table = 'expenses_category';
     protected $default = ['id', 'category_name'];
 
-    public function expense()
+    public function expenses(): HasMany
     {
-        return $this->hasMany(Expense::class);
-    }
-
-    public function expenses(): BelongsTo
-    {
-        return $this->belongsTo(Expense::class, 'id');
+        return $this->hasMany(Expense::class, 'category_id');
     }
 
     public function roles(): HasMany

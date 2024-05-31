@@ -27,7 +27,7 @@
                             <option value="all">@lang('app.all')</option>
                         @endif
                         @foreach ($leads as $client)
-                            <option value="{{ $client->id }}">{{ mb_ucwords($client->client_name) }}</option>
+                            <option value="{{ $client->id }}">{{ $client->client_name_salutation }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -223,7 +223,7 @@ $addProposalTemplatePermission = user()->permission('manage_proposal_template');
             showTable();
         });
 
-        $('body').on('click', '.delete-table-row', function() {
+        $('body').on('click', '.delete-proposal-table-row', function() {
             var id = $(this).data('proposal-id');
             Swal.fire({
                 title: "@lang('messages.sweetAlertTitle')",

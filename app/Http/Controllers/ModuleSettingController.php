@@ -50,7 +50,7 @@ class ModuleSettingController extends AccountBaseController
         $setting->status = $request->status;
         $setting->save();
 
-        return Reply::redirect(route('module-settings.index'));
+        return Reply::success(__('messages.updateSuccess'));
     }
 
 }

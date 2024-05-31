@@ -5,7 +5,7 @@
                 <div class="card-header bg-white  border-bottom-grey text-capitalize justify-content-between p-20">
                     <div class="row">
                         <div class="col-lg-10 col-md-10 col-10">
-                            <h3 class="heading-h1 mb-3">@lang('app.timeLog') @lang('app.details')</h3>
+                            <h3 class="heading-h1 mb-3">@lang('app.timeLogDetails')</h3>
                         </div>
                         <div class="col-lg-2 col-md-2 col-2 text-right">
                             @if (
@@ -25,7 +25,7 @@
 
                                     <div class="dropdown-menu dropdown-menu-right border-grey rounded b-shadow-4 p-0"
                                         aria-labelledby="dropdownMenuLink" tabindex="0">
-                                        @if (!is_null($timeLog->end_time))
+                                        @if (!is_null($timeLog->end_time) && (is_null($timeLog->project_id) || (!is_null($timeLog->project) && is_null($timeLog->project->deleted_at))))
                                             <a class="dropdown-item openRightModal"
                                                 href="{{ route('timelogs.edit', $timeLog->id) }}">@lang('app.edit')</a>
                                         @else
@@ -65,7 +65,7 @@
                         </div>
                     @endif
 
-                    <x-cards.data-row :label="__('app.earnings')" :value="currency_format($timeLog->earnings)" />
+                    <x-cards.data-row :label="__('app.earnings')" :value="currency_format($timeLog->earnings, company()->currency_id)" />
                     <x-cards.data-row :label="__('modules.timeLogs.memo')" :value="$timeLog->memo" />
                     <x-cards.data-row :label="__('app.project')" :value="$timeLog->project->project_name ?? '--'" />
                     <x-cards.data-row :label="__('app.task')" :value="$timeLog->task->heading ?? '--'" />
@@ -145,22 +145,11 @@
 
 <script>
     $('body').on('click', '.stop-timer', function() {
-        var id = $(this).data('time-id');
-        var url = "{{ route('timelogs.stop_timer', ':id') }}";
-        url = url.replace(':id', id);
-        var token = '{{ csrf_token() }}';
-        $.easyAjax({
-            url: url,
-            type: "POST",
-            data: {
-                timeId: id,
-                _token: token
-            },
-            success: function(data) {
-                window.location.reload();
-            }
-        })
-
+            var url = "{{ route('timelogs.stopper_alert', ':id') }}?via=timelog";
+            var id = $(this).data('time-id');
+            url = url.replace(':id', id);
+            $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
+            $.ajaxModal(MODAL_LG, url);
     });
 
     $('body').on('click', '.edit-time-break', function() {

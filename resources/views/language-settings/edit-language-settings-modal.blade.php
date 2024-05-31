@@ -7,11 +7,11 @@
         <x-form id="editLanguage" method="POST" class="form-horizontal">
             <div class="row">
                 <div class="col-lg-6">
-                    <x-forms.text :fieldLabel="__('app.name')" fieldPlaceholder="Enter Language Name" fieldName="language_name" fieldId="language_name" :fieldValue="$languageSetting->language_name" fieldRequired="true"/>
+                    <x-forms.text :fieldLabel="__('app.name')" :fieldPlaceholder="__('placeholders.language.languageName')" fieldName="language_name" fieldId="language_name" :fieldValue="$languageSetting->language_name" fieldRequired="true"/>
                 </div>
 
                 <div class="col-lg-6">
-                    <x-forms.text :fieldLabel="__('app.language_code')" fieldPlaceholder="Enter Language Code" fieldName="language_code" fieldId="language_code" :fieldValue="$languageSetting->language_code" fieldRequired="true"/>
+                    <x-forms.text :fieldLabel="__('app.language_code')" :fieldPlaceholder="__('placeholders.language.languageCode')" fieldName="language_code" fieldId="language_code" :fieldValue="$languageSetting->language_code" fieldRequired="true"/>
                 </div>
 
                 <div class="col-lg-6">
@@ -19,7 +19,7 @@
                         <option value="">--</option>
 
                         @foreach ($flags as $flag)
-                            <option data-content="<span class='flag-icon flag-icon-{{ strtolower($flag->code) }} flag-icon-squared'></span> {{ $flag->name }}"
+                            <option data-content="<span class='flag-icon flag-icon-{{ $flag->code }} flag-icon-squared'></span> {{ $flag->name }}"
                             value="{{ $flag->code }}" @if($languageSetting->flag_code == $flag->code) selected @endif>{{ $flag->name }}</option>
                         @endforeach
                     </x-forms.select>

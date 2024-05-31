@@ -34,7 +34,7 @@
                     <option {{ request('status') == 'overdue' ? 'selected' : '' }} value="overdue">@lang('app.overdue')
                     </option>
                     @foreach ($projectStatus as $status)
-                        <option value="{{$status->status_name}}">{{ ucfirst($status->status_name) }}</option>
+                        <option value="{{$status->status_name}}">{{ $status->status_name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -160,13 +160,12 @@
     <!-- CONTENT WRAPPER START -->
     <div class="content-wrapper">
         <!-- Add Task Export Buttons Start -->
-        <div class="d-block d-lg-flex d-md-flex justify-content-between action-bar mb-2">
+        <div class="d-grid d-lg-flex d-md-flex action-bar mb-2">
             <div id="table-actions" class="flex-grow-1 align-items-center mb-2 mb-lg-0 mb-md-0">
                 @if ($addProjectPermission == 'all' || $addProjectPermission == 'added' || $addProjectPermission == 'both')
                     <x-forms.link-primary :link="route('projects.create')"
                         class="mr-3 openRightModal float-left mb-2 mb-lg-0 mb-md-0" icon="plus">
-                        @lang('app.add')
-                        @lang('app.project')
+                        @lang('app.addProject')
                     </x-forms.link-primary>
                 @endif
                 @if ($viewProjectTemplatePermission == 'all' || in_array($manageProjectTemplatePermission , ['added', 'all']))
@@ -178,7 +177,7 @@
 
 
                 @if ($addProjectPermission == 'all' || $addProjectPermission == 'added' || $addProjectPermission == 'both')
-                    <x-forms.link-secondary :link="route('projects.import')" class="mr-3 float-left mb-2 mb-lg-0 mb-md-0" icon="file-upload">
+                    <x-forms.link-secondary :link="route('projects.import')" class="mr-3 float-left mb-2 mb-lg-0 mb-md-0 d-none d-lg-block" icon="file-upload">
                         @lang('app.importExcel')
                     </x-forms.link-secondary>
                 @endif
@@ -207,7 +206,7 @@
                 </x-datatable.actions>
             @endif
 
-            <div class="btn-group ml-0 ml-lg-3 ml-md-3" role="group">
+            <div class="btn-group mt-2 mt-lg-0 mt-md-0 ml-0 ml-lg-3 ml-md-3" role="group">
                 <a href="{{ route('projects.index') }}" class="btn btn-secondary f-14 projects" data-toggle="tooltip"
                     data-original-title="@lang('app.menu.projects')"><i class="side-icon bi bi-list-ul"></i></a>
 

@@ -2,7 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Lead;
+use App\Models\Deal;
+use App\Models\ProjectStatusSetting;
 use App\Models\Role;
 use App\Models\User;
 use App\Helper\Files;
@@ -37,15 +38,22 @@ use App\DataTables\ClientGDPRDataTable;
 use App\DataTables\ClientNotesDataTable;
 use App\DataTables\CreditNotesDataTable;
 use App\DataTables\ClientContactsDataTable;
+use App\DataTables\OrdersDataTable;
+use App\Enums\Salutation;
 use App\Http\Requests\Admin\Employee\ImportRequest;
 use App\Http\Requests\Admin\Client\StoreClientRequest;
 use App\Http\Requests\Gdpr\SaveConsentUserDataRequest;
 use App\Http\Requests\Admin\Client\UpdateClientRequest;
 use App\Http\Requests\Admin\Employee\ImportProcessRequest;
+use App\Models\EmployeeActivity;
+use App\Models\Lead;
+use App\Traits\EmployeeActivityTrait;
 
 class ClientController extends AccountBaseController
 {
+
     use ImportExcel;
+    use EmployeeActivityTrait;
 
     public function __construct()
     {
@@ -71,7 +79,7 @@ class ClientController extends AccountBaseController
         abort_403(!in_array($viewPermission, ['all', 'added', 'both']));
 
         if (!request()->ajax()) {
-            $this->clients = User::allClients();
+            $this->clients = User::allClients(active:false);
             $this->subcategories = ClientSubCategory::all();
             $this->categories = ClientCategory::all();
             $this->projects = Project::all();
@@ -111,7 +119,7 @@ class ClientController extends AccountBaseController
         $this->pageTitle = __('app.addClient');
         $this->countries = countries();
         $this->categories = ClientCategory::all();
-        $this->salutations = ['mr', 'mrs', 'miss', 'dr', 'sir', 'madam'];
+        $this->salutations = Salutation::cases();
         $this->languages = LanguageSetting::where('status', 'enabled')->get();
 
         $client = new ClientDetails();
@@ -120,17 +128,16 @@ class ClientController extends AccountBaseController
             $this->fields = $client->getCustomFieldGroupsWithFields()->fields;
         }
 
+        $this->view = 'clients.ajax.create';
+
         if (request()->ajax()) {
             if (request('quick-form') == 1) {
                 return view('clients.ajax.quick_create', $this->data);
             }
 
-            $html = view('clients.ajax.create', $this->data)->render();
-
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
 
-        $this->view = 'clients.ajax.create';
 
         return view('clients.create', $this->data);
     }
@@ -168,7 +175,6 @@ class ClientController extends AccountBaseController
 
         $user = User::create($data);
         $user->clientDetails()->create($data);
-
         $client_id = $user->id;
 
         $client_note = new ClientNote();
@@ -217,8 +223,7 @@ class ClientController extends AccountBaseController
             $redirectUrl = route('clients.index');
         }
 
-        if($request->add_more == 'true')
-        {
+        if ($request->add_more == 'true') {
             $html = $this->create();
 
             return Reply::successWithData(__('messages.recordSaved'), ['html' => $html, 'add_more' => true]);
@@ -234,20 +239,20 @@ class ClientController extends AccountBaseController
             foreach ($teams as $team) {
                 $selected = ($team->id == $user->id) ? 'selected' : '';
 
-                $teamData .= '<option ' . $selected .' data-content="';
+                $teamData .= '<option ' . $selected . ' data-content="';
 
                 $teamData .= '<div class=\'media align-items-center mw-250\'>';
 
-                $teamData .= '<div class=\'position-relative\'><img src='.$team->image_url.' class=\'mr-2 taskEmployeeImg rounded-circle\'></div>';
+                $teamData .= '<div class=\'position-relative\'><img src=' . $team->image_url . ' class=\'mr-2 taskEmployeeImg rounded-circle\'></div>';
                 $teamData .= '<div class=\'media-body\'>';
-                $teamData .= '<h5 class=\'mb-0 f-13\'>'.ucfirst($team->name).'</h5>';
-                $teamData .= '<p class=\'my-0 f-11 text-dark-grey\'>'.$team->email.'</p>';
+                $teamData .= '<h5 class=\'mb-0 f-13\'>' . $team->name . '</h5>';
+                $teamData .= '<p class=\'my-0 f-11 text-dark-grey\'>' . $team->email . '</p>';
 
-                $teamData .= (!is_null($team->clientDetails->company_name)) ? '<p class=\'my-0 f-11 text-dark-grey\'>'. $team->clientDetails->company_name .'</p>' : '';
+                $teamData .= (!is_null($team->clientDetails->company_name)) ? '<p class=\'my-0 f-11 text-dark-grey\'>' . $team->clientDetails->company_name . '</p>' : '';
                 $teamData .= '</div>';
                 $teamData .= '</div>"';
 
-                $teamData .= 'value="' . $team->id . '"> ' . mb_ucwords($team->name) . '';
+                $teamData .= 'value="' . $team->id . '"> ' . $team->name . '';
 
                 $teamData .= '</option>';
             }
@@ -278,7 +283,7 @@ class ClientController extends AccountBaseController
         }
 
         $this->pageTitle = __('app.update') . ' ' . __('app.client');
-        $this->salutations = ['mr', 'mrs', 'miss', 'dr', 'sir', 'madam'];
+        $this->salutations = Salutation::cases();
         $this->languages = LanguageSetting::where('status', 'enabled')->get();
 
         if (!is_null($this->client->clientDetails)) {
@@ -291,13 +296,11 @@ class ClientController extends AccountBaseController
 
         $this->subcategories = ClientSubCategory::all();
 
-        if (request()->ajax()) {
-            $html = view('clients.ajax.edit', $this->data)->render();
-
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
-        }
-
         $this->view = 'clients.ajax.edit';
+
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
+        }
 
         return view('clients.create', $this->data);
 
@@ -312,6 +315,9 @@ class ClientController extends AccountBaseController
     {
         $user = User::withoutGlobalScope(ActiveScope::class)->findOrFail($id);
         $data = $request->all();
+
+        $employeeActivity = EmployeeActivity::findOrFail($id);
+       
 
         unset($data['password']);
         unset($data['country']);
@@ -352,6 +358,11 @@ class ClientController extends AccountBaseController
             $data['locale'] = $request->locale;
             $fields = $request->only($user->clientDetails->getFillable());
 
+            if ($request->has('company_logo_delete') && $request->company_logo_delete == 'yes') {
+                Files::deleteFile($user->clientDetails->company_logo, 'client-logo');
+                $fields['company_logo'] = null;
+            }
+
             if ($request->hasFile('company_logo')) {
                 Files::deleteFile($user->clientDetails->company_logo, 'client-logo');
                 $fields['company_logo'] = Files::uploadLocalOrS3($request->company_logo, 'client-logo', 300);
@@ -369,6 +380,9 @@ class ClientController extends AccountBaseController
         if ($request->custom_fields_data) {
             $user->clientDetails->updateCustomFieldData($request->custom_fields_data);
         }
+
+        $this->createEmployeeActivity(auth()->user()->id, 'client-updated', $id, 'client');
+
 
         $redirectUrl = urldecode($request->redirect_url);
 
@@ -418,9 +432,14 @@ class ClientController extends AccountBaseController
                 $q->where('data', 'like', '{"id":' . $user->id . ',%');
                 $q->orWhere('data', 'like', '%,"name":' . $user->name . ',%');
                 $q->orWhere('data', 'like', '%,"user_one":' . $user->id . ',%');
+                $q->orWhere('data', 'like', '%,"client_id":' . $user->id . '%');
             })->delete();
 
         $user->delete();
+
+        Lead::where('client_id', $user->id)->update(['client_id' => null]);
+        $this->createEmployeeActivity(auth()->user()->id, 'client-deleted');
+
     }
 
     /**
@@ -451,6 +470,7 @@ class ClientController extends AccountBaseController
         $users->each(function ($user) {
             $this->deleteClient($user);
         });
+
         return true;
     }
 
@@ -485,7 +505,7 @@ class ClientController extends AccountBaseController
             || ($this->viewPermission == 'added' && $this->client->clientDetails->added_by == user()->id)
             || ($this->viewPermission == 'both' && $this->client->clientDetails->added_by == user()->id)));
 
-        $this->pageTitle = ucfirst($this->client->name);
+        $this->pageTitle = $this->client->name;
 
         $this->clientStats = $this->clientStats($id);
         $this->projectChart = $this->projectChartData($id);
@@ -515,6 +535,8 @@ class ClientController extends AccountBaseController
             return $this->creditnotes();
         case 'contacts':
             return $this->contacts();
+        case 'orders':
+            return $this->orders();
         case 'documents':
             abort_403(!($this->viewDocumentPermission == 'all'
                 || ($this->viewDocumentPermission == 'added' && $this->client->clientDetails->added_by == user()->id)
@@ -531,7 +553,7 @@ class ClientController extends AccountBaseController
             $this->client = User::withoutGlobalScope(ActiveScope::class)->findOrFail($id);
             $this->consents = PurposeConsent::with(['user' => function ($query) use ($id) {
                 $query->where('client_id', $id)
-                    ->orderBy('created_at', 'desc');
+                    ->orderByDesc('created_at');
             }])->get();
 
             return $this->gdpr();
@@ -551,9 +573,7 @@ class ClientController extends AccountBaseController
         }
 
         if (request()->ajax()) {
-            $html = view($this->view, $this->data)->render();
-
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
 
         $this->activeTab = $tab ?: 'profile';
@@ -578,13 +598,13 @@ class ClientController extends AccountBaseController
     /**
      * XXXXXXXXXXX
      *
-     * @return \Illuminate\Http\Response
+     * @return array
      */
     public function projectChartData($id)
     {
-        $labels = ['in progress', 'on hold', 'not started', 'canceled', 'finished'];
-        $data['labels'] = [__('app.inProgress'), __('app.onHold'), __('app.notStarted'), __('app.canceled'), __('app.finished')];
-        $data['colors'] = ['#1d82f5', '#FCBD01', '#616e80', '#D30000', '#2CB100'];
+        $labels = ProjectStatusSetting::where('status', 'active')->pluck('status_name');
+        $data['labels'] = ProjectStatusSetting::where('status', 'active')->pluck('status_name');
+        $data['colors'] = ProjectStatusSetting::where('status', 'active')->pluck('color');
         $data['values'] = [];
 
         foreach ($labels as $label) {
@@ -647,9 +667,18 @@ class ClientController extends AccountBaseController
             $client = null;
         }
 
+        $clientProjects = Project::where('client_id', $id)->get();
+
+        $options = '<option value="">--</option>';
+
+        foreach ($clientProjects as $project) {
+
+            $options .= '<option value="' . $project->id . '"> ' . $project->project_name . ' </option>';
+        }
+
         $data = $client ?: null;
 
-        return Reply::dataOnly(['status' => 'success', 'data' => $data]);
+        return Reply::dataOnly(['status' => 'success', 'data' => $data, 'project' => $options]);
     }
 
     public function projects()
@@ -664,6 +693,7 @@ class ClientController extends AccountBaseController
         $this->view = 'clients.ajax.projects';
 
         $dataTable = new ProjectsDataTable();
+
         return $dataTable->render('clients.show', $this->data);
 
     }
@@ -782,7 +812,7 @@ class ClientController extends AccountBaseController
 
         $this->consent = PurposeConsent::with(['user' => function ($query) use ($request) {
             $query->where('client_id', $request->clientId)
-                ->orderBy('created_at', 'desc');
+                ->orderByDesc('created_at');
         }])
             ->where('id', $request->consentId)
             ->first();
@@ -834,14 +864,11 @@ class ClientController extends AccountBaseController
         $addPermission = user()->permission('add_clients');
         abort_403(!in_array($addPermission, ['all', 'added', 'both']));
 
+        $this->view = 'clients.ajax.import';
 
         if (request()->ajax()) {
-            $html = view('clients.ajax.import', $this->data)->render();
-
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
-
-        $this->view = 'clients.ajax.import';
 
         return view('clients.create', $this->data);
     }
@@ -866,12 +893,12 @@ class ClientController extends AccountBaseController
     {
         $id = $request->id;
 
-        $counts = User::withCount('projects', 'invoices', 'estimates')->find($id);
+        $counts = User::withCount('projects', 'invoices', 'estimates')->withoutGlobalScope(ActiveScope::class)->find($id);
 
         $payments = Payment::leftJoin('invoices', 'invoices.id', '=', 'payments.invoice_id')
             ->leftJoin('projects', 'projects.id', '=', 'payments.project_id')
             ->leftJoin('orders', 'orders.id', '=', 'payments.order_id')
-            ->where(function ($query) use($id) {
+            ->where(function ($query) use ($id) {
                 $query->where('projects.client_id', $id)
                     ->orWhere('invoices.client_id', $id)
                     ->orWhere('orders.client_id', $id);
@@ -882,9 +909,9 @@ class ClientController extends AccountBaseController
         $estimateName = $counts->estimates_count > 1 ? __('app.menu.estimates') : __('app.estimate');
         $paymentName = $payments > 1 ? __('app.menu.payments') : __('app.payment');
 
-        $deleteClient = (__('messages.clientFinanceCount', ['projectCount' => $counts->projects_count, 'invoiceCount' => $counts->invoices_count, 'estimateCount' => $counts->estimates_count, 'paymentCount' => $payments, 'project' => $projectName , 'invoice' => $invoiceName , 'estimate' => $estimateName , 'payment' => $paymentName ]));
+        $deleteClient = (__('messages.clientFinanceCount', ['projectCount' => $counts->projects_count, 'invoiceCount' => $counts->invoices_count, 'estimateCount' => $counts->estimates_count, 'paymentCount' => $payments, 'project' => $projectName, 'invoice' => $invoiceName, 'estimate' => $estimateName, 'payment' => $paymentName]));
 
-        return Reply::dataOnly(['status' => 'success', 'deleteClient' => $deleteClient ]);
+        return Reply::dataOnly(['status' => 'success', 'deleteClient' => $deleteClient]);
     }
 
     public function clientDetails(Request $request)
@@ -900,47 +927,63 @@ class ClientController extends AccountBaseController
 
                 $teamData .= '<div class=\'media align-items-center mw-250\'>';
 
-                $teamData .= '<div class=\'position-relative\'><img src='.$client->image_url.' class=\'mr-2 taskEmployeeImg rounded-circle\'></div>';
+                $teamData .= '<div class=\'position-relative\'><img src=' . $client->image_url . ' class=\'mr-2 taskEmployeeImg rounded-circle\'></div>';
                 $teamData .= '<div class=\'media-body\'>';
-                $teamData .= '<h5 class=\'mb-0 f-13\'>'.ucfirst($client->name).'</h5>';
-                $teamData .= '<p class=\'my-0 f-11 text-dark-grey\'>'.$client->email.'</p>';
+                $teamData .= '<h5 class=\'mb-0 f-13\'>' . $client->name . '</h5>';
+                $teamData .= '<p class=\'my-0 f-11 text-dark-grey\'>' . $client->email . '</p>';
 
-                $teamData .= (!is_null($client->clientDetails->company_name)) ? '<p class=\'my-0 f-11 text-dark-grey\'>'. $client->clientDetails->company_name .'</p>' : '';
+                $teamData .= (!is_null($client->clientDetails->company_name)) ? '<p class=\'my-0 f-11 text-dark-grey\'>' . $client->clientDetails->company_name . '</p>' : '';
                 $teamData .= '</div>';
                 $teamData .= '</div>"';
 
-                $teamData .= 'value="' . $client->id . '"> ' . mb_ucwords($client->name) . '';
+                $teamData .= 'value="' . $client->id . '"> ' . $client->name . '';
 
                 $teamData .= '</option>';
 
             }
-        } else {
+        }
+        else {
 
             $project = Project::with('client')->findOrFail($request->id);
 
-            if($project->client != null) {
+            if ($project->client != null) {
 
                 $teamData .= '<option data-content="';
 
                 $teamData .= '<div class=\'media align-items-center mw-250\'>';
 
-                $teamData .= '<div class=\'position-relative\'><img src='.$project->client->image_url.' class=\'mr-2 taskEmployeeImg rounded-circle\'></div>';
+                $teamData .= '<div class=\'position-relative\'><img src=' . $project->client->image_url . ' class=\'mr-2 taskEmployeeImg rounded-circle\'></div>';
                 $teamData .= '<div class=\'media-body\'>';
-                $teamData .= '<h5 class=\'mb-0 f-13\'>'.ucfirst($project->client->name).'</h5>';
-                $teamData .= '<p class=\'my-0 f-11 text-dark-grey\'>'.$project->client->email.'</p>';
+                $teamData .= '<h5 class=\'mb-0 f-13\'>' . $project->client->name . '</h5>';
+                $teamData .= '<p class=\'my-0 f-11 text-dark-grey\'>' . $project->client->email . '</p>';
 
-                $teamData .= (!is_null($project->client->company->company_name)) ? '<p class=\'my-0 f-11 text-dark-grey\'>'. $project->client->company->company_name .'</p>' : '';
+                $teamData .= (!is_null($project->client->company->company_name)) ? '<p class=\'my-0 f-11 text-dark-grey\'>' . $project->client->company->company_name . '</p>' : '';
                 $teamData .= '</div>';
                 $teamData .= '</div>"';
 
-                $teamData .= 'value="' . $project->client->id . '"> ' . mb_ucwords($project->client->name) . '';
+                $teamData .= 'value="' . $project->client->id . '"> ' . $project->client->name . '';
 
                 $teamData .= '</option>';
             }
 
         }
 
-             return Reply::dataOnly(['teamData' => $teamData]);
+        return Reply::dataOnly(['teamData' => $teamData]);
+    }
+
+    public function orders()
+    {
+        $dataTable = new OrdersDataTable();
+        $viewPermission = user()->permission('view_order');
+        abort_403(!in_array($viewPermission, ['all', 'added', 'owned', 'both']));
+
+        $tab = request('tab');
+
+        $this->activeTab = $tab ?: 'profile';
+
+        $this->view = 'clients.ajax.orders';
+
+        return $dataTable->render('clients.show', $this->data);
     }
 
 }

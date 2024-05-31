@@ -14,7 +14,7 @@ class ProjectNoteMentionListener
     /**
      * Handle the event.
      *
-     * @param  ProjectNoteMentionEvent $event
+     * @param ProjectNoteMentionEvent $event
      * @return void
      */
 

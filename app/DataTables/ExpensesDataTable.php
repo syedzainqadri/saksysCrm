@@ -19,14 +19,16 @@ class ExpensesDataTable extends BaseDataTable
     private $deleteExpensePermission;
     private $viewExpensePermission;
     private $approveExpensePermission;
+    private $includeSoftDeletedProjects;
 
-    public function __construct()
+    public function __construct($includeSoftDeletedProjects = false)
     {
         parent::__construct();
         $this->editExpensePermission = user()->permission('edit_expenses');
         $this->deleteExpensePermission = user()->permission('delete_expenses');
         $this->viewExpensePermission = user()->permission('view_expenses');
         $this->approveExpensePermission = user()->permission('approve_expenses');
+        $this->includeSoftDeletedProjects = $includeSoftDeletedProjects;
     }
 
     /**
@@ -40,9 +42,7 @@ class ExpensesDataTable extends BaseDataTable
 
         $datatables = datatables()->eloquent($query);
         $datatables->addIndexColumn();
-        $datatables->addColumn('check', function ($row) {
-            return '<input type="checkbox" class="select-table-row" id="datatable-row-' . $row->id . '"  name="datatable_ids[]" value="' . $row->id . '" onclick="dataTableRowCheck(' . $row->id . ')">';
-        });
+        $datatables->addColumn('check', fn($row) => $this->checkBox($row));
         $datatables->addColumn('action', function ($row) {
 
             $action = '<div class="task_view">
@@ -58,10 +58,17 @@ class ExpensesDataTable extends BaseDataTable
 
             if (is_null($row->expenses_recurring_id)) {
                 if ($this->editExpensePermission == 'all' || ($this->editExpensePermission == 'added' && user()->id == $row->added_by)) {
-                    $action .= '<a class="dropdown-item openRightModal" href="' . route('expenses.edit', [$row->id]) . '">
+                    if (is_null($row->project_id)) {
+                        $action .= '<a class="dropdown-item openRightModal" href="' . route('expenses.edit', [$row->id]) . '">
                                 <i class="fa fa-edit mr-2"></i>
                                 ' . trans('app.edit') . '
+                                </a>';
+                    } else if (!is_null($row->project_id) && is_null($row->project_deleted_at)) {
+                        $action .= '<a class="dropdown-item openRightModal" href="' . route('expenses.edit', [$row->id]) . '">
+                            <i class="fa fa-edit mr-2"></i>
+                            ' . trans('app.edit') . '
                             </a>';
+                    }
                 }
 
                 if ($this->deleteExpensePermission == 'all' || ($this->deleteExpensePermission == 'added' && user()->id == $row->added_by)) {
@@ -90,10 +97,10 @@ class ExpensesDataTable extends BaseDataTable
                 <p class="mb-0"><span class="badge badge-primary"> ' . __('app.recurring') . ' </span></p>';
         });
         $datatables->addColumn('export_item_name', function ($row) {
-            return ucfirst($row->item_name);
+            return $row->item_name;
         });
         $datatables->addColumn('employee_name', function ($row) {
-            return ucfirst($row->user->name);
+            return $row->user->name;
         });
         $datatables->editColumn('user_id', function ($row) {
             return view('components.employee', [
@@ -160,7 +167,7 @@ class ExpensesDataTable extends BaseDataTable
             return $status;
         });
         $datatables->addColumn('status_export', function ($row) {
-            return ucfirst($row->status);
+            return $row->status;
         });
 
         $datatables->editColumn(
@@ -178,9 +185,7 @@ class ExpensesDataTable extends BaseDataTable
             }
         );
         $datatables->smart(false);
-        $datatables->setRowId(function ($row) {
-            return 'row-' . $row->id;
-        });
+        $datatables->setRowId(fn($row) => 'row-' . $row->id);
         $datatables->addIndexColumn();
         $datatables->removeColumn('currency_id');
         $datatables->removeColumn('name');
@@ -204,19 +209,24 @@ class ExpensesDataTable extends BaseDataTable
         $request = $this->request();
 
         $model = Expense::with('currency', 'user', 'user.employeeDetail', 'user.employeeDetail.designation', 'user.session')
-            ->select('expenses.id', 'expenses.item_name', 'expenses.user_id', 'expenses.price', 'users.name', 'expenses.purchase_date', 'expenses.currency_id', 'currencies.currency_symbol', 'expenses.status', 'expenses.purchase_from', 'expenses.expenses_recurring_id', 'designations.name as designation_name', 'expenses.added_by')
+            ->select('expenses.id', 'expenses.project_id', 'expenses.item_name', 'expenses.user_id', 'expenses.price', 'users.salutation', 'users.name', 'expenses.purchase_date', 'expenses.currency_id', 'currencies.currency_symbol', 'expenses.status', 'expenses.purchase_from', 'expenses.expenses_recurring_id', 'designations.name as designation_name', 'expenses.added_by', 'projects.deleted_at as project_deleted_at')
             ->join('users', 'users.id', 'expenses.user_id')
             ->leftJoin('employee_details', 'employee_details.user_id', '=', 'users.id')
             ->leftJoin('designations', 'employee_details.designation_id', '=', 'designations.id')
+            ->leftJoin('projects', 'projects.id', 'expenses.project_id')
             ->join('currencies', 'currencies.id', 'expenses.currency_id');
 
+        if (!$this->includeSoftDeletedProjects) {
+            $model->whereNull('projects.deleted_at');
+        }
+
         if ($request->startDate !== null && $request->startDate != 'null' && $request->startDate != '') {
-            $startDate = Carbon::createFromFormat($this->company->date_format, $request->startDate)->toDateString();
+            $startDate = companyToDateString($request->startDate);
             $model = $model->where(DB::raw('DATE(expenses.`purchase_date`)'), '>=', $startDate);
         }
 
         if ($request->endDate !== null && $request->endDate != 'null' && $request->endDate != '') {
-            $endDate = Carbon::createFromFormat($this->company->date_format, $request->endDate)->toDateString();
+            $endDate = companyToDateString($request->endDate);
             $model = $model->where(DB::raw('DATE(expenses.`purchase_date`)'), '<=', $endDate);
         }
 
@@ -273,7 +283,7 @@ class ExpensesDataTable extends BaseDataTable
      */
     public function html()
     {
-        return $this->setBuilder('expenses-table', 2)
+        $dataTable = $this->setBuilder('expenses-table', 2)
             ->parameters([
                 'initComplete' => 'function () {
                     window.LaravelDataTables["expenses-table"].buttons().container()
@@ -282,8 +292,13 @@ class ExpensesDataTable extends BaseDataTable
                 'fnDrawCallback' => 'function( oSettings ) {
                     $(".change-expense-status").selectpicker();
                 }',
-            ])
-            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+            ]);
+
+        if (canDataTableExport()) {
+            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+        }
+
+        return $dataTable;
     }
 
     /**

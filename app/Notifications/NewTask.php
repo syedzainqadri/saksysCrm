@@ -43,7 +43,7 @@ class NewTask extends BaseNotification
         }
 
         if ($this->emailSetting->send_slack == 'yes' && $this->company->slackSetting->status == 'active') {
-            array_push($via, 'slack');
+            $this->slackUserNameCheck($notifiable) ? array_push($via, 'slack') : null;
         }
 
         if ($this->emailSetting->send_push == 'yes') {
@@ -66,13 +66,17 @@ class NewTask extends BaseNotification
         $url = getDomainSpecificUrl($url, $this->company);
 
         $dueDate = (!is_null($this->task->due_date)) ? $this->task->due_date->format($this->company->date_format) : null;
+        $taskShortCode = (!is_null($this->task->task_short_code)) ? '#' . $this->task->task_short_code . ' - ' : ' ';
 
-        $content = ucfirst($this->task->heading) . ' #' . $this->task->task_short_code . '<p>
+
+        $content = $this->task->heading . ' ' . $taskShortCode . '<p>
             <b style="color: green">' . __('app.dueDate') . ': ' . $dueDate . '</b>
         </p>';
 
+        $subject = __('email.newTask.subject') . ' ' . $taskShortCode . config('app.name'). '.';
+
         return $build
-            ->subject(__('email.newTask.subject') . ' #' . $this->task->task_short_code . ' - ' . config('app.name') . '.')
+            ->subject($subject)
             ->greeting(__('email.hello') . ' ' . $notifiable->name . ',')
             ->markdown('mail.task.created', [
                 'url' => $url,
@@ -104,21 +108,13 @@ class NewTask extends BaseNotification
      */
     public function toSlack($notifiable)
     {
-        $slack = $notifiable->company->slackSetting;
         $dueDate = (!is_null($this->task->due_date)) ? $this->task->due_date->format($this->company->date_format) : null;
+        $url = route('tasks.show', $this->task->id);
+        $url = getDomainSpecificUrl($url, $this->company);
 
-        if (count($notifiable->employee) > 0 && (!is_null($notifiable->employee[0]->slack_username) && ($notifiable->employee[0]->slack_username != ''))) {
-            return (new SlackMessage())
-                ->from(config('app.name'))
-                ->image($slack->slack_logo_url)
-                ->to('@' . $notifiable->employee[0]->slack_username)
-                ->content('*' . __('email.newTask.subject') . '*' . "\n" . '<' . route('tasks.show', $this->task->id) . '|' . ucfirst($this->task->heading) . '>' . "\n" . ' #' . $this->task->task_short_code . "\n" . __('app.dueDate') . ': ' . $dueDate . (!is_null($this->task->project) ? "\n" . __('app.project') . ' - ' . ucfirst($this->task->project->project_name) : ''));
-        }
+        return $this->slackBuild($notifiable)
+            ->content('*' . __('email.newTask.subject') . '*' . "\n" . '<' . $url . '|' . $this->task->heading . '>' . "\n" . ' #' . $this->task->task_short_code . "\n" . __('app.dueDate') . ': ' . $dueDate . (!is_null($this->task->project) ? "\n" . __('app.project') . ' - ' . $this->task->project->project_name : ''));
 
-        return (new SlackMessage())
-            ->from(config('app.name'))
-            ->image($slack->slack_logo_url)
-            ->content('*' . __('email.newTask.subject') . '*' . "\n" .'This is a redirected notification. Add slack username for *' . $notifiable->name . '*');
     }
 
     // phpcs:ignore

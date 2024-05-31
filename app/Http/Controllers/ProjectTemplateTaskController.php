@@ -21,8 +21,14 @@ class ProjectTemplateTaskController extends AccountBaseController
 
         $this->middleware(function ($request, $next) {
             abort_403(!in_array('projects', $this->user->modules));
+
             return $next($request);
         });
+    }
+
+    public function index()
+    {
+        return redirect()->route('project-template.index');
     }
 
     /**
@@ -45,16 +51,17 @@ class ProjectTemplateTaskController extends AccountBaseController
         if (!is_null($this->project)) {
             $this->employees = $this->project->projectMembers;
 
-        } else {
+        }
+        else {
             $this->employees = User::allEmployees();
         }
 
+        $this->view = 'project-templates.task.ajax.create';
+
         if (request()->ajax()) {
-            $html = view('project-templates.task.ajax.create', $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
 
-        $this->view = 'project-templates.task.ajax.create';
         return view('project-templates.task.create', $this->data);
 
     }
@@ -78,7 +85,7 @@ class ProjectTemplateTaskController extends AccountBaseController
         $task->priority = $request->priority;
         $task->save();
 
-        if($request->user_id){
+        if ($request->user_id) {
             foreach ($request->user_id as $key => $value) {
                 ProjectTemplateTaskUser::create([
                     'user_id' => $value,
@@ -98,7 +105,7 @@ class ProjectTemplateTaskController extends AccountBaseController
      */
     public function show($id)
     {
-        $this->task = ProjectTemplateTask::findOrFail($id);
+        $this->task = ProjectTemplateTask::with(['category'])->findOrFail($id);
 
         $manageProjectTemplatePermission = user()->permission('manage_project_template');
         $viewProjectTemplatePermission = user()->permission('view_project_template');
@@ -108,19 +115,16 @@ class ProjectTemplateTaskController extends AccountBaseController
         $this->pageTitle = __('app.task') . ' # ' . $this->task->id;
 
         $this->tab = 'project-templates.task.ajax.sub_tasks';
+        $this->view = 'project-templates.task.ajax.show';
 
         if (request()->ajax()) {
 
-            if (request('json') == true) {
-                $html = view($this->tab, $this->data)->render();
-                return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            if (request('json')) {
+                return $this->returnAjax($this->tab);
             }
 
-            $html = view('project-templates.task.ajax.show', $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
-
-        $this->view = 'project-templates.task.ajax.show';
 
         return view('project-templates.task.create', $this->data);
 
@@ -144,12 +148,11 @@ class ProjectTemplateTaskController extends AccountBaseController
         $this->template = ProjectTemplate::findOrFail($this->task->project_template_id);
         $this->employees = User::allEmployees();
 
-        if (request()->ajax()) {
-            $html = view('project-templates.task.ajax.edit', $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
-        }
-
         $this->view = 'project-templates.task.ajax.edit';
+
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
+        }
 
         return view('project-templates.task.create', $this->data);
 
@@ -176,7 +179,7 @@ class ProjectTemplateTaskController extends AccountBaseController
 
         ProjectTemplateTaskUser::where('project_template_task_id', $task->id)->delete();
 
-        if($request->user_id){
+        if ($request->user_id) {
             foreach ($request->user_id as $key => $value) {
                 ProjectTemplateTaskUser::create(
                     [
@@ -199,6 +202,7 @@ class ProjectTemplateTaskController extends AccountBaseController
     public function destroy($id)
     {
         ProjectTemplateTask::destroy($id);
+
         return Reply::success(__('messages.deleteSuccess'));
     }
 

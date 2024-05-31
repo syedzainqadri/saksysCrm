@@ -2,10 +2,12 @@
 
 namespace App\Notifications;
 
-use App\Models\EmailNotificationSetting;
 use App\Http\Controllers\InvoiceController;
+use App\Models\EmailNotificationSetting;
+use App\Models\GlobalSetting;
 use App\Models\Invoice;
 use NotificationChannels\OneSignal\OneSignalChannel;
+use NotificationChannels\OneSignal\OneSignalMessage;
 
 class InvoiceUpdated extends BaseNotification
 {
@@ -60,7 +62,7 @@ class InvoiceUpdated extends BaseNotification
                 $pdf = $pdfOption['pdf'];
                 $filename = $pdfOption['fileName'];
 
-                $url = route('front.invoice', $this->invoice->hash);
+                $url = url()->temporarySignedRoute('front.invoice', now()->addDays(GlobalSetting::SIGNED_ROUTE_EXPIRY), $this->invoice->hash);
                 $url = getDomainSpecificUrl($url, $this->company);
 
                 $content = __('email.invoice.updateText');
@@ -94,6 +96,14 @@ class InvoiceUpdated extends BaseNotification
             'id' => $this->invoice->id,
             'invoice_number' => $this->invoice->invoice_number
         ];
+    }
+
+    // phpcs:ignore
+    public function toOneSignal($notifiable)
+    {
+        return OneSignalMessage::create()
+            ->setSubject(__('email.invoice.updateSubject'))
+            ->setBody(__('email.invoice.updateText'));
     }
 
 }

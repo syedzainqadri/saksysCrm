@@ -1,5 +1,5 @@
 <div class="modal-header">
-    <h5 class="modal-title" id="modelHeading">@lang('app.update') @lang('modules.tickets.template')</h5>
+    <h5 class="modal-title" id="modelHeading">@lang('app.updateTemplate')</h5>
     <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span>
     </button>
 </div>
@@ -19,11 +19,11 @@
 
                     <div class="col-md-12">
                         <div class="form-group my-3">
-                            <x-forms.label fieldId="reply_text" fieldRequired="true"
+                            <x-forms.label fieldId="description" fieldRequired="true"
                                            :fieldLabel="__('modules.tickets.templateText')">
                             </x-forms.label>
-                            <div id="reply_text">{!! $template->reply_text !!}</div>
-                            <textarea name="reply_text" id="reply_text_text" class="d-none"></textarea>
+                            <div id="description">{!! $template->reply_text !!}</div>
+                            <textarea name="description" id="description_text" class="d-none"></textarea>
                         </div>
                     </div>
 
@@ -40,12 +40,12 @@
 
 <script>
     $(document).ready(function () {
-        quillImageLoad('#reply_text');
+        quillImageLoad('#description');
     });
 
     $('#update-template').click(function () {
-        var note = document.getElementById('reply_text').children[0].innerHTML;
-        document.getElementById('reply_text_text').value = note;
+        var note = document.getElementById('description').children[0].innerHTML;
+        document.getElementById('description_text').value = note;
 
         $.easyAjax({
             url: "{{ route('replyTemplates.update', $template->id) }}",

@@ -4,7 +4,6 @@ namespace App\DataTables;
 
 use Yajra\DataTables\Services\DataTable;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Str;
 
 class BaseDataTable extends DataTable
 {
@@ -26,7 +25,7 @@ class BaseDataTable extends DataTable
 
         return parent::builder()
             ->setTableId($table)
-            ->columns($this->getColumns())
+            ->columns($this->getColumns()) /** @phpstan-ignore-line */
             ->minifiedAjax()
             ->orderBy($orderBy)
             ->destroy(true)
@@ -42,9 +41,14 @@ class BaseDataTable extends DataTable
     protected function filename(): string
     {
         // Remove DataTable from name
-        $filename = strtolower(str()->snake(class_basename($this), '-'));
+        $filename = str()->snake(class_basename($this), '-');
 
         return str_replace('data-table', '', $filename)  . now()->format('Y-m-d-H-i-s');
+    }
+
+    public function checkBox($row): string
+    {
+        return '<input type="checkbox" class="select-table-row" id="datatable-row-' . $row->id . '"  name="datatable_ids[]" value="' . $row->id . '" onclick="dataTableRowCheck(' . $row->id . ')">';
     }
 
 }

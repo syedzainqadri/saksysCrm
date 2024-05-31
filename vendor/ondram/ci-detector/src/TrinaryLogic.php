@@ -15,10 +15,8 @@ final class TrinaryLogic
     private const NO = -1;
 
     /** @var self[] */
-    private static $registry = [];
-
-    /** @var int */
-    private $value;
+    private static array $registry = [];
+    private int $value;
 
     private function __construct(int $value)
     {
@@ -35,13 +33,8 @@ final class TrinaryLogic
         return self::create($value ? self::YES : self::NO);
     }
 
-    private static function create(int $value): self
-    {
-        return self::$registry[$value] = self::$registry[$value] ?? new self($value);
-    }
-
     /**
-     * Return true if its known for sure that the value is true
+     * Return true if it's known for sure that the value is true
      */
     public function yes(): bool
     {
@@ -49,7 +42,7 @@ final class TrinaryLogic
     }
 
     /**
-     * Return true if its not known for sure whether the value is true or false
+     * Return true if it's not known for sure whether the value is true or false
      */
     public function maybe(): bool
     {
@@ -57,7 +50,7 @@ final class TrinaryLogic
     }
 
     /**
-     * Return true if its known for sure that the value is false
+     * Return true if it's known for sure that the value is false
      */
     public function no(): bool
     {
@@ -66,7 +59,8 @@ final class TrinaryLogic
 
     /**
      * Return string representation of the value.
-     * "Yes" when the value is true, "No" when its false, "Maybe" when its not known for sure whether its true or false.
+     * "Yes" when the value is true, "No" when its false, "Maybe" when it's not known for sure whether its
+     *  true or false.
      */
     public function describe(): string
     {
@@ -77,5 +71,10 @@ final class TrinaryLogic
         ];
 
         return $labels[$this->value];
+    }
+
+    private static function create(int $value): self
+    {
+        return self::$registry[$value] ??= new self($value);
     }
 }

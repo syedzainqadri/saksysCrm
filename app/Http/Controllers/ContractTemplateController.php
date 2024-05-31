@@ -58,13 +58,13 @@ class ContractTemplateController extends AccountBaseController
         $this->contractTypes = ContractType::all();
         $this->currencies = Currency::all();
 
+        $this->pageTitle = __('app.menu.addContractTemplate');
+        $this->view = 'contract-template.ajax.create';
+
         if (request()->ajax()) {
-            $this->pageTitle = __('app.menu.addContractTemplate');
-            $html = view('contract-template.ajax.create', $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
 
-        $this->view = 'contract-template.ajax.create';
         return view('contract-template.create', $this->data);
     }
 
@@ -76,13 +76,8 @@ class ContractTemplateController extends AccountBaseController
         $contract->currency_id = $request->currency_id;
         $contract->contract_type_id = $request->contract_type;
         $contract->description = trim_editor($request->description);
-        $contract->description = $request->contract_detail;
+        $contract->contract_detail = trim_editor($request->description);
         $contract->added_by = user()->id;
-
-        if ($request->contract_detail) {
-            $contract->contract_detail = $request->contract_detail;
-        }
-
         $contract->save();
 
         return Reply::redirect(route('contract-template.index'), __('messages.recordSaved'));
@@ -91,7 +86,7 @@ class ContractTemplateController extends AccountBaseController
     /**
      * Display the specified resource.
      *
-     * @param  int  $id
+     * @param int $id
      * @return \Illuminate\Http\Response
      */
     public function show($id)
@@ -100,15 +95,13 @@ class ContractTemplateController extends AccountBaseController
         $this->manageContractTemplatePermission = user()->permission('manage_contract_template');
         abort_403(!in_array($this->manageContractTemplatePermission, ['all', 'added']));
 
-        $this->view = 'contract-template.ajax.overview';
         $this->pageTitle = __('app.menu.contractTemplate');
+        $this->view = 'contract-template.ajax.overview';
 
         if (request()->ajax()) {
-            $html = view($this->view, $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
 
-        $this->view = 'contract-template.ajax.overview';
         return view('contract-template.create', $this->data);
 
     }
@@ -116,7 +109,7 @@ class ContractTemplateController extends AccountBaseController
     /**
      * Show the form for editing the specified resource.
      *
-     * @param  int  $id
+     * @param int $id
      * @return \Illuminate\Http\Response
      */
 
@@ -129,13 +122,14 @@ class ContractTemplateController extends AccountBaseController
         $this->contractTypes = ContractType::all();
         $this->currencies = Currency::all();
 
-        if (request()->ajax()) {
-            $this->pageTitle = __('app.update') . ' ' . __('app.menu.contractTemplate');
-            $html = view('contract-template.ajax.edit', $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
-        }
+        $this->pageTitle = __('app.update') . ' ' . __('app.menu.contractTemplate');
 
         $this->view = 'contract-template.ajax.edit';
+
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
+        }
+
         return view('contract-template.create', $this->data);
     }
 
@@ -147,11 +141,7 @@ class ContractTemplateController extends AccountBaseController
         $contract->currency_id = $request->currency_id;
         $contract->contract_type_id = $request->contract_type;
         $contract->description = trim_editor($request->description);
-        $contract->description = $request->contract_detail;
-
-        if ($request->contract_detail) {
-            $contract->contract_detail = $request->contract_detail;
-        }
+        $contract->contract_detail = trim_editor($request->description);
 
         $contract->save();
 
@@ -162,6 +152,7 @@ class ContractTemplateController extends AccountBaseController
     {
         if ($request->action_type == 'delete') {
             $this->deleteRecords($request);
+
             return Reply::success(__('messages.deleteSuccess'));
         }
 
@@ -173,13 +164,14 @@ class ContractTemplateController extends AccountBaseController
         abort_403(user()->permission('manage_contract_template') != 'all' && user()->permission('manage_contract_template') != 'added');
 
         ContractTemplate::whereIn('id', explode(',', $request->row_ids))->delete();
+
         return true;
     }
 
     /**
      * Remove the specified resource from storage.
      *
-     * @param  int  $id
+     * @param int $id
      * @return \Illuminate\Http\Response
      */
     public function destroy($id)
@@ -187,6 +179,7 @@ class ContractTemplateController extends AccountBaseController
         $contract = ContractTemplate::findOrFail($id);
 
         $contract->destroy($id);
+
         return Reply::success(__('messages.deleteSuccess'));
     }
 

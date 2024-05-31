@@ -71,7 +71,7 @@
                                 data-container="body" data-size="8">
                             <option value="all">@lang('app.all')</option>
                             @foreach ($projects as $project)
-                                <option value="{{ $project->id }}">{{ mb_ucwords($project->project_name) }}</option>
+                                <option value="{{ $project->id }}">{{ $project->project_name }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -338,23 +338,12 @@
             });
         });
 
-        $('body').on('click', '.stop-active-timer', function () {
-            const id = $(this).data('time-id');
-            let url = "{{ route('timelogs.stop_timer', ':id') }}";
+        $('body').on('click', '.stop-active-timer', function() {
+            var url = "{{ route('timelogs.stopper_alert', ':id') }}?via=timelog";
+            var id = $(this).data('time-id');
             url = url.replace(':id', id);
-            const token = '{{ csrf_token() }}';
-            $.easyAjax({
-                url: url,
-                type: "POST",
-                data: {
-                    timeId: id,
-                    _token: token
-                },
-                success: function (data) {
-                    showTable();
-                }
-            })
-
+            $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
+            $.ajaxModal(MODAL_LG, url);
         });
 
         $('body').on('click', '.approve-timelog', function () {

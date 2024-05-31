@@ -10,6 +10,7 @@ use Illuminate\Queue\SerializesModels;
 
 class TimeTrackerReminderEvent
 {
+
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public $user;

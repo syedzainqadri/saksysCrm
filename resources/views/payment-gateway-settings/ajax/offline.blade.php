@@ -11,41 +11,36 @@
                     <th class="text-right">@lang('app.action')</th>
                 </x-slot>
 
-                @forelse($offlineMethods as $key => $method)
+                @forelse($offlineMethods as $method)
                     <tr class="row{{ $method->id }}">
-                        <td>{{ $key + 1 }}</td>
-                        <td>{{ mb_ucwords($method->name) }}</td>
+                        <td>{{ $loop->iteration }}</td>
+                        <td>{{ $method->name }}</td>
                         <td class="text-break">{!! nl2br($method->description) !!} </td>
-                        <td>
-                            <i @class([
-                            'fa fa-circle mr-1 f-10',
-                            'text-light-green' => $method->status == 'yes',
-                            'text-red' => $method->status !== 'yes',
-                            ]) ></i>
-                            {{ ($method->status == 'yes') ? __('app.active'): __('app.inactive') }}
-                        </td>
+                        <td>{!! ($method->status == 'yes') ? \App\Helper\Common::active(): \App\Helper\Common::inactive() !!}</td>
 
                         <td class="text-right">
                             <div class="task_view">
-                                <a class="task_view_more d-flex align-items-center justify-content-center edit-type"
-                                   href="javascript:;" data-type-id="{{ $method->id }}">
-                                    <i class="fa fa-edit icons mr-2"></i> @lang('app.edit')
+                                <a href="javascript:;" data-type-id="{{ $method->id }}"
+                                   class="task_view_more d-flex align-items-center justify-content-center edit-type"
+                                   data-toggle="tooltip"
+                                   data-original-title="@lang('app.edit')">
+                                    <i class="fa fa-edit icons"></i>
                                 </a>
                             </div>
                             <div class="task_view">
-                                <a class="task_view_more d-flex align-items-center justify-content-center delete-type"
-                                   href="javascript:;" data-type-id="{{ $method->id }}">
-                                    <i class="fa fa-trash icons mr-2"></i> @lang('app.delete')
+                                <a href="javascript:;" data-data-id="{{ $method->id }}"
+                                   class="task_view_more d-flex align-items-center justify-content-center delete-type"
+                                   data-toggle="tooltip"
+                                   data-original-title="@lang('app.delete')">
+                                    <i class="fa fa-trash icons"></i>
                                 </a>
+
                             </div>
                         </td>
-
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="5" class="text-center">
-                            <x-cards.no-record icon="key" :message="__('messages.norecordSaved')" />
-                        </td>
+                        <x-cards.no-record-found-list colspan="5"/>
                     </tr>
                 @endforelse
             </x-table>

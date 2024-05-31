@@ -30,6 +30,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @method static \Illuminate\Database\Eloquent\Builder|EstimateItemImage whereSize($value)
  * @method static \Illuminate\Database\Eloquent\Builder|EstimateItemImage whereUpdatedAt($value)
  * @property-read \App\Models\EstimateItem $item
+ * @property-read mixed $file
  * @mixin \Eloquent
  */
 class EstimateItemImage extends BaseModel
@@ -39,20 +40,21 @@ class EstimateItemImage extends BaseModel
 
     const FILE_PATH = 'estimate-files';
 
-    protected $appends = ['file_url', 'icon'];
+    protected $appends = ['file_url', 'icon', 'file'];
     protected $fillable = ['estimate_item_id', 'filename', 'hashname', 'size', 'external_link'];
 
     public function getFileUrlAttribute()
     {
-        if (empty($this->external_link)) {
-            return asset_url_local_s3('estimate-files/' . $this->estimate_item_id . '/' . $this->hashname);
+        if($this->external_link){
+            return str($this->external_link)->contains('http') ? $this->external_link : asset_url_local_s3($this->external_link);
         }
 
-        if (!empty($this->external_link)) {
-            return $this->external_link;
-        }
+        return asset_url_local_s3(EstimateItemImage::FILE_PATH . '/' . $this->estimate_item_id . '/' . $this->hashname);
+    }
 
-        return '';
+    public function getFileAttribute()
+    {
+        return $this->external_link ?: (EstimateItemImage::FILE_PATH . '/' . $this->estimate_item_id . '/' . $this->hashname);
     }
 
     public function item() : BelongsTo

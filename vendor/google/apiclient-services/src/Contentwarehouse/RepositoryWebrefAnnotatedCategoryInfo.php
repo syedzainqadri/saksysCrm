@@ -22,11 +22,7 @@ class RepositoryWebrefAnnotatedCategoryInfo extends \Google\Model
   /**
    * @var string
    */
-  public $debugString;
-  /**
-   * @var float
-   */
-  public $listiness;
+  public $collectionHrid;
   /**
    * @var string
    */
@@ -35,30 +31,16 @@ class RepositoryWebrefAnnotatedCategoryInfo extends \Google\Model
   /**
    * @param string
    */
-  public function setDebugString($debugString)
+  public function setCollectionHrid($collectionHrid)
   {
-    $this->debugString = $debugString;
+    $this->collectionHrid = $collectionHrid;
   }
   /**
    * @return string
    */
-  public function getDebugString()
+  public function getCollectionHrid()
   {
-    return $this->debugString;
-  }
-  /**
-   * @param float
-   */
-  public function setListiness($listiness)
-  {
-    $this->listiness = $listiness;
-  }
-  /**
-   * @return float
-   */
-  public function getListiness()
-  {
-    return $this->listiness;
+    return $this->collectionHrid;
   }
   /**
    * @param string

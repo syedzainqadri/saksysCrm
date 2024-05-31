@@ -27,9 +27,9 @@ class UpdateClientRequest extends CoreRequest
     public function rules()
     {
         $rules = [
-            'email' => 'nullable|email|required_if:login,enable|unique:users,email,'.$this->route('client').',id,company_id,' . company()->id,
             'slack_username' => 'nullable|unique',
             'name'  => 'required',
+            'email' => 'nullable|email:rfc,strict|required_if:login,enable|unique:users,email,'.$this->route('client').',id,company_id,' . company()->id,
             'website' => 'nullable|url',
             'country' => 'required_with:mobile',
             'password' => 'nullable|min:8',

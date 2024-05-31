@@ -17,6 +17,8 @@
 
 namespace Google\Service\Networkconnectivity\Resource;
 
+use Google\Service\Networkconnectivity\Group;
+use Google\Service\Networkconnectivity\ListGroupsResponse;
 use Google\Service\Networkconnectivity\Policy;
 use Google\Service\Networkconnectivity\SetIamPolicyRequest;
 use Google\Service\Networkconnectivity\TestIamPermissionsRequest;
@@ -32,6 +34,20 @@ use Google\Service\Networkconnectivity\TestIamPermissionsResponse;
  */
 class ProjectsLocationsNetworkconnectivityGlobalHubsGroups extends \Google\Service\Resource
 {
+  /**
+   * Gets details about a Network Connectivity Center group. (groups.get)
+   *
+   * @param string $name Required. The name of the route table resource.
+   * @param array $optParams Optional parameters.
+   * @return Group
+   * @throws \Google\Service\Exception
+   */
+  public function get($name, $optParams = [])
+  {
+    $params = ['name' => $name];
+    $params = array_merge($params, $optParams);
+    return $this->call('get', [$params], Group::class);
+  }
   /**
    * Gets the access control policy for a resource. Returns an empty policy if the
    * resource exists and does not have a policy set. (groups.getIamPolicy)
@@ -55,12 +71,33 @@ class ProjectsLocationsNetworkconnectivityGlobalHubsGroups extends \Google\Servi
    * documentation](https://cloud.google.com/iam/help/conditions/resource-
    * policies).
    * @return Policy
+   * @throws \Google\Service\Exception
    */
   public function getIamPolicy($resource, $optParams = [])
   {
     $params = ['resource' => $resource];
     $params = array_merge($params, $optParams);
     return $this->call('getIamPolicy', [$params], Policy::class);
+  }
+  /**
+   * Lists groups in a given hub.
+   * (groups.listProjectsLocationsNetworkconnectivityGlobalHubsGroups)
+   *
+   * @param string $parent Required. The parent resource's name.
+   * @param array $optParams Optional parameters.
+   *
+   * @opt_param string filter An expression that filters the list of results.
+   * @opt_param string orderBy Sort the results by a certain order.
+   * @opt_param int pageSize The maximum number of results to return per page.
+   * @opt_param string pageToken The page token.
+   * @return ListGroupsResponse
+   * @throws \Google\Service\Exception
+   */
+  public function listProjectsLocationsNetworkconnectivityGlobalHubsGroups($parent, $optParams = [])
+  {
+    $params = ['parent' => $parent];
+    $params = array_merge($params, $optParams);
+    return $this->call('list', [$params], ListGroupsResponse::class);
   }
   /**
    * Sets the access control policy on the specified resource. Replaces any
@@ -74,6 +111,7 @@ class ProjectsLocationsNetworkconnectivityGlobalHubsGroups extends \Google\Servi
    * @param SetIamPolicyRequest $postBody
    * @param array $optParams Optional parameters.
    * @return Policy
+   * @throws \Google\Service\Exception
    */
   public function setIamPolicy($resource, SetIamPolicyRequest $postBody, $optParams = [])
   {
@@ -95,6 +133,7 @@ class ProjectsLocationsNetworkconnectivityGlobalHubsGroups extends \Google\Servi
    * @param TestIamPermissionsRequest $postBody
    * @param array $optParams Optional parameters.
    * @return TestIamPermissionsResponse
+   * @throws \Google\Service\Exception
    */
   public function testIamPermissions($resource, TestIamPermissionsRequest $postBody, $optParams = [])
   {

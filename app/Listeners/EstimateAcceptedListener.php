@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Notification;
 
 class EstimateAcceptedListener
 {
+
     /**
      * Create the event listener.
      *
@@ -25,7 +26,7 @@ class EstimateAcceptedListener
     /**
      * Handle the event.
      *
-     * @param  \App\Events\EstimateAcceptedEvent  $event
+     * @param EstimateAcceptedEvent $event
      * @return void
      */
     public function handle(EstimateAcceptedEvent $event)

@@ -2,6 +2,7 @@
 
 namespace App\DataTables;
 
+use App\Helper\Common;
 use App\Models\KnowledgeBase;
 use Illuminate\Support\Carbon;
 use Yajra\DataTables\Html\Button;
@@ -35,9 +36,7 @@ class KnowledgeBaseDataTable extends BaseDataTable
     {
         return datatables()
             ->eloquent($query)
-            ->addColumn('check', function ($row) {
-                return '<input type="checkbox" class="select-table-row" id="datatable-row-' . $row->id . '"  name="datatable_ids[]" value="' . $row->id . '" onclick="dataTableRowCheck(' . $row->id . ')">';
-            })
+            ->addColumn('check', fn($row) => $this->checkBox($row))
             ->addColumn('action', function ($row) {
 
                 $action = '<div class="task_view">
@@ -88,14 +87,12 @@ class KnowledgeBaseDataTable extends BaseDataTable
             ->editColumn(
                 'to',
                 function ($row) {
-                    return ucfirst($row->to);
+                    return $row->to;
                 }
             )
             ->addIndexColumn()
             ->smart(false)
-            ->setRowId(function ($row) {
-                return 'row-' . $row->id;
-            })
+            ->setRowId(fn($row) => 'row-' . $row->id)
             ->rawColumns(['action', 'check', 'heading']);
     }
 
@@ -109,14 +106,14 @@ class KnowledgeBaseDataTable extends BaseDataTable
     {
         $request = $this->request();
         $model = $model->select('*');
-        
+
         if ($request->startDate !== null && $request->startDate != 'null' && $request->startDate != '') {
-            $startDate = Carbon::createFromFormat($this->company->date_format, $request->startDate)->toDateString();
+            $startDate = companyToDateString($request->startDate);
             $model = $model->where(DB::raw('DATE(knowledge_bases.`created_at`)'), '>=', $startDate);
         }
 
         if ($request->endDate !== null && $request->endDate != 'null' && $request->endDate != '') {
-            $endDate = Carbon::createFromFormat($this->company->date_format, $request->endDate)->toDateString();
+            $endDate = companyToDateString($request->endDate);
             $model = $model->where(DB::raw('DATE(knowledge_bases.`created_at`)'), '<=', $endDate);
         }
 
@@ -148,8 +145,7 @@ class KnowledgeBaseDataTable extends BaseDataTable
      */
     public function html()
     {
-        return $this->setBuilder('knowledgebase-table', 3)
-            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]))
+        $dataTable = $this->setBuilder('knowledgebase-table', 3)
             ->parameters([
                 'initComplete' => 'function () {
                    window.LaravelDataTables["knowledgebase-table"].buttons().container()
@@ -161,6 +157,12 @@ class KnowledgeBaseDataTable extends BaseDataTable
                     })
                 }',
             ]);
+
+        if (canDataTableExport()) {
+            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+        }
+
+        return $dataTable;
     }
 
     /**

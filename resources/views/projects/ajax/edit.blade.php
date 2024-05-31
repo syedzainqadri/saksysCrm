@@ -18,12 +18,12 @@ $createPublicProjectPermission = user()->permission('create_public_project');
                 <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
                     @lang('modules.projects.projectInfo')</h4>
                 <div class="row p-20">
-                    <div class="col-lg-6 col-md-6">
+                    <div class="col-lg-4 col-md-4">
                         <x-forms.text class="mr-0 mr-lg-2 mr-md-2" :fieldLabel="__('modules.taskShortCode')"
                             fieldName="project_code" fieldRequired="true" fieldId="project_code"
                             :fieldPlaceholder="__('placeholders.writeshortcode')" :fieldValue="$project->project_short_code" />
                     </div>
-                    <div class="col-lg-4 col-md-6">
+                    <div class="col-lg-8 col-md-8">
                         <x-forms.text class="mr-0 mr-lg-2 mr-md-2" :fieldLabel="__('modules.projects.projectName')"
                             fieldName="project_name" fieldRequired="true" fieldId="project_name"
                             :fieldValue="$project->project_name" :fieldPlaceholder="__('placeholders.project')" />
@@ -32,7 +32,7 @@ $createPublicProjectPermission = user()->permission('create_public_project');
                     <div class="col-md-6 col-lg-4">
                         <x-forms.datepicker fieldId="start_date" fieldRequired="true"
                             :fieldLabel="__('modules.projects.startDate')" fieldName="start_date"
-                            :fieldValue="$project->start_date->format(company()->date_format)"
+                            :fieldValue="($project->start_date ? $project->start_date->format(company()->date_format) : '')"
                             :fieldPlaceholder="__('placeholders.date')" />
                     </div>
 
@@ -61,8 +61,8 @@ $createPublicProjectPermission = user()->permission('create_public_project');
                                 data-live-search="true">
                                 <option value="">--</option>
                                 @foreach ($categories as $category)
-                                    <option @if ($project->category_id == $category->id) selected @endif value="{{ $category->id }}">
-                                        {{ mb_ucwords($category->category_name) }}</option>
+                                    <option @selected($project->category_id == $category->id) value="{{ $category->id }}">
+                                        {{ $category->category_name }}</option>
                                 @endforeach
                             </select>
 
@@ -85,8 +85,8 @@ $createPublicProjectPermission = user()->permission('create_public_project');
                                     data-live-search="true">
                                     <option value="">--</option>
                                     @foreach ($teams as $team)
-                                        <option @if ($project->team_id === $team->id) selected @endif value="{{ $team->id }}">
-                                            {{ mb_ucfirst($team->team_name) }}
+                                        <option @selected($project->team_id == $team->id) value="{{ $team->id }}">
+                                            {{ $team->team_name }}
                                         </option>
                                     @endforeach
                                 </select>
@@ -95,24 +95,17 @@ $createPublicProjectPermission = user()->permission('create_public_project');
                     @endif
 
                     <div class="col-md-4">
-                        <x-forms.label class="my-3" fieldId="client_id" :fieldLabel="__('app.client')">
-                        </x-forms.label>
-                        <x-forms.input-group>
-                            <select class="form-control select-picker" name="client_id" id="client_id"
-                                data-live-search="true" data-size="8">
-                                <option value="">--</option>
-                                @foreach ($clients as $client)
-                                    <x-user-option :user="$client" :selected="$project->client_id == $client->id"/>
-                                @endforeach
-                            </select>
 
-                            @if ($addClientPermission == 'all' || $addClientPermission == 'added')
-                                <x-slot name="append">
-                                    <button id="add-client" type="button"
-                                        class="btn btn-outline-secondary border-grey"
-                                        data-toggle="tooltip" data-original-title="{{__('modules.client.addNewClient') }}">@lang('app.add')</button>
-                                </x-slot>
-                            @endif
+                        <x-forms.input-group>
+                            <x-client-selection-dropdown :clients="$clients" fieldRequired="false"
+                                                         :selected="$project->client_id ?? null"/>
+{{--                            @if ($addClientPermission == 'all' || $addClientPermission == 'added')--}}
+{{--                                <x-slot name="append">--}}
+{{--                                    <button id="add-client" type="button"--}}
+{{--                                        class="btn btn-outline-secondary border-grey"--}}
+{{--                                        data-toggle="tooltip" data-original-title="{{__('modules.client.addNewClient') }}">@lang('app.add')</button>--}}
+{{--                                </x-slot>--}}
+{{--                            @endif--}}
                         </x-forms.input-group>
                     </div>
 
@@ -224,9 +217,8 @@ $createPublicProjectPermission = user()->permission('create_public_project');
                             :fieldLabel="__('app.project') . ' ' . __('app.status')" fieldName="status" search="true">
                             @foreach ($projectStatus as $status)
                                 <option
-                                data-content="<i class='fa fa-circle mr-1 f-15' style='color:{{$status->color}}'></i>{{ ucfirst($status->status_name) }}"
-                                @if ($project->status == $status->status_name)
-                                selected @endif
+                                data-content="<i class='fa fa-circle mr-1 f-15' style='color:{{$status->color}}'></i>{{ $status->status_name }}"
+                                @selected($project->status == $status->status_name)
                                 value="{{$status->status_name}}">
                                 </option>
 
@@ -266,7 +258,7 @@ $createPublicProjectPermission = user()->permission('create_public_project');
                         <x-forms.select fieldId="currency_id" :fieldLabel="__('modules.invoices.currency')"
                             fieldName="currency_id" search="true">
                             @foreach ($currencies as $currency)
-                                <option @if ($currency->id == $project->currency_id) selected @endif value="{{ $currency->id }}">
+                                <option @selected($currency->id == $project->currency_id) value="{{ $currency->id }}">
                                     {{ $currency->currency_symbol . ' (' . $currency->currency_code . ')' }}
                                 </option>
                             @endforeach
@@ -372,7 +364,6 @@ $createPublicProjectPermission = user()->permission('create_public_project');
 </div>
 
 
-<script src="{{ asset('vendor/jquery/dropzone.min.js') }}"></script>
 <script>
     $(document).ready(function() {
 
@@ -537,14 +528,6 @@ $createPublicProjectPermission = user()->permission('create_public_project');
 
         init(RIGHT_MODAL);
     });
-
-    function checkboxChange(parentClass, id){
-        var checkedData = '';
-        $('.'+parentClass).find("input[type= 'checkbox']:checked").each(function () {
-            checkedData = (checkedData !== '') ? checkedData+', '+$(this).val() : $(this).val();
-        });
-        $('#'+id).val(checkedData);
-    }
 
     $('#save-project-data-form').on('change', '#employee_department', function () {
             let id = $(this).val();

@@ -12,7 +12,7 @@
                 <div class="row">
                     <div class="col-lg-12">
                         <x-forms.text class="mr-0 mr-lg-2 mr-md-2" :fieldLabel="__('modules.tickets.groupName')"
-                            fieldPlaceholder="e.g. Space X" fieldRequired="true" fieldName="group_name"
+                            :fieldPlaceholder="__('placeholders.tickets.ticketGroup')" fieldRequired="true" fieldName="group_name"
                             :fieldValue="$group->group_name" fieldId="group_name"/>
                     </div>
                 </div>

@@ -7,14 +7,16 @@ use App\Models\ProposalTemplateItemImage;
 use App\Models\ProposalTemplate;
 use App\Models\ProposalTemplateItem;
 use App\Traits\UnitTypeSaveTrait;
+use Froiden\RestAPI\Exceptions\RelatedResourceNotFoundException;
 
 class ProposalTemplateObserver
 {
+
     use UnitTypeSaveTrait;
 
     public function creating(ProposalTemplate $proposal)
     {
-        if(company()) {
+        if (company()) {
             $proposal->company_id = company()->id;
         }
     }
@@ -62,25 +64,25 @@ class ProposalTemplateObserver
                         $proposalTemplateItemImage->proposal_template_item_id = $proposalTemplateItem->id;
                         $proposalTemplateItemImage->company_id = $proposalTemplateItem->company_id;
 
-                        if(isset($invoice_item_image[$key])) {
+                        if (isset($invoice_item_image[$key])) {
                             $filename = Files::uploadLocalOrS3($invoice_item_image[$key], ProposalTemplateItemImage::FILE_PATH . '/' . $proposalTemplateItem->id . '/');
-                            $proposalTemplateItemImage->filename = !isset($invoice_item_image_url[$key]) ? $invoice_item_image[$key]->getClientOriginalName() : '';
-                            $proposalTemplateItemImage->hashname = !isset($invoice_item_image_url[$key]) ? $filename : '';
+                            $proposalTemplateItemImage->filename = $invoice_item_image[$key]->getClientOriginalName();
+                            $proposalTemplateItemImage->hashname = $filename;
+                            $proposalTemplateItemImage->size = $invoice_item_image[$key]->getSize();
                         }
 
-                        $proposalTemplateItemImage->size = !isset($invoice_item_image_url[$key]) ? $invoice_item_image[$key]->getSize() : '';
-                        $proposalTemplateItemImage->external_link = isset($invoice_item_image_url[$key]) ? $invoice_item_image_url[$key] : '';
+                        $proposalTemplateItemImage->external_link = isset($invoice_item_image[$key]) ? null : (isset($invoice_item_image_url[$key]) ? $invoice_item_image_url[$key] : null);
                         $proposalTemplateItemImage->save();
                     }
 
-                };
+                }
             }
 
         }
     }
 
     /**
-     * @throws \Froiden\RestAPI\Exceptions\RelatedResourceNotFoundException
+     * @throws RelatedResourceNotFoundException
      */
     public function updated(ProposalTemplate $proposal)
     {
@@ -143,7 +145,7 @@ class ProposalTemplateObserver
                     // phpcs:ignore
                     if ((isset($proposal_item_image[$key]) && $request->hasFile('invoice_item_image.' . $key)) || isset($proposal_item_image_url[$key])) {
 
-                        $proposalTemplateItemImage = ProposalTemplateItemImage::where('proposal_template_item_id', $proposalTemplateItem->id)->first();
+                        $proposalTemplateItemImage = ProposalTemplateItemImage::where('proposal_template_item_id', $proposalTemplateItem->id)->firstOrNew();
 
                         $proposalTemplateItemImage->proposal_template_item_id = $proposalTemplateItem->id;
                         $proposalTemplateItemImage->company_id = $proposalTemplateItem->company_id;
@@ -151,14 +153,16 @@ class ProposalTemplateObserver
                         /* Delete previous uploaded file if it not a product (because product images cannot be deleted) */
                         if (!isset($proposal_item_image_url[$key]) && $proposalTemplateItem && $proposalTemplateItem->proposalTemplateItemImage) {
                             Files::deleteFile($proposalTemplateItem->proposalTemplateItemImage->hashname, ProposalTemplateItemImage::FILE_PATH . '/' . $proposalTemplateItem->id . '/');
-
-                            $filename = Files::uploadLocalOrS3($proposal_item_image[$key], ProposalTemplateItemImage::FILE_PATH . '/' . $proposalTemplateItem->id . '/');
-                            $proposalTemplateItemImage->filename = !isset($proposal_item_image_url[$key]) ? $proposal_item_image[$key]->getClientOriginalName() : '';
-                            $proposalTemplateItemImage->hashname = !isset($proposal_item_image_url[$key]) ? $filename : '';
                         }
 
-                        $proposalTemplateItemImage->size = !!isset($proposal_item_image_url[$key]) ? $proposal_item_image[$key]->getSize() : '';
-                        $proposalTemplateItemImage->external_link = $proposal_item_image_url[$key] ?? '';
+                        if (isset($proposal_item_image[$key])) {
+                            $filename = Files::uploadLocalOrS3($proposal_item_image[$key], ProposalTemplateItemImage::FILE_PATH . '/' . $proposalTemplateItem->id . '/');
+                            $proposalTemplateItemImage->filename = isset($proposal_item_image[$key]) ? $proposal_item_image[$key]->getClientOriginalName() : null;
+                            $proposalTemplateItemImage->hashname = isset($proposal_item_image[$key]) ? $filename : null;
+                            $proposalTemplateItemImage->size = isset($proposal_item_image[$key]) ? $proposal_item_image[$key]->getSize() : null;
+                        }
+
+                        $proposalTemplateItemImage->external_link = isset($proposal_item_image[$key]) ? null : ($proposal_item_image_url[$key] ?? null);
                         $proposalTemplateItemImage->save();
 
                     }

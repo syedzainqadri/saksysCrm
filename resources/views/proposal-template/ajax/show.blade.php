@@ -49,7 +49,7 @@
                 <tr class="inv-num">
                     <td class="f-14 text-dark">
                         <p class="mt-3 mb-0">
-                            {{ mb_ucwords(company()->company_name) }}<br>
+                            {{ company()->company_name }}<br>
                             @if (!is_null($settings))
                                 {!! nl2br(default_address()->address) !!}<br>
                                 {{ company()->company_phone }}
@@ -83,7 +83,7 @@
                             </span><br>
 
                             @if ($invoice->lead && $invoice->lead->client_name && invoice_setting()->show_client_name == 'yes')
-                                {{ $invoice->lead->client_name }}<br>
+                                {{ $invoice->lead->client_name_salutation }}<br>
                             @endif
                             @if ($invoice->lead && $invoice->lead->client_email && invoice_setting()->show_client_email == 'yes')
                                 {{ $invoice->lead->client_email }}<br>
@@ -133,7 +133,7 @@
                             @foreach ($invoice->items as $item)
                                 @if ($item->type == 'item')
                                     <tr class="text-dark font-weight-semibold f-13">
-                                        <td>{{ ucfirst($item->item_name) }}</td>
+                                        <td>{{ $item->item_name }}</td>
                                         @if($invoiceSetting->hsn_sac_code_show == 1)
                                             <td align="right">{{ $item->hsn_sac_code }}</td>
                                         @endif
@@ -181,7 +181,7 @@
                                         @foreach ($taxes as $key => $tax)
                                             <tr class="text-dark-grey" align="right">
                                                 <td class="w-50 border-top-0 border-left-0">
-                                                    {{ strtoupper($key) }}</td>
+                                                    {{ $key }}</td>
                                             </tr>
                                         @endforeach
                                         <tr class="bg-light-grey text-dark f-w-500 f-16" align="right">
@@ -232,7 +232,7 @@
                                 <table>
                                     <tr width="100%" class="font-weight-semibold f-13">
                                         <td class="border-left-0 border-right-0 border-top-0">
-                                            {{ ucfirst($item->item_name) }}</td>
+                                            {{ $item->item_name }}</td>
                                     </tr>
                                     @if ($item->item_summary != '' || $item->proposalTemplateItemImage)
                                         <tr>
@@ -292,7 +292,7 @@
 
                 @foreach ($taxes as $key => $tax)
                     <tr>
-                        <th width="50%" class="text-dark-grey font-weight-normal">{{ strtoupper($key) }}</th>
+                        <th width="50%" class="text-dark-grey font-weight-normal">{{ $key }}</th>
                         <td width="50%" class="text-dark-grey font-weight-normal">
                             {{ currency_format($tax, $invoice->currency_id, false) }}</td>
                     </tr>

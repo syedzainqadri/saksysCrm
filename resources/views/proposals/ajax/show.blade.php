@@ -28,7 +28,7 @@
         <x-alert type="info">
             @lang('app.viewedOn') {{$invoice->last_viewed->timezone($settings->timezone)->translatedFormat($settings->date_format)}}
             @lang('app.at') {{$invoice->last_viewed->timezone($settings->timezone)->translatedFormat($settings->time_format)}}
-            @lang('app.using') @lang('modules.attendance.ipAddress'):{{$invoice->ip_address}}
+            @lang('app.usingIpAddress'):{{$invoice->ip_address}}
 
             @if (request()->ip() == $invoice->ip_address)
                 <strong>(@lang('modules.invoices.sameIp'))</strong>
@@ -45,7 +45,7 @@
         <div class="invoice-table-wrapper">
             <table width="100%" class="">
                 <tr class="inv-logo-heading">
-                    <td><img src="{{ invoice_setting()->logo_url }}" alt="{{ mb_ucwords(company()->company_name) }}"
+                    <td><img src="{{ invoice_setting()->logo_url }}" alt="{{ company()->company_name }}"
                             id="logo" /></td>
                     <td align="right" class="font-weight-bold f-21 text-dark text-uppercase mt-4 mt-lg-0 mt-md-0">
                         @lang('modules.lead.proposal')</td>
@@ -53,7 +53,7 @@
                 <tr class="inv-num">
                     <td class="f-14 text-dark">
                         <p class="mt-3 mb-0">
-                            {{ mb_ucwords(company()->company_name) }}<br>
+                            {{ company()->company_name }}<br>
                             @if (!is_null($settings))
                                 {!! nl2br(default_address()->address) !!}<br>
                                 {{ company()->company_phone }}
@@ -86,26 +86,26 @@
             <table width="100%">
                 <tr class="inv-unpaid">
                     <td class="f-14 text-dark">
-                        @if ($invoice->lead && ($invoice->lead->client_name || $invoice->lead->client_email || $invoice->lead->mobile || $invoice->lead->company_name || $invoice->lead->address) && (invoice_setting()->show_client_name == 'yes' || invoice_setting()->show_client_email == 'yes' || invoice_setting()->show_client_phone == 'yes' || invoice_setting()->show_client_company_name == 'yes' || invoice_setting()->show_client_company_address == 'yes'))
+                        @if ($invoice->lead && ($invoice->lead->contact->client_name || $invoice->lead->contact->client_email || $invoice->lead->contact->mobile || $invoice->lead->contact->company_name || $invoice->lead->contact->address) && (invoice_setting()->show_client_name == 'yes' || invoice_setting()->show_client_email == 'yes' || invoice_setting()->show_client_phone == 'yes' || invoice_setting()->show_client_company_name == 'yes' || invoice_setting()->show_client_company_address == 'yes'))
                         <p class="mb-0 text-left">
                             <span class="text-dark-grey text-capitalize">
                                 @lang("modules.invoices.billedTo")
                             </span><br>
 
-                            @if ($invoice->lead && $invoice->lead->client_name && invoice_setting()->show_client_name == 'yes')
-                                {{ mb_ucwords($invoice->lead->client_name) }}<br>
+                            @if ($invoice->lead->contact && $invoice->lead->contact->client_name && invoice_setting()->show_client_name == 'yes')
+                                {{ $invoice->lead->contact->client_name_salutation }}<br>
                             @endif
-                            @if ($invoice->lead && $invoice->lead->client_email && invoice_setting()->show_client_email == 'yes')
-                                {{ mb_ucwords($invoice->lead->client_email) }}<br>
+                            @if ($invoice->lead->contact && $invoice->lead->contact->client_email && invoice_setting()->show_client_email == 'yes')
+                                {{ $invoice->lead->contact->client_email }}<br>
                             @endif
-                            @if ($invoice->lead && $invoice->lead->mobile && invoice_setting()->show_client_phone == 'yes')
-                                {{ $invoice->lead->mobile }}<br>
+                            @if ($invoice->lead->contact && $invoice->lead->contact->mobile && invoice_setting()->show_client_phone == 'yes')
+                                {{ $invoice->lead->contact->mobile }}<br>
                             @endif
-                            @if ($invoice->lead && $invoice->lead->company_name && invoice_setting()->show_client_company_name == 'yes')
-                                {{ mb_ucwords($invoice->lead->company_name) }}<br>
+                            @if ($invoice->lead->contact && $invoice->lead->contact->company_name && invoice_setting()->show_client_company_name == 'yes')
+                                {{ $invoice->lead->contact->company_name }}<br>
                             @endif
-                            @if ($invoice->lead && $invoice->lead->address && invoice_setting()->show_client_company_address == 'yes')
-                                {!! nl2br($invoice->lead->address) !!}
+                            @if ($invoice->lead->contact && $invoice->lead->contact->address && invoice_setting()->show_client_company_address == 'yes')
+                                {!! nl2br($invoice->lead->contact->address) !!}
                             @endif
                         </p>
                         @endif
@@ -149,7 +149,7 @@
                                 @foreach ($invoice->items as $item)
                                     @if ($item->type == 'item')
                                         <tr class="text-dark font-weight-semibold f-13">
-                                            <td>{{ ucfirst($item->item_name) }}</td>
+                                            <td>{{ $item->item_name }}</td>
                                             @if($invoiceSetting->hsn_sac_code_show == 1)
                                                 <td align="right">{{ $item->hsn_sac_code }}</td>
                                             @endif
@@ -197,7 +197,7 @@
                                             @foreach ($taxes as $key => $tax)
                                                 <tr class="text-dark-grey" align="right">
                                                     <td class="w-50 border-top-0 border-left-0">
-                                                        {{ mb_strtoupper($key) }}</td>
+                                                        {{ $key }}</td>
                                                 </tr>
                                             @endforeach
                                             <tr class="bg-light-grey text-dark f-w-500 f-16" align="right">
@@ -248,7 +248,7 @@
                                     <table>
                                         <tr width="100%" class="font-weight-semibold f-13">
                                             <td class="border-left-0 border-right-0 border-top-0">
-                                                {{ ucfirst($item->item_name) }}</td>
+                                                {{ $item->item_name }}</td>
                                         </tr>
                                         @if ($item->item_summary != '' || $item->proposalItemImage)
                                             <tr>
@@ -308,7 +308,7 @@
 
                     @foreach ($taxes as $key => $tax)
                         <tr>
-                            <th width="50%" class="text-dark-grey font-weight-normal">{{ mb_strtoupper($key) }}</th>
+                            <th width="50%" class="text-dark-grey font-weight-normal">{{ $key }}</th>
                             <td width="50%" class="text-dark-grey font-weight-normal">
                                 {{ currency_format($tax, $invoice->currency_id, false) }}</td>
                         </tr>
@@ -328,7 +328,7 @@
                             <table>
                                 <tr>@lang('app.note')</tr>
                                 <tr>
-                                    <p class="text-dark-grey">{!! !empty($invoice->note) ? $invoice->note : '--' !!}</p>
+                                    <p class="text-dark-grey">{!! !empty($invoice->note) ? nl2br($invoice->note) : '--' !!}</p>
                                 </tr>
                             </table>
                         </td>
@@ -341,6 +341,18 @@
                             </table>
                         </td>
                     </tr>
+                    @if (isset($invoiceSetting->other_info))
+                        <tr>
+                            <td align="vertical-align: text-top">
+                                <table>
+                                    <tr>
+                                        <p class="text-dark-grey">{!! nl2br($invoiceSetting->other_info) !!}
+                                        </p>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                    @endif
                     <tr>
                         <td>
                             @if (isset($taxes) && invoice_setting()->tax_calculation_msg == 1)
@@ -397,7 +409,7 @@
                 <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton" tabindex="0">
                     <li>
                         <a class="dropdown-item f-14 text-dark"
-                            href="{{ route('front.proposal', $invoice->hash) }}" target="_blank">
+                            href="{{ url()->temporarySignedRoute('front.proposal', now()->addDays(\App\Models\GlobalSetting::SIGNED_ROUTE_EXPIRY), $invoice->hash) }}" target="_blank">
                             <i class="fa fa-link f-w-500 mr-2 f-11"></i> @lang('modules.proposal.publicLink')
                         </a>
                         <a class="dropdown-item f-14 text-dark"

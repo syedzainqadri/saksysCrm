@@ -217,8 +217,11 @@
             height: 50px;
         }
 
-        .word-break {
+        .note-text {
             max-width: 175px;
+        }
+
+        .word-break {
             word-wrap: break-word;
             word-break: break-all;
         }
@@ -269,7 +272,7 @@
         <tbody>
             <!-- Table Row Start -->
             <tr>
-                <td><img src="{{ $invoiceSetting->logo_url }}" alt="{{ mb_ucwords($company->company_name) }}"
+                <td><img src="{{ $invoiceSetting->logo_url }}" alt="{{ $company->company_name }}"
                         id="logo" /></td>
                 <td align="right" class="f-21 text-black font-weight-700 text-uppercase">@lang('app.estimate')</td>
             </tr>
@@ -278,7 +281,7 @@
             <tr>
                 <td>
                     <p class="line-height mt-1 mb-0 f-14 text-black description">
-                        {{ mb_ucwords($company->company_name) }}<br>
+                        {{ $company->company_name }}<br>
                         @if (!is_null($company))
                             {!! nl2br($company->defaultAddress->address) !!}<br>
                             {{ $company->company_phone }}
@@ -336,16 +339,16 @@
                                         @lang("modules.invoices.billedTo")
                                     </span><br>
                                     @if ($estimate->client && $estimate->client->name && $invoiceSetting->show_client_name == 'yes')
-                                        {{ mb_ucwords($estimate->client->name) }}<br>
+                                        {{ $estimate->client->name_salutation }}<br>
                                     @endif
                                     @if ($estimate->client && $estimate->client->email && $invoiceSetting->show_client_email == 'yes')
                                         {{ $estimate->client->email }}<br>
                                     @endif
                                     @if ($estimate->client && $estimate->client->mobile && $invoiceSetting->show_client_phone == 'yes')
-                                        {{ $estimate->client->mobile }}<br>
+                                        {{ $estimate->client->mobile_with_phonecode }}<br>
                                     @endif
                                     @if ($estimate->clientDetails && $estimate->clientDetails->company_name && $invoiceSetting->show_client_company_name == 'yes')
-                                        {{ mb_ucwords($estimate->clientDetails->company_name) }}<br>
+                                        {{ $estimate->clientDetails->company_name }}<br>
                                     @endif
                                     @if ($estimate->clientDetails && $estimate->clientDetails->address && $invoiceSetting->show_client_company_address == 'yes')
                                         {!! nl2br($estimate->clientDetails->address) !!}
@@ -363,7 +366,7 @@
                                 <br />
                                 @if ($estimate->clientDetails->company_logo)
                                     <img src="{{ $estimate->clientDetails->image_url }}"
-                                        alt="{{ mb_ucwords($estimate->clientDetails->company_name) }}" class="logo"
+                                        alt="{{ $estimate->clientDetails->company_name }}" class="logo"
                                         style="height:50px;" />
                                     <br><br><br>
                                 @endif
@@ -379,28 +382,13 @@
     </table>
 
     @if ($estimate->description)
-        <div class="f-13 mb-3 mt-1 description">{!! nl2br(
-            strip_tags($estimate->description, [
-                'p',
-                'b',
-                'strong',
-                'a',
-                'ul',
-                'li',
-                'ol',
-                'i',
-                'u',
-                'em',
-                'blockquote',
-                'img',
-            ]),
-        ) !!}</div>
+        <div class="f-13 mb-3 mt-1 description">{!! nl2br(pdfStripTags($estimate->description)) !!}</div>
     @endif
 
 
     <table width="100%" class="f-14 b-collapse">
         <tr>
-            <td height="10" colspan="2"></td>
+            <td height="10" colspan="{{ $invoiceSetting->hsn_sac_code_show ? '6' : '5' }}"></td>
         </tr>
 
         <!-- Table Row Start -->
@@ -420,8 +408,8 @@
             @if ($item->type == 'item')
                 <!-- Table Row Start -->
                 <tr class="main-table-items text-black">
-                    <td width="40%" class="description">
-                        {{ ucfirst($item->item_name) }}
+                    <td width="40%" class="description word-break">
+                        {{ $item->item_name }}
                     </td>
                     @if ($invoiceSetting->hsn_sac_code_show)
                         <td align="right" class="border-bottom-0" width="10%">{{ $item->hsn_sac_code ?: '--' }}
@@ -430,27 +418,31 @@
                     <td align="right" class="border-bottom-0" width="10%">{{ $item->quantity }}<br><span class="f-11 text-grey">{{ $item->unit->unit_type }}</td>
                     <td align="right" class="border-bottom-0">
                         {{ currency_format($item->unit_price, $estimate->currency_id, false) }}</td>
-                    <td align="right" class="border-bottom-0">{{ strtoupper($item->tax_list) }}</td>
+                    <td align="right" class="border-bottom-0">{{ $item->tax_list }}</td>
                     <td align="right" class="border-bottom-0"
                         width="{{ $invoiceSetting->hsn_sac_code_show ? '17%' : '20%' }}">
                         {{ currency_format($item->amount, $estimate->currency_id, false) }}</td>
                 </tr>
                 <!-- Table Row End -->
-                /* @if ($item->item_summary != '' || $item->estimateItemImage) */
-    </table>
-    <div class="f-13 summary text-black border-bottom-0 description">
-        {!! nl2br(strip_tags($item->item_summary, ['p', 'b', 'strong', 'a'])) !!}
-        @if ($item->estimateItemImage)
-            <p class="mt-2 description">
-                <img src="{{ $item->estimateItemImage->file_url }}" width="60" height="60"
-                    class="img-thumbnail">
-            </p>
-        @endif
-    </div>
-    <table class="bg-white" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation">
-        @endif
-        @endif
+                @if ($item->item_summary != '' || $item->estimateItemImage)
+                    <tr class="main-table-items text-black">
+                        <td class="f-13 text-black description word-break" colspan="{{ $invoiceSetting->hsn_sac_code_show ? '6' : '5' }}">
+                            {!! nl2br(pdfStripTags($item->item_summary)) !!}
+                        @if ($item->estimateItemImage)
+                            <p class="mt-2 description">
+                                <img src="{{ $item->estimateItemImage->file_url }}" width="60" height="60"
+                                    class="img-thumbnail">
+                            </p>
+                        @endif
+                        </td>
+                    </tr>
+                @endif
+            @endif
         @endforeach
+    </table>
+
+    <table class="bg-white" border="0" cellpadding="0" cellspacing="0" width="100%" role="presentation">
+
         <!-- Table Row Start -->
         <tr>
             <td class="total-box" align="right" colspan="{{ $invoiceSetting->hsn_sac_code_show ? '5' : '4' }}">
@@ -471,7 +463,7 @@
                     @foreach ($taxes as $key => $tax)
                         <!-- Table Row Start -->
                         <tr align="right" class="text-grey">
-                            <td width="50%" class="subtotal">{{ mb_strtoupper($key) }}</td>
+                            <td width="50%" class="subtotal">{{ $key }}</td>
                         </tr>
                         <!-- Table Row End -->
                     @endforeach
@@ -538,7 +530,7 @@
                 <!-- Table Row End -->
                 <!-- Table Row Start -->
                 <tr class="text-grey">
-                    <td class="f-11 line-height word-break">{!! $estimate->note ? nl2br($estimate->note) : '--' !!}</td>
+                    <td class="f-11 line-height word-break note-text">{!! $estimate->note ? nl2br($estimate->note) : '--' !!}</td>
                 </tr>
             @endif
             <!-- Table Row End -->
@@ -578,6 +570,14 @@
     </div>
     </p>
 
+    @if (isset($invoiceSetting->other_info))
+        <p>
+            <div style="margin-top: 10px;" class="f-11 line-height text-grey">
+                {!! nl2br($invoiceSetting->other_info) !!}
+            </div>
+        </p>
+    @endif
+
     {{-- Custom fields data --}}
     @if (isset($fields) && count($fields) > 0)
         <div class="page_break"></div>
@@ -586,7 +586,7 @@
             @foreach ($fields as $field)
                 <tr>
                     <td style="text-align: left;background: none;">
-                        <div class="f-14">{{ ucfirst($field->label) }}</div>
+                        <div class="f-14">{{ $field->label }}</div>
                         <p class="f-14 line-height text-grey" id="notes">
                             @if ($field->type == 'text' || $field->type == 'password' || $field->type == 'number' || $field->type == 'textarea')
                                 {{ $estimate->custom_fields_data['field_' . $field->id] ?? '-' }}

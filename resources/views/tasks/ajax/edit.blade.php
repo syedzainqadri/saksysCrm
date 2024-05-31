@@ -3,6 +3,7 @@ $addTaskCategoryPermission = user()->permission('add_task_category');
 $addEmployeePermission = user()->permission('add_employees');
 $addTaskFilePermission = user()->permission('add_task_files');
 $editTaskPermission = user()->permission('edit_tasks');
+$viewProjectPermission = user()->permission('view_projects');
 $viewTaskCategoryPermission = user()->permission('view_task_category');
 @endphp
 
@@ -32,8 +33,8 @@ $viewTaskCategoryPermission = user()->permission('view_task_category');
                                 <option value="">--</option>
                                 @if ($viewTaskCategoryPermission == 'all' || $viewTaskCategoryPermission == 'added')
                                     @foreach ($categories as $category)
-                                        <option @if ($task->task_category_id == $category->id) selected @endif value="{{ $category->id }}">
-                                            {{ mb_ucwords($category->category_name) }}
+                                        <option @selected($task->task_category_id == $category->id) value="{{ $category->id }}">
+                                            {{ $category->category_name }}
                                         </option>
                                     @endforeach
                                 @endif
@@ -54,13 +55,18 @@ $viewTaskCategoryPermission = user()->permission('view_task_category');
                         </x-forms.label>
                         <x-forms.input-group>
                             <select class="form-control select-picker" name="project_id" id="project-id"
+                                    data-toggle="tooltip"
+                                    title="@lang('modules.tasks.notFinishedProjects')"
                                 data-live-search="true" data-size="8">
                                 <option value="">--</option>
+                                @if($viewProjectPermission != 'none' && in_array('employee', user_roles()))
                                 @foreach ($projects as $project)
-                                    <option @if ($project->id == $task->project_id) selected @endif value="{{ $project->id }}">
-                                        {{ mb_ucwords($project->project_name) }}
+                                    <option @selected($project->id == $task->project_id) value="{{ $project->id }}"
+                                            data-content="{!! '<strong>'.$project->project_short_code."</strong> ".$project->project_name !!}"
+                                    >
                                     </option>
                                 @endforeach
+                                @endif
                             </select>
                         </x-forms.input-group>
                     </div>
@@ -189,9 +195,9 @@ $viewTaskCategoryPermission = user()->permission('view_task_category');
                                 <x-forms.select fieldName="milestone_id" fieldId="milestone-id"
                                     :fieldLabel="__('modules.projects.milestones')">
                                     <option value="">--</option>
-                                    @if ($task->project && count($task->project->milestones) > 0)
-                                        @foreach ($task->project->milestones as $milestone)
-                                            <option @if ($milestone->id == $task->milestone_id) selected @endif value="{{ $milestone->id }}">
+                                    @if ($task->project && count($task->project->incompleteMilestones) > 0)
+                                        @foreach ($task->project->incompleteMilestones as $milestone)
+                                            <option @selected($milestone->id == $task->milestone_id) value="{{ $milestone->id }}">
                                                 {{ $milestone->milestone_title }}</option>
                                         @endforeach
                                     @endif
@@ -229,7 +235,7 @@ $viewTaskCategoryPermission = user()->permission('view_task_category');
                                                     }
                                                 }
                                             @endphp
-                                            <option @if ($task->board_column_id == $item->id) selected @endif value="{{ $item->id }}" data-content = "{{$icon}}">
+                                            <option @selected($task->board_column_id == $item->id) value="{{ $item->id }}" data-content = "{{$icon}}">
                                             </option>
                                         @endforeach
                                     </x-forms.select>
@@ -239,14 +245,14 @@ $viewTaskCategoryPermission = user()->permission('view_task_category');
                             <div class="col-lg-3 col-md-6">
                                 <x-forms.select fieldId="priority" :fieldLabel="__('modules.tasks.priority')"
                                     fieldName="priority">
-                                    <option @if ($task->priority == 'high') selected @endif
+                                    <option @selected($task->priority == 'high')
                                         data-content="<i class='fa fa-circle mr-2' style='color: #dd0000'></i> @lang('modules.tasks.high')"
                                         value="high">@lang('modules.tasks.high')</option>
-                                    <option @if ($task->priority == 'medium') selected @endif
+                                    <option @selected($task->priority == 'medium')
                                         data-content="<i class='fa fa-circle mr-2' style='color: #ffc202'></i> @lang('modules.tasks.medium')"
                                         value="medium">
                                         @lang('modules.tasks.medium')</option>
-                                    <option @if ($task->priority == 'low') selected @endif
+                                    <option @selected($task->priority == 'low')
                                         data-content="<i class='fa fa-circle mr-2' style='color: #0a8a1f'></i> @lang('modules.tasks.low')"
                                         value="low">@lang('modules.tasks.low')</option>
                                 </x-forms.select>
@@ -318,13 +324,13 @@ $viewTaskCategoryPermission = user()->permission('view_task_category');
 
                                         <x-slot name="append">
                                             <select name="repeat_type" class="select-picker form-control">
-                                                <option @if ($task->repeat_type == 'day') selected @endif value="day">
+                                                <option @selected($task->repeat_type == 'day') value="day">
                                                     @lang('app.day')</option>
-                                                <option @if ($task->repeat_type == 'week') selected @endif value="week">
+                                                <option @selected($task->repeat_type == 'week') value="week">
                                                     @lang('app.week')</option>
-                                                <option @if ($task->repeat_type == 'month') selected @endif value="month">
+                                                <option @selected($task->repeat_type == 'month') value="month">
                                                     @lang('app.month')</option>
-                                                <option @if ($task->repeat_type == 'year') selected @endif value="year">
+                                                <option @selected($task->repeat_type == 'year') value="year">
                                                     @lang('app.year')</option>
                                             </select>
                                         </x-slot>
@@ -353,7 +359,7 @@ $viewTaskCategoryPermission = user()->permission('view_task_category');
                                 fieldName="dependent_task_id" search="true">
                                 <option value="">--</option>
                                 @foreach ($allTasks as $item)
-                                    <option @if ($item->id == $task->dependent_task_id) selected @endif value="{{ $item->id }}">
+                                    <option @selected($item->id == $task->dependent_task_id) value="{{ $item->id }}">
                                         {{ $item->heading }}
                                         (@lang('app.dueDate'):
                                         @if(!is_null($item->due_date))
@@ -393,7 +399,6 @@ $viewTaskCategoryPermission = user()->permission('view_task_category');
 </div>
 
 
-<script src="{{ asset('vendor/jquery/dropzone.min.js') }}"></script>
 <script>
     var add_task_files = "{{ $addTaskFilePermission }}";
 
@@ -824,11 +829,4 @@ $viewTaskCategoryPermission = user()->permission('view_task_category');
         init(RIGHT_MODAL);
     });
 
-    function checkboxChange(parentClass, id){
-        var checkedData = '';
-        $('.'+parentClass).find("input[type= 'checkbox']:checked").each(function () {
-            checkedData = (checkedData !== '') ? checkedData+', '+$(this).val() : $(this).val();
-        });
-        $('#'+id).val(checkedData);
-    }
 </script>

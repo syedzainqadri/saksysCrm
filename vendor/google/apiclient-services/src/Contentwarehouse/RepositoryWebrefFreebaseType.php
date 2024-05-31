@@ -31,7 +31,7 @@ class RepositoryWebrefFreebaseType extends \Google\Collection
   /**
    * @var string
    */
-  public $typeMid;
+  public $typeFprint;
   /**
    * @var string
    */
@@ -68,16 +68,16 @@ class RepositoryWebrefFreebaseType extends \Google\Collection
   /**
    * @param string
    */
-  public function setTypeMid($typeMid)
+  public function setTypeFprint($typeFprint)
   {
-    $this->typeMid = $typeMid;
+    $this->typeFprint = $typeFprint;
   }
   /**
    * @return string
    */
-  public function getTypeMid()
+  public function getTypeFprint()
   {
-    return $this->typeMid;
+    return $this->typeFprint;
   }
   /**
    * @param string

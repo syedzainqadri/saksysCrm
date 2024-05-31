@@ -256,8 +256,11 @@
             height: 50px;
         }
 
-        .word-break {
+        .note-text {
             max-width: 175px;
+        }
+
+        .word-break {
             word-wrap: break-word;
             word-break: break-all;
         }
@@ -304,7 +307,7 @@
     <tbody>
     <!-- Table Row Start -->
     <tr>
-        <td><img src="{{ $invoiceSetting->logo_url }}" alt="{{ mb_ucwords(company()->company_name) }}"
+        <td><img src="{{ $invoiceSetting->logo_url }}" alt="{{ company()->company_name }}"
                  id="logo"/></td>
         <td align="right" class="f-21 text-black font-weight-700 text-uppercase">@lang('app.credit-note')</td>
     </tr>
@@ -313,7 +316,7 @@
     <tr>
         <td>
             <p class="line-height mt-1 mb-0 f-14 text-black description">
-                {{ mb_ucwords(company()->company_name) }}<br>
+                {{ company()->company_name }}<br>
                 @if (!is_null($settings))
                     {!! nl2br(default_address()->address) !!}<br>
                     {{ company()->company_phone }}
@@ -336,7 +339,7 @@
                 </tr>
 
                 <tr>
-                    <td class="heading-table-left">@lang('app.credit-note') @lang('app.date')</td>
+                    <td class="heading-table-left">@lang('app.creditNoteDate')</td>
                     <td class="heading-table-right">
                         {{ $creditNote->issue_date->translatedFormat(company()->date_format) }}
                     </td>
@@ -353,7 +356,7 @@
     <!-- Table Row Start -->
     <tr>
         <td colspan="2">
-            @if (!is_null($creditNote->project_id) && !is_null($creditNote->project->clientDetails))
+            @if (!is_null($creditNote->project_id) && !is_null($creditNote->project) && !is_null($creditNote->project->clientDetails))
                 @php
                     $client = $creditNote->project->client;
                 @endphp
@@ -369,8 +372,8 @@
                         <p class="line-height mb-0">
                                     <span
                                         class="text-grey text-capitalize">@lang("modules.invoices.billedTo")</span><br>
-                            {{ mb_ucwords($client->name) }}<br>
-                            {{ mb_ucwords($client->clientDetails->company_name) }}<br>
+                            {{ $client->name_salutation }}<br>
+                            {{ $client->clientDetails->company_name }}<br>
                             {!! nl2br($client->clientDetails->address) !!}
 
                             @if (($invoiceSetting->show_project == 1) && (isset($creditNote->project)))
@@ -402,7 +405,7 @@
 </table>
 <table width="100%" class="f-14 b-collapse">
     <tr>
-        <td height="10" colspan="2"></td>
+        <td height="10" colspan="{{ $invoiceSetting->hsn_sac_code_show ? '6' : '5' }}"></td>
     </tr>
     <!-- Table Row Start -->
     <tr class="main-table-heading text-grey">
@@ -423,8 +426,8 @@
     @if ($item->type == 'item')
         <!-- Table Row Start -->
             <tr class="main-table-items text-black">
-                <td width="40%">
-                    {{ ucfirst($item->item_name) }}
+                <td width="40%" class="word-break">
+                    {{ $item->item_name }}
                 </td>
                 @if($invoiceSetting->hsn_sac_code_show)
                     <td align="right" class="border-bottom-0"
@@ -433,15 +436,15 @@
                 <td align="right" class="border-bottom-0" width="10%">{{ $item->quantity }}@if($item->unit)<br><span class="f-11 text-dark-grey">{{ $item->unit->unit_type }}</span>@endif</td>
                 <td align="right"
                     class="border-bottom-0">{{ currency_format($item->unit_price, $creditNote->currency_id, false) }}</td>
-                <td align="right" class="border-bottom-0">{{ strtoupper($item->tax_list) }}</td>
+                <td align="right" class="border-bottom-0">{{ $item->tax_list }}</td>
                 <td align="right" class="border-bottom-0"
                     width="{{ $invoiceSetting->hsn_sac_code_show ? '17%' : '20%' }}">{{ currency_format($item->amount, $creditNote->currency_id, false) }}</td>
             </tr>
             @if ($item->item_summary != '' || $item->creditNoteItemImage)
                 {{-- DOMPDF HACK FOR RENDER IN TABLE --}}
 </table>
-<div class="f-13 summary text-black border-bottom-0 description">
-    {!! nl2br(strip_tags($item->item_summary, ['p', 'b', 'strong', 'a'])) !!}
+<div class="f-13 summary text-black border-bottom-0 description word-break">
+    {!! nl2br(pdfStripTags($item->item_summary)) !!}
     @if ($item->creditNoteItemImage)
         <p class="mt-2">
             <img src="{{ $item->creditNoteItemImage->file_url }}" width="60" height="60"
@@ -474,7 +477,7 @@
             @foreach ($taxes as $key => $tax)
                 <!-- Table Row Start -->
                     <tr align="right" class="text-grey">
-                        <td width="50%" class="subtotal">{{ mb_strtoupper($key) }}</td>
+                        <td width="50%" class="subtotal">{{ $key }}</td>
                     </tr>
                     <!-- Table Row End -->
             @endforeach
@@ -487,7 +490,7 @@
                     <td width="50%" class="subtotal">@lang('modules.credit-notes.creditAmountUsed')</td>
                 </tr>
                 <tr align="right" class="text-grey">
-                    <td width="50%" class="subtotal">@lang('app.adjustment') @lang('app.amount')</td>
+                    <td width="50%" class="subtotal">@lang('app.adjustmentAmount')</td>
                 </tr>
                 <tr align="right" class="balance text-black">
                     <td width="50%" class="balance-left">@lang('modules.credit-notes.creditAmountRemaining')</td>
@@ -563,6 +566,11 @@
     <tr class="text-grey">
         <td class="f-11 line-height">{!! nl2br($invoiceSetting->invoice_terms) !!}</td>
     </tr>
+    @if (isset($invoiceSetting->other_info))
+        <tr class="text-grey">
+            <td class="f-11 line-height">{!! nl2br($invoiceSetting->other_info) !!}</td>
+        </tr>
+    @endif
 
     @if ($creditNote->note != '')
         <tr>
@@ -574,7 +582,7 @@
         <!-- Table Row End -->
         <!-- Table Row Start -->
         <tr class="text-grey">
-            <td class="f-11 line-height word-break">{!! $creditNote->note ? nl2br($creditNote->note) : '--' !!}</td>
+            <td class="f-11 line-height word-break note-text">{!! $creditNote->note ? nl2br($creditNote->note) : '--' !!}</td>
         </tr>
     @endif
     <!-- Table Row End -->

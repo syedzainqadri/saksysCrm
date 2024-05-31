@@ -2,6 +2,7 @@
 
 namespace App\DataTables;
 
+use App\Helper\Common;
 use Carbon\Carbon;
 use App\Models\Holiday;
 use App\Models\Designation;
@@ -36,11 +37,9 @@ class DesignationDataTable extends BaseDataTable
         return datatables()
             ->eloquent($query)
             ->addIndexColumn()
-            ->addColumn('check', function ($row) {
-                return '<input type="checkbox" class="select-table-row" id="datatable-row-' . $row->id . '"  name="datatable_ids[]" value="' . $row->id . '" onclick="dataTableRowCheck(' . $row->id . ')">';
-            })
+            ->addColumn('check', fn($row) => $this->checkBox($row))
             ->editColumn('name', function ($row) {
-                $name = '<h5 class="mb-0 f-13 text-darkest-grey"><a href="' . route('designations.show', [$row->id]) . '" class="openRightModal">' . ucfirst($row->name) . '</a></h5>';
+                $name = '<h5 class="mb-0 f-13 text-darkest-grey"><a href="' . route('designations.show', [$row->id]) . '" class="openRightModal">' . $row->name . '</a></h5>';
 
                 return $name;
             })
@@ -51,15 +50,14 @@ class DesignationDataTable extends BaseDataTable
                 if ($parent) {
                     return $parent->name;
                 }
-                else {
-                    return '-';
-                }
+
+                return '-';
 
             })
             ->addColumn('action', function ($row) {
 
                 $action = '<div class="task_view">
-
+<a href="' . route('designations.show', [$row->id]) . '" class="taskView text-darkest-grey f-w-500 openRightModal">' . __('app.view') . '</a>
                     <div class="dropdown">
                         <a class="task_view_more d-flex align-items-center justify-content-center dropdown-toggle" type="link"
                             id="dropdownMenuLink-' . $row->id . '" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -67,7 +65,6 @@ class DesignationDataTable extends BaseDataTable
                         </a>
                         <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuLink-' . $row->id . '" tabindex="0">';
 
-                $action .= '<a href="' . route('designations.show', [$row->id]) . '" class="dropdown-item openRightModal"><i class="fa fa-eye mr-2"></i>' . __('app.view') . '</a>';
 
                 if ($this->editDesignationPermission == 'all') {
                     $action .= '<a class="dropdown-item openRightModal" href="' . route('designations.edit', [$row->id]) . '">
@@ -91,14 +88,12 @@ class DesignationDataTable extends BaseDataTable
                 return $action;
             })
             ->smart(false)
-            ->setRowId(function ($row) {
-                return 'row-' . $row->id;
-            })
+            ->setRowId(fn($row) => 'row-' . $row->id)
             ->rawColumns(['check', 'action', 'name']);
     }
 
     /**
-     * @param Holiday $model
+     * @param Designation $model
      * @return \Illuminate\Database\Query\Builder
      */
     public function query(Designation $model)
@@ -144,7 +139,7 @@ class DesignationDataTable extends BaseDataTable
      */
     public function html()
     {
-        return $this->setBuilder('Designation-table')
+        $dataTable = $this->setBuilder('Designation-table')
             ->parameters([
                 'initComplete' => 'function () {
                    window.LaravelDataTables["Designation-table"].buttons().container()
@@ -156,8 +151,13 @@ class DesignationDataTable extends BaseDataTable
                     });
                     $(".statusChange").selectpicker();
                 }',
-            ])
-            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+            ]);
+
+        if (canDataTableExport()) {
+            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+        }
+
+        return $dataTable;
     }
 
     /**
@@ -176,7 +176,7 @@ class DesignationDataTable extends BaseDataTable
             ],
             '#' => ['data' => 'DT_RowIndex', 'orderable' => false, 'searchable' => false, 'visible' => false, 'title' => '#'],
             __('app.name') => ['data' => 'name', 'name' => 'name', 'exportable' => true, 'title' => __('app.name')],
-            __('app.menu.parent_id') => ['data' => 'parent_id', 'name' => 'parent_id', 'exportable' => true, 'title' => __('app.menu.parent_id') . ' ' . strtolower(__('app.menu.designation'))],
+            __('app.menu.parent_id') => ['data' => 'parent_id', 'name' => 'parent_id', 'exportable' => true, 'title' => __('app.menu.parent_id') . ' ' . __('app.menu.designation')],
             Column::computed('action', __('app.action'))
                 ->exportable(false)
                 ->printable(false)

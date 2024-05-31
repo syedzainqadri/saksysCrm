@@ -31,7 +31,7 @@ class UpdateSmtpSetting extends CoreRequest
             'mail_username' => 'required',
             'mail_password' => 'required',
             'mail_from_name' => 'required',
-            'mail_from_email' => 'required|email:rfc',
+            'mail_from_email' => 'required|email:rfc,strict',
             'mail_encryption' => 'required'
         ];
     }

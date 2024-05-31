@@ -32,13 +32,13 @@ $deleteProjectMilestonePermission = ($project->project_admin == user()->id) ? 'a
                             <td class="pl-20">{{ $key + 1 }}</td>
                             <td>
                                 <a href="javascript:;" class="milestone-detail text-darkest-grey f-w-500"
-                                    data-milestone-id="{{ $item->id }}">{{ ucfirst($item->milestone_title) }}</a>
+                                    data-milestone-id="{{ $item->id }}">{{ $item->milestone_title }}</a>
                             </td>
                             <td>
                                 @if (!is_null($item->currency_id))
                                     {{ currency_format($item->cost, $item->currency->id) }}
                                 @else
-                                    {{ currency_format($item->cost) }}
+                                    {{ currency_format($item->cost, $item->currency_id) }}
                                 @endif
                             </td>
                             <td>
@@ -64,11 +64,13 @@ $deleteProjectMilestonePermission = ($project->project_admin == user()->id) ? 'a
                                             aria-labelledby="dropdownMenuLink-{{ $item->id }}" tabindex="0">
 
                                             @if ($editProjectMilestonePermission == 'all' || ($editProjectMilestonePermission == 'added' && user()->id == $item->added_by))
-                                                <a class="dropdown-item edit-milestone" href="javascript:;"
-                                                    data-row-id="{{ $item->id }}">
-                                                    <i class="fa fa-edit mr-2"></i>
-                                                    @lang('app.edit')
-                                                </a>
+                                                @if(is_null($project->deleted_at))
+                                                    <a class="dropdown-item edit-milestone" href="javascript:;"
+                                                        data-row-id="{{ $item->id }}">
+                                                        <i class="fa fa-edit mr-2"></i>
+                                                        @lang('app.edit')
+                                                    </a>
+                                                @endif
                                             @endif
 
                                             @if ($deleteProjectMilestonePermission == 'all' || ($deleteProjectMilestonePermission == 'added' && user()->id == $item->added_by))

@@ -37,7 +37,7 @@ $addProductSubCategoryPermission = user()->permission('manage_product_sub_catego
                                         id="product_category_id" data-live-search="true">
                                         <option value="">--</option>
                                         @foreach ($categories as $category)
-                                            <option value="{{ $category->id }}" @if ($category->id == $product->category_id) selected @endif>{{ mb_ucwords($category->category_name) }}</option>
+                                            <option value="{{ $category->id }}" @if ($category->id == $product->category_id) selected @endif>{{ $category->category_name }}</option>
                                         @endforeach
                                     </select>
 
@@ -61,7 +61,7 @@ $addProductSubCategoryPermission = user()->permission('manage_product_sub_catego
                                         <option value="">@lang('messages.noProductSubCategoryAdded')</option>
                                         @if ($product->category_id)
                                             @foreach ($product->category->subCategories as $category)
-                                                <option value="{{ $category->id }}" @if ($category->id == $product->sub_category_id) selected @endif>{{ mb_ucwords($category->category_name) }}</option>
+                                                <option value="{{ $category->id }}" @if ($category->id == $product->sub_category_id) selected @endif>{{ $category->category_name }}</option>
                                             @endforeach
                                         @endif
                                     </select>
@@ -84,7 +84,7 @@ $addProductSubCategoryPermission = user()->permission('manage_product_sub_catego
                                         data-live-search="true" multiple="true">
                                         @foreach ($taxes as $tax)
                                             <option value="{{ $tax->id }}" @if (isset($product->taxes) && array_search($tax->id, json_decode($product->taxes)) !== false) selected @endif>
-                                                {{ strtoupper($tax->tax_name) }}: {{ $tax->rate_percent }}%
+                                                {{ $tax->tax_name }}: {{ $tax->rate_percent }}%
                                             </option>
                                         @endforeach
                                     </select>
@@ -269,7 +269,7 @@ $addProductSubCategoryPermission = user()->permission('manage_product_sub_catego
             $.easyBlockUI();
         });
 
-        productDropzone.on('queuecomplete', function() {
+        productDropzone.on('successmultiple', function() {
             window.location.href = '{{ route("products.index") }}';
         });
         productDropzone.on('removedfile', function () {
@@ -334,8 +334,6 @@ $addProductSubCategoryPermission = user()->permission('manage_product_sub_catego
 
         productDropzone.options.maxFiles = productDropzone.options.maxFiles - mockFile.length;
 
-        productDropzone.on("maxfilesexceeded", function(file) { this.removeFile(file); });
-
         $('#save-product-form').click(function() {
             const url = "{{ route('products.update', [$product->id]) }}";
 
@@ -399,8 +397,9 @@ $addProductSubCategoryPermission = user()->permission('manage_product_sub_catego
             $.ajaxModal(MODAL_LG, url);
         })
 
-        $('#add-sub-category').click(function() {
-            const url = "{{ route('productSubCategory.create') }}";
+        $('#add-sub-category').click(function () {
+            let catID = $('#product_category_id').val();
+            const url = "{{ route('productSubCategory.create') }}?catID=" + catID;
             $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
             $.ajaxModal(MODAL_LG, url);
         });

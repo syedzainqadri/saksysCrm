@@ -4,6 +4,7 @@ namespace App\Notifications;
 
 use App\Models\User;
 use App\Models\Estimate;
+use App\Models\GlobalSetting;
 use Illuminate\Notifications\Messages\MailMessage;
 
 class NewEstimate extends BaseNotification
@@ -52,7 +53,7 @@ class NewEstimate extends BaseNotification
     public function toMail($notifiable): MailMessage
     {
         $build = parent::build();
-        $url = route('front.estimate.show', $this->estimate->hash);
+        $url = url()->temporarySignedRoute('front.estimate.show', now()->addDays(GlobalSetting::SIGNED_ROUTE_EXPIRY), $this->estimate->hash);
         $url = getDomainSpecificUrl($url, $this->company);
 
         $content = __('email.estimate.text');
@@ -64,7 +65,7 @@ class NewEstimate extends BaseNotification
                 'content' => $content,
                 'themeColor' => $this->company->header_color,
                 'actionText' => __('email.estimateDeclined.action'),
-                'notifiableName' => mb_ucwords($this->user->name)
+                'notifiableName' => $this->user->name
             ]);
     }
 

@@ -13,6 +13,7 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 
 class EstimateAcceptedEvent
 {
+
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     /**
@@ -26,5 +27,5 @@ class EstimateAcceptedEvent
     {
         $this->estimate = $estimate;
     }
-    
+
 }

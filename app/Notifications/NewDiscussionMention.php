@@ -43,7 +43,7 @@ class NewDiscussionMention extends BaseNotification
         }
 
         if ($this->emailSetting->send_slack == 'yes' && $this->company->slackSetting->status == 'active') {
-            array_push($via, 'slack');
+            $this->slackUserNameCheck($notifiable) ? array_push($via, 'slack') : null;
         }
 
         if ($this->emailSetting->send_push == 'yes') {
@@ -66,7 +66,7 @@ class NewDiscussionMention extends BaseNotification
         $content = __('email.discussion.mentionContent') . ' ' . $this->discussion->title . '<br>' . __('app.projectName') . ':' . $this->discussion->project->project_name;
 
         return parent::build()
-            ->subject(__('email.discussion.mentionSubject') .':'. $this->discussion->title . ' - ' . config('app.name') . '.')
+            ->subject(__('email.discussion.mentionSubject') . ':' . $this->discussion->title . ' - ' . config('app.name') . '.')
             ->markdown('mail.email', [
                 'url' => $url,
                 'content' => $content,
@@ -101,20 +101,11 @@ class NewDiscussionMention extends BaseNotification
      */
     public function toSlack($notifiable)
     {
-        $slack = $notifiable->company->slackSetting;
 
-        if (count($notifiable->employee) > 0 && (!is_null($notifiable->employee[0]->slack_username) && ($notifiable->employee[0]->slack_username != ''))) {
-            return (new SlackMessage())
-                ->from(config('app.name'))
-                ->image($slack->slack_logo_url)
-                ->to('@' . $notifiable->employee[0]->slack_username)
-                ->content('*' . __('email.discussion.mentionSubject') . '*' . "\n" . $this->discussion->title);
-        }
+        return $this->slackBuild($notifiable)
+            ->content('*' . __('email.discussion.mentionSubject') . '*' . "\n" . $this->discussion->title);
 
-        return (new SlackMessage())
-            ->from(config('app.name'))
-            ->image($slack->slack_logo_url)
-            ->content('*' . __('email.discussion.subject') . '*' . "\n" .'This is a redirected notification. Add slack username for *' . $notifiable->name . '*');
+
     }
 
     // phpcs:ignore
@@ -122,7 +113,7 @@ class NewDiscussionMention extends BaseNotification
     {
         return OneSignalMessage::create()
             ->subject(__('email.discussion.subject'))
-            ->body(ucfirst($this->discussion->title));
+            ->body($this->discussion->title);
     }
 
 }

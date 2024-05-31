@@ -42,7 +42,7 @@
                                         <option
                                         {{ isset($selected_category_id) && $selected_category_id == $category->id ? 'selected' : '' }}
                                          value="{{ $category->id }}">
-                                            {{ mb_ucwords($category->name) }}</option>
+                                            {{ $category->name }}</option>
                                     @endforeach
                                 </select>
 
@@ -86,7 +86,6 @@
     </div>
 </div>
 
-<script src="{{ asset('vendor/jquery/dropzone.min.js') }}"></script>
 <script>
     $(document).ready(function() {
         quillMention(null, '#description');

@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Helper\Reply;
 use App\Models\CustomLinkSetting;
+use App\Models\EmployeeActivity;
 use App\Models\GlobalSetting;
 use Carbon\Carbon;
 use App\Models\UserChat;
@@ -66,6 +68,7 @@ class AccountBaseController extends Controller
         $this->viewTimelogPermission = user()->permission('view_timelogs');
 
         $this->activeTimerCount = ProjectTimeLog::whereNull('end_time')
+            ->doesntHave('activeBreak')
             ->join('users', 'users.id', 'project_time_logs.user_id')
             ->select('project_time_logs.id');
 
@@ -76,6 +79,8 @@ class AccountBaseController extends Controller
         $this->activeTimerCount = $this->activeTimerCount->count();
 
         $this->selfActiveTimer = ProjectTimeLog::selfActiveTimer();
+
+        $this->customLink = custom_link_setting();
     }
 
     public function common()
@@ -110,7 +115,6 @@ class AccountBaseController extends Controller
         }
 
         $this->sidebarUserPermissions = sidebar_user_perms();
-        $this->customLink = CustomLinkSetting::all();
     }
 
     public function logProjectActivity($projectId, $text)
@@ -149,3 +153,5 @@ class AccountBaseController extends Controller
     }
 
 }
+
+

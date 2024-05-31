@@ -35,7 +35,7 @@
                         data-size="8">
                         <option value="all">@lang('app.all')</option>
                         @foreach ($departments as $department)
-                            <option value="{{ $department->id }}">{{ ucfirst($department->team_name) }}</option>
+                            <option value="{{ $department->id }}">{{ $department->team_name }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -47,7 +47,7 @@
                             data-size="8">
                         <option value="all">@lang('app.all')</option>
                         @foreach ($designations as $designation)
-                            <option value="{{ $designation->id }}">{{ ucfirst($designation->name) }}</option>
+                            <option value="{{ $designation->id }}">{{ $designation->name }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -96,7 +96,7 @@ $addAttendancePermission = user()->permission('add_attendance');
     <!-- CONTENT WRAPPER START -->
     <div class="content-wrapper px-4">
 
-        <div class="d-flex">
+        <div class="d-grid d-lg-flex d-md-flex action-bar">
 
             <div id="table-actions" class="flex-grow-1 align-items-center">
                 @if ($addAttendancePermission == 'all' || $addAttendancePermission == 'added')
@@ -105,21 +105,22 @@ $addAttendancePermission = user()->permission('add_attendance');
                         icon="plus">
                         @lang('modules.attendance.markAttendance')
                     </x-forms.link-primary>
-
-                    <x-forms.button-secondary id="export-all" class="mr-3 mb-2 mb-lg-0" icon="file-export">
-                        @lang('app.exportExcel')
-                    </x-forms.button-secondary>
+                    @if (canDataTableExport())
+                        <x-forms.button-secondary id="export-all" class="mr-3 mb-2 mb-lg-0" icon="file-export">
+                            @lang('app.exportExcel')
+                        </x-forms.button-secondary>
+                    @endif
                 @endif
 
                 @if ($addAttendancePermission == 'all' || $addAttendancePermission == 'added')
-                    <x-forms.link-secondary :link="route('attendances.import')" class="mr-3 openRightModal float-left"
+                    <x-forms.link-secondary :link="route('attendances.import')" class="mr-3 openRightModal float-left d-none d-lg-block"
                         icon="file-upload">
                         @lang('app.importExcel')
                     </x-forms.link-secondary>
                 @endif
             </div>
 
-            <div class="btn-group" role="group">
+            <div class="btn-group mt-2 mt-lg-0 mt-md-0 ml-0 ml-lg-3 ml-md-3" role="group">
                 <a href="{{ route('attendances.index') }}" class="btn btn-secondary f-14" data-toggle="tooltip"
                     data-original-title="@lang('app.summary')"><i class="side-icon bi bi-list-ul"></i></a>
 
@@ -262,19 +263,20 @@ $addAttendancePermission = user()->permission('add_attendance');
         }
 
         showTable(false);
+        @if (canDataTableExport())
+            $('#export-all').click(function() {
+                var year = $('#year').val();
+                var month = $('#month').val();
+                var department = $('#department').val();
+                var designation = $('#designation').val();
+                var userId = $('#user_id').val();
 
-        $('#export-all').click(function() {
-            var year = $('#year').val();
-            var month = $('#month').val();
-            var department = $('#department').val();
-            var designation = $('#designation').val();
-            var userId = $('#user_id').val();
+                var url =
+                    "{{ route('attendances.export_all_attendance', [':year', ':month', ':userId', ':department', ':designation']) }}";
+                url = url.replace(':year', year).replace(':month', month).replace(':userId', userId).replace(':department', department).replace(':designation', designation);
+                window.location.href = url;
 
-            var url =
-                "{{ route('attendances.export_all_attendance', [':year', ':month', ':userId', ':department', ':designation']) }}";
-            url = url.replace(':year', year).replace(':month', month).replace(':userId', userId).replace(':department', department).replace(':designation', designation);
-            window.location.href = url;
-
-        });
+            });
+        @endif
     </script>
 @endpush

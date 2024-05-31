@@ -29,7 +29,7 @@ class TicketListener
             Notification::send($event->ticket->agent, new TicketAgent($event->ticket));
 
         }
-        elseif ($event->notificationName == 'MentionTicketAgent'){
+        elseif ($event->notificationName == 'MentionTicketAgent') {
             Notification::send($event->mentionUser, new MentionTicketAgent($event->ticket));
 
         }

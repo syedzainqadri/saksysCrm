@@ -8,6 +8,7 @@ use App\Models\CustomField;
 use App\Models\CustomFieldGroup;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Collection;
+use ReflectionClass;
 
 trait CustomFieldsTrait
 {
@@ -23,7 +24,7 @@ trait CustomFieldsTrait
 
     private function getModelName()
     {
-        $model = new \ReflectionClass($this);
+        $model = new ReflectionClass($this);
         $this->model = $model;
 
         return $this->model->getName();
@@ -129,7 +130,7 @@ trait CustomFieldsTrait
                 ->first();
 
             if ($entry) {
-                if ($fieldType == 'file' && (!is_null($entry->value) && $entry->value != $value )) {
+                if ($fieldType == 'file' && (!is_null($entry->value) && $entry->value != $value)) {
                     Files::deleteFile($entry->value, 'custom_fields');
                 }
 

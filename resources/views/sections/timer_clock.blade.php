@@ -4,22 +4,30 @@
         <span id="active-timer" class="mr-2">{{ $selfActiveTimer->timer }}</span>
 
         @if (is_null($selfActiveTimer->activeBreak))
-            <a href="javascript:;" class="pause-active-timer mr-1 border-right" data-toggle="tooltip" data-original-title="{{ __('modules.timeLogs.pauseTimer') }}" data-time-id="{{ $selfActiveTimer->id }}">
+            <a href="javascript:;" class="pause-active-timer mr-1 border-right" data-url="{{ url()->current() }}"
+                data-toggle="tooltip" data-original-title="{{ __('modules.timeLogs.pauseTimer') }}"
+                data-time-id="{{ $selfActiveTimer->id }}">
                 <i class="fa fa-pause-circle text-primary"></i>
             </a>
         @else
-            <a href="javascript:;" class="resume-active-timer mr-1 border-right" data-toggle="tooltip" data-original-title="{{ __('modules.timeLogs.resumeTimer') }}" data-time-id="{{ $selfActiveTimer->activeBreak->id }}">
+            <a href="javascript:;" class="resume-active-timer mr-1 border-right" data-url="{{ url()->current() }}"
+                data-toggle="tooltip" data-original-title="{{ __('modules.timeLogs.resumeTimer') }}"
+                data-time-id="{{ $selfActiveTimer->activeBreak->id }}">
                 <i class="fa fa-play-circle text-primary"></i>
             </a>
         @endif
-        <a href="javascript:;" class="stop-active-timer" data-toggle="tooltip" data-original-title="{{ __('modules.timeLogs.stopTimer') }}" data-time-id="{{ $selfActiveTimer->id }}">
+        <a href="javascript:;" class="stop-active-timer" id="stop-active-timer" data-toggle="tooltip"
+            data-original-title="{{ __('modules.timeLogs.stopTimer') }}" data-url="{{ url()->current() }}"
+            data-time-id="{{ $selfActiveTimer->id }}">
             <i class="fa fa-stop-circle text-danger"></i>
         </a>
 
     </span>
 
     @if (is_null($selfActiveTimer->activeBreak))
-        <a href="javascript:;" class='btn-danger btn btn-sm rounded mr-3 f-14 py-2 px-2 stop-active-timer d-block d-sm-none mr-2' data-time-id="{{ $selfActiveTimer->id }}">
+        <a href="javascript:;"
+            class='btn-danger btn btn-sm rounded mr-3 f-14 py-2 px-2 stop-active-timer d-block d-sm-none mr-2'
+            data-time-id="{{ $selfActiveTimer->id }}" data-url="{{ url()->current() }}" id="stop-active-timer">
             {{ __('modules.timeLogs.stopTimer') }}
         </a>
     @endif
@@ -27,7 +35,7 @@
 
 <script>
     var $worked = $("#active-timer");
-    var activeBreak = "{{ (!is_null($selfActiveTimer) && !is_null($selfActiveTimer->activeBreak)) }}";
+    var activeBreak = "{{ !is_null($selfActiveTimer) && !is_null($selfActiveTimer->activeBreak) }}";
 
     function updateTimerTask() {
         var myTime = $worked.html();
@@ -73,4 +81,31 @@
     } else {
         runTimeClock = false;
     }
+        document.addEventListener("visibilitychange", function() {
+            if (document.visibilityState === "visible") {
+                var url = "{{ route('timelogs.timer_data') }}";
+                    $.easyAjax({
+                    url: url,
+                    container: '#startTimerForm',
+                    type: "GET",
+                    blockUI: true,
+                    success: function (response) {
+                        if (response.status == 'success') {
+                            $('#active-timer').html(response.data.timer);
+                        }
+                    }
+                });
+            }
+        });
+
+@if(!is_null($selfActiveTimer))
+    $('.stop-active-timer').click(function(){
+        var url = "{{ route('timelogs.stopper_alert', ':id') }}?via=timelog";
+        var id = "{{$selfActiveTimer->id}}";
+        url = url.replace(':id', id);
+        $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
+        $.ajaxModal(MODAL_LG, url);
+    })
+@endif
+
 </script>

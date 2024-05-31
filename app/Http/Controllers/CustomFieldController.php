@@ -6,6 +6,7 @@ use App\Helper\Reply;
 use App\Models\CustomField;
 use App\Models\CustomFieldGroup;
 use Yajra\DataTables\Facades\DataTables;
+use Illuminate\Support\Facades\Validator;
 use App\Http\Requests\CustomField\StoreCustomField;
 use App\Http\Requests\CustomField\UpdateCustomField;
 
@@ -95,12 +96,11 @@ class CustomFieldController extends AccountBaseController
                     'visible',
                     function ($row) {
                         $class = 'badge  badge-danger disabled color-palette';
-                        // dd($row->visible == 'false');
+
                         if($row->visible == 'true') {
                             $string = '<span class="' . $class . '">' . __('app.yes') . '</span>';
                         }
                         else {
-                            // dump('false');
                             $class = 'badge  badge-secondary disabled color-palette';
                             $string = '<span class="' . $class . '">' . __('app.no') . '</span>';
                         }
@@ -136,7 +136,6 @@ class CustomFieldController extends AccountBaseController
     {
         $this->customFieldGroups = CustomFieldGroup::all();
         $this->types = ['text', 'number', 'password', 'textarea', 'select', 'radio', 'date', 'checkbox', 'file'];
-
         return view('custom-fields.create-custom-field-modal', $this->data);
     }
 
@@ -146,6 +145,7 @@ class CustomFieldController extends AccountBaseController
      */
     public function store(StoreCustomField $request)
     {
+
         $name = CustomField::generateUniqueSlug($request->get('label'), $request->module);
         $group = [
             'fields' => [
@@ -229,7 +229,7 @@ class CustomFieldController extends AccountBaseController
                 'visible' => $field['visible']
             ];
 
-            if (isset($field['required']) && (in_array(strtolower($field['required']), ['yes', 'on', 1]))) {
+            if (isset($field['required']) && (in_array($field['required'], ['yes', 'on', 1]))) {
                 $insertData['required'] = 'yes';
 
             }

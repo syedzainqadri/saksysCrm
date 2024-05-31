@@ -2,45 +2,37 @@
 
 namespace App\Observers;
 
+use App\Enums\MaritalStatus;
 use App\Events\NewCompanyCreatedEvent;
 use App\Http\Controllers\AppSettingController;
+use App\Http\Controllers\CurrencySettingController;
 use App\Http\Controllers\RolePermissionController;
 use App\Models\AttendanceSetting;
-use App\Models\ClientDetails;
-use App\Models\Contract;
 use App\Models\Company;
 use App\Models\Currency;
 use App\Models\EmailNotificationSetting;
-use App\Models\EmployeeDetails;
-use App\Models\Estimate;
-use App\Models\Expense;
 use App\Models\GlobalSetting;
 use App\Models\GoogleCalendarModule;
-use App\Models\Invoice;
 use App\Models\InvoiceSetting;
-use App\Models\Lead;
 use App\Models\LogTimeFor;
 use App\Models\ModuleSetting;
 use App\Models\Permission;
-use App\Models\Product;
-use App\Models\Project;
 use App\Models\ProjectSetting;
-use App\Models\ProjectTimeLog;
 use App\Models\Role;
 use App\Models\SlackSetting;
-use App\Models\Task;
 use App\Models\ThemeSetting;
-use App\Models\Ticket;
 use App\Models\TicketEmailSetting;
 use App\Models\TicketType;
 use App\Models\User;
-use App\Models\CurrencyFormatSetting;
 use App\Models\CustomFieldGroup;
 use App\Models\DashboardWidget;
 use App\Models\DiscussionCategory;
 use App\Models\EmployeeShift;
 use App\Models\LeadCustomForm;
+use App\Models\LeadPipeline;
+use App\Models\LeadPipelineStages;
 use App\Models\LeadSource;
+use App\Models\PipelineStage;
 use App\Models\MessageSetting;
 use App\Models\TicketChannel;
 use App\Models\TicketCustomForm;
@@ -51,14 +43,19 @@ use App\Models\ProjectStatusSetting;
 use App\Models\QuickBooksSetting;
 use App\Models\TaskboardColumn;
 use App\Models\UnitType;
+use App\Traits\StoreHeaders;
 
 class CompanyObserver
 {
+
+    use StoreHeaders;
 
     public function creating(Company $company)
     {
         $this->copyFromGlobalSettings($company);
         $this->dateFormats($company);
+        $this->storeHeaders($company);
+
     }
 
     private function copyFromGlobalSettings($company)
@@ -96,6 +93,10 @@ class CompanyObserver
             $this->dateFormats($company);
         }
 
+        if ($company->isDirty('currency_id')) {
+            (new CurrencySettingController())->updateExchangeRates();
+        }
+
         if (!isRunningInConsoleOrSeeding() && $company->isDirty('currency_id') && !is_null(user())) {
             $allClients = User::allClients();
             $clientsArray = $allClients->pluck('id')->toArray();
@@ -108,6 +109,7 @@ class CompanyObserver
         // for the case of running company migration before having global_settings table
         if ($company->id === 1 && isWorksuite() && !isRunningInConsoleOrSeeding()) {
             $global = GlobalSetting::first();
+            $global->email = $company->company_email;
             $global->global_app_name = $company->app_name;
             $global->logo_background_color = $company->logo_background_color;
             $global->header_color = $company->header_color;
@@ -163,6 +165,7 @@ class CompanyObserver
         $this->ticketEmailSetting($company);
         $this->googleCalendar($company);
         $this->unitType($company);
+        $this->leadStages($company);
 
         // Will be used in various module
         event(new NewCompanyCreatedEvent($company));
@@ -362,12 +365,12 @@ class CompanyObserver
     public function leadSources($company)
     {
         $sources = [
-            ['type' => 'email', 'company_id' => $company->id],
-            ['type' => 'google', 'company_id' => $company->id],
-            ['type' => 'facebook', 'company_id' => $company->id],
-            ['type' => 'friend', 'company_id' => $company->id],
-            ['type' => 'direct visit', 'company_id' => $company->id],
-            ['type' => 'tv ad', 'company_id' => $company->id]
+            ['type' => __('app.email'), 'company_id' => $company->id],
+            ['type' => __('app.google'), 'company_id' => $company->id],
+            ['type' => __('app.facebook'), 'company_id' => $company->id],
+            ['type' => __('app.friend'), 'company_id' => $company->id],
+            ['type' => __('app.direct'), 'company_id' => $company->id],
+            ['type' => __('app.tv'), 'company_id' => $company->id]
         ];
 
         LeadSource::insert($sources);
@@ -379,19 +382,68 @@ class CompanyObserver
         ];
 
         LeadStatus::insert($status);
+    }
+
+    public function leadStages($company)
+    {
+        $pipeline = new LeadPipeline();
+        $pipeline->name = 'Sales Pipeline';
+        $pipeline->company_id = $company->id;
+        $pipeline->label_color = '#009EFF';
+        $pipeline->default = 1;
+        $pipeline->priority = 1;
+        $pipeline->save();
+
+        $pipelineStages = [
+            ['name' => 'Generated', 'slug' => 'generated', 'lead_pipeline_id' => $pipeline->id, 'priority' => 1, 'default' => 1, 'label_color' => '#FFD700', 'company_id' => $company->id],
+            ['name' => 'Qualified', 'slug' => 'qualified', 'lead_pipeline_id' => $pipeline->id, 'priority' => 2, 'default' => 0, 'label_color' => '#009EFF', 'company_id' => $company->id],
+            ['name' => 'Initial Contact', 'slug' => 'initial-contact', 'lead_pipeline_id' => $pipeline->id, 'priority' => 3, 'default' => 0, 'label_color' => '#00CED1', 'company_id' => $company->id],
+            ['name' => 'Schedule Appointment', 'slug' => 'schedule-appointment', 'lead_pipeline_id' => $pipeline->id, 'priority' => 4, 'default' => 0, 'label_color' => '#32CD32', 'company_id' => $company->id],
+            ['name' => 'Proposal Sent', 'slug' => 'proposal-sent', 'lead_pipeline_id' => $pipeline->id, 'priority' => 5, 'default' => 0, 'label_color' => '#FFA07A', 'company_id' => $company->id],
+            ['name' => 'Win', 'slug' => 'win', 'lead_pipeline_id' => $pipeline->id, 'priority' => 6, 'default' => 0, 'label_color' => '#1FAE07', 'company_id' => $company->id],
+            ['name' => 'Lost', 'slug' => 'lost', 'lead_pipeline_id' => $pipeline->id, 'priority' => 7, 'default' => 0, 'label_color' => '#DB1313', 'company_id' => $company->id]
+        ];
+
+        PipelineStage::insert($pipelineStages);
+
+        return $pipeline;
 
     }
 
     public function leaveType($company)
     {
-        $gender = ['male','female','others'];
-        $maritalstatus = ['married','unmarried'];
+        $gender = ['male', 'female', 'others'];
+        $maritalStatus = MaritalStatus::toArray();
         $roles = Role::where('name', '<>', 'client')->where('company_id', $company->id)->pluck('id')->toArray();
 
         $status = [
-            ['type_name' => 'Casual', 'color' => '#16813D', 'company_id' => $company->id, 'gender' => json_encode($gender), 'marital_status' => json_encode($maritalstatus),  'role' => json_encode($roles)],
-            ['type_name' => 'Sick', 'color' => '#DB1313', 'company_id' => $company->id, 'gender' => json_encode($gender), 'marital_status' => json_encode($maritalstatus),  'role' => json_encode($roles)],
-            ['type_name' => 'Earned', 'color' => '#B078C6', 'company_id' => $company->id, 'gender' => json_encode($gender), 'marital_status' => json_encode($maritalstatus),  'role' => json_encode($roles)]
+            [
+                'type_name' => 'Casual',
+                'color' => '#16813D',
+                'company_id' => $company->id,
+                'gender' => json_encode($gender),
+                'marital_status' => json_encode($maritalStatus),
+                'role' => json_encode($roles),
+                'unused_leave' => 'carry forward',
+            ],
+            [
+                'type_name' => 'Sick',
+                'color' => '#DB1313',
+                'company_id' => $company->id,
+                'gender' => json_encode($gender),
+                'marital_status' => json_encode($maritalStatus),
+                'role' => json_encode($roles),
+                'unused_leave' => 'carry forward',
+            ],
+            [
+                'type_name' => 'Earned',
+                'color' => '#B078C6',
+                'company_id' => $company->id,
+                'gender' => json_encode($gender),
+                'marital_status' => json_encode($maritalStatus),
+                'role' => json_encode($roles),
+                'unused_leave' => 'carry forward',
+            ],
         ];
 
         LeaveType::insert($status);

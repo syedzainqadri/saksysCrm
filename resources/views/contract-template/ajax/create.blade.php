@@ -8,8 +8,7 @@ $addClientPermission = user()->permission('add_clients');
         <x-form id="save-contract-data-form">
             <div class="add-client bg-white rounded">
                 <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
-                    @lang('app.menu.contract') @lang('app.details')</h4>
-
+                    @lang('app.contractDetails')</h4>
                 <div class="row p-20">
                     <div class="col-md-12">
                         <x-forms.text fieldId="subject" :fieldLabel="__('app.subject')" fieldName="subject"
@@ -21,7 +20,7 @@ $addClientPermission = user()->permission('add_clients');
                             <x-forms.label fieldId="description" :fieldLabel="__('app.description')">
                             </x-forms.label>
                             <div id="description">{!! $contract ? $contract->contract_detail : '' !!}</div>
-                            <textarea name="contract_detail" id="description-text" class="d-none"></textarea>
+                            <textarea name="description" id="description-text" class="d-none"></textarea>
                         </div>
                     </div>
 

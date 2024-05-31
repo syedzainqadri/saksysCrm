@@ -8,7 +8,7 @@ $addExpenseCategoryPermission = user()->permission('manage_expense_category');
 
             <div class="add-client bg-white rounded">
                 <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
-                    @lang('app.expense') @lang('app.details')</h4>
+                    @lang('app.expenseDetails')</h4>
                 <div class="row p-20">
                     <div class="col-md-6 col-lg-3">
                         <x-forms.text class="mr-0 mr-lg-2 mr-md-2" :fieldLabel="__('modules.expenses.itemName')"
@@ -17,21 +17,26 @@ $addExpenseCategoryPermission = user()->permission('manage_expense_category');
                     </div>
 
                     <div class="col-md-6 col-lg-3">
-                        <input type="hidden" id="currency_id" name="currency_id" value="{{company()->currency_id}}">
-                        <x-forms.select :fieldLabel="__('modules.invoices.currency')" fieldName="currency"
-                            fieldRequired="true" fieldId="currency">
-                            @foreach ($currencies as $currency)
-                                <option @if ($currency->id == company()->currency_id) selected @endif value="{{ $currency->id }}" data-currency-name="{{$currency->currency_name}}">
-                                    {{ $currency->currency_name }} - ({{ $currency->currency_symbol }})
-                                </option>
-                            @endforeach
-                        </x-forms.select>
+                        @if(isset($projectName))
+                            <input type="hidden" id="currency_id" name="currency_id" value="{{ $project->currency_id}}">
+                            <x-forms.text :fieldLabel="__('modules.invoices.currency')" fieldName="project-currency" fieldId="project-currency" :fieldValue="$project->currency->currency_name" fieldReadOnly="true" />
+                        @else
+                            <input type="hidden" id="currency_id" name="currency_id" value="{{company()->currency_id}}">
+                            <x-forms.select :fieldLabel="__('modules.invoices.currency')" fieldName="currency"
+                                fieldRequired="true" fieldId="currency">
+                                @foreach ($currencies as $currency)
+                                    <option @selected ($currency->id == company()->currency_id)  value="{{ $currency->id }}" data-currency-name="{{$currency->currency_name}}">
+                                        {{ $currency->currency_name }} - ({{ $currency->currency_symbol }})
+                                    </option>
+                                @endforeach
+                            </x-forms.select>
+                        @endif
                     </div>
 
                     <div class="col-md-6 col-lg-3">
                         <x-forms.number fieldId="exchange_rate" :fieldLabel="__('modules.currencySettings.exchangeRate')"
-                        fieldName="exchange_rate" fieldRequired="true" :fieldValue="$companyCurrency->exchange_rate" fieldReadOnly="true"
-                        :fieldHelp="'( '.company()->currency->currency_name.' '.__('app.to').' '.company()->currency->currency_name.' )'"/>
+                        fieldName="exchange_rate" fieldRequired="true" :fieldValue="(isset($projectName) ? $project->currency->exchange_rate : $companyCurrency->exchange_rate)" fieldReadOnly="true"
+                        :fieldHelp="' '"/>
                     </div>
 
                     <div class="col-md-6 col-lg-3">
@@ -74,8 +79,8 @@ $addExpenseCategoryPermission = user()->permission('manage_expense_category');
                                 search="true">
                                 <option value="">--</option>
                                 @foreach ($projects as $project)
-                                    <option data-currency-id="{{ $project->currency_id }}" @if ($projectId == $project->id) selected @endif value="{{ $project->id }}">
-                                        {{ mb_ucwords($project->project_name) }}
+                                    <option data-currency-id="{{ $project->currency_id }}" @selected ($projectId == $project->id) value="{{ $project->id }}">
+                                        {{ $project->project_name }}
                                     </option>
                                 @endforeach
                             </x-forms.select>
@@ -91,7 +96,7 @@ $addExpenseCategoryPermission = user()->permission('manage_expense_category');
                                 data-live-search="true">
                                 <option value="">--</option>
                                 @foreach ($categories as $category)
-                                    <option value="{{ $category->id }}">{{ mb_ucwords($category->category_name) }}
+                                    <option value="{{ $category->id }}">{{ $category->category_name }}
                                     </option>
                                 @endforeach
                             </select>
@@ -119,7 +124,7 @@ $addExpenseCategoryPermission = user()->permission('manage_expense_category');
                                 @if($viewBankAccountPermission != 'none')
                                     @foreach ($bankDetails as $bankDetail)
                                         <option value="{{ $bankDetail->id }}">@if($bankDetail->type == 'bank')
-                                            {{ $bankDetail->bank_name }} | @endif {{ mb_ucwords($bankDetail->account_name) }}
+                                            {{ $bankDetail->bank_name }} | @endif {{ $bankDetail->account_name }}
                                         </option>
                                     @endforeach
                                 @endif
@@ -248,14 +253,6 @@ $addExpenseCategoryPermission = user()->permission('manage_expense_category');
         init(RIGHT_MODAL);
     });
 
-    function checkboxChange(parentClass, id){
-        var checkedData = '';
-        $('.'+parentClass).find("input[type= 'checkbox']:checked").each(function () {
-            checkedData = (checkedData !== '') ? checkedData+', '+$(this).val() : $(this).val();
-        });
-        $('#'+id).val(checkedData);
-    }
-
     $('body').on("change", '#currency, #project_id', function() {
         if ($('#project_id').val() != '') {
             var curId = $('#project_id option:selected').attr('data-currency-id');
@@ -295,10 +292,23 @@ $addExpenseCategoryPermission = user()->permission('manage_expense_category');
                 if (response.status == 'success') {
                     $('#bank_account_id').html(response.data);
                     $('#bank_account_id').selectpicker('refresh');
-                    $('#exchange_rate').val(response.exchangeRate);
-                    $('#exchange_rateHelp').html('( '+companyCurrencyName+' @lang('app.to') '+currentCurrencyName+' )');
+                    $('#exchange_rate').val(1/response.exchangeRate);
+                    let currencyExchange = (companyCurrencyName != currentCurrencyName) ? '( '+currentCurrencyName+' @lang('app.to') '+companyCurrencyName+' )' : '';
+                    $('#exchange_rateHelp').html(currencyExchange);
                 }
             }
         });
     });
+
+    @if(isset($projectName))
+        setExchangeRateHelp();
+        function setExchangeRateHelp(){
+            $('#exchange_rate').prop('readonly', false);
+            var companyCurrencyName = "{{$companyCurrency->currency_name}}";
+            var currentCurrencyName = `{{ $project->currency->currency_name }}` ;
+            let currencyExchange = (companyCurrencyName != currentCurrencyName) ? '( '+currentCurrencyName+' @lang('app.to') '+currentCurrencyName+' )' : '';
+            $('#exchange_rateHelp').html(currencyExchange);
+        }
+    @endif
+
 </script>

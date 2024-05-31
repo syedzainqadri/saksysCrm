@@ -20,6 +20,7 @@ class ClientSubCategoryController extends AccountBaseController
         $this->subcategories = ClientSubCategory::all();
         $this->categories = ClientCategory::all();
         $this->deletePermission = user()->permission('manage_client_subcategory');
+
         return view('clients.create-subcategory', $this->data);
     }
 
@@ -34,6 +35,7 @@ class ClientSubCategoryController extends AccountBaseController
         $category->category_name = $request->category_name;
         $category->save();
         $categories = ClientCategory::all();
+
         return Reply::successWithData(__('messages.recordSaved'), ['data' => $categories]);
     }
 
@@ -44,7 +46,7 @@ class ClientSubCategoryController extends AccountBaseController
      */
     public function update(Request $request, $id)
     {
-        abort_403 (user()->permission('manage_client_subcategory') != 'all');
+        abort_403(user()->permission('manage_client_subcategory') != 'all');
 
         $category = ClientSubCategory::findOrFail($id);
 
@@ -62,18 +64,20 @@ class ClientSubCategoryController extends AccountBaseController
      */
     public function destroy($id)
     {
-        abort_403 (user()->permission('manage_client_subcategory') != 'all');
+        abort_403(user()->permission('manage_client_subcategory') != 'all');
 
         ClientSubCategory::findOrFail($id);
 
         ClientSubCategory::destroy($id);
         $categoryData = ClientSubCategory::all();
+
         return Reply::successWithData(__('messages.deleteSuccess'), ['data' => $categoryData]);
     }
 
     public function getSubCategories($id)
     {
         $sub_categories = ClientSubCategory::where('category_id', $id)->get();
+
         return Reply::dataOnly(['status' => 'success', 'data' => $sub_categories]);
     }
 

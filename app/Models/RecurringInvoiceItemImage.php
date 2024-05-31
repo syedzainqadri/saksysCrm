@@ -31,6 +31,7 @@ use App\Traits\IconTrait;
  * @method static \Illuminate\Database\Eloquent\Builder|InvoiceItemImage whereUpdatedAt($value)
  * @property int $invoice_recurring_item_id
  * @method static \Illuminate\Database\Eloquent\Builder|RecurringInvoiceItemImage whereInvoiceRecurringItemId($value)
+ * @property-read mixed $file
  * @mixin \Eloquent
  */
 class RecurringInvoiceItemImage extends BaseModel
@@ -41,21 +42,21 @@ class RecurringInvoiceItemImage extends BaseModel
     const FILE_PATH = 'recurring-invoice-files';
 
     protected $table = 'invoice_recurring_item_images';
-    protected $appends = ['file_url', 'icon'];
+    protected $appends = ['file_url', 'icon', 'file'];
     protected $fillable = ['invoice_recurring_item_id', 'filename', 'hashname', 'size', 'external_link'];
 
     public function getFileUrlAttribute()
     {
-        if (empty($this->external_link)) {
-            return asset_url_local_s3(RecurringInvoiceItemImage::FILE_PATH . '/' . $this->invoice_recurring_item_id . '/' . $this->hashname);
-        }
-        elseif (!empty($this->external_link)) {
-            return $this->external_link;
-        }
-        else {
-            return '';
+        if($this->external_link){
+            return str($this->external_link)->contains('http') ? $this->external_link : asset_url_local_s3($this->external_link);
         }
 
+        return asset_url_local_s3(RecurringInvoiceItemImage::FILE_PATH . '/' . $this->invoice_recurring_item_id . '/' . $this->hashname);
+    }
+
+    public function getFileAttribute()
+    {
+        return $this->external_link ?: (RecurringInvoiceItemImage::FILE_PATH . '/' . $this->invoice_recurring_item_id . '/' . $this->hashname);
     }
 
 }

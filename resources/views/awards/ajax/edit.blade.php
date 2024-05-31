@@ -28,9 +28,9 @@
                                     data-live-search="true">
                                         <option value="">--</option>
                                         @foreach ($icons as $item)
-                                            <option data-icon="{{ $item->icon }}"  {{ ($appreciationType->award_icon_id == $item->id) ? 'selected' : '' }} data-content="<i class='bi bi-{{ $item->icon }}'></i> {{ $item->title }}" value="{{ $item->id }}">
-                                                {{ mb_ucwords($item->title) }}
-                                            </option>
+                                        <option data-icon="{{ $item->icon }}"  {{ ($appreciationType->award_icon_id == $item->id) ? 'selected' : '' }} data-content="<i class='bi bi-{{ $item->icon }}'></i> {{ $item->title }}" value="{{ $item->id }}">
+                                            {{ $item->title }}
+                                        </option>
                                         @endforeach
                                     </select>
                                 </x-forms.input-group>
@@ -53,15 +53,15 @@
                             </div>
                             <div class="col-sm-2">
                                 <div class="position-relative icon-preview d-flex d-none mt-5">
-                                   
+
                                 </div>
                             </div>
 
                             <div class="col-md-6">
                                 <x-forms.select fieldId="status" :fieldLabel="__('app.status')"
                                                 fieldName="status">
-                                    <option @if ($appreciationType->status == 'active') selected @endif value="active">@lang('app.active')</option>
-                                    <option @if ($appreciationType->status == 'inactive') selected @endif value="inactive">@lang('app.inactive')</option>
+                                    <option @selected($appreciationType->status == 'active') value="active">@lang('app.active')</option>
+                                    <option @selected($appreciationType->status == 'inactive')  value="inactive">@lang('app.inactive')</option>
                                 </x-forms.select>
                             </div>
 

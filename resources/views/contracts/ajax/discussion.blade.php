@@ -13,8 +13,8 @@ $deleteContractDiscussionPermission = user()->permission('delete_contract_discus
             <div class="row">
                 <div class="col-md-12">
                     <a class="f-15 f-w-500" href="javascript:;" id="add-comment"><i
-                            class="icons icon-plus font-weight-bold mr-1"></i>@lang('app.add')
-                        @lang('modules.tasks.comment')</a>
+                            class="icons icon-plus font-weight-bold mr-1"></i>
+                        @lang('modules.contracts.addComment')</a>
                 </div>
             </div>
 
@@ -22,7 +22,7 @@ $deleteContractDiscussionPermission = user()->permission('delete_contract_discus
                 <div class="col-md-12 ">
                     <div class="media">
                         <img src="{{ user()->image_url }}" class="align-self-start mr-3 taskEmployeeImg rounded"
-                            alt="{{ mb_ucfirst(user()->name) }}">
+                            alt="{{ user()->name }}">
                         <div class="media-body bg-white">
                             <div class="form-group">
                                 <div id="task-comment"></div>
@@ -35,7 +35,7 @@ $deleteContractDiscussionPermission = user()->permission('delete_contract_discus
                         <x-forms.button-cancel id="cancel-comment" class="border-0 mr-3">@lang('app.cancel')
                         </x-forms.button-cancel>
                         <x-forms.button-primary id="submit-comment" icon="location-arrow">@lang('app.submit')
-                            </x-button-primary>
+                            </x-forms.button-primary>
                     </div>
 
                 </div>
@@ -51,15 +51,15 @@ $deleteContractDiscussionPermission = user()->permission('delete_contract_discus
                             <div class="card-img my-1 ml-0">
                                 <a href="{{ route('employees.show', $discussion->user->id) }}">
                                     <img src="{{ $discussion->user->image_url }}"
-                                        alt="{{ mb_ucwords($discussion->user->name) }}"></a>
+                                        alt="{{ $discussion->user->name }}"></a>
                             </div>
                             <div class="card-body border-0 pl-0 py-1">
                                 <div class="d-flex flex-grow-1">
                                     <h4 class="card-title f-15 f-w-500 mr-3"><a class="text-dark"
-                                            href="{{ route('employees.show', $discussion->user->id) }}">{{ mb_ucwords($discussion->user->name) }}</a>
+                                            href="{{ route('employees.show', $discussion->user->id) }}">{{ $discussion->user->name }}</a>
                                     </h4>
                                     <p class="card-date f-11 text-lightest mb-0">
-                                        {{ ucfirst($discussion->created_at->diffForHumans()) }}
+                                        {{ $discussion->created_at->diffForHumans() }}
                                     </p>
                                     <div class="dropdown ml-auto comment-action">
                                         <button
@@ -85,7 +85,7 @@ $deleteContractDiscussionPermission = user()->permission('delete_contract_discus
                                         </div>
                                     </div>
                                 </div>
-                                <div class="card-text f-14 text-dark-grey text-justify">{!! ucfirst($discussion->message) !!}
+                                <div class="card-text f-14 text-dark-grey text-justify">{!! $discussion->message !!}
                                 </div>
                             </div>
                         </div>

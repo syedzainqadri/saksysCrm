@@ -2,6 +2,7 @@
 
 namespace App\Observers;
 
+use Carbon\Carbon;
 use Exception;
 use App\Models\User;
 use App\Helper\Files;
@@ -10,6 +11,7 @@ use App\Models\Estimate;
 use App\Models\UnitType;
 use App\Services\Google;
 use App\Scopes\ActiveScope;
+use Google_Service_Calendar_Event;
 use Illuminate\Support\Str;
 use App\Models\InvoiceItems;
 use App\Models\Notification;
@@ -24,9 +26,12 @@ use App\Models\GoogleCalendarModule;
 use App\Http\Controllers\QuickbookController;
 use App\Models\Payment;
 use App\Models\ProposalItemImage;
+use App\Traits\EmployeeActivityTrait;
 
 class InvoiceObserver
 {
+    use EmployeeActivityTrait;
+
     use UnitTypeSaveTrait;
 
     public function saving(Invoice $invoice)
@@ -79,11 +84,19 @@ class InvoiceObserver
         if (company()) {
             $invoice->company_id = company()->id;
         }
+
+        if (is_numeric($invoice->invoice_number)) {
+            $invoice->invoice_number = $invoice->formatInvoiceNumber();
+        }
+
+        $invoiceSettings = company() ? company()->invoiceSetting : $invoice->company->invoiceSetting;
+        $invoice->original_invoice_number = str($invoice->invoice_number)->replace($invoiceSettings->invoice_prefix . $invoiceSettings->invoice_number_separator, '');
     }
 
     public function created(Invoice $invoice)
     {
         if (!isRunningInConsoleOrSeeding()) {
+
             if (!empty(request()->item_name) && is_array(request()->item_name)) {
 
                 $itemsSummary = request()->item_summary;
@@ -107,9 +120,9 @@ class InvoiceObserver
                                 'item_name' => $item,
                                 'item_summary' => $itemsSummary[$key] ?: '',
                                 'type' => 'item',
-                                'unit_id' => (isset($unitId[$key]) && !is_null($unitId[$key])) ? $unitId[$key] : null,
-                                'product_id' => (isset($product[$key]) && !is_null($product[$key])) ? $product[$key] : null,
-                                'hsn_sac_code' => (isset($hsn_sac_code[$key]) && !is_null($hsn_sac_code[$key])) ? $hsn_sac_code[$key] : null,
+                                'unit_id' => (isset($unitId[$key])) ? $unitId[$key] : null,
+                                'product_id' => (isset($product[$key])) ? $product[$key] : null,
+                                'hsn_sac_code' => (isset($hsn_sac_code[$key])) ? $hsn_sac_code[$key] : null,
                                 'quantity' => $quantity[$key],
                                 'unit_price' => round($cost_per_item[$key], 2),
                                 'amount' => round($amount[$key], 2),
@@ -130,31 +143,28 @@ class InvoiceObserver
                         InvoiceItemImage::create(
                             [
                                 'invoice_item_id' => $invoiceItem->id,
-                                'filename' => !isset($invoice_item_image_url[$key]) ? $invoice_item_image[$key]->getClientOriginalName() : '',
-                                'hashname' => !isset($invoice_item_image_url[$key]) ? $filename : '',
-                                'size' => !isset($invoice_item_image_url[$key]) ? $invoice_item_image[$key]->getSize() : '',
-                                'external_link' => isset($invoice_item_image_url[$key]) ? $invoice_item_image_url[$key] : ''
+                                'filename' => isset($invoice_item_image[$key]) ? $invoice_item_image[$key]->getClientOriginalName() : '',
+                                'hashname' => isset($invoice_item_image[$key]) ? $filename : null,
+                                'size' => isset($invoice_item_image[$key]) ? $invoice_item_image[$key]->getSize() : null,
+                                'external_link' => isset($invoice_item_image[$key]) ? null : (isset($invoice_item_image_url[$key]) ? $invoice_item_image_url[$key] : null),
                             ]
                         );
 
                     }
 
-                     $image = true;
+                    $image = true;
 
-                    if (isset($invoice_item_image_delete[$key]))
-                    {
+                    if (isset($invoice_item_image_delete[$key])) {
                         $image = false;
                     }
 
-                    if ($image && (isset(request()->image_id[$key]) && $invoiceOldImage[$key] != '') && isset($invoiceItem) && request()->has('estimate_id'))
-                    {
+                    if ($image && (isset(request()->image_id[$key]) && $invoiceOldImage[$key] != '') && isset($invoiceItem) && request()->has('estimate_id')) {
                         $estimateOldImg = EstimateItemImage::with('item')->where('id', request()->image_id[$key])->first();
 
                         $this->duplicateImageStore($estimateOldImg, $invoiceItem);
                     }
 
-                    if ($image && (isset(request()->image_id[$key]) && $invoiceOldImage[$key] != '') && isset($invoiceItem) && request()->has('proposal_id'))
-                    {
+                    if ($image && (isset(request()->image_id[$key]) && $invoiceOldImage[$key] != '') && isset($invoiceItem) && request()->has('proposal_id')) {
                         $estimateOldImg = ProposalItemImage::with('item')->where('id', request()->image_id[$key])->first();
 
                         $this->duplicateImageStore($estimateOldImg, $invoiceItem, true);
@@ -254,6 +264,7 @@ class InvoiceObserver
                 Step3 - Insert new invoices items with images
             */
 
+
             $request = request();
 
             $items = $request->item_name;
@@ -281,9 +292,8 @@ class InvoiceObserver
 
                     try {
                         $invoiceItem = InvoiceItems::findOrFail($invoice_item_id);
-                    }
-                    catch(Exception )  {
-                            $invoiceItem = new InvoiceItems();
+                    } catch (Exception) {
+                        $invoiceItem = new InvoiceItems();
                     }
 
                     $invoiceItem->invoice_id = $invoice->id;
@@ -318,10 +328,10 @@ class InvoiceObserver
                                 'invoice_item_id' => $invoiceItem->id,
                             ],
                             [
-                                'filename' => !isset($invoice_item_image_url[$key]) ? $invoice_item_image[$key]->getClientOriginalName() : '',
-                                'hashname' => !isset($invoice_item_image_url[$key]) ? $filename : '',
-                                'size' => !isset($invoice_item_image_url[$key]) ? $invoice_item_image[$key]->getSize() : '',
-                                'external_link' => $invoice_item_image_url[$key] ?? ''
+                                'filename' => isset($invoice_item_image[$key]) ? $invoice_item_image[$key]->getClientOriginalName() : '',
+                                'hashname' => isset($invoice_item_image[$key]) ? $filename : null,
+                                'size' => isset($invoice_item_image[$key]) ? $invoice_item_image[$key]->getSize() : null,
+                                'external_link' => isset($invoice_item_image[$key]) ? null : ($invoice_item_image_url[$key] ?? null),
                             ]
                         );
                     }
@@ -353,15 +363,19 @@ class InvoiceObserver
             $invoice->status = 'paid';
         }
 
+        if ($invoice->amountDue() == 0) {
+            $invoice->status = 'paid';
+        }
+
         $invoice->saveQuietly();
 
         // To add payment if received
-        if ($paymentStatus == '1') {
+        if ($paymentStatus == '1' && $invoice->amountDue() != 0) {
             $clientPayment = new Payment();
             $clientPayment->currency_id = $invoice->currency_id;
             $clientPayment->invoice_id = $invoice->id;
             $clientPayment->project_id = $invoice->project_id;
-            $clientPayment->amount = $invoice->total;
+            $clientPayment->amount = $invoice->amountDue();
             $clientPayment->exchange_rate = $invoice->exchange_rate;
             $clientPayment->transaction_id = $invoice->transaction_id;
             $clientPayment->bank_account_id = $invoice->bank_account_id;
@@ -393,7 +407,7 @@ class InvoiceObserver
         }
 
         $notifyData = ['App\Notifications\InvoicePaymentReceived', 'App\Notifications\InvoiceReminder', 'App\Notifications\NewInvoice', 'App\Notifications\NewPayment'];
-        \App\Models\Notification::deleteNotification($notifyData, $invoice->id);
+        Notification::deleteNotification($notifyData, $invoice->id);
 
         /* Delete invoice item files */
         $invoiceItems = InvoiceItems::where('invoice_id', $invoice->id)->get();
@@ -436,6 +450,14 @@ class InvoiceObserver
         }
     }
 
+    public function deleted(Invoice $invoice)
+    {
+        if (user()) {
+            self::createEmployeeActivity(user()->id, 'invoice-deleted');
+
+        }
+    }
+
     protected function googleCalendarEvent($event)
     {
         $module = GoogleCalendarModule::first();
@@ -457,13 +479,13 @@ class InvoiceObserver
             $description = __('messages.invoiceDueOn');
 
             if ($event->issue_date && $event->due_date) {
-                $start_date = \Carbon\Carbon::parse($event->issue_date)->shiftTimezone($googleAccount->timezone);
-                $due_date = \Carbon\Carbon::parse($event->due_date)->shiftTimezone($googleAccount->timezone);
+                $start_date = Carbon::parse($event->issue_date)->shiftTimezone($googleAccount->timezone);
+                $due_date = Carbon::parse($event->due_date)->shiftTimezone($googleAccount->timezone);
 
                 // Create event
                 $google = $google->connectUsing($googleAccount->token);
 
-                $eventData = new \Google_Service_Calendar_Event(array(
+                $eventData = new Google_Service_Calendar_Event(array(
                     'summary' => $event->invoice_number . ' ' . $description,
                     'location' => $googleAccount->address,
                     'description' => $description,
@@ -515,7 +537,7 @@ class InvoiceObserver
     public function duplicateImageStore($estimateOldImg, $invoiceItem, $proposal = false)
     {
 
-        if(!is_null($estimateOldImg)) {
+        if (!is_null($estimateOldImg)) {
 
             $file = new InvoiceItemImage();
 
@@ -526,7 +548,8 @@ class InvoiceObserver
             if ($proposal == false) {
                 Files::copy(EstimateItemImage::FILE_PATH . '/' . $estimateOldImg->item->id . '/' . $estimateOldImg->hashname, InvoiceItemImage::FILE_PATH . '/' . $invoiceItem->id . '/' . $fileName);
 
-            } else {
+            }
+            else {
                 Files::copy(ProposalItemImage::FILE_PATH . '/' . $estimateOldImg->item->id . '/' . $estimateOldImg->hashname, InvoiceItemImage::FILE_PATH . '/' . $invoiceItem->id . '/' . $fileName);
             }
 

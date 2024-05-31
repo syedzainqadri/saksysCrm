@@ -30,7 +30,7 @@ $manageCategoryPermission = user()->permission('manage_discussion_category');
         <div class="d-flex" id="table-actions">
             @if (($addDiscussionPermission == 'all' || $addDiscussionPermission == 'added' || $project->project_admin == user()->id) && !$project->trashed())
                 <x-forms.button-primary class="mr-3 float-left" id="add-discussion" icon="plus" data-redirect-url="{{ route('projects.show', $project->id) . '?tab=discussion' }}">
-                    @lang('app.new') @lang('modules.projects.discussion')
+                    @lang('app.newDiscussion')
                 </x-forms.button-primary>
             @endif
 
@@ -53,8 +53,8 @@ $manageCategoryPermission = user()->permission('manage_discussion_category');
                         <option value="">@lang('app.all')</option>
                         @foreach ($discussionCategories as $item)
                             <option
-                                data-content="<i class='fa fa-circle mr-2' style='color: {{ $item->color }}'></i> {{ mb_ucwords($item->name) }}"
-                                value="{{ $item->id }}">{{ mb_ucwords($item->name) }}</option>
+                                data-content="<i class='fa fa-circle mr-2' style='color: {{ $item->color }}'></i> {{ $item->name }}"
+                                value="{{ $item->id }}">{{ $item->name }}</option>
                         @endforeach
                     </select>
                 </div>

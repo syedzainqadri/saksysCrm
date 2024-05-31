@@ -10,7 +10,7 @@ class ClientSelectionDropdown extends Component
     public $clients;
     public $selected;
     public $fieldRequired;
-    
+
     /**
      * Create a new component instance.
      *

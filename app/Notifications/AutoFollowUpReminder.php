@@ -3,7 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\EmailNotificationSetting;
-use App\Models\LeadFollowUp;
+use App\Models\DealFollowUp;
 
 class AutoFollowUpReminder extends BaseNotification
 {
@@ -16,7 +16,7 @@ class AutoFollowUpReminder extends BaseNotification
     private $leadFollowup;
     private $emailSetting;
 
-    public function __construct(LeadFollowUp $leadFollowup)
+    public function __construct(DealFollowUp $leadFollowup)
     {
         $this->leadFollowup = $leadFollowup;
         $this->company = $leadFollowup->lead->company;
@@ -49,7 +49,7 @@ class AutoFollowUpReminder extends BaseNotification
     public function toMail($notifiable)
     {
         $build = parent::build();
-        $url = route('leads.show', $this->leadFollowup->lead->id) . '?tab=follow-up';
+        $url = route('deals.show', $this->leadFollowup->lead->id) . '?tab=follow-up';
 
         $url = getDomainSpecificUrl($url, $this->company);
 
@@ -59,7 +59,7 @@ class AutoFollowUpReminder extends BaseNotification
 
         $followUpTime = $this->leadFollowup?->next_follow_up_date->format($this->company->time_format);
 
-        $content = __('email.followUpReminder.followUpLeadText') .'<br><br>' .__('email.followUpReminder.followUpLead') . ' :- ' . $followUpLead . '<br>' . __('email.followUpReminder.nextFollowUpDate') . ' :- ' . $followUpDate . '<br>' . __('email.followUpReminder.nextFollowUpTime') . ' :- ' . $followUpTime . '<br>' . ucfirst($this->leadFollowup->remark);
+        $content = __('email.followUpReminder.followUpLeadText') .'<br><br>' .__('email.followUpReminder.followUpLead') . ' :- ' . $followUpLead . '<br>' . __('email.followUpReminder.nextFollowUpDate') . ' :- ' . $followUpDate . '<br>' . __('email.followUpReminder.nextFollowUpTime') . ' :- ' . $followUpTime . '<br>' . $this->leadFollowup->remark;
 
         return $build
             ->subject(__('email.followUpReminder.subject') . ' #' . $this->leadFollowup->lead->id . ' - ' . config('app.name') . '.')
@@ -87,6 +87,20 @@ class AutoFollowUpReminder extends BaseNotification
             'created_at' => $this->leadFollowup->created_at->format('Y-m-d H:i:s'),
             'heading' => __('email.followUpReminder.subject'),
         ];
+    }
+
+    public function toSlack($notifiable)
+    {
+
+        $followUpLead = $this->leadFollowup?->lead?->client_name;
+
+        $followUpDate = $this->leadFollowup?->next_follow_up_date->format($this->company->date_format);
+
+        $followUpTime = $this->leadFollowup?->next_follow_up_date->format($this->company->time_format);
+        
+        return $this->slackBuild($notifiable)
+            ->content(__('email.followUpReminder.followUpLeadText') .'<br><br>' .__('email.followUpReminder.followUpLead') . ' :- ' . $followUpLead . '<br>' . __('email.followUpReminder.nextFollowUpDate') . ' :- ' . $followUpDate . '<br>' . __('email.followUpReminder.nextFollowUpTime') . ' :- ' . $followUpTime . '<br>' . $this->leadFollowup->remark);
+
     }
 
 }

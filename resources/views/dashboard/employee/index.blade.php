@@ -7,7 +7,7 @@
         || (!is_null($viewTicketsPermission) && $viewTicketsPermission != 'none')
         || (!is_null($viewLeavePermission) && $viewLeavePermission != 'none')
         )
-        <link rel="stylesheet" href="{{ asset('vendor/full-calendar/main.min.css') }}">
+        <link rel="stylesheet" href="{{ asset('vendor/full-calendar/main.min.css') }}" defer="defer">
     @endif
     <style>
         .h-200 {
@@ -92,8 +92,7 @@
         @if(in_array('admin', user_roles()))
             <div class="row">
                 @include('dashboard.update-message-dashboard')
-                {{-- Remove for versions above 5.2.4 --}}
-                @include('dashboard.update-gateway-credentials')
+                @includeIf('dashboard.update-message-module-dashboard')
                 <x-cron-message :modal="true"></x-cron-message>
             </div>
         @endif
@@ -102,7 +101,7 @@
 
             <!-- WELOCOME NAME START -->
             <div>
-                <h3 class="heading-h3 mb-0 f-21 text-capitalize font-weight-bold">@lang('app.welcome') {{ $user->name }}</h3>
+                <h3 class="heading-h3 mb-0 f-21 font-weight-bold">@lang('app.welcome') {{ $user->name }}</h3>
             </div>
             <!-- WELOCOME NAME END -->
 
@@ -197,11 +196,11 @@
                                             <img class="" src=" {{ $user->image_url }}" alt="Card image">
                                         </div>
                                         <div class="card-body border-0 pl-0">
-                                            <h4 class="card-title text-dark f-18 f-w-500 mb-0">{{ mb_ucfirst($user->name) }}</h4>
+                                            <h4 class="card-title text-dark f-18 f-w-500 mb-0">{{ $user->name }}</h4>
                                             <p class="f-14 font-weight-normal text-dark-grey mb-2">
                                                 {{ $user->employeeDetails->designation->name ?? '--' }}</p>
                                             <p class="card-text f-12 text-lightest"> @lang('app.employeeId') :
-                                                {{ mb_strtoupper($user->employeeDetails->employee_id) }}</p>
+                                                {{ $user->employeeDetails->employee_id }}</p>
                                         </div>
                                     </div>
                                 </a>
@@ -211,7 +210,7 @@
                                         @if(in_array('tasks', user_modules()))
                                             <span>
                                                 <label class="f-12 text-dark-grey mb-12 text-capitalize" for="usr">
-                                                    @lang('app.open') @lang('app.menu.tasks') </label>
+                                                    @lang('app.openTasks') </label>
                                                 <p class="mb-0 f-18 f-w-500">
                                                     <a href="{{ route('tasks.index') . '?assignee=me' }}"
                                                         class="text-dark">
@@ -296,13 +295,13 @@
                                             @if ($editTimelogPermission == 'all' || ($editTimelogPermission == 'added' && $myActiveTimer->added_by == user()->id) || ($editTimelogPermission == 'owned' && (($myActiveTimer->project && $myActiveTimer->project->client_id == user()->id) || $myActiveTimer->user_id == user()->id)) || ($editTimelogPermission == 'both' && (($myActiveTimer->project && $myActiveTimer->project->client_id == user()->id) || $myActiveTimer->user_id == user()->id || $myActiveTimer->added_by == user()->id)))
                                                 @if (is_null($myActiveTimer->activeBreak))
                                                     <x-forms.button-secondary icon="pause-circle"
-                                                        data-time-id="{{ $myActiveTimer->id }}" id="pause-timer-btn">
+                                                        data-time-id="{{ $myActiveTimer->id }}" id="pause-timer-btn" data-url="{{ url()->current() }}">
                                                         @lang('modules.timeLogs.pauseTimer')</x-forms.button-secondary>
-                                                    <x-forms.button-primary class="ml-3 stop-active-timer"
+                                                    <x-forms.button-primary class="ml-3 stop-active-timer" data-url="{{ url()->current() }}"
                                                         data-time-id="{{ $myActiveTimer->id }}" icon="stop-circle">
                                                         @lang('modules.timeLogs.stopTimer')</x-forms.button-primary>
                                                 @else
-                                                    <x-forms.button-primary id="resume-timer-btn" icon="play-circle"
+                                                    <x-forms.button-primary id="resume-timer-btn" icon="play-circle" data-url="{{ url()->current() }}"
                                                         data-time-id="{{ $myActiveTimer->activeBreak->id }}">
                                                         @lang('modules.timeLogs.resumeTimer')</x-forms.button-primary>
                                                 @endif
@@ -393,62 +392,92 @@
         || (!is_null($viewTicketsPermission) && $viewTicketsPermission != 'none')
         || (!is_null($viewLeavePermission) && $viewLeavePermission != 'none')
         )
-        <script src="{{ asset('vendor/full-calendar/main.min.js') }}"></script>
-        <script src="{{ asset('vendor/full-calendar/locales-all.min.js') }}"></script>
+        <script src="{{ asset('vendor/full-calendar/main.min.js') }}"  defer="defer"></script>
+        <script src="{{ asset('vendor/full-calendar/locales-all.min.js') }}"  defer="defer"></script>
+        <script>
+
+            $(document).ready(function () {
+                var calendarEl = document.getElementById('calendar');
+
+                var calendar = new FullCalendar.Calendar(calendarEl, {
+                    locale: initialLocaleCode,
+                    timeZone: '{{ company()->timezone }}',
+                    firstDay: parseInt("{{ attendance_setting()?->week_start_from }}"),
+                    headerToolbar: {
+                        left: 'prev,next today',
+                        center: 'title',
+                        right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
+                    },
+                    navLinks: true, // can click day/week names to navigate views
+                    selectable: false,
+                    initialView: 'listWeek',
+                    selectMirror: true,
+                    select: function(arg) {
+                        addEventModal(arg.start, arg.end, arg.allDay);
+                        calendar.unselect()
+                    },
+                    eventClick: function(arg) {
+                        getEventDetail(arg.event.id,arg.event.extendedProps.event_type);
+                    },
+                    editable: false,
+                    dayMaxEvents: true, // allow "more" link when too many events
+                    events: {
+                        url: "{{ route('dashboard.private_calendar') }}",
+                    },
+                    eventDidMount: function(info) {
+                            $(info.el).css('background-color', info.event.extendedProps.bg_color);
+                            $(info.el).css('color', info.event.extendedProps.color);
+                            $(info.el).find('td.fc-list-event-title').prepend('<i class="fa '+info.event.extendedProps.icon+'"></i>&nbsp;&nbsp;');
+                            // tooltip for leaves
+                            if(info.event.extendedProps.event_type == 'leave'){
+                                $(info.el).find('td.fc-list-event-title > a').css('cursor','default'); // list view cursor for leave
+                                $(info.el).css('cursor','default')
+                                $(info.el).tooltip({
+                                    title: info.event.extendedProps.name,
+                                    container: 'body',
+                                    delay: { "show": 50, "hide": 50 }
+                                });
+                        }
+                    },
+                    eventTimeFormat: { // like '14:30:00'
+                        hour: company.time_format == 'H:i' ? '2-digit' : 'numeric',
+                        minute: '2-digit',
+                        meridiem: company.time_format == 'H:i' ? false : true
+                    }
+                });
+
+                if (calendarEl != null) {
+                    calendar.render();
+                }
+
+
+                $('.cal-filter').on('click', function() {
+
+                    var filter = [];
+
+                    $('.filter-check:checked').each(function() {
+                        filter.push($(this).val());
+                    });
+
+                    if(filter.length < 1){
+                        filter.push('None');
+                    }
+
+                    calendar.removeAllEventSources();
+                    calendar.addEventSource({
+                        url: "{{ route('dashboard.private_calendar') }}",
+                        extraParams: {
+                            filter: filter
+                        }
+                    });
+
+                    filter = null;
+                });
+
+            })
+        </script>
         <script>
             var initialLocaleCode = '{{ user()->locale }}';
-            var calendarEl = document.getElementById('calendar');
-
-            var calendar = new FullCalendar.Calendar(calendarEl, {
-                locale: initialLocaleCode,
-                timeZone: '{{ company()->timezone }}',
-                firstDay: parseInt("{{ attendance_setting()?->week_start_from }}"),
-                headerToolbar: {
-                    left: 'prev,next today',
-                    center: 'title',
-                    right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
-                },
-                navLinks: true, // can click day/week names to navigate views
-                selectable: false,
-                initialView: 'listWeek',
-                selectMirror: true,
-                select: function(arg) {
-                    addEventModal(arg.start, arg.end, arg.allDay);
-                    calendar.unselect()
-                },
-                eventClick: function(arg) {
-                    getEventDetail(arg.event.id,arg.event.extendedProps.event_type);
-                },
-                editable: false,
-                dayMaxEvents: true, // allow "more" link when too many events
-                events: {
-                    url: "{{ route('dashboard.private_calendar') }}",
-                },
-                eventDidMount: function(info) {
-                        $(info.el).css('background-color', info.event.extendedProps.bg_color);
-                        $(info.el).css('color', info.event.extendedProps.color);
-                        $(info.el).find('td.fc-list-event-title').prepend('<i class="fa '+info.event.extendedProps.icon+'"></i>&nbsp;&nbsp;');
-                        // tooltip for leaves
-                        if(info.event.extendedProps.event_type == 'leave'){
-                            $(info.el).find('td.fc-list-event-title > a').css('cursor','default'); // list view cursor for leave
-                            $(info.el).css('cursor','default')
-                            $(info.el).tooltip({
-                                title: info.event.extendedProps.name,
-                                container: 'body',
-                                delay: { "show": 50, "hide": 50 }
-                            });
-                    }
-                },
-                eventTimeFormat: { // like '14:30:00'
-                    hour: company.time_format == 'H:i' ? '2-digit' : 'numeric',
-                    minute: '2-digit',
-                    meridiem: company.time_format == 'H:i' ? false : true
-                }
-            });
-
-            if (calendarEl != null) {
-                calendar.render();
-            }
 
             // Task Detail show in sidebar
             var getEventDetail = function(id,type) {
@@ -545,29 +574,6 @@
                 }
             });
 
-
-            $('.cal-filter').on('click', function() {
-
-                var filter = [];
-
-                $('.filter-check:checked').each(function() {
-                    filter.push($(this).val());
-                });
-
-                if(filter.length < 1){
-                    filter.push('None');
-                }
-
-                calendar.removeAllEventSources();
-                calendar.addEventSource({
-                    url: "{{ route('dashboard.private_calendar') }}",
-                    extraParams: {
-                        filter: filter
-                    }
-                });
-
-                filter = null;
-            });
         </script>
     @endif
 
@@ -664,26 +670,70 @@
             })
         });
 
+
+        @if (session('success'))
+            Swal.fire({
+                icon: 'success',
+                text: '{{ session('success') }}',
+
+                toast: true,
+                position: "top-end",
+                timer: 3000,
+                timerProgressBar: true,
+                showConfirmButton: false,
+
+                customClass: {
+                    confirmButton: "btn btn-primary",
+                },
+                showClass: {
+                    popup: "swal2-noanimation",
+                    backdrop: "swal2-noanimation",
+                },
+            });
+        @endif
+        @if (session('error'))
+            Swal.fire({
+                icon: 'error',
+                text: '{{ session('error') }}',
+
+                toast: true,
+                position: "top-end",
+                timer: 3000,
+                timerProgressBar: true,
+                showConfirmButton: false,
+
+                customClass: {
+                    confirmButton: "btn btn-primary",
+                },
+                showClass: {
+                    popup: "swal2-noanimation",
+                    backdrop: "swal2-noanimation",
+                },
+            });
+        @endif
     </script>
 
     @if (attendance_setting()->radius_check == 'yes' || attendance_setting()->save_current_location)
     <script>
-        const currentLatitude = document.getElementById("current-latitude");
-        const currentLongitude = document.getElementById("current-longitude");
-        const x = document.getElementById("current-latitude");
+        function setCurrentLocation() {
+            const currentLatitude = document.getElementById("current-latitude");
+            const currentLongitude = document.getElementById("current-longitude");
 
-        function getLocation() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(showPosition);
+            function getLocation() {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(showPosition);
+                }
             }
+
+            function showPosition(position) {
+                currentLatitude.value = position.coords.latitude;
+                currentLongitude.value = position.coords.longitude;
+            }
+            getLocation();
+
         }
 
-        function showPosition(position) {
-            currentLatitude.value = position.coords.latitude;
-            currentLongitude.value = position.coords.longitude;
-        }
-        getLocation();
-
+        setCurrentLocation();
     </script>
 
     @endif

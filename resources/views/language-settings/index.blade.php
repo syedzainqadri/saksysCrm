@@ -17,7 +17,7 @@
                 <div class="row">
                     <div class="col-md-12 mb-2">
                         <x-forms.button-primary icon="plus" id="add-language"
-                                                class="mb-2 mr-2"> @lang('app.addNew') @lang('app.language')
+                                                class="mb-2 mr-2"> @lang('app.addNewLanguage')
                         </x-forms.button-primary>
                         <x-forms.button-secondary icon="cog" id="translations"
                                                   class="mb-2 mr-2"> @lang('modules.languageSettings.translate')
@@ -25,6 +25,7 @@
                         <x-forms.button-secondary icon="cog" id="autoTranslate"
                                                   class="mb-2"> @lang('modules.languageSettings.autoTranslate')
                         </x-forms.button-secondary>
+                        @includeIf('languagepack::publish-all-button')
                     </div>
                 </div>
             </x-slot>
@@ -52,15 +53,15 @@
 
                 <x-table class="table table-sm-responsive">
                     <x-slot name="thead">
-                        <th>@lang('app.language') @lang('app.name')</th>
-                        <th>@lang('app.language') @lang('app.code')</th>
+                        <th>@lang('app.languageName')</th>
+                        <th>@lang('app.languageCode')</th>
                         <th>@lang('app.status')</th>
                         <th width="50%" class="text-right">@lang('app.action')</th>
                     </x-slot>
 
                     @forelse($languages as $language)
                         <tr id="languageRow{{ $language->id }}" @class(['bg-additional-grey' => companyOrGlobalSetting()->locale === $language->language_code]) >
-                            <td><span class='flag-icon flag-icon-{{ strtolower($language->language_code=='en'?'gb':$language->flag_code) }} flag-icon-squared'></span> {{ mb_ucwords($language->language_name) }}</td>
+                            <td><span class='flag-icon flag-icon-{{ $language->language_code=='en'?'gb':$language->flag_code }} flag-icon-squared'></span> {{ $language->language_name }}</td>
                             <td>{{ $language->language_code }}</td>
                             <td>
                                 @if(companyOrGlobalSetting()->locale !== $language->language_code)
@@ -78,31 +79,40 @@
 
                             </td>
                             @php $appSettingLink = "<a href='".route('app-settings.index')."'>".__('app.menu.appSettings')."</a>" @endphp
-                            <td @class(['text-right'=>companyOrGlobalSetting()->locale !== $language->language_code,'text-left' => companyOrGlobalSetting()->locale === $language->language_code])>
+                            <td class='text-right'>
                                 @if($language->language_code !=='en' && companyOrGlobalSetting()->locale != $language->language_code)
                                     @if (companyOrGlobalSetting()->locale != $language->language_code)
-                                        <div class="task_view">
-                                            <a href="javascript:;" data-language-id="{{ $language->id }}"
-                                               class="edit-language task_view_more d-flex align-items-center justify-content-center disabled">
-                                                <i class="fa fa-edit icons mr-2"></i> @lang('app.edit')
-                                            </a>
-                                        </div>
-                                        <div class="task_view mt-1 mt-lg-0 mt-md-0">
-                                            <a href="javascript:;" data-language-id="{{ $language->id }}"
-                                               class="delete-language task_view_more d-flex align-items-center justify-content-center">
-                                                <i class="fa fa-trash icons mr-2"></i> @lang('app.delete')
-                                            </a>
-                                        </div>
-
+                                        @includeIf('languagepack::publish', ['language' => $language])
+                                        <button type="button"
+                                            class="edit-language btn btn-outline-secondary  rounded f-14 p-2"
+                                            data-language-id="{{ $language->id }}">
+                                            <i class="fa fa-edit icons mr-2"></i> @lang('app.edit')
+                                        </button>
+                                        <button type="button"
+                                            class="delete-language btn btn-outline-secondary  rounded f-14 p-2"
+                                            data-language-id="{{ $language->id }}">
+                                            <i class="fa fa-trash icons mr-2"></i> @lang('app.delete')
+                                        </button>
                                     @else
-                                        @lang('messages.defaultLanguageCantChange',['appsettings'=> $appSettingLink])
+                                        @includeIf('languagepack::publish', ['language' => $language])
+
+                                        <button type="button" onclick="window.location.href='{{ route('app-settings.index') }}'"
+                                            class="btn btn-outline-secondary  rounded f-14 p-2"
+                                            data-toggle="popover" data-placement="top"
+                                            data-content="@lang('messages.defaultLanguageCantChange',['appsettings'=> $appSettingLink])"
+                                            data-html="true" data-trigger="hover">
+                                            &nbsp;<i class="fas fa-question-circle"></i>&nbsp;
+                                        </button>
                                     @endif
                                 @else
-                                    @if (companyOrGlobalSetting()->locale == $language->language_code)
-                                        <span class="f-12">@lang('messages.defaultLanguageCantChange',['appsettings' => $appSettingLink])</span>
-                                    @else
-                                        <span class="f-12">@lang('messages.defaultEnLanguageCantChange')</span>
-                                    @endif
+                                    @includeIf('languagepack::publish', ['language' => $language])
+                                    <button type="button" onclick="window.location.href='{{ route('app-settings.index') }}'"
+                                        class="btn btn-outline-secondary  rounded f-14 p-2"
+                                        data-toggle="popover" data-placement="top"
+                                        data-content="@if (companyOrGlobalSetting()->locale == $language->language_code)@lang('messages.defaultLanguageCantChange',['appsettings'=> $appSettingLink])@else @lang('messages.defaultEnLanguageCantChange')@endif"
+                                        data-html="true" data-trigger="hover">
+                                        &nbsp;<i class="fas fa-question-circle"></i>&nbsp;
+                                    </button>
                                 @endif
                             </td>
                         </tr>
@@ -215,4 +225,5 @@
         });
 
     </script>
+    @includeIf('languagepack::script')
 @endpush

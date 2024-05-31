@@ -327,6 +327,7 @@
 
         .word-break {
             word-wrap:break-word;
+            word-break: break-all;
         }
 
         .f-13 {
@@ -375,7 +376,7 @@
 
             <div class="company-info">
                 <span class="company-name description">
-                    {{ mb_ucwords($company->company_name) }}
+                    {{ $company->company_name }}
                 </span>
 
                 <span class="spacer"></span>
@@ -404,7 +405,7 @@
                 </tr>
                 <tr>
                     <td>@lang('app.status'):</td>
-                    <td>{{ mb_ucwords($estimate->status) }}</td>
+                    <td>{{ $estimate->status }}</td>
                 </tr>
             </table>
 
@@ -416,7 +417,7 @@
                 @if($estimate->clientDetails->company_logo)
                     <div class="client-logo-div">
                         <img src="{{ $estimate->clientDetails->image_url }}"
-                            alt="{{ mb_ucwords($estimate->clientDetails->company_name) }}" class="client-logo"/>
+                            alt="{{ $estimate->clientDetails->company_name }}" class="client-logo"/>
                     </div>
                 @endif
             </section>
@@ -443,7 +444,7 @@
 
                 @if ($estimate->client && $estimate->client->name && $invoiceSetting->show_client_name == 'yes')
                 <div>
-                    <span class="bold">{{ mb_ucwords($estimate->client->name) }}</span>
+                    <span class="bold">{{ $estimate->client->name_salutation }}</span>
                 </div>
                 @endif
 
@@ -455,13 +456,13 @@
 
                 @if ($estimate->client && $estimate->client->mobile && $invoiceSetting->show_client_phone == 'yes')
                 <div>
-                    <span>@if(isset($estimate->clientdetails->user->country))+{{$estimate->clientdetails->user->country->phonecode}} @endif  {{ $estimate->client->mobile }}</span>
+                    <span>{{ $estimate->client->mobile_with_phonecode }}</span>
                 </div>
                 @endif
 
                 @if ($estimate->clientDetails && $estimate->clientDetails->company_name && $invoiceSetting->show_client_company_name == 'yes')
                 <div>
-                    <span>{{ mb_ucwords($estimate->clientDetails->company_name) }}</span>
+                    <span>{{ $estimate->clientDetails->company_name }}</span>
                 </div>
                 @endif
 
@@ -486,7 +487,7 @@
     <div class="invoice-body">
 
         @if ($estimate->description)
-            <div class="f-13 mb-3 description">{!! nl2br(strip_tags($estimate->description, ['p', 'b', 'strong', 'a', 'ul', 'li', 'ol', 'i', 'u', 'em', 'blockquote', 'img'])) !!}</div>
+            <div class="f-13 mb-3 description">{!! nl2br(pdfStripTags($estimate->description)) !!}</div>
         @endif
 
         <section id="items" class="description">
@@ -510,10 +511,10 @@
                     @if($item->type == 'item')
                         <tr data-iterate="item">
                             <td>{{ ++$count }}</td> <!-- Don't remove this column as it's needed for the row commands -->
-                            <td>
-                                {{ ucfirst($item->item_name) }}
+                            <td class="word-break">
+                                {{ $item->item_name }}
                                 @if(!is_null($item->item_summary))
-                                    <p class="item-summary">{!! nl2br(strip_tags($item->item_summary, ['p', 'b', 'strong', 'a'])) !!}</p>
+                                    <p class="item-summary word-break">{!! nl2br(pdfStripTags($item->item_summary)) !!}</p>
                                 @endif
                                 @if ($item->estimateItemImage)
                                     <p class="mt-2">
@@ -526,7 +527,7 @@
                             @endif
                             <td>{{ $item->quantity }}@if($item->unit)<br><span class="f-11 text-dark-grey">{{ $item->unit->unit_type }}</span>@endif</td>
                             <td>{{ currency_format($item->unit_price, $estimate->currency_id, false) }}</td>
-                            <td>{{ strtoupper($item->tax_list) }}</td>
+                            <td>{{ $item->tax_list }}</td>
                             <td>{{ currency_format($item->amount, $estimate->currency_id, false) }}</td>
                         </tr>
                     @endif
@@ -547,7 +548,7 @@
                 @endif
                 @foreach($taxes as $key=>$tax)
                 <tr data-iterate="tax">
-                    <td colspan="{{ $invoiceSetting->hsn_sac_code_show ? '5': '4' }}">{{ mb_strtoupper($key) }}:</td>
+                    <td colspan="{{ $invoiceSetting->hsn_sac_code_show ? '5': '4' }}">{{ $key }}:</td>
                     <td>{{ currency_format($tax, $estimate->currency_id, false) }}</td>
                 </tr>
                 @endforeach
@@ -570,6 +571,12 @@
             @endif
 
             <div class="word-break item-summary description">@lang('modules.invoiceSettings.invoiceTerms') <br>{!! nl2br($invoiceSetting->invoice_terms) !!}</div>
+
+            @if (isset($invoiceSetting->other_info))
+                <div class="word-break item-summary description">
+                    {!! nl2br($invoiceSetting->other_info) !!}
+                </div>
+            @endif
         </section>
 
         @if (isset($taxes) && $invoiceSetting->tax_calculation_msg == 1)
@@ -599,7 +606,7 @@
                 @foreach($fields as $field)
                     <tr>
                         <td style="text-align: left;background: none;" >
-                            <div style="font-size: 13px; margin-top: 5px;">{{ ucfirst($field->label) }}</div>
+                            <div style="font-size: 13px; margin-top: 5px;">{{ $field->label }}</div>
                             <p id="notes">
                                 @if( $field->type == 'text' || $field->type == 'password' || $field->type == 'number' || $field->type == 'textarea')
                                     {{$estimate->custom_fields_data['field_'.$field->id] ?? '-'}}

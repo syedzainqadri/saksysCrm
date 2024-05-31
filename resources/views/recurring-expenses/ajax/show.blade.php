@@ -44,7 +44,7 @@
 
             <x-cards.data-row :label="__('app.category')" :value="$expense->category->category_name ?? '--'" />
 
-            <x-cards.data-row :label="__('app.price')" :value="currency_format($expense->price)" />
+            <x-cards.data-row :label="__('app.price')" :value="currency_format($expense->price, $expense->currency_id)" />
 
             <x-cards.data-row :label="__('modules.expenses.purchaseFrom')" :value="$expense->purchase_from ?? '--'" />
 

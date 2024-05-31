@@ -37,6 +37,7 @@ class EstimateTemplateController extends AccountBaseController
 
     public function index(EstimateTemplateDataTable $dataTable)
     {
+        $this->addPermission = user()->permission('add_estimates');
         return $dataTable->render('estimates-templates.index', $this->data);
     }
 
@@ -58,12 +59,12 @@ class EstimateTemplateController extends AccountBaseController
         $this->products = Product::all();
         $this->categories = ProductCategory::all();
 
+        $this->view = 'estimates-templates.ajax.create';
+
         if (request()->ajax()) {
-            $html = view('estimates-templates.ajax.create', $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
 
-        $this->view = 'estimates-templates.ajax.create';
         return view('estimates.create', $this->data);
     }
 
@@ -74,7 +75,7 @@ class EstimateTemplateController extends AccountBaseController
         $quantity = $request->quantity;
         $amount = $request->amount;
 
-        if (trim($items[0]) == '' || trim($items[0]) == '' || trim($cost_per_item[0]) == '') {
+        if (isset($items[0]) && (trim($items[0]) == '' || trim($items[0]) == '' || isset($cost_per_item[0]) && trim($cost_per_item[0]) == '')) {
             return Reply::error(__('messages.addItem'));
         }
 
@@ -212,13 +213,12 @@ class EstimateTemplateController extends AccountBaseController
         $this->categories = ProductCategory::all();
         $this->invoiceSetting = invoice_setting();
 
+        $this->view = 'estimates-templates.ajax.edit';
+
         if (request()->ajax()) {
-            $html = view('estimates-templates.ajax.edit', $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
 
-
-        $this->view = 'estimates-templates.ajax.edit';
         return view('estimates-templates.create', $this->data);
     }
 
@@ -236,7 +236,7 @@ class EstimateTemplateController extends AccountBaseController
         $quantity = $request->quantity;
         $amount = $request->amount;
 
-        if (trim($items[0]) == '' || trim($cost_per_item[0]) == '') {
+        if (isset($items[0]) && (trim($items[0]) == '' || trim($items[0]) == '' || isset($cost_per_item[0]) && trim($cost_per_item[0]) == '')) {
             return Reply::error(__('messages.addItem'));
         }
 
@@ -307,8 +307,8 @@ class EstimateTemplateController extends AccountBaseController
         $this->invoiceSetting = invoice_setting();
         $this->estimateTemplate = EstimateTemplate::with('items', 'clients', 'currency', 'units')->findOrFail($id);
 
-        App::setLocale($this->invoiceSetting->locale);
-        Carbon::setLocale($this->invoiceSetting->locale);
+        App::setLocale($this->invoiceSetting->locale ?? 'en');
+        Carbon::setLocale($this->invoiceSetting->locale ?? 'en');
 
         if ($this->estimateTemplate->discount > 0) {
             if ($this->estimateTemplate->discount_type == 'percent') {
@@ -366,9 +366,6 @@ class EstimateTemplateController extends AccountBaseController
 
         $pdf->loadView('estimates-templates.pdf.' . $this->invoiceSetting->template, $this->data);
 
-        $dom_pdf = $pdf->getDomPDF();
-        $canvas = $dom_pdf->get_canvas();
-        $canvas->page_text(530, 820, 'Page {PAGE_NUM} of {PAGE_COUNT}', null, 10, array(0, 0, 0));
         $filename = __('modules.estimates.estimateTemplate') . '-' . $this->estimateTemplate->id;
 
         return [

@@ -102,6 +102,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
  * @property-read \Illuminate\Database\Eloquent\Collection<int, ProposalItem> $proposalitems
  * @property-read \Illuminate\Database\Eloquent\Collection<int, ProposalTemplate> $proposaltemplate
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\RecurringInvoice> $recurringInvoice
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\CreditNotes> $creditnoteitems
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, EstimateItem> $estimateitems
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\EstimateTemplate> $estimatetemplate
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, InvoiceItems> $invoicesItems
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Order> $orders
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, ProposalItem> $proposalitems
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, ProposalTemplate> $proposaltemplate
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\RecurringInvoice> $recurringInvoice
  * @mixin \Eloquent
  */
 class UnitType extends BaseModel

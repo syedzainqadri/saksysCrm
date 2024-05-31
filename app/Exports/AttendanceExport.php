@@ -2,25 +2,29 @@
 
 namespace App\Exports;
 
-use App\Models\Leave;
-use App\Models\Holiday;
-use Carbon\CarbonPeriod;
 use App\Models\Attendance;
-use Illuminate\Support\Carbon;
+use Carbon\CarbonInterval;
+use App\Models\AttendanceSetting;
 use App\Models\EmployeeDetails;
 use App\Models\EmployeeShiftSchedule;
+use App\Models\Holiday;
+use App\Models\Leave;
+use Carbon\CarbonPeriod;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Maatwebsite\Excel\Events\AfterSheet;
-use Maatwebsite\Excel\Concerns\WithMapping;
-use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\WithMapping;
+use Maatwebsite\Excel\Events\AfterSheet;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
 
 class AttendanceExport implements FromCollection, WithHeadings, WithMapping, WithEvents
 {
 
     /**
-     * @return \Illuminate\Support\Collection
+     * @return Collection
      */
     public static $sum;
     public $year;
@@ -76,7 +80,7 @@ class AttendanceExport implements FromCollection, WithHeadings, WithMapping, Wit
 
         $event->sheet->getDelegate()->getStyle('b:ag')
             ->getAlignment()
-            ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            ->setHorizontal(Alignment::HORIZONTAL_CENTER);
     }
 
     public function headings(): array
@@ -140,7 +144,7 @@ class AttendanceExport implements FromCollection, WithHeadings, WithMapping, Wit
             $attendances = $attendances->orderBy('attendances.clock_in_time', 'asc')
                 ->where(DB::raw('DATE(attendances.clock_in_time)'), '>=', $startDate->format('Y-m-d'))
                 ->where(DB::raw('DATE(attendances.clock_in_time)'), '<=', $endDate->format('Y-m-d'))
-                ->select(DB::raw('DATE_FORMAT(attendances.clock_in_time, "%Y-%m-%d") as date'), 'attendances.clock_in_time', 'attendances.clock_out_time', 'attendances.late', 'attendances.half_day')->get();
+                ->select('attendances.clock_in_time as date', 'attendances.clock_in_time', 'attendances.clock_out_time', 'attendances.late', 'attendances.half_day')->get();
 
             $leavesDates = Leave::where('user_id', $userId)
                 ->where('leave_date', '>=', $startDate)
@@ -155,7 +159,7 @@ class AttendanceExport implements FromCollection, WithHeadings, WithMapping, Wit
                 ->get();
 
             $period = CarbonPeriod::create($startDate, $endDate); // Get All Dates from start to end date
-            $holidays = Holiday::getHolidayByDates($startDate, $endDate); // Getting Holiday Data
+            $holidays = Holiday::getHolidayByDates($startDate, $endDate, $userId); // Getting Holiday Data
 
             $attendances = collect($attendances)->each(function ($item) {
                 $item->status = '';
@@ -232,20 +236,25 @@ class AttendanceExport implements FromCollection, WithHeadings, WithMapping, Wit
             }
 
             $employee_temp = array();
+            $status = __('app.present');
 
             foreach ($attendances->sortBy('date') as $attendance) {
-                $date = Carbon::createFromFormat('Y-m-d', $attendance->date)->timezone(company()->timezone)->format(company()->date_format);
 
-                $to = $attendance->clock_out_time ? \Carbon\Carbon::createFromFormat('Y-m-d H:s:i', $attendance->clock_out_time) : null;
-                $from = $attendance->clock_in_time ? \Carbon\Carbon::createFromFormat('Y-m-d H:s:i', $attendance->clock_in_time) : null;
+                $date = Carbon::createFromFormat('Y-m-d H:i:s', $attendance->date)->timezone(company()->timezone)->format(company()->date_format);
+
+                $to = $attendance->clock_out_time ? \Carbon\Carbon::parse($attendance->clock_out_time) : null;
+                $from = $attendance->clock_in_time ? \Carbon\Carbon::parse($attendance->clock_in_time) : null;
+
+                if ($from && !$to) {
+                    $to = $this->getDefaultClockOutTime($from, $employeeShifts->where('date', $attendance->date)->first());
+                }
 
                 $clock_in = $attendance->clock_in_time ? Carbon::createFromFormat('Y-m-d H:i:s', $attendance->clock_in_time)->timezone(company()->timezone)->format(company()->time_format) : 0;
                 $clock_out = $attendance->clock_out_time ? Carbon::createFromFormat('Y-m-d H:i:s', $attendance->clock_out_time)->timezone(company()->timezone)->format(company()->time_format) : 0;
 
-                $diff_in_hours = ($to && $from) ? $to->diffInHours($from) : 0;
+                $diff_in_hours = ($to && $from) ? $to->diffInMinutes($from) : 0;
 
                 if ($attendance->status != null) {
-
 
                     if ($attendance->status == 'Absent') {
                         $status = __('app.absent');
@@ -270,7 +279,7 @@ class AttendanceExport implements FromCollection, WithHeadings, WithMapping, Wit
                     $status = __('app.halfday');
                 }
                 else {
-                    $status = __('app.present');
+                    $status = '--';
                 }
 
                 if ($employee_temp && $employee_temp[1] == $date) {
@@ -309,13 +318,14 @@ class AttendanceExport implements FromCollection, WithHeadings, WithMapping, Wit
         $num = isset($employeedata['dates']) ? count($employeedata['dates']) : 0;
 
         for ($index = 1; $index <= $num; $index++) {
+
             $emp_status = $employeedata['dates'][$index]['comments']['status'];
 
             if (str_contains($emp_status, 'Holiday') || $employeedata['dates'][$index]['total_hours'] < 1) {
                 $data[] = $employeedata['dates'][$index]['comments']['status'];
             }
             else {
-                $data[] = $employeedata['dates'][$index]['total_hours'];
+                $data[] = CarbonInterval::formatHuman($employeedata['dates'][$index]['total_hours']);
             }
         }
 
@@ -329,6 +339,26 @@ class AttendanceExport implements FromCollection, WithHeadings, WithMapping, Wit
                 $attendance->status = '';
             }
         }
+    }
+
+    private function getDefaultClockOutTime($date, $attendanceSettings)
+    {
+
+        if ($attendanceSettings) {
+            $attendanceSettings = $attendanceSettings->shift;
+
+        }
+        else {
+            $attendanceSettings = AttendanceSetting::first()->shift; // Do not get this from session here
+        }
+
+        $defaultClockOutTime = Carbon::createFromFormat('Y-m-d H:i:s', $date->format('Y-m-d') . ' ' . $attendanceSettings->office_end_time, $attendanceSettings->company->timezone);
+
+        if ($defaultClockOutTime->lessThan($date)) {
+            $defaultClockOutTime = $date;
+        }
+
+        return $defaultClockOutTime;
     }
 
 }

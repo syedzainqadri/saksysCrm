@@ -44,7 +44,7 @@ class TaskCommentClient extends BaseNotification
         }
 
         if ($this->emailSetting->send_slack == 'yes' && $this->company->slackSetting->status == 'active') {
-            array_push($via, 'slack');
+            $this->slackUserNameCheck($notifiable) ? array_push($via, 'slack') : null;
         }
 
         if ($this->emailSetting->send_push == 'yes') {
@@ -66,7 +66,7 @@ class TaskCommentClient extends BaseNotification
         $url = route('tasks.show', [$this->task->id, 'view' => 'comments']);
         $url = getDomainSpecificUrl($url, $this->company);
 
-        $content = __('email.taskComment.subject') . ' - ' . ucfirst($this->task->heading) . ' #' . $this->task->task_short_code . '<br>' . (!is_null($this->task->project)) ? __('app.project') . ' - ' . ucfirst($this->task->project->project_name) : '';
+        $content = __('email.taskComment.subject') . ' - ' . $this->task->heading . ' #' . $this->task->task_short_code . '<br>' . (!is_null($this->task->project)) ? __('app.project') . ' - ' . $this->task->project->project_name : '';
 
         return $build
             ->subject(__('email.taskComment.subject') . ' #' . $this->task->task_short_code . ' - ' . config('app.name') . '.')
@@ -103,20 +103,9 @@ class TaskCommentClient extends BaseNotification
      */
     public function toSlack($notifiable)
     {
-        $slack = $notifiable->company->slackSetting;
+        return $this->slackBuild($notifiable)
+            ->content('*' . __('email.taskComment.subject') . '*' . "\n" . $this->task->heading . "\n" . ' #' . $this->task->task_short_code);
 
-        if (count($notifiable->employee) > 0 && (!is_null($notifiable->employee[0]->slack_username) && ($notifiable->employee[0]->slack_username != ''))) {
-            return (new SlackMessage())
-                ->from(config('app.name'))
-                ->image($slack->slack_logo_url)
-                ->to('@' . $notifiable->employee[0]->slack_username)
-                ->content('*' . __('email.taskComment.subject') . '*' . "\n" . ucfirst($this->task->heading) . "\n" . ' #' . $this->task->task_short_code);
-        }
-
-        return (new SlackMessage())
-            ->from(config('app.name'))
-            ->image($slack->slack_logo_url)
-            ->content('*' . __('email.taskComment.subject') . '*' . "\n" .'This is a redirected notification. Add slack username for *' . $notifiable->name . '*');
     }
 
     // phpcs:ignore
@@ -124,7 +113,7 @@ class TaskCommentClient extends BaseNotification
     {
         return OneSignalMessage::create()
             ->setSubject(__('email.taskComment.subject'))
-            ->setBody(__('email.taskComment.subject') . ' - ' . ucfirst($this->task->heading) . ' #' . $this->task->task_short_code);
+            ->setBody(__('email.taskComment.subject') . ' - ' . $this->task->heading . ' #' . $this->task->task_short_code);
     }
 
 }

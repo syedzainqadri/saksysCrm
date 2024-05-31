@@ -36,7 +36,7 @@ class UpdateRecurringInvoice extends CoreRequest
         ];
 
         if ($this->invoice_count == 0) {
-            $rules['issue_date'] = 'required|date_format:"' . $setting->date_format . '"|after_or_equal:'.Carbon::now()->format($setting->date_format);
+            $rules['issue_date'] = 'required|date_format:"' . $setting->date_format . '"|after_or_equal:'.now()->format($setting->date_format);
             $rules['currency_id'] = 'required';
             $rules['client_id'] = 'required';
 

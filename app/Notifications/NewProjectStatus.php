@@ -7,21 +7,15 @@ use App\Models\Project;
 class NewProjectStatus extends BaseNotification
 {
 
+    private $projectStatus;
 
     /**
      * Create a new notification instance.
      *
      * @return void
      */
-    private $projectStatus;
-
-    /**
-     * @var \Illuminate\Contracts\Foundation\Application|\Illuminate\Session\SessionManager|\Illuminate\Session\Store|mixed
-     */
-
     public function __construct(Project $projectStatus)
     {
-
         $this->projectStatus = $projectStatus;
         $this->company = $this->projectStatus->company;
     }
@@ -56,7 +50,7 @@ class NewProjectStatus extends BaseNotification
         $url = route('projects.show', $this->projectStatus->id);
         $url = getDomainSpecificUrl($url, $this->company);
 
-        $content = __('email.newProjectStatus.text') . ' - ' . ucfirst($this->projectStatus->status) . '. ' . __('email.newProjectStatus.loginNow');
+        $content = __('email.newProjectStatus.text') . ' - ' . $this->projectStatus->status . '. ' . __('email.newProjectStatus.loginNow');
 
         return $build
             ->subject(__('email.newProjectStatus.subject') . ' - ' . config('app.name') . '.')

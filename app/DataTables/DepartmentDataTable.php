@@ -2,6 +2,7 @@
 
 namespace App\DataTables;
 
+use App\Helper\Common;
 use App\Models\Team;
 use App\DataTables\BaseDataTable;
 use Yajra\DataTables\Html\Button;
@@ -31,13 +32,11 @@ class DepartmentDataTable extends BaseDataTable
     {
         return datatables()
             ->eloquent($query)
-            ->addColumn('check', function ($row) {
-                return '<input type="checkbox" class="select-table-row" id="datatable-row-' . $row->id . '"  name="datatable_ids[]" value="' . $row->id . '" onclick="dataTableRowCheck(' . $row->id . ')">';
-            })
+            ->addColumn('check', fn($row) => $this->checkBox($row))
             ->addColumn('action', function ($row) {
 
                 $action = '<div class="task_view">
-
+<a href="' . route('departments.show', [$row->id]) . '" class="taskView text-darkest-grey f-w-500 openRightModal">' . __('app.view') . '</a>
                     <div class="dropdown">
                         <a class="task_view_more d-flex align-items-center justify-content-center dropdown-toggle" type="link"
                             id="dropdownMenuLink-' . $row->id . '" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -45,7 +44,6 @@ class DepartmentDataTable extends BaseDataTable
                         </a>
                         <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuLink-' . $row->id . '" tabindex="0">';
 
-                $action .= '<a href="' . route('departments.show', $row->id) . '" class="dropdown-item openRightModal" ><i class="fa fa-eye mr-2"></i>' . __('app.view') . '</a>';
 
                 if ($this->editDepartmentPermission == 'all') {
                     $action .= '<a class="dropdown-item openRightModal" href="' . route('departments.edit', [$row->id]) . '">
@@ -70,7 +68,7 @@ class DepartmentDataTable extends BaseDataTable
             ->editColumn(
                 'name',
                 function ($row) {
-                    return '<h5 class="mb-0 f-13 text-darkest-grey"><a href="' . route('departments.show', [$row->id]) . '" class="openRightModal">' . ucfirst($row->team_name) . '</a></h5>';
+                    return '<h5 class="mb-0 f-13 text-darkest-grey"><a href="' . route('departments.show', [$row->id]) . '" class="openRightModal">' . $row->team_name . '</a></h5>';
                 }
             )
             ->editColumn('parent_id', function ($row) {
@@ -80,22 +78,19 @@ class DepartmentDataTable extends BaseDataTable
                 if ($parent) {
                     return $parent->team_name;
                 }
-                else {
-                    return '-';
-                }
+
+                return '-';
             })
             ->addIndexColumn()
             ->smart(false)
-            ->setRowId(function ($row) {
-                return 'row-' . $row->id;
-            })
+            ->setRowId(fn($row) => 'row-' . $row->id)
             ->rawColumns(['action', 'name', 'check']);
     }
 
     /**
      * Get query source of dataTable.
      *
-     * @param \App\Models\DepartmentDataTable $model
+     * @param \App\Models\Team $model
      * @return \Illuminate\Database\Eloquent\Builder
      */
 
@@ -142,8 +137,7 @@ class DepartmentDataTable extends BaseDataTable
      */
     public function html()
     {
-        return $this->setBuilder('departments-table', 2)
-            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]))
+        $dataTable = $this->setBuilder('departments-table', 2)
             ->parameters([
                 'initComplete' => 'function () {
                    window.LaravelDataTables["departments-table"].buttons().container()
@@ -155,6 +149,12 @@ class DepartmentDataTable extends BaseDataTable
                     })
                 }',
             ]);
+
+        if (canDataTableExport()) {
+            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+        }
+
+        return $dataTable;
     }
 
     /**

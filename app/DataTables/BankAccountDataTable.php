@@ -2,6 +2,7 @@
 
 namespace App\DataTables;
 
+use App\Helper\Common;
 use Carbon\Carbon;
 use App\DataTables\BaseDataTable;
 use App\Models\BankAccount;
@@ -36,9 +37,7 @@ class BankAccountDataTable extends BaseDataTable
     {
         return datatables()
             ->eloquent($query)
-            ->addColumn('check', function ($row) {
-                return '<input type="checkbox" class="select-table-row" id="datatable-row-' . $row->id . '"  name="datatable_ids[]" value="' . $row->id . '" onclick="dataTableRowCheck(' . $row->id . ')">';
-            })
+            ->addColumn('check', fn($row) => $this->checkBox($row))
             ->addColumn('action', function ($row) {
 
                 $action = '<div class="task_view">';
@@ -73,7 +72,7 @@ class BankAccountDataTable extends BaseDataTable
                 return $action;
             })
             ->editColumn('bank_name', function ($row) {
-                return $row->type == 'bank' ? Ucfirst($row->bank_name) : '--';
+                return $row->type == 'bank' ? $row->bank_name : '--';
             })
             ->editColumn('bank_name_logo', function ($row) {
                 $bankLogo = '';
@@ -86,10 +85,10 @@ class BankAccountDataTable extends BaseDataTable
                     $bankLogo = $row->file_url;
                 }
 
-                return '<a class="text-darkest-grey" href="' . route('bankaccounts.show', $row->id) . '">' . $bankLogo . ' ' . ucfirst($row->bank_name) . '</a>';
+                return '<a class="text-darkest-grey" href="' . route('bankaccounts.show', $row->id) . '">' . $bankLogo . ' ' . $row->bank_name . '</a>';
             })
             ->editColumn('account_name', function ($row) {
-                return '<a class="text-darkest-grey" href="' . route('bankaccounts.show', $row->id) . '">' . mb_ucwords($row->account_name) . '</a>';
+                return '<a class="text-darkest-grey" href="' . route('bankaccounts.show', $row->id) . '">' . $row->account_name . '</a>';
             })
             ->editColumn('account_type', function ($row) {
                 return $row->type == 'bank' ? __('modules.bankaccount.'.$row->account_type) : '--';
@@ -148,9 +147,7 @@ class BankAccountDataTable extends BaseDataTable
             })
             ->addIndexColumn()
             ->smart(false)
-            ->setRowId(function ($row) {
-                return 'row-' . $row->id;
-            })
+            ->setRowId(fn($row) => 'row-' . $row->id)
             ->rawColumns(['action', 'account_name', 'status', 'check', 'bank_name_logo']);
     }
 
@@ -209,7 +206,7 @@ class BankAccountDataTable extends BaseDataTable
      */
     public function html()
     {
-        return $this->setBuilder('bank-account-table', 2)
+        $dataTable = $this->setBuilder('bank-account-table', 2)
             ->parameters([
                 'initComplete' => 'function () {
                    window.LaravelDataTables["bank-account-table"].buttons().container()
@@ -218,8 +215,13 @@ class BankAccountDataTable extends BaseDataTable
                 'fnDrawCallback' => 'function( oSettings ) {
                     $(".change-account-status").selectpicker();
                 }',
-            ])
-            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+            ]);
+
+        if (canDataTableExport()) {
+            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+        }
+
+        return $dataTable;
     }
 
     /**

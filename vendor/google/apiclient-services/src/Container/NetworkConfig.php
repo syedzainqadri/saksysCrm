@@ -30,6 +30,10 @@ class NetworkConfig extends \Google\Model
   /**
    * @var bool
    */
+  public $enableCiliumClusterwideNetworkPolicy;
+  /**
+   * @var bool
+   */
   public $enableFqdnNetworkPolicy;
   /**
    * @var bool
@@ -39,12 +43,22 @@ class NetworkConfig extends \Google\Model
    * @var bool
    */
   public $enableL4ilbSubsetting;
+  /**
+   * @var bool
+   */
+  public $enableMultiNetworking;
   protected $gatewayApiConfigType = GatewayAPIConfig::class;
   protected $gatewayApiConfigDataType = '';
   /**
    * @var string
    */
+  public $inTransitEncryptionConfig;
+  /**
+   * @var string
+   */
   public $network;
+  protected $networkPerformanceConfigType = ClusterNetworkPerformanceConfig::class;
+  protected $networkPerformanceConfigDataType = '';
   /**
    * @var string
    */
@@ -101,6 +115,20 @@ class NetworkConfig extends \Google\Model
   /**
    * @param bool
    */
+  public function setEnableCiliumClusterwideNetworkPolicy($enableCiliumClusterwideNetworkPolicy)
+  {
+    $this->enableCiliumClusterwideNetworkPolicy = $enableCiliumClusterwideNetworkPolicy;
+  }
+  /**
+   * @return bool
+   */
+  public function getEnableCiliumClusterwideNetworkPolicy()
+  {
+    return $this->enableCiliumClusterwideNetworkPolicy;
+  }
+  /**
+   * @param bool
+   */
   public function setEnableFqdnNetworkPolicy($enableFqdnNetworkPolicy)
   {
     $this->enableFqdnNetworkPolicy = $enableFqdnNetworkPolicy;
@@ -141,6 +169,20 @@ class NetworkConfig extends \Google\Model
     return $this->enableL4ilbSubsetting;
   }
   /**
+   * @param bool
+   */
+  public function setEnableMultiNetworking($enableMultiNetworking)
+  {
+    $this->enableMultiNetworking = $enableMultiNetworking;
+  }
+  /**
+   * @return bool
+   */
+  public function getEnableMultiNetworking()
+  {
+    return $this->enableMultiNetworking;
+  }
+  /**
    * @param GatewayAPIConfig
    */
   public function setGatewayApiConfig(GatewayAPIConfig $gatewayApiConfig)
@@ -157,6 +199,20 @@ class NetworkConfig extends \Google\Model
   /**
    * @param string
    */
+  public function setInTransitEncryptionConfig($inTransitEncryptionConfig)
+  {
+    $this->inTransitEncryptionConfig = $inTransitEncryptionConfig;
+  }
+  /**
+   * @return string
+   */
+  public function getInTransitEncryptionConfig()
+  {
+    return $this->inTransitEncryptionConfig;
+  }
+  /**
+   * @param string
+   */
   public function setNetwork($network)
   {
     $this->network = $network;
@@ -167,6 +223,20 @@ class NetworkConfig extends \Google\Model
   public function getNetwork()
   {
     return $this->network;
+  }
+  /**
+   * @param ClusterNetworkPerformanceConfig
+   */
+  public function setNetworkPerformanceConfig(ClusterNetworkPerformanceConfig $networkPerformanceConfig)
+  {
+    $this->networkPerformanceConfig = $networkPerformanceConfig;
+  }
+  /**
+   * @return ClusterNetworkPerformanceConfig
+   */
+  public function getNetworkPerformanceConfig()
+  {
+    return $this->networkPerformanceConfig;
   }
   /**
    * @param string

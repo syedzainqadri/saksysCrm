@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GdprController;
-use App\Http\Controllers\LeadController;
+use App\Http\Controllers\DealController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\AwardController;
 use App\Http\Controllers\ImageController;
@@ -53,7 +53,7 @@ use App\Http\Controllers\BankAccountController;
 use App\Http\Controllers\DesignationController;
 use App\Http\Controllers\EmployeeDocController;
 use App\Http\Controllers\ImmigrationController;
-use App\Http\Controllers\LeadCategoyController;
+use App\Http\Controllers\LeadCategoryController;
 use App\Http\Controllers\LeaveReportController;
 use App\Http\Controllers\LeavesQuotaController;
 use App\Http\Controllers\MessageFileController;
@@ -94,6 +94,7 @@ use App\Http\Controllers\ProjectCategoryController;
 use App\Http\Controllers\ProjectTemplateController;
 use App\Http\Controllers\TimelogCalendarController;
 use App\Http\Controllers\AttendanceReportController;
+use App\Http\Controllers\AttendanceSettingController;
 use App\Http\Controllers\ContractTemplateController;
 use App\Http\Controllers\EmergencyContactController;
 use App\Http\Controllers\EstimateTemplateController;
@@ -105,6 +106,7 @@ use App\Http\Controllers\TicketCustomFormController;
 use App\Http\Controllers\ClientSubCategoryController;
 use App\Http\Controllers\KnowledgeBaseFileController;
 use App\Http\Controllers\ContractDiscussionController;
+use App\Http\Controllers\DealNoteController;
 use App\Http\Controllers\DiscussionCategoryController;
 use App\Http\Controllers\ProductSubCategoryController;
 use App\Http\Controllers\ProjectTemplateTaskController;
@@ -115,9 +117,13 @@ use App\Http\Controllers\KnowledgeBaseCategoryController;
 use App\Http\Controllers\ProjectTemplateMemberController;
 use App\Http\Controllers\ProjectTemplateSubTaskController;
 use App\Http\Controllers\EmployeeShiftChangeRequestController;
+use App\Http\Controllers\LeadContactController;
+use App\Http\Controllers\PipelineController;
+use App\Models\AttendanceSetting;
 
 Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::post('image/upload', [ImageController::class, 'store'])->name('image.store');
+
 
     Route::get('account-unverified', [DashboardController::class, 'accountUnverified'])->name('account_unverified');
     Route::get('checklist', [DashboardController::class, 'checklist'])->name('checklist');
@@ -125,6 +131,7 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::get('dashboard-advanced', [DashboardController::class, 'advancedDashboard'])->name('dashboard.advanced');
     Route::post('dashboard/widget/{dashboardType}', [DashboardController::class, 'widget'])->name('dashboard.widget');
     Route::post('dashboard/week-timelog', [DashboardController::class, 'weekTimelog'])->name('dashboard.week_timelog');
+    Route::get('dashboard/lead-data/{id}', [DashboardController  ::class, 'getLeadStage'])->name('dashboard.deal-stage-data');
 
     Route::get('attendances/clock-in-modal', [DashboardController::class, 'clockInModal'])->name('attendances.clock_in_modal');
     Route::post('attendances/store-clock-in', [DashboardController::class, 'storeClockIn'])->name('attendances.store_clock_in');
@@ -146,8 +153,8 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::get('clients/import', [ClientController::class, 'importClient'])->name('clients.import');
     Route::post('clients/import', [ClientController::class, 'importStore'])->name('clients.import.store');
     Route::post('clients/import/process', [ClientController::class, 'importProcess'])->name('clients.import.process');
-    Route::resource('clients', ClientController::class);
     Route::get('clients/finance-count/{id}', [ClientController::class, 'financeCount'])->name('clients.finance_count');
+    Route::resource('clients', ClientController::class);
 
     Route::post('client-contacts/apply-quick-action', [ClientContactController::class, 'applyQuickAction'])->name('client-contacts.apply_quick_action');
     Route::resource('client-contacts', ClientContactController::class);
@@ -283,6 +290,7 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::post('project-notes/apply-quick-action', [ProjectNoteController::class, 'applyQuickAction'])->name('project_notes.apply_quick_action');
     Route::resource('project-notes', ProjectNoteController::class);
     Route::get('projects-ajax', [ProjectController::class, 'ajaxLoadProject'])->name('get.projects-ajax');
+    Route::get('get-projects', [ProjectController::class, 'getProjects'])->name('get.projects');
     Route::resource('projects', ProjectController::class);
 
     /* PRODUCTS */
@@ -359,8 +367,10 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::resource('knowledgebasecategory', KnowledgeBaseCategoryController::class);
 
     /* EVENTS */
+    Route::post('event-monthly-on', [EventCalendarController::class, 'monthlyOn'])->name('events.monthly_on');
     Route::resource('events', EventCalendarController::class);
-
+    Route::post('updateStatus/{id}', [EventCalendarController::class, 'updateStatus'])->name('events.update_status');
+    Route::get('events/event-status-note/{id}', [EventCalendarController::class, 'eventStatusNote'])->name('events.event_status_note');
 
     /* Event Files */
     Route::get('event-files/download/{id}', [EventFileController::class, 'download'])->name('event-files.download');
@@ -419,50 +429,69 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::resource('holidays', HolidayController::class);
 
     // Lead Files
-    Route::group(['prefix' => 'leads'], function () {
-        Route::get('lead-files/download/{id}', [LeadFileController::class, 'download'])->name('lead-files.download');
-        Route::get('lead-files/layout', [LeadFileController::class, 'layout'])->name('lead-files.layout');
-        Route::resource('lead-files', LeadFileController::class);
+    Route::get('deal-files/download/{id}', [LeadFileController::class, 'download'])->name('deal-files.download');
+    Route::get('deal-files/layout', [LeadFileController::class, 'layout'])->name('deal-files.layout');
+    Route::resource('deal-files', LeadFileController::class);
 
-        Route::get('leads/follow-up/{leadID}', [LeadController::class, 'followUpCreate'])->name('leads.follow_up');
-        Route::post('leads/follow-up-store', [LeadController::class, 'followUpStore'])->name('leads.follow_up_store');
-        Route::get('leads/follow-up-edit/{id?}', [LeadController::class, 'editFollow'])->name('leads.follow_up_edit');
-        Route::post('leads/follow-up-update', [LeadController::class, 'updateFollow'])->name('leads.follow_up_update');
+    // Follow up
+    Route::get('deals/follow-up/{leadID}', [DealController::class, 'followUpCreate'])->name('deals.follow_up');
+    Route::post('deals/follow-up-store', [DealController::class, 'followUpStore'])->name('deals.follow_up_store');
+    Route::get('deals/follow-up-edit/{id?}', [DealController::class, 'editFollow'])->name('deals.follow_up_edit');
+    Route::post('deals/follow-up-update', [DealController::class, 'updateFollow'])->name('deals.follow_up_update');
+    Route::post('deals/follow-up-delete/{id}', [DealController::class, 'deleteFollow'])->name('deals.follow_up_delete');
 
-        Route::post('leads/follow-up-delete/{id}', [LeadController::class, 'deleteFollow'])->name('leads.follow_up_delete');
+    // Change status
+    Route::post('deals/change-stage', [DealController::class, 'changeStage'])->name('deals.change_stage');
+    Route::post('deals/apply-quick-action', [DealController::class, 'applyQuickAction'])->name('deals.apply_quick_action');
 
-        Route::post('leads/change-status', [LeadController::class, 'changeStatus'])->name('leads.change_status');
-        Route::post('leads/apply-quick-action', [LeadController::class, 'applyQuickAction'])->name('leads.apply_quick_action');
+    Route::get('deals/gdpr-consent', [DealController::class, 'consent'])->name('deals.gdpr_consent');
+    Route::post('deals/save-deal-consent/{deal}', [DealController::class, 'saveLeadConsent'])->name('deals.save_lead_consent');
+    Route::post('deals/change-follow-up-status', [DealController::class, 'changeFollowUpStatus'])->name('deals.change_follow_up_status');
 
-        Route::get('leads/gdpr-consent', [LeadController::class, 'consent'])->name('leads.gdpr_consent');
-        Route::post('leads/save-lead-consent/{lead}', [LeadController::class, 'saveLeadConsent'])->name('leads.save_lead_consent');
-        Route::post('leads/change-follow-up-status', [LeadController::class, 'changeFollowUpStatus'])->name('leads.change_follow_up_status');
+    // Lead Category
+    Route::resource('leadCategory', LeadCategoryController::class);
 
-        Route::resource('leadCategory', LeadCategoyController::class);
+    // Lead Note
+    Route::get('lead-notes/ask-for-password/{id}', [LeadNoteController::class, 'askForPassword'])->name('lead-notes.ask_for_password');
+    Route::post('lead-notes/check-password', [LeadNoteController::class, 'checkPassword'])->name('lead-notes.check_password');
+    Route::post('lead-notes/apply-quick-action', [LeadNoteController::class, 'applyQuickAction'])->name('lead-notes.apply_quick_action');
 
-        // Lead Note
-        Route::get('lead-notes/ask-for-password/{id}', [LeadNoteController::class, 'askForPassword'])->name('lead_notes.ask_for_password');
-        Route::post('lead-notes/check-password', [LeadNoteController::class, 'checkPassword'])->name('lead_notes.check_password');
-        Route::post('lead-notes/apply-quick-action', [LeadNoteController::class, 'applyQuickAction'])->name('lead-notes.apply_quick_action');
+    Route::resource('lead-notes', LeadNoteController::class);
 
-        Route::resource('lead-notes', LeadNoteController::class);
+    // Deal Note
+    Route::post('deal-notes/apply-quick-action', [DealNoteController::class, 'applyQuickAction'])->name('deal-notes.apply_quick_action');
+    Route::resource('deal-notes', DealNoteController::class);
 
-        // lead board routes
-        Route::post('leadboards/collapseColumn', [LeadBoardController::class, 'collapseColumn'])->name('leadboards.collapse_column');
-        Route::post('leadboards/updateIndex', [LeadBoardController::class, 'updateIndex'])->name('leadboards.update_index');
-        Route::get('leadboards/loadMore', [LeadBoardController::class, 'loadMore'])->name('leadboards.load_more');
-        Route::resource('leadboards', LeadBoardController::class);
+    // deal board routes
+    Route::post('leadboards/collapseColumn', [LeadBoardController::class, 'collapseColumn'])->name('leadboards.collapse_column');
+    Route::post('leadboards/updateIndex', [LeadBoardController::class, 'updateIndex'])->name('leadboards.update_index');
+    Route::get('leadboards/loadMore', [LeadBoardController::class, 'loadMore'])->name('leadboards.load_more');
+    Route::resource('leadboards', LeadBoardController::class);
 
-        Route::post('lead-form/sortFields', [LeadCustomFormController::class, 'sortFields'])->name('lead-form.sortFields');
-        Route::resource('lead-form', LeadCustomFormController::class);
-        Route::get('import', [LeadController::class, 'importLead'])->name('leads.import');
-        Route::post('import', [LeadController::class, 'importStore'])->name('leads.import.store');
-        Route::post('import/process', [LeadController::class, 'importProcess'])->name('leads.import.process');
-        // leads route
+    Route::post('lead-form/sortFields', [LeadCustomFormController::class, 'sortFields'])->name('lead-form.sortFields');
+    Route::resource('lead-form', LeadCustomFormController::class);
 
+    Route::group(['prefix' => 'deals'], function () {
+        Route::get('import', [DealController::class, 'importLead'])->name('deals.import');
+        Route::post('import', [DealController::class, 'importStore'])->name('deals.import.store');
+        Route::post('import/process', [DealController::class, 'importProcess'])->name('deals.import.process');
     });
 
-    Route::resource('leads', LeadController::class);
+    Route::group(['prefix' => 'lead-contact'], function () {
+        Route::get('import', [LeadContactController::class, 'importLead'])->name('lead-contact.import');
+        Route::post('import', [LeadContactController::class, 'importStore'])->name('lead-contact.import.store');
+        Route::post('import/process', [LeadContactController::class, 'importProcess'])->name('lead-contact.import.process');
+    });
+
+    // deals route
+
+    Route::resource('lead-contact', LeadContactController::class);
+    Route::post('lead-contact/apply-quick-action', [LeadContactController::class, 'applyQuickAction'])->name('lead-contact.apply_quick_action');
+
+    Route::get('deals/get-stage/{id}', [DealController::class, 'getStages'])->name('deals.get-stage');
+    Route::get('deals/get-deals/{id}', [DealController::class, 'getDeals'])->name('deals.get-deals');
+    Route::get('deals/get-agent/{id}', [DealController::class, 'getAgents'])->name('deals.get_agents');
+    Route::resource('deals', DealController::class);
 
     // leaves files routes
     Route::get('leave-files/download/{id}', [LeaveFileController::class, 'download'])->name('leave-files.download');
@@ -560,7 +589,7 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::get('payments/add-bulk-payments', [PaymentController::class, 'addBulkPayments'])->name('payments.add_bulk_payments');
     Route::post('payments/save-bulk-payments', [PaymentController::class, 'saveBulkPayments'])->name('payments.save_bulk_payments');
 
-    Route::resource('payments', PaymentController::class);
+    Route::resource('payments', PaymentController::class)->except(['edit', 'update']);
 
     // Credit notes
     Route::post('creditnotes/store_file', [CreditNoteController::class, 'storeFile'])->name('creditnotes.store_file');
@@ -610,6 +639,7 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
         Route::get('show-active-timer', [TimelogController::class, 'showActiveTimer'])->name('timelogs.show_active_timer');
         Route::get('show-timer', [TimelogController::class, 'showTimer'])->name('timelogs.show_timer');
         Route::post('start-timer', [TimelogController::class, 'startTimer'])->name('timelogs.start_timer');
+        Route::get('timer-data', [TimelogController::class, 'timerData'])->name('timelogs.timer_data');
         Route::post('stop-timer', [TimelogController::class, 'stopTimer'])->name('timelogs.stop_timer');
         Route::post('pause-timer', [TimelogController::class, 'pauseTimer'])->name('timelogs.pause_timer');
         Route::post('resume-timer', [TimelogController::class, 'resumeTimer'])->name('timelogs.resume_timer');
@@ -618,6 +648,7 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
         Route::post('employee_data', [TimelogController::class, 'employeeData'])->name('timelogs.employee_data');
         Route::post('user_time_logs', [TimelogController::class, 'userTimelogs'])->name('timelogs.user_time_logs');
         Route::post('approve_timelog', [TimelogController::class, 'approveTimelog'])->name('timelogs.approve_timelog');
+        Route::get('stopper-alert/{id}', [TimelogController::class, 'stopperAlert'])->name('timelogs.stopper_alert');
     });
     Route::resource('timelogs', TimelogController::class);
 
@@ -628,6 +659,8 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::post('companySign/sign/{id}', [ContractController::class, 'companySign'])->name('companySign.sign');
     Route::get('companySignStore/sign/{id}', [ContractController::class, 'companiesSign'])->name('companySignStore.sign');
     Route::post('contracts/project-detail/{id}', [ContractController::class, 'projectDetail'])->name('contracts.project_detail');
+    Route::get('contracts/company-sig/{id}', [ContractController::class, 'companySig'])->name('contracts.company_sig');
+
 
     Route::group(['prefix' => 'contracts'], function () {
         Route::resource('contractDiscussions', ContractDiscussionController::class);
@@ -658,6 +691,10 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::get('attendances/by-map-location', [AttendanceController::class, 'byMapLocation'])->name('attendances.by_map_location');
     Route::resource('attendances', AttendanceController::class);
     Route::get('attendance/{id}/{day}/{month}/{year}', [AttendanceController::class, 'addAttendance'])->name('attendances.add-user-attendance');
+    Route::post('attendances/check-half-day', [AttendanceController::class, 'checkHalfDay'])->name('attendances.check_half_day');
+    Route::get('check-qr-login', [AttendanceController::class, 'qrClockInOut'])->name('settings.qr-login');
+    Route::post('change-qr-code-status', [AttendanceController::class, 'qrCodeStatus'])->name('settings.change-qr-code-status');
+
 
     Route::get('shifts/mark/{id}/{day}/{month}/{year}', [EmployeeShiftScheduleController::class, 'mark'])->name('shifts.mark');
     Route::get('shifts/export-all/{year}/{month}/{id}/{department}/{startDate}/{viewType}', [EmployeeShiftScheduleController::class, 'exportAllShift'])->name('shifts.export_all');
@@ -695,13 +732,17 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::resource('task-report', TaskReportController::class);
 
     Route::post('time-log-report-chart', [TimelogReportController::class, 'timelogChartData'])->name('time-log-report.chart');
+    Route::get('time-log-consolidated-report', [TimelogReportController::class,'consolidateIndex'])->name('time-log-consolidated.report');
     Route::resource('time-log-report', TimelogReportController::class);
+    Route::post('time-log-report-time', [TimelogReportController::class, 'totalTime'])->name('time-log-report.time');
 
     Route::post('finance-report-chart', [FinanceReportController::class, 'financeChartData'])->name('finance-report.chart');
     Route::resource('finance-report', FinanceReportController::class);
 
     Route::resource('income-expense-report', IncomeVsExpenseReportController::class);
 
+    Route::get('leave-report/leave-quota', [LeaveReportController::class, 'leaveQuota'])->name('leave-report.leave_quota');
+    Route::get('leave-report/leave-quota/{id}', [LeaveReportController::class, 'employeeLeaveQuota'])->name('leave-report.employee-leave-quota');
     Route::resource('leave-report', LeaveReportController::class);
 
     Route::resource('attendance-report', AttendanceReportController::class);
@@ -755,5 +796,4 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
 
     Route::get('quickbooks/{hash}/callback', [QuickbookController::class, 'callback'])->name('quickbooks.callback');
     Route::get('quickbooks', [QuickbookController::class, 'index'])->name('quickbooks.index');
-
 });

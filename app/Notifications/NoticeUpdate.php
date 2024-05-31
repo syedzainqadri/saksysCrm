@@ -43,7 +43,7 @@ class NoticeUpdate extends BaseNotification
         }
 
         if ($this->emailSetting->send_slack == 'yes' && $this->company->slackSetting->status == 'active') {
-            array_push($via, 'slack');
+            $this->slackUserNameCheck($notifiable) ? array_push($via, 'slack') : null;
         }
 
         if ($this->emailSetting->send_push == 'yes') {
@@ -66,7 +66,7 @@ class NoticeUpdate extends BaseNotification
         $url = route('notices.show', $this->notice->id);
         $url = getDomainSpecificUrl($url, $this->company);
 
-        $content = __('email.noticeUpdate.text') . '<br>' . ucfirst($this->notice->heading);
+        $content = __('email.noticeUpdate.text') . '<br>' . $this->notice->heading;
 
         return $build
             ->subject(__('email.noticeUpdate.subject') . ' - ' . config('app.name'))
@@ -99,20 +99,8 @@ class NoticeUpdate extends BaseNotification
      */
     public function toSlack($notifiable)
     {
-        $slack = $notifiable->company->slackSetting;
-
-        if (count($notifiable->employee) > 0 && (!is_null($notifiable->employee[0]->slack_username) && ($notifiable->employee[0]->slack_username != ''))) {
-            return (new SlackMessage())
-                ->from(config('app.name'))
-                ->image($slack->slack_logo_url)
-                ->to('@' . $notifiable->employee[0]->slack_username)
-                ->content('*' . __('email.noticeUpdate.subject') . ' : ' . ucfirst($this->notice->heading) . '*' . "\n" . $this->notice->description);
-        }
-
-        return (new SlackMessage())
-            ->from(config('app.name'))
-            ->image($slack->slack_logo_url)
-            ->content('*' . __('email.noticeUpdate.subject') . '*' . "\n" .'This is a redirected notification. Add slack username for *' . $notifiable->name . '*');
+        return $this->slackBuild($notifiable)
+            ->content('*' . __('email.noticeUpdate.subject') . ' : ' . $this->notice->heading . '*' . "\n" . $this->notice->description);
     }
 
     // phpcs:ignore

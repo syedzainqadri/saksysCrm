@@ -43,26 +43,15 @@ class CustomerDataRemovalDataTable extends BaseDataTable
 
                 return $action;
             })
-            ->addColumn('status', function ($row) use ($status) {
-
-                if ($row->status == 'pending') {
-                    $status = '<label class="label label-info">' . __('app.pending') . '</label>';
-                }
-                elseif ($row->status == 'approved') {
-                    $status = '<label class="label label-success">' . __('app.approved') . '</label>';
-                }
-                elseif ($row->status == 'rejected') {
-                    $status = '<label class="label label-danger">' . __('app.rejected') . '</label>';
-                }
-
-                return $status;
+            ->addColumn('status', function ($row) {
+                return match ($row->status) {
+                    'pending' => '<label class="label label-info">' . __('app.pending') . '</label>',
+                    'approved' => '<label class="label label-success">' . __('app.approved') . '</label>',
+                    'rejected' => '<label class="label label-danger">' . __('app.rejected') . '</label>',
+                    default => ''
+                };
             })
-            ->editColumn(
-                'created_at',
-                function ($row) {
-                    return Carbon::parse($row->created_at)->translatedFormat($this->company->date_format);
-                }
-            )
+            ->editColumn('created_at', fn ($row) => Carbon::parse($row->created_at)->translatedFormat($this->company->date_format))
             ->rawColumns(['status', 'action', 'status']);
     }
 
@@ -83,7 +72,7 @@ class CustomerDataRemovalDataTable extends BaseDataTable
      */
     public function html()
     {
-        return $this->setBuilder('removal-request-customer')
+        $dataTable = $this->setBuilder('removal-request-customer')
             ->parameters([
                 'initComplete' => 'function () {
                    window.LaravelDataTables["removal-request-customer"].buttons().container()
@@ -95,8 +84,13 @@ class CustomerDataRemovalDataTable extends BaseDataTable
                     });
                     $(".statusChange").selectpicker();
                 }',
-            ])
-            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+            ]);
+
+        if (canDataTableExport()) {
+            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+        }
+
+        return $dataTable;
     }
 
     /**

@@ -2,6 +2,8 @@
 
 namespace App\View\Components;
 
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\Response;
 use Illuminate\View\Component;
 
 class SettingMenuItem extends Component
@@ -28,7 +30,7 @@ class SettingMenuItem extends Component
     /**
      * Get the view / contents that represent the component.
      *
-     * @return \Illuminate\Contracts\View\View|string
+     * @return View|string
      */
     public function render()
     {
@@ -38,7 +40,7 @@ class SettingMenuItem extends Component
     /**
      * XXXXXXXXXXX
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function isActive($option)
     {

@@ -1,12 +1,5 @@
 <?php
 
-/**
- * Vonage Client Library for PHP
- *
- * @copyright Copyright (c) 2016-2022 Vonage, Inc. (http://vonage.com)
- * @license https://github.com/Vonage/vonage-php-sdk-core/blob/master/LICENSE.txt Apache License 2.0
- */
-
 declare(strict_types=1);
 
 namespace Vonage\Entity;
@@ -43,6 +36,16 @@ class IterableAPICollection implements ClientAwareInterface, Iterator, Countable
     use ClientAwareTrait;
 
     protected APIResource $api;
+
+    /**
+     * This allows for override if the endpoint API uses a different query key
+     */
+    protected string $pageIndexKey = 'page_index';
+
+    /**
+     * This allows for override if the endpoint API uses a different query key
+     */
+    protected string $pageSizeKey = 'page_size';
 
     /**
      * Determines if the collection will automatically go to the next page
@@ -85,12 +88,23 @@ class IterableAPICollection implements ClientAwareInterface, Iterator, Countable
     /**
      * User set page index.
      */
-    protected int $index = 1;
+    protected ?int $index = 1;
 
     protected bool $isHAL = true;
 
     /**
-     * User set pgge sixe.
+     * Used to override the index, this is to hack inconsistent API behaviours
+     */
+    protected bool $noIndex = false;
+
+    /**
+     * Used if there are HAL elements, but entities are all in one request
+     * Specifically removes automatic pagination that adds request parameters
+     */
+    protected bool $noQueryParameters = false;
+
+    /**
+     * User set pgge size.
      */
     protected ?int $size = null;
 
@@ -101,6 +115,36 @@ class IterableAPICollection implements ClientAwareInterface, Iterator, Countable
     protected string $collectionPath = '';
 
     protected $hydrator;
+
+    /**
+     * Used to override pagination to remove it from the URL page query
+     * but differs from noQueryParameters when you want to use other filters
+     */
+    protected bool $hasPagination = true;
+
+    public function getPageIndexKey(): string
+    {
+        return $this->pageIndexKey;
+    }
+
+    public function setPageIndexKey(string $pageIndexKey): IterableAPICollection
+    {
+        $this->pageIndexKey = $pageIndexKey;
+
+        return $this;
+    }
+
+    public function getPageSizeKey(): string
+    {
+        return $this->pageSizeKey;
+    }
+
+    public function setPageSizeKey(string $pageSizeKey): IterableAPICollection
+    {
+        $this->pageSizeKey = $pageSizeKey;
+
+        return $this;
+    }
 
     /**
      * @param $hydrator
@@ -443,14 +487,16 @@ class IterableAPICollection implements ClientAwareInterface, Iterator, Countable
     {
         //use filter if no query provided
         if (false === strpos($absoluteUri, '?')) {
+            $originalUri = $absoluteUri;
+
             $query = [];
 
             if (isset($this->size)) {
-                $query['page_size'] = $this->size;
+                $query[$this->pageSizeKey] = $this->size;
             }
 
-            if (isset($this->index)) {
-                $query['page_index'] = $this->index;
+            if (isset($this->index) && $this->hasPagination()) {
+                $query[$this->pageIndexKey] = $this->index;
             }
 
             if (isset($this->filter)) {
@@ -458,6 +504,11 @@ class IterableAPICollection implements ClientAwareInterface, Iterator, Countable
             }
 
             $absoluteUri .= '?' . http_build_query($query);
+
+            // This is an override to completely remove request parameters for single requests
+            if ($this->getNoQueryParameters()) {
+                $absoluteUri = $originalUri;
+            }
         }
 
         $requestUri = $absoluteUri;
@@ -551,6 +602,40 @@ class IterableAPICollection implements ClientAwareInterface, Iterator, Countable
     public function setNaiveCount(bool $naiveCount): self
     {
         $this->naiveCount = $naiveCount;
+
+        return $this;
+    }
+
+    public function setNoQueryParameters(bool $noQueryParameters): self
+    {
+        $this->noQueryParameters = $noQueryParameters;
+
+        return $this;
+    }
+
+    public function getNoQueryParameters(): bool
+    {
+        return $this->noQueryParameters;
+    }
+
+    public function setIndex(?int $index): IterableAPICollection
+    {
+        $this->index = $index;
+
+        return $this;
+}
+
+    /**
+     * @return bool
+     */
+    public function hasPagination(): bool
+    {
+        return $this->hasPagination;
+    }
+
+    public function setHasPagination(bool $hasPagination): static
+    {
+        $this->hasPagination = $hasPagination;
 
         return $this;
     }

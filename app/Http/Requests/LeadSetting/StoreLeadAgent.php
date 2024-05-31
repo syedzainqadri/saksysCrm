@@ -26,7 +26,8 @@ class StoreLeadAgent extends CoreRequest
     public function rules()
     {
         return [
-            'agent_name' => 'required'
+            'agent_id' => 'required',
+            'category_id' => 'required'
         ];
     }
 

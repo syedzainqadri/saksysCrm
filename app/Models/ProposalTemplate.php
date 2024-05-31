@@ -76,7 +76,7 @@ class ProposalTemplate extends BaseModel
 
     public function lead(): BelongsTo
     {
-        return $this->belongsTo(Lead::class);
+        return $this->belongsTo(Deal::class);
     }
 
     public function units(): BelongsTo

@@ -2,7 +2,10 @@
 
 namespace App\Models;
 
+use App\Traits\HasMaskImage;
 use Carbon\Carbon;
+use GuzzleHttp\Client;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
@@ -13,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $currency_key_version
  * @property string $license_type
  * @property string|null $logo
+ * @property string|null $email
  * @property string|null $login_background
  * @property string $address
  * @property string|null $website
@@ -63,6 +67,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property-read mixed $favicon_url
  * @property-read mixed $icon
  * @property-read mixed $light_logo_url
+ * @property-read mixed $masked_default_logo
  * @property-read mixed $login_background_url
  * @property-read mixed $logo_url
  * @property-read mixed $moment_date_format
@@ -170,12 +175,29 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @method static \Illuminate\Database\Eloquent\Builder|GlobalSetting whereLastLicenseVerifiedAt($value)
  * @property string $auth_theme_text
  * @method static \Illuminate\Database\Eloquent\Builder|GlobalSetting whereAuthThemeText($value)
+ * @property string $sign_up_terms
+ * @property string|null $terms_link
+ * @property int $allow_max_no_of_files
+ * @method static \Illuminate\Database\Eloquent\Builder|GlobalSetting whereAllowMaxNoOfFiles($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|GlobalSetting whereSignUpTerms($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|GlobalSetting whereTermsLink($value)
+ * @property string|null $purchased_on
+ * @method static \Illuminate\Database\Eloquent\Builder|GlobalSetting whereEmail($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|GlobalSetting wherePurchasedOn($value)
  * @mixin \Eloquent
  */
 class GlobalSetting extends BaseModel
 {
 
+    use HasMaskImage;
+
     const CHECKLIST_TOTAL = 6;
+    const SIGNED_ROUTE_EXPIRY = 7; // Days
+
+    protected $casts = [
+        'google_map_key' => 'encrypted',
+        'google_client_secret' => 'encrypted'
+    ];
 
     public $dates = ['last_cron_run'];
 
@@ -380,7 +402,7 @@ class GlobalSetting extends BaseModel
             return asset('img/worksuite-logo.png');
         }
 
-        return asset_url_local_s3('app-logo/' . $this->light_logo, true, 'image');
+        return asset_url_local_s3('app-logo/' . $this->light_logo);
 
     }
 
@@ -390,7 +412,7 @@ class GlobalSetting extends BaseModel
             return asset('img/worksuite-logo.png');
         }
 
-        return asset_url_local_s3('app-logo/' . $this->logo, true, 'image');
+        return asset_url_local_s3('app-logo/' . $this->logo);
     }
 
     public function getLightLogoUrlAttribute()
@@ -399,17 +421,16 @@ class GlobalSetting extends BaseModel
             return asset('img/worksuite-logo.png');
         }
 
-        return asset_url_local_s3('app-logo/' . $this->light_logo, true, 'image');
+        return asset_url_local_s3('app-logo/' . $this->light_logo);
     }
 
     public function getDarkLogoUrlAttribute()
     {
-
         if (is_null($this->logo)) {
             return asset('img/worksuite-logo.png');
         }
 
-        return asset_url_local_s3('app-logo/' . $this->logo, true, 'image');
+        return asset_url_local_s3('app-logo/' . $this->logo);
     }
 
     public function getLoginBackgroundUrlAttribute()
@@ -420,6 +441,99 @@ class GlobalSetting extends BaseModel
         }
 
         return asset_url_local_s3('login-background/' . $this->login_background);
+    }
+
+    public function maskedDefaultLogo(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                if (is_null($this->logo)) {
+                    return asset('img/worksuite-logo.png');
+                }
+
+                return $this->generateMaskedImageAppUrl('app-logo/' . $this->logo);
+            },
+        );
+
+    }
+
+    public function maskedLogoUrl(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                if (user()) {
+                    if (user()->dark_theme) {
+                        return $this->masked_default_logo;
+                    }
+                }
+
+                if (company() && company()->auth_theme == 'dark') {
+                    return $this->masked_default_logo;
+                }
+
+                if (is_null($this->light_logo)) {
+                    return asset('img/worksuite-logo.png');
+                }
+
+                return $this->generateMaskedImageAppUrl('app-logo/' . $this->light_logo);
+            },
+        );
+    }
+
+    public function maskedLightLogoUrl(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                if (is_null($this->light_logo)) {
+                    return asset('img/worksuite-logo.png');
+                }
+
+                return $this->generateMaskedImageAppUrl('app-logo/' . $this->light_logo);
+            },
+        );
+
+    }
+
+    public function maskedDarkLogoUrl(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                if (is_null($this->logo)) {
+                    return asset('img/worksuite-logo.png');
+                }
+
+                return $this->generateMaskedImageAppUrl('app-logo/' . $this->logo);
+            },
+        );
+
+    }
+
+    public function maskedLoginBackgroundUrl(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                if (is_null($this->login_background) || $this->login_background == 'login-background.jpg') {
+                    return null;
+                }
+
+                return $this->generateMaskedImageAppUrl('login-background/' . $this->login_background);
+            },
+        );
+
+    }
+
+    public function maskedFaviconUrl(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                if (is_null($this->favicon)) {
+                    return asset('favicon.png');
+                }
+
+                return $this->generateMaskedImageAppUrl('favicon/' . $this->favicon);
+            },
+        );
+
     }
 
     public function getShowPublicMessageAttribute()
@@ -443,7 +557,7 @@ class GlobalSetting extends BaseModel
             return asset('favicon.png');
         }
 
-        return asset_url_local_s3('favicon/' . $this->favicon, true, 'image');
+        return asset_url_local_s3('favicon/' . $this->favicon);
     }
 
     public static function checkListCompleted()
@@ -466,7 +580,6 @@ class GlobalSetting extends BaseModel
             $checkListCompleted++;
         }
 
-
         return $checkListCompleted;
     }
 
@@ -487,11 +600,29 @@ class GlobalSetting extends BaseModel
         $days = [];
 
         for ($dayNumber = 0; $dayNumber < Carbon::DAYS_PER_WEEK; $dayNumber++) {
-            $dayName = Carbon::now()->startOfWeek(0)->addDays($dayNumber)->translatedFormat($full);
+            $dayName = now()->startOfWeek(0)->addDays($dayNumber)->translatedFormat($full);
             $days[] = $dayName;
         }
 
         return $days;
+    }
+
+    public static function validateGoogleRecaptcha($googleRecaptchaResponse)
+    {
+        $secretKey = global_setting()->google_recaptcha_v2_status == 'active' ? global_setting()->google_recaptcha_v2_secret_key : global_setting()->google_recaptcha_v3_secret_key;
+
+        $client = new Client();
+        $response = $client->post('https://www.google.com/recaptcha/api/siteverify', [
+            'form_params' => [
+                'secret' => $secretKey,
+                'response' => $googleRecaptchaResponse,
+                'remoteip' => $_SERVER['REMOTE_ADDR'],
+            ],
+        ]);
+
+        $body = json_decode($response->getBody());
+
+        return $body->success;
     }
 
 }

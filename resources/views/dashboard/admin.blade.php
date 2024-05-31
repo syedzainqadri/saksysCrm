@@ -248,6 +248,7 @@
                 }
             });
         }
+
     </script>
     <script>
         const activeTab = "{{ $activeTab }}";

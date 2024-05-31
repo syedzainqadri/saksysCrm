@@ -36,6 +36,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property-read int|null $mention_note_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\User> $mentionUser
  * @property-read int|null $mention_user_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\MentionUser> $mentionNote
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\User> $mentionUser
  * @mixin \Eloquent
  */
 class TaskNote extends BaseModel

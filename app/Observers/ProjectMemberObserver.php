@@ -32,7 +32,7 @@ class ProjectMemberObserver
 
                 $activity = new ProjectActivity();
                 $activity->project_id = $projectMember->project_id;
-                $activity->activity = mb_ucwords($member->user->name) . ' ' . __('messages.isAddedAsProjectMember');
+                $activity->activity = $member->user->name . ' ' . __('messages.isAddedAsProjectMember');
                 $activity->save();
             }
         }

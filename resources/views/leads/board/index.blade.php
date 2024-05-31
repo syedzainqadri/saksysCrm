@@ -23,8 +23,8 @@
 @endpush
 
 @php
-$addLeadPermission = user()->permission('add_lead');
-$viewLeadPermission = user()->permission('view_lead');
+$addLeadPermission = user()->permission('add_deals');
+$viewLeadPermission = user()->permission('view_deals');
 @endphp
 
 @section('filter-section')
@@ -39,26 +39,25 @@ $viewLeadPermission = user()->permission('view_lead');
     <!-- CONTENT WRAPPER START -->
     <div class="w-task-board-box px-4 py-2 bg-white">
         <!-- Add Task Export Buttons Start -->
-        <div class="d-block d-lg-flex d-md-flex my-3">
+        <div class="d-grid d-lg-flex d-md-flex action-bar my-3">
 
             <x-alert type="warning" icon="info" class="d-lg-none">@lang('messages.dragDropScreenInfo')</x-alert>
 
             <div id="table-actions" class="flex-grow-1 align-items-center">
                 @if ($addLeadPermission == 'all' || $addLeadPermission == 'added')
-                    <x-forms.link-primary :link="route('leads.create')" class="mr-3 openRightModal float-left" icon="plus">
-                        @lang('app.add')
-                        @lang('app.lead')
+                    <x-forms.link-primary :link="route('deals.create')" class="mr-3 openRightModal float-left" icon="plus">
+                        @lang('modules.deal.addDeal')
                     </x-forms.link-primary>
                 @endif
-                @if (user()->permission('manage_lead_status') == 'all')
+                @if (user()->permission('manage_deal_stages') == 'all')
                     <x-forms.button-secondary icon="plus" id="add-column">
-                        @lang('modules.tasks.addBoardColumn')
+                        @lang('modules.deal.addStages')
                     </x-forms.button-secondary>
                 @endif
             </div>
 
-            <div class="btn-group mt-2 mt-lg-0 mt-md-0" role="group">
-                <a href="{{ route('leads.index') }}" class="btn btn-secondary f-14" data-toggle="tooltip"
+            <div class="btn-group mt-2 mt-lg-0 mt-md-0 ml-0 ml-lg-3 ml-md-3" role="group">
+                <a href="{{ route('deals.index') }}" class="btn btn-secondary f-14" data-toggle="tooltip"
                     data-original-title="@lang('modules.leaves.tableView')"><i class="side-icon bi bi-list-ul"></i></a>
 
                 <a href="{{ route('leadboards.index') }}" class="btn btn-secondary f-14 btn-active" data-toggle="tooltip"
@@ -93,19 +92,23 @@ $viewLeadPermission = user()->permission('view_lead');
             }
 
             var searchText = $('#search-text-field').val();
+            var pipeline = $('#pipeline').val();
             var min = $('#min').val();
             var max = $('#max').val();
             var type = $('#type').val();
             var followUp = $('#followUp').val();
-            var agent = $('#filter_agent_id').val();
+            var agent = $('#agent_id').val();
             var category_id = $('#filter_category_id').val();
             var source_id = $('#filter_source_id').val();
             var date_filter_on = $('#date_filter_on').val();
+            var status_id = $('#filter_status_id').val();
+            var deal_watcher_id = $('#deal_watcher_agent_id').val();
+            var lead_agent_id = $('#lead_agent_id').val();
 
             var url = "{{ route('leadboards.index') }}?startDate=" + encodeURIComponent(startDate) + '&endDate=' +
                 encodeURIComponent(endDate) + '&type=' + type + '&followUp=' + followUp + '&agent=' +
-                agent + '&category_id=' + category_id + '&source_id=' + source_id +
-                '&searchText=' + searchText  + '&min=' + min + '&max=' + max + '&date_filter_on=' + date_filter_on;
+                agent + '&category_id=' + category_id + '&source_id=' + source_id +' &deal_watcher_id=' + deal_watcher_id + '&lead_agent_id=' + lead_agent_id +
+                '&searchText=' + searchText  + '&min=' + min + '&max=' + max + '&date_filter_on=' + date_filter_on + '&status_id=' + status_id + '&pipeline=' + pipeline;
 
             $.easyAjax({
                 url: url,
@@ -140,7 +143,7 @@ $viewLeadPermission = user()->permission('view_lead');
             var max = $('#max').val();
             var type = $('#type').val();
             var followUp = $('#followUp').val();
-            var agent = $('#filter_agent_id').val();
+            var agent = $('#agent_id').val();
             var category_id = $('#filter_category_id').val();
             var source_id = $('#filter_source_id').val();
             var searchText = $('#search-text-field').val();
@@ -151,7 +154,7 @@ $viewLeadPermission = user()->permission('view_lead');
                 encodeURIComponent(endDate) + '&type=' + type + '&followUp=' + followUp + '&agent=' +
                 agent + '&category_id=' + category_id + '&source_id=' + source_id +
                 '&searchText=' + searchText + '&columnId=' + columnId + '&currentTotalTasks=' + currentTotalTasks +
-                '&totalTasks=' + totalTasks + '&min=' + min + '&max=' + max + '&date_filter_on=' + date_filter_on;
+                '&totalTasks=' + totalTasks + '&min=' + min + '&max=' + max + '&date_filter_on=' + date_filter_on + '&pipeline=' + pipeline;
 
             $.easyAjax({
                 url: url,
@@ -195,14 +198,14 @@ $viewLeadPermission = user()->permission('view_lead');
         }
 
         $('#add-column').click(function() {
-            const url = "{{ route('lead-status-settings.create') }}";
+            const url = "{{ route('lead-stage-setting.create') }}";
             $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
             $.ajaxModal(MODAL_LG, url);
         });
 
         $('body').on('click', '.edit-column', function() {
             var statusId = $(this).data('column-id');
-            var url = "{{ route('lead-status-settings.edit', ':id ') }}";
+            var url = "{{ route('lead-stage-setting.edit', ':id ') }}";
             url = url.replace(':id', statusId);
 
             $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
@@ -211,12 +214,12 @@ $viewLeadPermission = user()->permission('view_lead');
 
         $('body').on('click', '.delete-column', function() {
             var id = $(this).data('column-id');
-            var url = "{{ route('lead-status-settings.destroy', ':id') }}";
+            var url = "{{ route('lead-stage-setting.destroy', ':id') }}";
             url = url.replace(':id', id);
 
             Swal.fire({
                 title: "@lang('messages.sweetAlertTitle')",
-                text: "@lang('messages.recoverRecord')",
+                text: "@lang('messages.deal.deleteStage')",
                 icon: 'warning',
                 showCancelButton: true,
                 focusConfirm: false,
@@ -270,6 +273,49 @@ $viewLeadPermission = user()->permission('view_lead');
                     if (response.status == 'success') {
                         showTable();
                     }
+                }
+            });
+        });
+
+        $('body').on('click', '.delete-table-row', function() {
+            var id = $(this).data('id');
+            Swal.fire({
+                title: "@lang('messages.sweetAlertTitle')",
+                text: "@lang('messages.recoverRecord')",
+                icon: 'warning',
+                showCancelButton: true,
+                focusConfirm: false,
+                confirmButtonText: "@lang('messages.confirmDelete')",
+                cancelButtonText: "@lang('app.cancel')",
+                customClass: {
+                    confirmButton: 'btn btn-primary mr-3',
+                    cancelButton: 'btn btn-secondary'
+                },
+                showClass: {
+                    popup: 'swal2-noanimation',
+                    backdrop: 'swal2-noanimation'
+                },
+                buttonsStyling: false
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    var url = "{{ route('deals.destroy', ':id') }}";
+                    url = url.replace(':id', id);
+
+                    var token = "{{ csrf_token() }}";
+
+                    $.easyAjax({
+                        type: 'POST',
+                        url: url,
+                        data: {
+                            '_token': token,
+                            '_method': 'DELETE'
+                        },
+                        success: function(response) {
+                            if (response.status == "success") {
+                                window.location.href = "{{ route('leadboards.index')}}";
+                            }
+                        }
+                    });
                 }
             });
         });

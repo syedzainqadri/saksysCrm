@@ -56,30 +56,28 @@ class NewPayment extends BaseNotification
         if (($this->payment->project_id && $this->payment->project->client_id != null) || ($this->payment->invoice_id && $this->payment->invoice->client_id != null)) {
             $url = route('payments.show', $this->payment->id);
             $url = getDomainSpecificUrl($url, $this->company);
-            $payment_gateway = !is_null($this->payment->gateway) ? $this->payment->gateway . (($this->payment->offlineMethods) ? ' ('. $this->payment->offlineMethods->name .')' : '') : '--';
-            $payment_invoice = !is_null($this->payment->invoice->custom_invoice_number) ? $this->payment->invoice->custom_invoice_number : '--';
-            $projectName = !is_null($this->payment->project_id) ? $this->payment->project->project_name : '--';
-            $clientName = !is_null($this->payment->invoice->client->name) ? $this->payment->invoice->client->name : '--';
-            $clientEmail = !is_null($this->payment->invoice->client->email) ? $this->payment->invoice->client->email : '--';
+            $payment_gateway = !is_null($this->payment->gateway) ? $this->payment->gateway . (($this->payment->offlineMethods) ? ' (' . $this->payment->offlineMethods->name . ')' : '') : '--';
+            $payment_invoice = $this->payment->invoice->custom_invoice_number ?? '--';
+            $projectName = $this->payment->project->project_name ?? '--';
+            $clientName = $this->payment->invoice->client->name ?? '--';
+            $clientEmail = $this->payment->invoice->client->email ?? '--';
             $subject = __('email.payment.clientsubject') . ' - ' . config('app.name') . '.';
 
-            if ($notifiable->hasRole('admin'))
-            {
-                    $subject = __('email.payment.subject') . ' - ' . config('app.name') . '.';
-                    $content = __('email.payment.text').
-                    '<br>'. __('email.payment.amount') . '   :   '. $this->payment->currency->currency_symbol .  $this->payment->amount .
-                    '<br>'.__('email.payment.method') . '   :   '.  $payment_gateway.
-                    '<br>'. __('email.payment.invoiceNumber'). '   :   '.  $payment_invoice.
-                    '<br>'. __('email.payment.Project'). '   :   '.  $projectName.
-                    '<br>'. __('email.payment.clientName'). '   :   '.  $clientName.
-                    '<br>'. __('email.payment.clientEmail'). '   :   '.  $clientEmail;
+            if ($notifiable->hasRole('admin')) {
+                $subject = __('email.payment.subject') . ' - ' . config('app.name') . '.';
+                $content = __('email.payment.text') .
+                    '<br>' . __('email.payment.amount') . '   :   ' . $this->payment->currency->currency_symbol . $this->payment->amount .
+                    '<br>' . __('email.payment.method') . '   :   ' . $payment_gateway .
+                    '<br>' . __('email.payment.invoiceNumber') . '   :   ' . $payment_invoice .
+                    '<br>' . __('email.payment.Project') . '   :   ' . $projectName .
+                    '<br>' . __('email.payment.clientName') . '   :   ' . $clientName .
+                    '<br>' . __('email.payment.clientEmail') . '   :   ' . $clientEmail;
             }
-            else
-            {
-                $content = __('email.payment.text').
-                    '<br>'. __('email.payment.amount') . '   :   '. $this->payment->currency->currency_symbol .  $this->payment->amount .
-                    '<br>'.__('email.payment.method') . '   :   '.  $payment_gateway.
-                    '<br>'. __('email.payment.invoiceNumber'). '   :   '.  $payment_invoice;
+            else {
+                $content = __('email.payment.text') .
+                    '<br>' . __('email.payment.amount') . '   :   ' . $this->payment->currency->currency_symbol . $this->payment->amount .
+                    '<br>' . __('email.payment.method') . '   :   ' . $payment_gateway .
+                    '<br>' . __('email.payment.invoiceNumber') . '   :   ' . $payment_invoice;
             }
 
             return $build

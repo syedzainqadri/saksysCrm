@@ -257,6 +257,9 @@ return new class extends Migration {
                 $table->string('week_start_from')->default('1');
                 $table->boolean('allow_shift_change')->default(true);
                 $table->enum('show_clock_in_button', ['yes', 'no'])->default('no');
+     
+
+
                 $table->timestamps();
             });
 
@@ -1219,7 +1222,9 @@ return new class extends Migration {
                 $table->foreign(['added_by'])->references(['id'])->on('users')->onUpdate('CASCADE')->onDelete('SET NULL');
                 $table->foreign(['last_updated_by'])->references(['id'])->on('users')->onUpdate('CASCADE')->onDelete('SET NULL');
                 $table->text('event_id')->nullable();
+               
                 $table->timestamps();
+
             });
 
             Schema::create('orders', function (Blueprint $table) {

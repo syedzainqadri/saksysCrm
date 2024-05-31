@@ -62,7 +62,7 @@ class ExpenseController extends AccountBaseController
     public function show($id)
     {
         $this->expense = Expense::with(['user', 'project', 'category', 'transactions' => function($q){
-            $q->orderBy('id', 'desc')->limit(1);
+            $q->orderByDesc('id')->limit(1);
         }, 'transactions.bankAccount'])->findOrFail($id)->withCustomFields();
 
         $this->viewPermission = user()->permission('view_expenses');
@@ -79,13 +79,12 @@ class ExpenseController extends AccountBaseController
         }
 
         $this->pageTitle = $this->expense->item_name;
+        $this->view = 'expenses.ajax.show';
 
         if (request()->ajax()) {
-            $html = view('expenses.ajax.show', $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
 
-        $this->view = 'expenses.ajax.show';
         return view('expenses.show', $this->data);
 
     }
@@ -124,9 +123,9 @@ class ExpenseController extends AccountBaseController
         $this->projectId = request('project_id') ? request('project_id') : null;
 
         if (!is_null($this->projectId)) {
-            $employees = Project::with('projectMembers')->where('id', $this->projectId)->first();
-            $this->projectName = $employees->project_name;
-            $this->employees = $employees->projectMembers;
+            $this->project = Project::with('projectMembers')->where('id', $this->projectId)->first();
+            $this->projectName = $this->project->project_name;
+            $this->employees = $this->project->projectMembers;
 
         } else {
             $this->employees = User::allEmployees(null, true);
@@ -138,12 +137,12 @@ class ExpenseController extends AccountBaseController
             $this->fields = $expense->getCustomFieldGroupsWithFields()->fields;
         }
 
+        $this->view = 'expenses.ajax.create';
+
         if (request()->ajax()) {
-            $html = view('expenses.ajax.create', $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
 
-        $this->view = 'expenses.ajax.create';
         return view('expenses.show', $this->data);
 
     }
@@ -153,7 +152,7 @@ class ExpenseController extends AccountBaseController
         $userRole = session('user_roles');
         $expense = new Expense();
         $expense->item_name = $request->item_name;
-        $expense->purchase_date = Carbon::createFromFormat($this->company->date_format, $request->purchase_date)->format('Y-m-d');
+        $expense->purchase_date = companyToYmd($request->purchase_date);
         $expense->purchase_from = $request->purchase_from;
         $expense->price = round($request->price, 2);
         $expense->currency_id = $request->currency_id;
@@ -234,7 +233,7 @@ class ExpenseController extends AccountBaseController
         else {
             $this->projects = Project::get();
         }
-        
+
         $this->companyCurrency = Currency::where('id', company()->currency_id)->first();
 
         $expense = new Expense();
@@ -243,12 +242,12 @@ class ExpenseController extends AccountBaseController
             $this->fields = $expense->getCustomFieldGroupsWithFields()->fields;
         }
 
+        $this->view = 'expenses.ajax.edit';
+
         if (request()->ajax()) {
-            $html = view('expenses.ajax.edit', $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
 
-        $this->view = 'expenses.ajax.edit';
         return view('expenses.show', $this->data);
 
     }
@@ -257,7 +256,7 @@ class ExpenseController extends AccountBaseController
     {
         $expense = Expense::findOrFail($id);
         $expense->item_name = $request->item_name;
-        $expense->purchase_date = Carbon::createFromFormat($this->company->date_format, $request->purchase_date)->format('Y-m-d');
+        $expense->purchase_date = companyToYmd($request->purchase_date);
         $expense->purchase_from = $request->purchase_from;
         $expense->price = round($request->price, 2);
         $expense->currency_id = $request->currency_id;
@@ -331,14 +330,22 @@ class ExpenseController extends AccountBaseController
     {
         abort_403(user()->permission('delete_employees') != 'all');
 
-        Expense::withoutGlobalScope(ActiveScope::class)->whereIn('id', explode(',', $request->row_ids))->delete();
+        // Did this to call observer
+        foreach (Expense::withoutGlobalScope(ActiveScope::class)->whereIn('id', explode(',', $request->row_ids))->get() as $delete) {
+            $delete->delete();
+        }
     }
 
     protected function changeBulkStatus($request)
     {
         abort_403(user()->permission('edit_employees') != 'all');
 
-        Expense::withoutGlobalScope(ActiveScope::class)->whereIn('id', explode(',', $request->row_ids))->update(['status' => $request->status]);
+        $expenses = Expense::withoutGlobalScope(ActiveScope::class)->whereIn('id', explode(',', $request->row_ids))->get();
+
+        $expenses->each(function ($expense) use ($request) {
+            $expense->status = $request->status;
+            $expense->save();
+        });
     }
 
     protected function getEmployeeProjects(Request $request)
@@ -426,8 +433,8 @@ class ExpenseController extends AccountBaseController
                 $selected = $employee->id == $request->userId ? 'selected' : '';
                 $itsYou = $employee->id == user()->id ? "<span class='ml-2 badge badge-secondary pr-1'>". __('app.itsYou') .'</span>' : '';
 
-                $data .= 'data-content="<div class=\'d-inline-block mr-1\'><img class=\'taskEmployeeImg rounded-circle\' src=\'' . $employee->image_url . '\' ></div> '.ucfirst($employee->name).$itsYou.'"
-                value="' . $employee->id . '"'.$selected.'>'.ucfirst($employee->name).'</option>';
+                $data .= 'data-content="<div class=\'d-inline-block mr-1\'><img class=\'taskEmployeeImg rounded-circle\' src=\'' . $employee->image_url . '\' ></div> '.$employee->name.$itsYou.'"
+                value="' . $employee->id . '"'.$selected.'>'.$employee->name.'</option>';
 
             }
         }
@@ -437,8 +444,8 @@ class ExpenseController extends AccountBaseController
 
                 $selected = $manager->id == $request->userId ? 'selected' : '';
                 $itsYou = $manager->id == user()->id ? "<span class='ml-2 badge badge-secondary pr-1'>" . __('app.itsYou') . '</span>' : '';
-                $data .= 'data-content="<div class=\'d-inline-block mr-1\'><img class=\'taskEmployeeImg rounded-circle\' src=\'' . $manager->image_url . '\' ></div> '.ucfirst($manager->name).'"
-                value="' . $manager->id . '"'.$selected.'>'.ucfirst($manager->name).$itsYou.'</option>';
+                $data .= 'data-content="<div class=\'d-inline-block mr-1\'><img class=\'taskEmployeeImg rounded-circle\' src=\'' . $manager->image_url . '\' ></div> '.$manager->name.'"
+                value="' . $manager->id . '"'.$selected.'>'.$manager->name.$itsYou.'</option>';
             }
         }
 

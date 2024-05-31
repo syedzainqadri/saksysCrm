@@ -10,7 +10,7 @@ $addLeadFilePermission = user()->permission('add_lead_files');
             <div id="table-actions" class="flex-grow-1 align-items-center">
                 @if ($addLeadFilePermission == 'all' || $addLeadFilePermission == 'added')
                     <x-forms.link-primary link="javascript:;" id="add-files" class="mr-3 float-left" icon="plus"
-                        data-lead-id="{{ $lead->id }}">
+                        data-lead-id="{{ $deal->id }}">
                         @lang('app.add')
                         @lang('modules.lead.file')
                     </x-forms.link-primary>
@@ -45,11 +45,11 @@ $addLeadFilePermission = user()->permission('add_lead_files');
     var fileLayout = 'listview';
     function leadFilesView(layout) {
         $('#layout').html('');
-        var leadID = "{{ $lead->id }}";
+        var leadID = "{{ $deal->id }}";
         fileLayout = layout;
         $.easyAjax({
             type: 'GET',
-            url: "{{ route('lead-files.layout') }}",
+            url: "{{ route('deal-files.layout') }}",
             disableButton: true,
             blockUI: true,
             data: {
@@ -91,7 +91,7 @@ $addLeadFilePermission = user()->permission('add_lead_files');
             buttonsStyling: false
         }).then((result) => {
             if (result.isConfirmed) {
-                var url = "{{ route('lead-files.destroy', ':id') }}";
+                var url = "{{ route('deal-files.destroy', ':id') }}";
                 url = url.replace(':id', id);
 
                 var token = "{{ csrf_token() }}";

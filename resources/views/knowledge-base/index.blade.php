@@ -36,10 +36,9 @@
                                      :text="__('app.all')"/>
 
                 @foreach ($categories as $item)
-
                     <x-setting-menu-item
                         :id="'category-'.$item->id"
-                        :active="$activeMenu" :menu="strtolower(str_replace(' ', '_', $item->name))"
+                        :active="$activeMenu" :menu="str_replace(' ', '_', $item->name)"
                         :href="route('knowledgebase.index') . '?id=' . $item->id" :text="$item->name">
                     </x-setting-menu-item>
 
@@ -61,11 +60,11 @@
                             <div class="form-group flex-grow-1">
                                 <x-forms.link-primary
                                     :link="route('knowledgebase.create') . '?category=' . request('id')"
-                                    class="mb-2 openRightModal" icon="plus">
+                                    class="openRightModal" icon="plus">
                                     @lang('modules.knowledgeBase.addknowledgebase')
                                 </x-forms.link-primary>
 
-                                <x-forms.button-secondary id="addCategory" class="mr-3 mb-2 mb-lg-0" icon="plus">
+                                <x-forms.button-secondary id="addCategory" class="mr-3 ml-2 mb-lg-0" icon="plus">
                                     @lang('modules.module.addknowledgebaseCategory')
                                 </x-forms.button-secondary>
 
@@ -120,8 +119,8 @@
                                         <a href="{{ route('knowledgebase.show', $item->id) }}"
                                            class="openRightModal text-darkest-grey d-block">{{ $item->heading }}</a>
                                     </td>
-                                    <td>{{ ucfirst($item->knowledgebasecategory->name) }}</td>
-                                    <td>{{ ucfirst($item->to) }}</td>
+                                    <td>{{ $item->knowledgebasecategory->name }}</td>
+                                    <td>{{ $item->to }}</td>
                                     <td class="text-right">
                                         @if ($editKnowledgebasePermission == 'all' || ($editKnowledgebasePermission == 'added' && $item->added_by == user()->id))
                                             <div class="task_view">

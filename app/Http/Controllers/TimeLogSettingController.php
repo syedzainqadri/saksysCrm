@@ -58,7 +58,7 @@ class TimeLogSettingController extends AccountBaseController
             $logTime->approval_required = $request->approval_required;
         }
 
-        if ($request->has('tracker_reminder')) {
+        if ($request->has('tracker_reminder') && $request->time) {
             $logTime->tracker_reminder = $request->tracker_reminder;
             $logTime->time = Carbon::createFromFormat($this->company->time_format, $request->time)->format('H:i:s');
         }

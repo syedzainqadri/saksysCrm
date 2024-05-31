@@ -101,9 +101,9 @@ trait RedisTrait
         $params = preg_replace_callback('#^'.$scheme.':(//)?(?:(?:(?<user>[^:@]*+):)?(?<password>[^@]*+)@)?#', function ($m) use (&$auth) {
             if (isset($m['password'])) {
                 if (\in_array($m['user'], ['', 'default'], true)) {
-                    $auth = $m['password'];
+                    $auth = rawurldecode($m['password']);
                 } else {
-                    $auth = [$m['user'], $m['password']];
+                    $auth = [rawurldecode($m['user']), rawurldecode($m['password'])];
                 }
 
                 if ('' === $auth) {
@@ -173,6 +173,11 @@ trait RedisTrait
             throw new CacheException('Redis Sentinel support requires one of: "predis/predis", "ext-redis >= 5.2", "ext-relay".');
         }
 
+        if (isset($params['lazy'])) {
+            $params['lazy'] = filter_var($params['lazy'], \FILTER_VALIDATE_BOOLEAN);
+        }
+        $params['redis_cluster'] = filter_var($params['redis_cluster'], \FILTER_VALIDATE_BOOLEAN);
+
         if ($params['redis_cluster'] && isset($params['redis_sentinel'])) {
             throw new InvalidArgumentException('Cannot use both "redis_cluster" and "redis_sentinel" at the same time.');
         }
@@ -207,6 +212,7 @@ trait RedisTrait
                 do {
                     $host = $hosts[$hostIndex]['host'] ?? $hosts[$hostIndex]['path'];
                     $port = $hosts[$hostIndex]['port'] ?? 0;
+                    $passAuth = isset($params['auth']) && (!$isRedisExt || \defined('Redis::OPT_NULL_MULTIBULK_AS_NULL'));
                     $address = false;
 
                     if (isset($hosts[$hostIndex]['host']) && $tls) {
@@ -216,25 +222,60 @@ trait RedisTrait
                     if (!isset($params['redis_sentinel'])) {
                         break;
                     }
-                    $extra = [];
-                    if (\defined('Redis::OPT_NULL_MULTIBULK_AS_NULL') && isset($params['auth'])) {
-                        $extra = [$params['auth']];
-                    }
-                    $sentinel = new $sentinelClass($host, $port, $params['timeout'], (string) $params['persistent_id'], $params['retry_interval'], $params['read_timeout'], ...$extra);
 
-                    if ($address = $sentinel->getMasterAddrByName($params['redis_sentinel'])) {
-                        [$host, $port] = $address;
+                    try {
+                        if (version_compare(phpversion('redis'), '6.0.0', '>=') && $isRedisExt) {
+                            $options = [
+                                'host' => $host,
+                                'port' => $port,
+                                'connectTimeout' => $params['timeout'],
+                                'persistent' => $params['persistent_id'],
+                                'retryInterval' => $params['retry_interval'],
+                                'readTimeout' => $params['read_timeout'],
+                            ];
+
+                            if ($passAuth) {
+                                $options['auth'] = $params['auth'];
+                            }
+
+                            $sentinel = new \RedisSentinel($options);
+                        } else {
+                            $extra = $passAuth ? [$params['auth']] : [];
+
+                            $sentinel = new $sentinelClass($host, $port, $params['timeout'], (string) $params['persistent_id'], $params['retry_interval'], $params['read_timeout'], ...$extra);
+                        }
+
+                        if ($address = $sentinel->getMasterAddrByName($params['redis_sentinel'])) {
+                            [$host, $port] = $address;
+                        }
+                    } catch (\RedisException|\Relay\Exception $redisException) {
                     }
                 } while (++$hostIndex < \count($hosts) && !$address);
 
                 if (isset($params['redis_sentinel']) && !$address) {
-                    throw new InvalidArgumentException(sprintf('Failed to retrieve master information from sentinel "%s".', $params['redis_sentinel']));
+                    throw new InvalidArgumentException(sprintf('Failed to retrieve master information from sentinel "%s".', $params['redis_sentinel']), previous: $redisException ?? null);
                 }
 
                 try {
                     $extra = [
                         'stream' => $params['ssl'] ?? null,
                     ];
+                    $booleanStreamOptions = [
+                        'allow_self_signed',
+                        'capture_peer_cert',
+                        'capture_peer_cert_chain',
+                        'disable_compression',
+                        'SNI_enabled',
+                        'verify_peer',
+                        'verify_peer_name',
+                    ];
+
+                    foreach ($extra['stream'] ?? [] as $streamOption => $value) {
+                        if (\in_array($streamOption, $booleanStreamOptions, true) && \is_string($value)) {
+                            $extra['stream'][$streamOption] = filter_var($value, \FILTER_VALIDATE_BOOL);
+                        }
+                    }
+
                     if (isset($params['auth'])) {
                         $extra['auth'] = $params['auth'];
                     }
@@ -252,7 +293,10 @@ trait RedisTrait
                     }
 
                     if ((null !== $auth && !$redis->auth($auth))
-                        || ($params['dbindex'] && !$redis->select($params['dbindex']))
+                        // Due to a bug in phpredis we must always select the dbindex if persistent pooling is enabled
+                        // @see https://github.com/phpredis/phpredis/issues/1920
+                        // @see https://github.com/symfony/symfony/issues/51578
+                        || (($params['dbindex'] || ('pconnect' === $connect && '0' !== \ini_get('redis.pconnect.pooling_enabled'))) && !$redis->select($params['dbindex']))
                     ) {
                         $e = preg_replace('/^ERR /', '', $redis->getLastError());
                         throw new InvalidArgumentException('Redis connection failed: '.$e.'.');
@@ -538,7 +582,7 @@ trait RedisTrait
         return $failed;
     }
 
-    private function pipeline(\Closure $generator, object $redis = null): \Generator
+    private function pipeline(\Closure $generator, ?object $redis = null): \Generator
     {
         $ids = [];
         $redis ??= $this->redis;

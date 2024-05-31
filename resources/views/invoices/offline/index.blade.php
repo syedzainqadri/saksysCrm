@@ -14,9 +14,14 @@
                         <div class="col-lg-12 col-md-12">
                             <x-forms.select class="select-picker" fieldId="offlineMethod" :fieldLabel="__('modules.invoices.paymentMethod')"
                                 fieldName="offlineMethod" search="true">
-                                <option value="all">@lang('modules.payments.offlineMethodMsg')</option>
+                                <option value="">@lang('modules.payments.offlineMethodMsg')</option>
                                 @foreach($methods as $method)
-                                    <option value="{{ $method->id }}">{{ mb_ucwords($method->name) }}</option>
+                                    @php
+                                        $description = "<p class='my-0 f-11 text-dark-grey'>$method->description</p>"
+                                    @endphp
+                                    <option value="{{ $method->id }}"
+                                            data-content="{!! '<strong>'.$method->name."</strong> ".$description !!}"
+                                    >
                                 @endforeach
                             </x-forms.select>
                         </div>

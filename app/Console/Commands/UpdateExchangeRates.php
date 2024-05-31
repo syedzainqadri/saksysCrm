@@ -3,7 +3,6 @@
 namespace App\Console\Commands;
 
 use App\Models\Company;
-use App\Models\Currency;
 use App\Models\GlobalSetting;
 use GuzzleHttp\Client;
 use Illuminate\Console\Command;
@@ -34,7 +33,6 @@ class UpdateExchangeRates extends Command
 
     public function handle()
     {
-        $companies = Company::with(['currencies', 'currency'])->get();
         $globalSetting = GlobalSetting::first();
 
         $currencyApiKey = ($globalSetting->currency_converter_key) ?: config('app.currency_converter_key');
@@ -42,14 +40,19 @@ class UpdateExchangeRates extends Command
 
         $client = new Client();
 
-        foreach ($companies as $company) {
-            $company->currencies->each(function ($currency) use ($currencyApiKey, $currencyApiKeyVersion, $company, $client) {
-                $response = $client->request('GET', 'https://' . $currencyApiKeyVersion . '.currconv.com/api/v7/convert?q=' . $company->currency->currency_code . '_' . $currency->currency_code . '&compact=ultra&apiKey=' . $currencyApiKey);
-                $response = json_decode($response->getBody(), true);
-                $currency->exchange_rate = $response[$company->currency->currency_code . '_' . $currency->currency_code];
-                $currency->saveQuietly();
-            });
-        }
+        Company::with(['currencies', 'currency'])->chunk(50, function ($companies) use ($currencyApiKey, $currencyApiKeyVersion, $client) {
+
+            foreach ($companies as $company) {
+                $company->currencies->each(function ($currency) use ($currencyApiKey, $currencyApiKeyVersion, $company, $client) {
+                    $response = $client->request('GET', 'https://' . $currencyApiKeyVersion . '.currconv.com/api/v7/convert?q=' . $company->currency->currency_code . '_' . $currency->currency_code . '&compact=ultra&apiKey=' . $currencyApiKey);
+                    $response = json_decode($response->getBody(), true);
+                    $currency->exchange_rate = $response[$company->currency->currency_code . '_' . $currency->currency_code];
+                    $currency->saveQuietly();
+                });
+            }
+        });
+
+        return Command::SUCCESS;
 
     }
 

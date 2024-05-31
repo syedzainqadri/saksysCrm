@@ -15,13 +15,15 @@ class PaymentsDataTable extends BaseDataTable
     private $editPaymentPermission;
     private $deletePaymentPermission;
     private $viewPaymentPermission;
+    private $trashedData;
 
-    public function __construct()
+    public function __construct($trashedData = false)
     {
         parent::__construct();
         $this->editPaymentPermission = user()->permission('edit_payments');
         $this->deletePaymentPermission = user()->permission('delete_payments');
         $this->viewPaymentPermission = user()->permission('view_payments');
+        $this->trashedData = $trashedData;
     }
 
     /**
@@ -58,19 +60,6 @@ class PaymentsDataTable extends BaseDataTable
                 $action .= '<a href="' . route('payments.download', $row->id) . '" class="dropdown-item"><i class="fa fa-download mr-2"></i>' . __('app.download') . '</a>';
 
                 if (
-                    ($this->editPaymentPermission == 'all'
-                        || ($this->editPaymentPermission == 'added' && isset($row->added_by) && user()->id == $row->added_by)
-                        || ($this->editPaymentPermission == 'owned' && isset($row->invoice) && user()->id == $row->invoice->client_id)
-                        || ($this->editPaymentPermission == 'both' && ((isset($row->invoice) && user()->id == $row->invoice->client_id) || (isset($row->added_by) && user()->id == $row->added_by))))
-                    && $row->status != 'failed' && ($row->gateway == null || $row->gateway == 'Offline' || is_null($row->transaction_id))
-                ) {
-                    $action .= '<a class="dropdown-item openRightModal" href="' . route('payments.edit', [$row->id]) . '">
-                            <i class="fa fa-edit mr-2"></i>
-                            ' . trans('app.edit') . '
-                        </a>';
-                }
-
-                if (
                     ($this->deletePaymentPermission == 'all'
                         || ($this->deletePaymentPermission == 'added' && user()->id == $row->added_by)
                         || ($this->deletePaymentPermission == 'owned' && isset($row->invoice) && user()->id == $row->invoice->client_id)
@@ -103,11 +92,11 @@ class PaymentsDataTable extends BaseDataTable
                     return '--';
                 }
 
-                return '<a class="text-darkest-grey" href="' . route('projects.show', $row->project_id) . '">' . ucfirst($row->project->project_name) . '</a>';
+                return '<a class="text-darkest-grey" href="' . route('projects.show', $row->project_id) . '">' . $row->project->project_name . '</a>';
             })
             ->editColumn('invoice_number', function ($row) {
                 if (!is_null($row->invoice_id) && !is_null($row->invoice)) {
-                    return '<a class="text-darkest-grey" href="' . route('invoices.show', $row->invoice_id) . '">' . ucfirst($row->invoice->invoice_number) . '</a>';
+                    return '<a class="text-darkest-grey" href="' . route('invoices.show', $row->invoice_id) . '">' . $row->invoice->invoice_number . '</a>';
                 }
 
                 return '--';
@@ -144,22 +133,22 @@ class PaymentsDataTable extends BaseDataTable
             })
             ->editColumn('client_email', function ($row) {
                 if (!is_null($row->invoice_id) && isset($row->invoice->client->email)) {
-                    return '<a class="text-darkest-grey" href="' . route('clients.show', $row->invoice->client->id) . '">' . ucfirst($row->invoice->client->email) . '</a>';
+                    return '<a class="text-darkest-grey" href="' . route('clients.show', $row->invoice->client->id) . '">' . ucfirst($row->invoice->client->email) . '</a>'; /** @phpstan-ignore-line */
                 }
 
                 if (!is_null($row->project_id) && isset($row->project->client->email)) {
-                    return '<a class="text-darkest-grey" href="' . route('clients.show', $row->project->client->id) . '">' . ucfirst($row->project->client->email) . '</a>';
+                    return '<a class="text-darkest-grey" href="' . route('clients.show', $row->project->client->id) . '">' . ucfirst($row->project->client->email) . '</a>'; /** @phpstan-ignore-line */
                 }
 
                 if (!is_null($row->order_id) && isset($row->order->client->email)) {
-                    return '<a class="text-darkest-grey" href="' . route('clients.show', $row->order->client->id) . '">' . ucfirst($row->order->client->email) . '</a>';
+                    return '<a class="text-darkest-grey" href="' . route('clients.show', $row->order->client->id) . '">' . ucfirst($row->order->client->email) . '</a>'; /** @phpstan-ignore-line */
                 }
 
                 return '--';
             })
             ->editColumn('order_number', function ($row) {
                 if (!is_null($row->order_id) && !is_null($row->order)) {
-                    return '<a class="text-darkest-grey" href="' . route('orders.show', $row->order_id) . '">' . ucfirst($row->order->order_number) . '</a>';
+                    return '<a class="text-darkest-grey" href="' . route('orders.show', $row->order_id) . '">' . $row->order->order_number . '</a>';
                 }
 
                 return '--';
@@ -189,9 +178,7 @@ class PaymentsDataTable extends BaseDataTable
             )
             ->addIndexColumn()
             ->smart(false)
-            ->setRowId(function ($row) {
-                return 'row-' . $row->id;
-            })
+            ->setRowId(fn($row) => 'row-' . $row->id)
             ->rawColumns(['invoice', 'action', 'status', 'client_id', 'client_email', 'project_id', 'invoice_number', 'order_number', 'check'])
             ->removeColumn('invoice_id')
             ->removeColumn('currency_symbol')
@@ -212,13 +199,17 @@ class PaymentsDataTable extends BaseDataTable
             ->leftJoin('orders', 'orders.id', '=', 'payments.order_id')
             ->select('payments.id', 'payments.company_id', 'payments.project_id', 'payments.currency_id', 'payments.invoice_id', 'payments.amount', 'payments.status', 'payments.paid_on', 'payments.remarks', 'payments.bill', 'payments.added_by', 'payments.order_id', 'payments.gateway', 'payments.transaction_id');
 
+        if (!$this->trashedData) {
+            $model = $model->whereNull('projects.deleted_at');
+        }
+
         if ($request->startDate !== null && $request->startDate != 'null' && $request->startDate != '') {
-            $startDate = Carbon::createFromFormat($this->company->date_format, $request->startDate)->toDateString();
+            $startDate = companyToDateString($request->startDate);
             $model = $model->where(DB::raw('DATE(payments.`paid_on`)'), '>=', $startDate);
         }
 
         if ($request->endDate !== null && $request->endDate != 'null' && $request->endDate != '') {
-            $endDate = Carbon::createFromFormat($this->company->date_format, $request->endDate)->toDateString();
+            $endDate = companyToDateString($request->endDate);
             $model = $model->where(DB::raw('DATE(payments.`paid_on`)'), '<=', $endDate);
         }
 
@@ -270,7 +261,7 @@ class PaymentsDataTable extends BaseDataTable
      */
     public function html()
     {
-        return $this->setBuilder('payments-table', 2)
+        $dataTable = $this->setBuilder('payments-table', 2)
             ->parameters([
                 'initComplete' => 'function () {
                    window.LaravelDataTables["payments-table"].buttons().container()
@@ -279,8 +270,13 @@ class PaymentsDataTable extends BaseDataTable
                 'fnDrawCallback' => 'function( oSettings ) {
                   //
                 }',
-            ])
-            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+            ]);
+
+        if (canDataTableExport()) {
+            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+        }
+
+        return $dataTable;
     }
 
     /**
@@ -298,7 +294,7 @@ class PaymentsDataTable extends BaseDataTable
                 'searchable' => false,
                 'visible' => !in_array('client', user_roles())
             ],
-            '#' => ['data' => 'DT_RowIndex', 'orderable' => false, 'searchable' => false, 'visible' => !showId()],
+            '#' => ['data' => 'DT_RowIndex', 'orderable' => false, 'searchable' => false, 'visible' => !showId(), 'title' => '#'],
             __('app.id') => ['data' => 'id', 'name' => 'payments.id', 'title' => __('app.id'), 'visible' => showId()],
             __('modules.taskCode') => ['data' => 'short_code', 'name' => 'project_short_code', 'title' => __('modules.taskCode')],
             __('app.project') => ['data' => 'project_id', 'name' => 'project_id', 'title' => __('app.project'), 'width' => '10%'],

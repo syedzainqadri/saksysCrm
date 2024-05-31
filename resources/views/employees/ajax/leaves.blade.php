@@ -26,7 +26,7 @@ $addLeavePermission = user()->permission('add_leave');
                         data-size="8">
                         <option value="all">@lang('app.all')</option>
                         @foreach ($leaveTypes as $leaveType)
-                            <option value="{{ $leaveType->id }}">{{ mb_ucwords($leaveType->type_name) }}</option>
+                            <option value="{{ $leaveType->id }}">{{ $leaveType->type_name }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -85,7 +85,7 @@ $addLeavePermission = user()->permission('add_leave');
                 <div class="select-status mr-3 pl-3">
                     <select name="action_type" class="form-control select-picker" id="quick-action-type" disabled>
                         <option value="">@lang('app.selectAction')</option>
-                        <option value="change-leave-status">@lang('app.change') @lang('app.leaveStatus')</option>
+                        <option value="change-leave-status">@lang('app.changeLeaveStatus')</option>
                         <option value="delete">@lang('app.delete')</option>
                     </select>
                 </div>

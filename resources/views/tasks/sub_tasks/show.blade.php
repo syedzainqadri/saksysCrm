@@ -6,7 +6,7 @@
 @endphp
 
 @forelse ($task->subtasks as $subtask)
-<div class="card w-100 rounded-0 border-0 subtask mb-3">
+<div class="card w-100 rounded-0 border-0 subtask mb-1">
 
     <div class="card-horizontal">
         <div class="d-flex">
@@ -23,7 +23,7 @@
                 @endif
 
                 <p class="card-title f-14 mr-3 text-dark flex-grow-1">
-                    {!! $subtask->status == 'complete' ? '<s>' . ucfirst($subtask->title) . '</s>' : '<a class="view-subtask text-dark-grey" href="javascript:;" data-row-id=' . $subtask->id . ' >' .  ucfirst($subtask->title) . '</a>' !!}
+                    {!! $subtask->status == 'complete' ? '<s>' . $subtask->title . '</s>' : '<a class="view-subtask text-dark-grey" href="javascript:;" data-row-id=' . $subtask->id . ' >' .  $subtask->title . '</a>' !!}
                     {!! $subtask->due_date ? '<span class="f-11 text-lightest"><br>'.__('modules.invoices.due') . ': ' . $subtask->due_date->translatedFormat(company()->date_format) . '</span>' : '' !!}
                 </p>
                 <div class="dropdown ml-auto subtask-action">

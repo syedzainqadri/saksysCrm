@@ -84,6 +84,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @property-read int|null $mention_comment_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\User> $mentionUser
  * @property-read int|null $mention_user_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\TaskCommentEmoji> $commentEmoji
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\TaskCommentEmoji> $dislike
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\User> $dislikeUsers
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\TaskCommentEmoji> $like
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\User> $likeUsers
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\MentionUser> $mentionComment
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\User> $mentionUser
  * @mixin \Eloquent
  */
 class TaskComment extends BaseModel

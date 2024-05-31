@@ -105,7 +105,7 @@
                                             data-content="{{__('messages.leave.unusedLeave')}}" data-trigger="hover"></i>
                                     <div class="col-md-4">
                                         <x-forms.input-group>
-                                            <select name="unused_leave" class="select-picker form-control">
+                                            <select name="unused_leave" class="select-picker form-control" disabled>
                                                 <option value="carry forward" @if($leaveType->unused_leave == 'carry forward') selected @endif>@lang('modules.leaves.carryForward')</option>
                                                 <option value="lapse" @if($leaveType->unused_leave == 'lapse') selected @endif>@lang('modules.leaves.lapse')</option>
                                                 <option value="paid" @if($leaveType->unused_leave == 'paid') selected @endif>@lang('app.paid')</option>
@@ -159,12 +159,9 @@
                                         data-content="{{__('messages.leave.maritalStatus')}}" data-trigger="hover"></i>
                                 <select class="form-control multiple-option" multiple name="marital_status[]"
                                     id="marital_status" data-live-search="true" data-size="8">
-                                    @foreach ($allMaritalStatus as $status)
-                                        <option value="{{ $status }}"
-                                            @if (is_array($maritalStatus) && in_array($status, $maritalStatus))
-                                                selected
-                                            @endif
-                                        >@lang('modules.leaves.'.$status)</option>
+                                    @foreach (\App\Enums\MaritalStatus::cases() as $status)
+                                        <option @selected(is_array($maritalStatus) && in_array($status->value, $maritalStatus))
+                                            value="{{ $status->value }}">{{ $status->label() }}</option>
                                     @endforeach
                                 </select>
                             </div>

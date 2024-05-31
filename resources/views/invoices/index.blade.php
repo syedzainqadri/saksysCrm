@@ -70,7 +70,7 @@
                             data-container="body" data-live-search="true" data-size="8">
                             <option value="all">@lang('app.all')</option>
                             @foreach ($projects as $project)
-                                <option value="{{ $project->id }}">{{ mb_ucwords($project->project_name) }}</option>
+                                <option value="{{ $project->id }}">{{ $project->project_name }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -116,7 +116,7 @@ $manageRecurringInvoicesPermission = user()->permission('manage_recurring_invoic
     <!-- CONTENT WRAPPER START -->
     <div class="content-wrapper">
         <!-- Add Task Export Buttons Start -->
-        <div class="d-block d-lg-flex d-md-flex">
+        <div class="d-block d-lg-flex d-md-flex justify-content-between">
             <div id="table-actions" class="flex-grow-1 align-items-center mb-2 mb-lg-0 mb-md-0">
                 @if ($addInvoicesPermission == 'all')
                     <x-forms.link-primary :link="route('invoices.create')" class="mr-3 float-left mb-2 mb-lg-0 mb-md-0"
@@ -130,16 +130,16 @@ $manageRecurringInvoicesPermission = user()->permission('manage_recurring_invoic
                         @lang('app.invoiceRecurring')
                     </x-forms.link-secondary>
                 @endif
-                @if ($addInvoicesPermission == 'all')
+                @if ($addInvoicesPermission == 'all' && in_array('projects', user_modules()))
                     <x-forms.link-secondary class="mr-3 float-left mb-2 mb-lg-0 mb-md-0" icon="plus"
                         :link="route('invoices.create', ['type' => 'timelog'])">
-                        @lang('app.create') @lang('app.timeLog') @lang('app.invoice')
+                        @lang('app.createTimeLogInvoice')
                     </x-forms.link-secondary>
                 @endif
 
             </div>
 
-            <div class="btn-group mt-3 mt-lg-0 mt-md-0 ml-lg-3" role="group">
+            <div class="btn-group mt-3 mt-lg-0 mt-md-0 ml-lg-3 d-none d-lg-block" role="group">
                 <a href="javascript:;" class="img-lightbox btn btn-secondary f-14"
                 data-image-url="{{ asset('img/invoice-lc.png') }}" data-toggle="tooltip"
                 data-original-title="@lang('app.howItWorks')"><i class="side-icon bi bi-question-circle"></i></a>
@@ -165,25 +165,26 @@ $manageRecurringInvoicesPermission = user()->permission('manage_recurring_invoic
     <script src="{{ asset('vendor/jquery/clipboard.min.js') }}"></script>
     <script>
         $(function() {
-        var clipboard = new ClipboardJS('.btn-copy');
+            var clipboard = new ClipboardJS('.btn-copy');
 
-        clipboard.on('success', function(e) {
-            Swal.fire({
-                icon: 'success',
-                text: '@lang("app.copied")',
-                toast: true,
-                position: 'top-end',
-                timer: 3000,
-                timerProgressBar: true,
-                showConfirmButton: false,
-                customClass: {
-                    confirmButton: 'btn btn-primary',
-                },
-                showClass: {
-                    popup: 'swal2-noanimation',
-                    backdrop: 'swal2-noanimation'
-                },
-            })
+            clipboard.on('success', function(e) {
+                Swal.fire({
+                    icon: 'success',
+                    text: '@lang("app.copied")',
+                    toast: true,
+                    position: 'top-end',
+                    timer: 3000,
+                    timerProgressBar: true,
+                    showConfirmButton: false,
+                    customClass: {
+                        confirmButton: 'btn btn-primary',
+                    },
+                    showClass: {
+                        popup: 'swal2-noanimation',
+                        backdrop: 'swal2-noanimation'
+                    },
+                })
+            });
         });
 
         $('#invoices-table').on('preXhr.dt', function(e, settings, data) {
@@ -537,6 +538,6 @@ $manageRecurringInvoicesPermission = user()->permission('manage_recurring_invoic
             $('#datatableRange').data('daterangepicker').setEndDate("{{ request('end') }}");
             showTable();
         @endif
-    });
+
     </script>
 @endpush

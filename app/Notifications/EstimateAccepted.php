@@ -3,14 +3,11 @@
 namespace App\Notifications;
 
 use App\Models\Estimate;
-use Illuminate\Bus\Queueable;
 use App\Models\EmailNotificationSetting;
-use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\SlackMessage;
 
-class EstimateAccepted extends Notification
+class EstimateAccepted extends BaseNotification
 {
-    use Queueable;
 
     /**
      * Create a new notification instance.
@@ -18,7 +15,6 @@ class EstimateAccepted extends Notification
      * @return void
      */
     private $estimate;
-    private $company;
     private $emailSetting;
 
     public function __construct(Estimate $estimate)
@@ -31,15 +27,14 @@ class EstimateAccepted extends Notification
     /**
      * Get the notification's delivery channels.
      *
-     * @param  mixed  $notifiable
      * @return array
      */
-    public function via()
+    public function via($notifiable)
     {
         $via = [];
 
         if ($this->emailSetting->send_slack == 'yes' && $this->company->slackSetting->status == 'active') {
-            array_push($via, 'slack');
+            $this->slackUserNameCheck($notifiable) ? array_push($via, 'slack') : null;
         }
 
         return $via;
@@ -47,20 +42,8 @@ class EstimateAccepted extends Notification
 
     public function toSlack($notifiable)
     {
-        $slack = $notifiable->company->slackSetting;
-
-        if (count($notifiable->employee) > 0 && (!is_null($notifiable->employee[0]->slack_username) && ($notifiable->employee[0]->slack_username != ''))) {
-            return (new SlackMessage())
-                ->from(config('app.name'))
-                ->to('@' . $notifiable->employee[0]->slack_username)
-                ->image($slack->slack_logo_url)
-                ->content(__('email.hello')  . ' ' .  mb_ucwords($notifiable->name) . $this->estimate->estimate_number .' '. __('email.estimateAccepted.subject'));
-        }
-
-        return (new SlackMessage())
-            ->from(config('app.name'))
-            ->image($slack->slack_logo_url)
-            ->content(__('email.hello')  . ' ' .  mb_ucwords($notifiable->name) .' '. $this->estimate->estimate_number .' '. __('email.estimateAccepted.subject'));
+        return $this->slackBuild($notifiable)
+            ->content(__('email.hello') . ' ' . $notifiable->name . $this->estimate->estimate_number . ' ' . __('email.estimateAccepted.subject'));
 
     }
 

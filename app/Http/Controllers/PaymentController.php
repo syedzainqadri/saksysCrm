@@ -19,9 +19,11 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Traits\EmployeeActivityTrait;
 
 class PaymentController extends AccountBaseController
 {
+    use EmployeeActivityTrait;
 
     public function __construct()
     {
@@ -114,13 +116,19 @@ class PaymentController extends AccountBaseController
             $this->projects = Project::with('currency')->whereNotNull('client_id')->get();
         }
 
+        $this->currencyCode = company()->currency->currency_code;
+        $this->exchangeRate = company()->currency->exchange_rate;
+
         if (request()->has('project')) {
             $this->projectId = request()->project;
         }
 
         $this->project = request()->has('project') ? Project::findOrFail(request()->project) : null;
-        $this->currencyCode = company()->currency->currency_code;
-        $this->exchangeRate = company()->currency->exchange_rate;
+
+        if ($this->project) {
+            $this->currencyCode = $this->project->currency->currency_code;
+            $this->exchangeRate = $this->project->currency->exchange_rate;
+        }
 
         $bankAccountQuery = BankAccount::query();
 
@@ -182,13 +190,11 @@ class PaymentController extends AccountBaseController
         $this->linkPaymentPermission = user()->permission('link_payment_bank_account');
         $this->companyCurrency = Currency::where('id', company()->currency_id)->first();
 
-        if (request()->ajax()) {
-            $html = view('payments.ajax.create', $this->data)->render();
-
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
-        }
-
         $this->view = 'payments.ajax.create';
+
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
+        }
 
         return view('payments.create', $this->data);
     }
@@ -219,8 +225,9 @@ class PaymentController extends AccountBaseController
             $payment->invoice_id = $invoice->id;
             $payment->currency_id = $invoice->currency->id;
 
+            $tolerance = 0.01;
 
-            if ($request->amount > $invoice->amountDue()) {
+            if ($request->amount > $invoice->amountDue() + $tolerance) {
                 return Reply::error(__('messages.invoicePaymentExceedError'));
             }
         }
@@ -231,7 +238,7 @@ class PaymentController extends AccountBaseController
         $payment->gateway = $request->gateway;
         $payment->transaction_id = $request->transaction_id;
         $payment->offline_method_id = $request->offline_methods;
-        $payment->paid_on = Carbon::createFromFormat($this->company->date_format, $request->paid_on)->format('Y-m-d');
+        $payment->paid_on = companyToYmd($request->paid_on);
 
         $payment->remarks = $request->remarks;
 
@@ -260,6 +267,8 @@ class PaymentController extends AccountBaseController
         if ($redirectUrl == '') {
             $redirectUrl = route('payments.index');
         }
+        self::createEmployeeActivity(user()->id, 'payment-created', $payment->id, 'payment');
+
 
         return Reply::successWithData(__('messages.recordSaved'), ['redirectUrl' => $redirectUrl]);
     }
@@ -323,13 +332,11 @@ class PaymentController extends AccountBaseController
 
         $this->linkPaymentPermission = user()->permission('link_payment_bank_account');
 
-        if (request()->ajax()) {
-            $html = view('payments.ajax.edit', $this->data)->render();
-
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
-        }
-
         $this->view = 'payments.ajax.edit';
+
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
+        }
 
         return view('payments.create', $this->data);
     }
@@ -355,7 +362,7 @@ class PaymentController extends AccountBaseController
         $payment->transaction_id = $request->transaction_id;
 
         if ($request->paid_on != '') {
-            $payment->paid_on = Carbon::createFromFormat($this->company->date_format, $request->paid_on)->format('Y-m-d');
+            $payment->paid_on = companyToYmd($request->paid_on);
         }
         else {
             $payment->paid_on = null;
@@ -408,7 +415,7 @@ class PaymentController extends AccountBaseController
     public function show($id)
     {
         $this->payment = Payment::with(['invoice', 'project', 'currency', 'offlineMethods', 'transactions' => function ($q) {
-            $q->orderBy('id', 'desc')->limit(1);
+            $q->orderByDesc('id')->limit(1);
         }, 'transactions.bankAccount'])->findOrFail($id);
 
         $this->viewPermission = user()->permission('view_payments');
@@ -421,14 +428,11 @@ class PaymentController extends AccountBaseController
         ));
 
         $this->pageTitle = __('modules.payments.paymentDetails');
+        $this->view = 'payments.ajax.show';
 
         if (request()->ajax()) {
-            $html = view('payments.ajax.show', $this->data)->render();
-
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
-
-        $this->view = 'payments.ajax.show';
 
         return view('payments.create', $this->data);
     }
@@ -495,7 +499,7 @@ class PaymentController extends AccountBaseController
                 $bankName = $bankAccount->bank_name . ' |';
             }
 
-            $options .= '<option value="' . $bankAccount->id . '"> ' . $bankName . ' ' . mb_ucwords($bankAccount->account_name) . ' </option>';
+            $options .= '<option value="' . $bankAccount->id . '"> ' . $bankName . ' ' . $bankAccount->account_name . ' </option>';
         }
 
         $exchangeRate = Currency::where('id', $request->curId)->pluck('exchange_rate')->toArray();
@@ -562,13 +566,11 @@ class PaymentController extends AccountBaseController
             return Reply::dataOnly(['status' => 'success', 'table' => $table, 'payment' => $this->paymentID]);
         }
 
-        if (request()->ajax()) {
-            $html = view('payments.ajax.add-bulk-payments', $this->data)->render();
-
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
-        }
-
         $this->view = 'payments.ajax.add-bulk-payments';
+
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
+        }
 
         return view('payments.create', $this->data);
     }

@@ -2,10 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
 use App\Helper\Reply;
-use App\Models\BaseModel;
-use App\Models\LeaveType;
 use App\Models\Designation;
 use App\Models\EmployeeDetails;
 use Illuminate\Http\Request;
@@ -40,13 +37,11 @@ class DesignationController extends AccountBaseController
     public function create()
     {
         $this->designations = Designation::all();
+        $this->view = 'designation.ajax.create';
 
         if (request()->ajax()) {
-            $html = view('designation.ajax.create', $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
-
-        $this->view = 'designation.ajax.create';
 
         return view('designation.create', $this->data);
     }
@@ -77,28 +72,37 @@ class DesignationController extends AccountBaseController
         $this->designation = Designation::findOrFail($id);
         $this->parent = Designation::where('id', $this->designation->parent_id)->first();
 
-        if (request()->ajax())
-        {
-            $html = view('designation.ajax.show', $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+        $this->view = 'designation.ajax.show';
+
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
         }
 
-        $this->view = 'designation.ajax.show';
         return view('designation.create', $this->data);
     }
 
     public function edit($id)
     {
         $this->designation = Designation::findOrFail($id);
-        $this->designations = Designation::all();
 
-        if (request()->ajax())
-        {
-            $html = view('designation.ajax.edit', $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
-        }
+        $designations = Designation::where('id', '!=', $this->designation->id)->get();
+
+        $childDesignations = $designations->where('parent_id', $this->designation->id)->pluck('id')->toArray();
+
+        $designations = $designations->where('parent_id', '!=', $this->designation->id);
+
+        // remove child designations
+        $this->designations = $designations->filter(function ($value, $key) use ($childDesignations) {
+            return !in_array($value->parent_id, $childDesignations);
+        });
+
 
         $this->view = 'designation.ajax.edit';
+
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
+        }
+
         return view('designation.create', $this->data);
 
     }

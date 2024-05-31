@@ -29,7 +29,7 @@ class StripeWebhookController extends Controller
     {
         if (!$companyHash) {
             return response()->json([
-                'message' => 'The route has been moved to other route. Please check the stripe settings again'
+                'message' => 'The route has been moved to another route. Please check the Stripe settings again.'
             ]);
         }
 
@@ -37,12 +37,12 @@ class StripeWebhookController extends Controller
 
         if (!$company) {
             return response()->json([
-                'message' => 'The webhook url provided is wrong'
+                'message' => 'The webhook URL provided is incorrect.'
             ]);
         }
 
         return response()->json([
-            'message' => 'This url should not be opened directly(GET Request). Only POST request is accepted. Add this url to your stripe webhook'
+            'message' => 'This URL should not be opened directly (GET Request). Only POST requests are accepted. Add this URL to your Stripe webhook.'
         ]);
     }
 
@@ -90,6 +90,7 @@ class StripeWebhookController extends Controller
 
         if ($payload['data']['object']['status'] != 'succeeded') {
             $this->paymentFailed($payload);
+
             return response(__('messages.paymentFailed'), 400);
         }
 

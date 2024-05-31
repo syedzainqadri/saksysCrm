@@ -82,7 +82,7 @@
                     </div>
 
                     <div class="col-md-12 bankLogo">
-                        <x-forms.file allowedFileExtensions="png jpg jpeg svg" class="mr-0 mr-lg-2 mr-md-2"
+                        <x-forms.file allowedFileExtensions="png jpg jpeg svg bmp" class="mr-0 mr-lg-2 mr-md-2"
                             :fieldLabel="__('modules.bankaccount.bankLogo')" fieldName="bank_logo"
                             fieldId="bank_logo" :popover="__('modules.themeSettings.logoSize')">
                         </x-forms.file>

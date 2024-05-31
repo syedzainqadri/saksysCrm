@@ -4,7 +4,7 @@
 
             <div class="add-client bg-white rounded">
                 <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
-                    @lang('app.timeLog') @lang('app.details')</h4>
+                    @lang('app.timeLogDetails')</h4>
                 <div class="row p-20">
                     <div class="col-md-12">
                         <div class="row">
@@ -61,7 +61,7 @@
                             <div class="col-md-3 col-lg-3">
                                 <x-forms.datepicker fieldId="start_date" fieldRequired="true"
                                     :fieldLabel="__('modules.timeLogs.startDate')" fieldName="start_date"
-                                    :fieldValue="\Carbon\Carbon::now(company()->timezone)->format(company()->date_format)"
+                                    :fieldValue="now(company()->timezone)->format(company()->date_format)"
                                     :fieldPlaceholder="__('placeholders.date')" />
                             </div>
 
@@ -76,7 +76,7 @@
                             <div class="col-md-3 col-lg-3">
                                 <x-forms.datepicker fieldId="end_date" fieldRequired="true"
                                     :fieldLabel="__('modules.timeLogs.endDate')" fieldName="end_date"
-                                    :fieldValue="\Carbon\Carbon::now(company()->timezone)->format(company()->date_format)"
+                                    :fieldValue="now(company()->timezone)->format(company()->date_format)"
                                     :fieldPlaceholder="__('placeholders.date')" />
                             </div>
 
@@ -225,18 +225,16 @@
 
         function calculateTime() {
             var format = '{{ company()->moment_date_format }}';
+            var timeFormat = '{{ company()->time_format }}';
             var startDate = $('#start_date').val();
             var endDate = $('#end_date').val();
             var startTime = $("#start_time").val();
             var endTime = $("#end_time").val();
 
-            startDate = moment(startDate, format).format('YYYY-MM-DD');
-            endDate = moment(endDate, format).format('YYYY-MM-DD');
+            startDate = moment(startDate + " " + startTime, format + " " + 'hh:mm A');
+            endDate = moment(endDate + " " + endTime, format + " " + 'hh:mm A');
 
-            var timeStart = new Date(startDate + " " + startTime);
-            var timeEnd = new Date(endDate + " " + endTime);
-
-            var diff = (timeEnd - timeStart) / 60000; //dividing by seconds and milliseconds
+            var diff = endDate.diff(startDate, 'minutes');
 
             var minutes = diff % 60;
             var hours = (diff - minutes) / 60;
@@ -255,27 +253,9 @@
                     },
                     buttonsStyling: false
                 });
-                $("#start_time").val(startTime);
-                $('#end_time').val(endTime);
 
-                return false;
-                var numberOfDaysToAdd = 1;
-                timeEnd.setDate(timeEnd.getDate() + numberOfDaysToAdd);
-                var dd = timeEnd.getDate();
+                $('#end_time').val(startTime);
 
-                if (dd < 10) {
-                    dd = "0" + dd;
-                }
-
-                var mm = timeEnd.getMonth() + 1;
-
-                if (mm < 10) {
-                    mm = "0" + mm;
-                }
-
-                var y = timeEnd.getFullYear();
-
-                $('#end_date').val(mm + '/' + dd + '/' + y);
                 calculateTime();
             } else {
                 $('#total_time').html(hours + "Hrs " + minutes + "Mins");
@@ -286,11 +266,4 @@
         init(RIGHT_MODAL);
     });
 
-    function checkboxChange(parentClass, id){
-        var checkedData = '';
-        $('.'+parentClass).find("input[type= 'checkbox']:checked").each(function () {
-            checkedData = (checkedData !== '') ? checkedData+', '+$(this).val() : $(this).val();
-        });
-        $('#'+id).val(checkedData);
-    }
 </script>

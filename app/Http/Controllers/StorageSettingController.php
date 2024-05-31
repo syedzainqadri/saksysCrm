@@ -157,6 +157,7 @@ class StorageSettingController extends AccountBaseController
 
     public function awsLocalToAwsModal()
     {
+        config(['filesystems.default' => 'local']);
         $this->files = FileStorage::where('storage_location', 'local')->orderBy('storage_location')->get();
         $this->localFilesCount = FileStorage::where('storage_location', 'local')->count();
 

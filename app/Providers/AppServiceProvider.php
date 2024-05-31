@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Cashier\Cashier;
 use Laravel\Sanctum\Sanctum;
-use Modules\RestAPI\Entities\PersonalAccessToken;
 use function config;
 
 class AppServiceProvider extends ServiceProvider
@@ -46,11 +45,12 @@ class AppServiceProvider extends ServiceProvider
         }
 
         CarbonInterval::macro('formatHuman', function ($totalMinutes, $seconds = false): string {
+
             if ($seconds) {
-                return static::seconds($totalMinutes)->cascade()->forHumans(['short' => true, 'options' => 0]);
+                return static::seconds($totalMinutes)->cascade()->forHumans(['short' => true, 'options' => 0]); /** @phpstan-ignore-line */
             }
 
-            return static::minutes($totalMinutes)->cascade()->forHumans(['short' => true, 'options' => 0]);
+            return static::minutes($totalMinutes)->cascade()->forHumans(['short' => true, 'options' => 0]); /** @phpstan-ignore-line */
         });
 
     }

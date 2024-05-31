@@ -3,16 +3,38 @@ $editPermission = user()->permission('edit_events');
 $deletePermission = user()->permission('delete_events');
 $attendeesIds = $event->attendee->pluck('user_id')->toArray();
 @endphp
+
+<style>
+    #event-status2 {
+        border-radius: 0 5px 5px 0;
+    }
+
+    #event-status {
+        border-radius: 5px 0 0 5px;
+    }
+</style>
+
 <div id="task-detail-section">
+    <h3 class="heading-h1 mb-3">{{ $event->event_name }}</h3>
     <div class="row">
         <div class="col-sm-12">
             <div class="card bg-white border-0 b-shadow-4">
-                <div class="card-header bg-white  border-bottom-grey text-capitalize justify-content-between p-20">
+                <div class="card-header bg-white  border-bottom-grey justify-content-between p-20">
                     <div class="row">
-                        <div class="col-md-10">
-                            <h3 class="heading-h1 mb-3">{{ $event->event_name }}</h3>
+                        <div class="col-lg-8 col-10">
+                            @if ($event->status == 'pending')
+                                    <x-forms.button-primary icon="check" data-event-id="{{$event->id}}" id="event-status" value="completed"
+                                                class="mr-2 mb-2 mb-lg-0 mb-md-0">
+                                                @lang('app.markComplete')
+                                    </x-forms.button-primary>
+
+                                    <x-forms.button-secondary icon="times" data-event-id="{{$event->id}}" id="event-status2" value="cancelled"
+                                        class="mr-3">
+                                        @lang('app.markCancel')
+                                    </x-forms.button-secondary>
+                            @endif
                         </div>
-                        <div class="col-md-2 text-right">
+                        <div class="col-lg-4 col-2 text-right">
                             <div class="dropdown">
                                 <button
                                     class="btn btn-lg f-14 px-2 py-1 text-dark-grey text-capitalize rounded  dropdown-toggle"
@@ -22,7 +44,7 @@ $attendeesIds = $event->attendee->pluck('user_id')->toArray();
 
                                 <div class="dropdown-menu dropdown-menu-right border-grey rounded b-shadow-4 p-0"
                                     aria-labelledby="dropdownMenuLink" tabindex="0">
-                                       @if ($editPermission == 'all'
+                                        @if ($editPermission == 'all'
                                     || ($editPermission == 'added' && $event->added_by == user()->id)
                                     || ($editPermission == 'owned' && in_array(user()->id, $attendeesIds))
                                     || ($editPermission == 'both' && (in_array(user()->id, $attendeesIds) || $event->added_by == user()->id))
@@ -46,17 +68,18 @@ $attendeesIds = $event->attendee->pluck('user_id')->toArray();
                     </div>
                 </div>
                 <div class="card-body">
-                    <x-cards.data-row :label="__('modules.events.eventName')" :value="ucfirst($event->event_name)"
+                    <x-cards.data-row :label="__('modules.events.eventName')" :value="$event->event_name"
                         html="true" />
 
+                    @if (!in_array('client', user_roles()))
                     <div class="col-12 px-0 pb-3 d-flex">
                         <p class="mb-0 text-lightest f-14 w-30 d-inline-block text-capitalize">
-                            @lang('modules.events.attendees') @lang('app.employee')</p>
+                           @lang('app.attendeesEmployee')</p>
                         <p class="mb-0 text-dark-grey f-14">
                             @foreach ($event->attendee as $item)
                             @if(in_array('employee', $item->user->roles->pluck('name')->toArray()))
                                 <div class="taskEmployeeImg rounded-circle mr-1">
-                                    <img data-toggle="tooltip" data-original-title="{{ mb_ucwords($item->user->name) }}"
+                                    <img data-toggle="tooltip" data-original-title="{{ $item->user->name }}"
                                         src="{{ $item->user->image_url }}">
                                 </div>
                             @endif
@@ -66,22 +89,39 @@ $attendeesIds = $event->attendee->pluck('user_id')->toArray();
 
                     <div class="col-12 px-0 pb-3 d-flex">
                         <p class="mb-0 text-lightest f-14 w-30 d-inline-block text-capitalize">
-                            @lang('modules.events.attendees') @lang('app.client')</p>
+                            @lang('app.attendeesClients')</p>
                         <p class="mb-0 text-dark-grey f-14">
                             @foreach ($event->attendee as $item)
                             @if(in_array('client', $item->user->roles->pluck('name')->toArray()))
                                 <div class="taskEmployeeImg rounded-circle mr-1">
-                                    <img data-toggle="tooltip" data-original-title="{{ mb_ucwords($item->user->name) }}"
+                                    <img data-toggle="tooltip" data-original-title="{{ $item->user->name }}"
                                         src="{{ $item->user->image_url }}">
                                 </div>
                             @endif
                             @endforeach
                         </p>
                     </div>
+                    @endif
 
-                    <x-cards.data-row :label="__('app.description')" :value="ucfirst($event->description)"
+                    <div class="col-12 px-0 pb-3 d-flex">
+                        <p class="mb-0 text-lightest f-14 w-30 d-inline-block text-capitalize">
+                            @lang('app.host')</p>
+                        <p class="mb-0 text-dark-grey f-14">
+                            @if ($event->user)
+                            <div class="taskEmployeeImg rounded-circle mr-1">
+                                <img data-toggle="tooltip"
+                                data-original-title="{{ $event->user->name }}"
+                                src="{{ $event->user->image_url }}">
+                            </div>
+                            @else
+                            --
+                            @endif
+                        </p>
+                    </div>
+
+                    <x-cards.data-row :label="__('app.description')" :value="$event->description"
                         html="true" />
-                    <x-cards.data-row :label="__('app.where')" :value="ucfirst($event->where)"
+                    <x-cards.data-row :label="__('app.where')" :value="$event->where"
                         html="true" />
                     <x-cards.data-row :label="__('modules.events.startOn')"
                         :value="$event->start_date_time->translatedFormat(company()->date_format. ' - '.company()->time_format)"
@@ -93,6 +133,23 @@ $attendeesIds = $event->attendee->pluck('user_id')->toArray();
                         $url = str_starts_with($event->event_link, 'http') ? $event->event_link : 'http://'.$event->event_link;
                             $link = "<a href=".$url." style='color:black; cursor: pointer;' target='_blank'>$event->event_link</a>";
                         @endphp
+
+                    @if ($event->status)
+                        <div class="col-12 px-0 pb-3 d-lg-flex d-md-flex d-block">
+                            <p class="mb-0 text-lightest f-14 w-30 text-capitalize">@lang('app.status')</p>
+                            @if ($event->status == 'pending')
+                                <p class="mb-0 text-dark-grey f-14 w-70 text-wrap"><i class="fa fa-circle mr-1 text-yellow f-10"></i>{{ ucfirst($event->status) }}</p>
+                            @elseif ($event->status == 'completed')
+                                <p class="mb-0 text-dark-grey f-14 w-70 text-wrap"><i class="fa fa-circle mr-1 text-dark-green f-10"></i>{{ ucfirst($event->status) }}</p>
+                            @elseif ($event->status == 'cancelled')
+                                <p class="mb-0 text-dark-grey f-14 w-70 text-wrap"><i class="fa fa-circle mr-1 text-red f-10"></i>{{ ucfirst($event->status) }}</p>
+                            @endif
+                        </div>
+                    @endif
+                    @if ($event->note)
+                    <x-cards.data-row :label="__('app.note')" :value="$event->note"
+                        html="true" />
+                    @endif
                     <x-cards.data-row :label="__('modules.events.eventLink')"
                     html="true" :value="$link"/>
                     <x-cards.data-row :label="__('app.file')"
@@ -147,6 +204,14 @@ $('body').on('click', '.delete-event', function() {
             icon: 'warning',
             showCancelButton: true,
             focusConfirm: false,
+            @if ($event->parent_id)
+            input: 'radio',
+            inputValue: 'this',
+            inputOptions: {
+                'this': `@lang('app.thisEvent')`,
+                'all': `@lang('app.allEvent')`
+            },
+            @endif
             confirmButtonText: "@lang('messages.confirmDelete')",
             cancelButtonText: "@lang('app.cancel')",
             customClass: {
@@ -169,7 +234,10 @@ $('body').on('click', '.delete-event', function() {
                     url: url,
                     data: {
                         '_token': token,
-                        '_method': 'DELETE'
+                        '_method': 'DELETE',
+                        @if ($event->parent_id)
+                        'delete': result.value,
+                        @endif
                     },
                     success: function(response) {
                         if (response.status == "success") {
@@ -223,6 +291,22 @@ $('body').on('click', '.delete-event', function() {
                 });
             }
         });
+    });
+
+    $('#event-status2').click(function () {
+        var id = $(this).data('event-id');
+        var url = "{{ route('events.event_status_note', ':id') }}?status=cancelled";
+        url = url.replace(':id', id);
+        $(MODAL_DEFAULT + ' ' + MODAL_HEADING).html('...');
+        $.ajaxModal(MODAL_DEFAULT, url);
+    });
+
+    $('#event-status').click(function () {
+        var id = $(this).data('event-id');
+        var url = "{{ route('events.event_status_note', ':id') }}?status=completed";
+        url = url.replace(':id', id);
+        $(MODAL_DEFAULT + ' ' + MODAL_HEADING).html('...');
+        $.ajaxModal(MODAL_DEFAULT, url);
     });
 
 </script>

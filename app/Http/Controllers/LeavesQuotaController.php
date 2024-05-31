@@ -24,12 +24,14 @@ class LeavesQuotaController extends AccountBaseController
 
     public function update(Request $request, $id)
     {
-        if ($request->leaves < 0) {
-            return Reply::error('messages.leaveTypeValueError');
+        $type = EmployeeLeaveQuota::findOrFail($id);
+
+        if ($request->leaves < 0 || $request->leaves < $type->leaves_used) {
+            return Reply::error('messages.employeeLeaveQuota');
         }
 
-        $type = EmployeeLeaveQuota::findOrFail($id);
         $type->no_of_leaves = $request->leaves;
+        $type->leaves_remaining = $request->leaves - $type->leaves_used;
         $type->save();
 
         session()->forget('user');
@@ -40,32 +42,14 @@ class LeavesQuotaController extends AccountBaseController
     public function employeeLeaveTypes($userId)
     {
         if ($userId != 0) {
-            $leaveQuotas = LeaveType::select('leave_types.*', 'employee_details.notice_period_start_date', 'employee_details.probation_end_date',
-            'employee_details.department_id as employee_department', 'employee_details.designation_id as employee_designation',
-            'employee_details.marital_status as maritalStatus', 'users.gender as usergender', 'employee_details.joining_date', 'employee_leave_quotas.no_of_leaves as employeeLeave')
-                ->join('employee_leave_quotas', 'employee_leave_quotas.leave_type_id', 'leave_types.id')
-                ->join('users', 'users.id', 'employee_leave_quotas.user_id')
-                ->join('employee_details', 'employee_details.user_id', 'users.id')
-                ->where('users.id', $userId)->get();
-        
-            $roles = User::with('roles')->findOrFail($userId);
-
-            $userRole = [];
-
-            foreach($roles->roles as $role){
-                $userRole[] = $role->id;
-            }
-
+            $employee = User::with(['roles', 'leaveTypes'])->findOrFail($userId);
             $options = '';
 
-            foreach($leaveQuotas as $leave){
-                $leaveType = LeaveType::leaveTypeCodition($leave, $userRole);
+            foreach($employee->leaveTypes->where('leaves_remaining', '>', 0) as $leavesQuota) {
+                $hasLeave = $leavesQuota->leaveType->leaveTypeCondition($leavesQuota->leaveType, $employee);
 
-                if ($leave->employeeLeave > 0) { /** @phpstan-ignore-line */
-                    if($leaveType){
-                        $options .= '<option value="' . $leave->id . '"> ' .  $leave->type_name . ' </option>'; /** @phpstan-ignore-line */
-
-                    }
+                if ($hasLeave) {
+                    $options .= '<option value="' . $leavesQuota->leave_type_id . '"> ' .  $leavesQuota->leaveType->type_name .' (' . $leavesQuota->leaves_remaining . ') </option>'; /** @phpstan-ignore-line */
                 }
             }
         }
@@ -75,7 +59,7 @@ class LeavesQuotaController extends AccountBaseController
             $options = '';
 
             foreach ($leaveQuotas as $leaveQuota) {
-                $options .= '<option value="' . $leaveQuota->id . '"> ' .  $leaveQuota->type_name . ' </option>';
+                $options .= '<option value="' . $leaveQuota->id . '"> ' .  $leaveQuota->type_name . ' (' . $leaveQuota->no_of_leaves . ') </option>'; /** @phpstan-ignore-line */
             }
         }
 

@@ -35,10 +35,9 @@ class SocialAuthSettingController extends AccountBaseController
 
         $this->activeTab = $tab ?: 'google';
 
-        if (request()->ajax()) {
-            $html = view($this->view, $this->data)->render();
 
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
         }
 
         return view('social-login-settings.index', $this->data);

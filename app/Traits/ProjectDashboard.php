@@ -28,7 +28,7 @@ trait ProjectDashboard
 
         $this->pageTitle = 'app.projectDashboard';
 
-        $this->startDate  = (request('startDate') != '') ? Carbon::createFromFormat($this->company->date_format, request('startDate')) : now($this->company->timezone)->startOfMonth();
+        $this->startDate = (request('startDate') != '') ? Carbon::createFromFormat($this->company->date_format, request('startDate')) : now($this->company->timezone)->startOfMonth();
 
         $this->endDate = (request('endDate') != '') ? Carbon::createFromFormat($this->company->date_format, request('endDate')) : now($this->company->timezone);
 
@@ -51,6 +51,7 @@ trait ProjectDashboard
 
         $hoursLogged = $hoursLogged - $breakMinutes;
 
+        /** @phpstan-ignore-next-line */
         $timeLog = CarbonInterval::formatHuman($hoursLogged);
 
         $this->totalHoursLogged = $timeLog;
@@ -67,6 +68,8 @@ trait ProjectDashboard
 
         $this->pendingMilestone = ProjectMilestone::whereBetween(DB::raw('DATE(project_milestones.`created_at`)'), [$startDate, $endDate])
             ->with('project', 'currency')
+            ->whereHas('project')
+            ->where('status', 'incomplete')
             ->get();
 
         $this->statusWiseProject = $this->statusChartData($startDate, $endDate);
@@ -76,9 +79,9 @@ trait ProjectDashboard
 
     public function statusChartData($startDate, $endDate)
     {
-        $labels = ProjectStatusSetting::all()->where('status', 'active')->pluck('status_name');
-        $data['labels'] = ProjectStatusSetting::all()->where('status', 'active')->pluck('status_name');
-        $data['colors'] = ProjectStatusSetting::all()->where('status', 'active')->pluck('color');
+        $labels = ProjectStatusSetting::where('status', 'active')->pluck('status_name');
+        $data['labels'] = ProjectStatusSetting::where('status', 'active')->pluck('status_name');
+        $data['colors'] = ProjectStatusSetting::where('status', 'active')->pluck('color');
         $data['values'] = [];
 
         foreach ($labels as $label) {

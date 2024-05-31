@@ -59,6 +59,7 @@ class DiscussionController extends AccountBaseController
             $discussion->project_id = $request->project_id;
         }
 
+        $discussion->last_reply_at = now()->timezone('UTC')->toDateTimeString();
         $discussion->user_id = $this->user->id;
         $discussion->save();
 
@@ -103,9 +104,10 @@ class DiscussionController extends AccountBaseController
 
         $this->userData = $userData;
 
+        $this->view = 'discussions.replies.show';
+
         if (request()->ajax()) {
-            $html = view('discussions.replies.show', $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
 
         return redirect(route('projects.show', $this->discussion->project_id) . '?tab=discussion');
@@ -132,8 +134,22 @@ class DiscussionController extends AccountBaseController
         Discussion::where('id', $reply->discussion_id)
             ->update(['best_answer_id' => $replyId]);
         $this->discussion = Discussion::with('category', 'replies', 'replies.user', 'replies.files')->findOrFail($reply->discussion_id);
-        $html = view('discussions.replies.show', $this->data)->render();
-        return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+
+
+        $userData = [];
+        $usersData = $reply->discussion->project->projectMembers;
+
+        foreach ($usersData as $user) {
+
+            $url = route('employees.show', [$user->slug]);
+
+            $userData[] = ['id' => $user->id, 'value' => $user->name, 'image' => $user->image_url, 'link' => $url];
+        }
+
+        $this->userData = $userData;
+
+        return $this->returnAjax('discussions.replies.show');
+
     }
 
 }

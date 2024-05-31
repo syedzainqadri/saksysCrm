@@ -34,19 +34,19 @@
                 <div class="col-lg-3">
                     <x-forms.datepicker fieldId="issue_date" fieldRequired="true"
                                         :fieldLabel="__('modules.employees.issueDate')" fieldName="issue_date"
-                                        :fieldValue="\Carbon\Carbon::now(company()->timezone)->format(company()->date_format)"
+                                        :fieldValue="now(company()->timezone)->format(company()->date_format)"
                                         :fieldPlaceholder="__('placeholders.date')"/>
                 </div>
 
                 <div class="col-lg-3">
                     <x-forms.datepicker fieldId="expiry_date" fieldRequired="true"
                                         :fieldLabel="__('modules.employees.expiryDate')" fieldName="expiry_date"
-                                        :fieldValue="\Carbon\Carbon::now(company()->timezone)->format(company()->date_format)"
+                                        :fieldValue="now(company()->timezone)->format(company()->date_format)"
                                         :fieldPlaceholder="__('placeholders.date')"/>
                 </div>
 
                 <div class="col-lg-12">
-                    <x-forms.file allowedFileExtensions="png jpg jpeg svg" class="mr-0 mr-lg-2 mr-md-2"
+                    <x-forms.file allowedFileExtensions="png jpg jpeg svg pdf doc docx" class="mr-0 mr-lg-2 mr-md-2"
                         :fieldLabel="__('modules.employees.scanCopy')" fieldName="file"
                         fieldId="file">
                     </x-forms.file>
@@ -60,8 +60,6 @@
     <x-forms.button-cancel data-dismiss="modal" class="border-0 mr-3">@lang('app.cancel')</x-forms.button-cancel>
     <x-forms.button-primary id="save-visa-form" icon="check">@lang('app.save')</x-forms.button-primary>
 </div>
-
-<script src="{{ asset('vendor/jquery/dropzone.min.js') }}"></script>
 
 <script>
 

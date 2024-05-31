@@ -52,8 +52,8 @@ $editImmigrationPermission = user()->permission('edit_immigration');
                         @lang('modules.employees.scanCopy')</p>
                     <p class="mb-0 text-dark-grey f-14 w-70">
                         @if($visa->file)
-                            <img data-toggle="tooltip" style="height:50px;"
-                            src="{{ $visa->image_url }}">
+                            <a target="_blank" class="text-dark-grey"
+                                href="{{ $visa->image_url }}"><i class="fa fa-external-link-alt"></i> <u>@lang('app.viewScanCopy')</u></a>
                         @else
                         --
                         @endif

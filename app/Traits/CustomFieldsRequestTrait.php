@@ -20,11 +20,10 @@ trait CustomFieldsRequestTrait
                 $customField = CustomField::findOrFail($id);
 
                 if ($customField->required == 'yes') {
-                    $rules['custom_fields_data.'.$key] = 'required';
+                    $rules['custom_fields_data.' . $key] = 'required';
 
-                    if($customField->type == 'file' && request()->hasFile('custom_fields_data.'.$key))
-                    {
-                        $rules['custom_fields_data.'.$key] = 'required|file|mimes:pdf,doc,docx,jpg,jpeg,png,webp,xls,xlsx,zip,rar,txt,svg,ppt,pptx,mp4,mp3,avi,flv,wmv,3gp,webm,psd,ai,eps,indd,svg,ttf,otf,woff,woff2,zip,rar,7z';
+                    if ($customField->type == 'file' && request()->hasFile('custom_fields_data.' . $key)) {
+                        $rules['custom_fields_data.' . $key] = 'required|file|mimes:pdf,doc,docx,jpg,jpeg,png,webp,xls,xlsx,zip,rar,txt,svg,ppt,pptx,mp4,mp3,avi,flv,wmv,3gp,webm,psd,ai,eps,indd,svg,ttf,otf,woff,woff2,zip,rar,7z';
                     }
                 }
             }
@@ -45,7 +44,7 @@ trait CustomFieldsRequestTrait
                 $customField = CustomField::findOrFail($id);
 
                 if ($customField->required == 'yes') {
-                    $attributes['custom_fields_data.'.$key] = $customField->label;
+                    $attributes['custom_fields_data.' . $key] = str($customField->label);
                 }
             }
         }

@@ -271,6 +271,10 @@
             max-width: 150px !important;
         }
 
+        .word-break {
+            word-wrap: break-word;
+            word-break: break-all;
+        }
     </style>
 </head>
 
@@ -284,7 +288,7 @@
                         @if (!is_null($invoice->project) && !is_null($invoice->project->client) && !is_null($invoice->project->client->clientDetails))
                             <small>@lang('modules.invoices.billedTo'):</small>
                             <h3 class="name">
-                                {{ mb_ucwords($invoice->project->client->clientDetails->company_name) }}</h3>
+                                {{ $invoice->project->client->clientDetails->company_name }}</h3>
                             <div class="mb-3">
                                 <b>@lang('app.address') :</b>
                                 <div>{!! nl2br($invoice->project->clientDetails->address) !!}</div>
@@ -301,7 +305,7 @@
                             @endif
                         @elseif(!is_null($invoice->client_id) && !is_null($invoice->clientDetails))
                             <small>@lang('modules.invoices.billedTo'):</small>
-                            <h3 class="name">{{ mb_ucwords($invoice->clientDetails->company_name) }}</h3>
+                            <h3 class="name">{{ $invoice->clientDetails->company_name }}</h3>
                             <div class="mb-3">
                                 <b>@lang('app.address') :</b>
                                 <div>{!! nl2br($invoice->clientDetails->address) !!}</div>
@@ -320,7 +324,7 @@
                         @if (is_null($invoice->project) && !is_null($invoice->estimate) && !is_null($invoice->estimate->client->clientDetails))
                             <small>@lang('modules.invoices.billedTo'):</small>
                             <h3 class="name">
-                                {{ mb_ucwords($invoice->estimate->client->clientDetails->company_name) }}</h3>
+                                {{ $invoice->estimate->client->clientDetails->company_name }}</h3>
                             <div class="mb-3">
                                 <b>@lang('app.address') :</b>
                                 <div>{!! nl2br($invoice->estimate->client->clientDetails->address) !!}</div>
@@ -350,7 +354,7 @@
                             <img src="{{ $invoiceSetting->logo_url }}" alt="home" class="dark-logo" />
                         </div>
                         <small>@lang('modules.invoices.generatedBy'):</small>
-                        <h3 class="name">{{ mb_ucwords(company()->company_name) }}</h3>
+                        <h3 class="name">{{ company()->company_name }}</h3>
                         @if (!is_null($settings))
                             <div>{!! nl2br(default_address()->address) !!}</div>
                             <div>{{ company()->company_phone }}</div>
@@ -371,13 +375,13 @@
                 @if ($creditNote)
                     <div class="">@lang('app.credit-note'): {{ $creditNote->cn_number }}</div>
                 @endif
-                <div class="date">@lang('app.menu.issues') @lang('app.date'):
+                <div class="date">@lang('app.menu.issuesDate'):
                     {{ $invoice->issue_date->translatedFormat(company()->date_format) }}</div>
                 @if ($invoice->status === 'unpaid')
                     <div class="date">@lang('app.dueDate'):
                         {{ $invoice->due_date->translatedFormat(company()->date_format) }}</div>
                 @endif
-                <div class="">@lang('app.status'): {{ mb_ucwords($invoice->status) }}</div>
+                <div class="">@lang('app.status'): {{ $invoice->status }}</div>
             </div>
 
         </div>
@@ -398,9 +402,9 @@
                         <tr style="page-break-inside: avoid;">
                             <td class="no">{{ ++$count }}</td>
                             <td class="desc">
-                                <h3>{{ ucfirst($item->item_name) }}</h3>
+                                <h3 class="word-break">{{ $item->item_name }}</h3>
                                 @if (!is_null($item->item_summary))
-                                    <p class="item-summary">{!! nl2br(strip_tags($item->item_summary, ['p', 'b', 'strong', 'a'])) !!}</p>
+                                    <p class="item-summary word-break">{!! nl2br(pdfStripTags($item->item_summary)) !!}</p>
                                 @endif
                             </td>
                             <td class="qty">
@@ -434,7 +438,7 @@
                         <td class="no">&nbsp;</td>
                         <td class="qty">&nbsp;</td>
                         <td class="qty">&nbsp;</td>
-                        <td class="desc">{{ mb_strtoupper($key) }}</td>
+                        <td class="desc">{{ $key }}</td>
                         <td class="unit">{{ number_format((float) $tax, 2, '.', '') }}</td>
                     </tr>
                 @endforeach
@@ -452,12 +456,12 @@
                     </tr>
                 @endif
                 <tr dontbreak="true">
-                    <td colspan="4">@lang('modules.invoices.total') @lang('modules.invoices.paid')</td>
+                    <td colspan="4">@lang('app.totalPaid')</td>
                     <td style="text-align: center">{{ number_format((float) $invoice->getPaidAmount(), 2, '.', '') }}
                     </td>
                 </tr>
                 <tr dontbreak="true">
-                    <td colspan="4">@lang('modules.invoices.total') @lang('modules.invoices.due')</td>
+                    <td colspan="4">@lang('app.totalDue')</td>
                     <td style="text-align: center">{{ number_format((float) $invoice->amountDue(), 2, '.', '') }}</td>
                 </tr>
             </tfoot>
@@ -474,6 +478,9 @@
                 @lang('modules.invoiceSettings.invoiceTerms')
                 <br>
                 {!! nl2br($invoiceSetting->invoice_terms) !!}
+            @endif
+            @if (isset($invoiceSetting->other_info))
+                <br>{!! nl2br($invoiceSetting->other_info) !!}
             @endif
 
         </p>

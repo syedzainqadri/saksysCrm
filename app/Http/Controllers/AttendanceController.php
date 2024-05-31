@@ -8,10 +8,12 @@ use App\Models\User;
 use App\Helper\Reply;
 use App\Models\Leave;
 use App\Models\Holiday;
-use Carbon\CarbonInterval;
 use Carbon\CarbonPeriod;
 use App\Models\Attendance;
+use Carbon\CarbonInterval;
+use App\Models\Designation;
 use App\Traits\ImportExcel;
+use App\Traits\EmployeeDashboard;
 use Illuminate\Http\Request;
 use App\Models\CompanyAddress;
 use App\Exports\AttendanceExport;
@@ -19,6 +21,7 @@ use App\Imports\AttendanceImport;
 use App\Jobs\ImportAttendanceJob;
 use App\Models\AttendanceSetting;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Models\EmployeeShiftSchedule;
 use App\Exports\AttendanceByMemberExport;
@@ -27,11 +30,14 @@ use App\Http\Requests\Attendance\StoreAttendance;
 use App\Http\Requests\Admin\Employee\ImportRequest;
 use App\Http\Requests\Attendance\StoreBulkAttendance;
 use App\Http\Requests\Admin\Employee\ImportProcessRequest;
-use App\Models\Designation;
+use App\Models\Company;
+use App\Models\LogTimeFor;
 
 class AttendanceController extends AccountBaseController
 {
-    use ImportExcel;
+    use ImportExcel, EmployeeDashboard {
+        EmployeeDashboard::attendanceShift as protected attendanceShiftFromTrait;
+    }
 
     public function __construct()
     {
@@ -131,7 +137,7 @@ class AttendanceController extends AccountBaseController
         }
 
         $employees = $employees->get();
-
+        $user = user();
         $this->holidays = Holiday::whereRaw('MONTH(holidays.date) = ?', [$request->month])->whereRaw('YEAR(holidays.date) = ?', [$request->year])->get();
 
         $final = [];
@@ -174,32 +180,58 @@ class AttendanceController extends AccountBaseController
 
             }
 
+            $firstAttendanceProcessed = [];
+
             foreach ($employee->attendance as $attendance) {
-                $clockInTime = Carbon::createFromFormat('Y-m-d H:i:s', $attendance->clock_in_time->timezone(company()->timezone)->toDateTimeString(), 'UTC');
+                $clockInTimeUTC = $attendance->clock_in_time->timezone(company()->timezone)->toDateTimeString();
+                $clockInTime = Carbon::createFromFormat('Y-m-d H:i:s', $clockInTimeUTC, 'UTC');
+                $startOfDayKey = $clockInTime->startOfDay()->toDateTimeString();
 
-                if (isset($shiftScheduleCollection[$clockInTime->copy()->startOfDay()->toDateTimeString()])) {
-                    $shiftStartTime = Carbon::parse($clockInTime->copy()->toDateString() . ' ' . $shiftScheduleCollection[$clockInTime->copy()->startOfDay()->toDateTimeString()]->shift->office_start_time);
-                    $shiftEndTime = Carbon::parse($clockInTime->copy()->toDateString() . ' ' . $shiftScheduleCollection[$clockInTime->copy()->startOfDay()->toDateTimeString()]->shift->office_end_time);
+                $shiftSchedule = $shiftScheduleCollection[$startOfDayKey] ?? null;
 
-                    if ($clockInTime->between($shiftStartTime, $shiftEndTime)) {
-                        $final[$employee->id . '#' . $employee->name][$clockInTime->day] = '<a href="javascript:;" data-toggle="tooltip" data-original-title="'.($attendance->employee_shift_id ? $attendance->shift->shift_name : __('app.present')).'" class="view-attendance" data-attendance-id="' . $attendance->id . '"><i class="fa fa-'.($attendance->half_day == 'yes' ? 'star-half-alt' : ($attendance->late == 'yes' ? 'exclamation-circle' : 'check')).' text-primary"></i></a>';
+                if ($shiftSchedule) {
+                    $shift = $shiftSchedule->shift;
+                    $shiftStartTime = Carbon::parse($clockInTime->toDateString() . ' ' . $shift->office_start_time);
+                    $shiftEndTime = Carbon::parse($clockInTime->toDateString() . ' ' . $shift->office_end_time);
 
-                    }
-                    else if ($attendance->employee_shift_id == $shiftScheduleCollection[$clockInTime->copy()->startOfDay()->toDateTimeString()]->shift->id) {
-                        $final[$employee->id . '#' . $employee->name][$clockInTime->day] = '<a href="javascript:;" data-toggle="tooltip" data-original-title="'.($attendance->employee_shift_id ? $attendance->shift->shift_name : __('app.present')).'" class="view-attendance" data-attendance-id="' . $attendance->id . '"><i class="fa fa-'.($attendance->half_day == 'yes' ? 'star-half-alt' : ($attendance->late == 'yes' ? 'exclamation-circle' : 'check')).' text-primary"></i></a>';
+                    // Determine if the attendance is within the shift time, the previous day's shift, or otherwise
+                    $isWithinShift = $clockInTime->between($shiftStartTime, $shiftEndTime);
+                    $isPreviousShift = $clockInTime->betweenIncluded($shiftStartTime->subDay(), $shiftEndTime->subDay());
+                    $isAssignedShift = $attendance->employee_shift_id == $shift->id;
 
-                    }
-                    elseif ($clockInTime->betweenIncluded($shiftStartTime->copy()->subDay(), $shiftEndTime->copy()->subDay())) {
-                        $final[$employee->id . '#' . $employee->name][$clockInTime->copy()->subDay()->day] = '<a href="javascript:;" data-toggle="tooltip" data-original-title="'.($attendance->employee_shift_id ? $attendance->shift->shift_name : __('app.present')).'" class="view-attendance" data-attendance-id="' . $attendance->id . '"><i class="fa fa-'.($attendance->half_day == 'yes' ? 'star-half-alt' : ($attendance->late == 'yes' ? 'exclamation-circle' : 'check')).' text-primary"></i></a>';
+                } else {
+                    $isWithinShift = $isPreviousShift = $isAssignedShift = false;
+                }
 
-                    }
-                    else {
-                        $final[$employee->id . '#' . $employee->name][$clockInTime->day] = '<a href="javascript:;" data-toggle="tooltip" data-original-title="'.($attendance->employee_shift_id ? $attendance->shift->shift_name : __('app.present')).'" class="view-attendance" data-attendance-id="' . $attendance->id . '"><i class="fa fa-'.($attendance->half_day == 'yes' ? 'star-half-alt' : ($attendance->late == 'yes' ? 'exclamation-circle' : 'check')).' text-primary"></i></a>';
-                    }
+                if (!isset($isHalfDay[$employee->id][$startOfDayKey]) && !isset($isLate[$employee->id][$startOfDayKey])) {
+                    $isHalfDay[$employee->id][$startOfDayKey] = $isLate[$employee->id][$startOfDayKey] = false;
+                }
+
+                // Check if this is the first attendance of the day for this employee
+                if (!isset($firstAttendanceProcessed[$employee->id][$startOfDayKey])) {
+                    $firstAttendanceProcessed[$employee->id][$startOfDayKey] = true; // Mark as processed
+
+                    // Apply "half day" or "late" logic only if it's the first attendance
+                    $isHalfDay[$employee->id][$startOfDayKey] = $attendance->half_day == 'yes';
+                    $isLate[$employee->id][$startOfDayKey] = $attendance->late == 'yes';
 
                 }
-                else {
-                    $final[$employee->id . '#' . $employee->name][$clockInTime->day] = '<a href="javascript:;" class="view-attendance" data-attendance-id="' . $attendance->id . '"><i class="fa fa-'.($attendance->half_day == 'yes' ? 'star-half-alt' : ($attendance->late == 'yes' ? 'exclamation-circle' : 'check')).' text-primary"></i></a>';
+
+                $iconClassKey = $isHalfDay[$employee->id][$startOfDayKey] ? 'star-half-alt text-red' : ($isLate[$employee->id][$startOfDayKey] ? 'exclamation-circle text-warning' : 'check text-success');
+
+                // Tooltip title based on attendance status or presence
+                $tooltipTitle = $attendance->employee_shift_id ? $attendance->shift->shift_name : __('app.present');
+
+                // Construct the attendance HTML once
+                $attendanceHtml = "<a href=\"javascript:;\" data-toggle=\"tooltip\" data-original-title=\"{$tooltipTitle}\" class=\"view-attendance\" data-attendance-id=\"{$attendance->id}\"><i class=\"fa fa-{$iconClassKey}\"></i></a>";
+
+                // Determine the day to assign the attendanceHtml
+                if ($isWithinShift || $isAssignedShift || $isPreviousShift) {
+                    $dayToAssign = $isPreviousShift ? $clockInTime->copy()->subDay()->day : $clockInTime->day;
+                    $final[$employee->id . '#' . $employee->name][$dayToAssign] = $attendanceHtml;
+
+                } else {
+                    $final[$employee->id . '#' . $employee->name][$clockInTime->day] = $attendanceHtml;
                 }
             }
 
@@ -246,9 +278,25 @@ class AttendanceController extends AccountBaseController
             }
 
             foreach ($this->holidays as $holiday) {
-                if ($final[$employee->id . '#' . $employee->name][$holiday->date->day] == 'Absent' || $final[$employee->id . '#' . $employee->name][$holiday->date->day] == '-') {
-                    $final[$employee->id . '#' . $employee->name][$holiday->date->day] = 'Holiday';
-                    $holidayOccasions[$holiday->date->day] = $holiday->occassion;
+                $departmentId = $employee->employeeDetails->department_id;
+                $designationId = $employee->employeeDetails->designation_id;
+                $employmentType = $employee->employeeDetails->employment_type;
+
+
+                $holidayDepartment = (!is_null($holiday->department_id_json)) ? json_decode($holiday->department_id_json) : [];
+                $holidayDesignation = (!is_null($holiday->designation_id_json)) ? json_decode($holiday->designation_id_json) : [];
+                $holidayEmploymentType = (!is_null($holiday->employment_type_json)) ? json_decode($holiday->employment_type_json) : [];
+
+                if (((in_array($departmentId, $holidayDepartment) || $holiday->department_id_json == null) &&
+                  (in_array($designationId, $holidayDesignation) || $holiday->designation_id_json == null) &&
+                  (in_array($employmentType, $holidayEmploymentType) || $holiday->employment_type_json == null))
+                  ) {
+
+
+                    if ($final[$employee->id . '#' . $employee->name][$holiday->date->day] == 'Absent' || $final[$employee->id . '#' . $employee->name][$holiday->date->day] == '-') {
+                        $final[$employee->id . '#' . $employee->name][$holiday->date->day] = 'Holiday';
+                        $holidayOccasions[$holiday->date->day] = $holiday->occassion;
+                    }
                 }
             }
         }
@@ -345,7 +393,6 @@ class AttendanceController extends AccountBaseController
         }
 
         $this->maxClockIn = $attendanceActivity->count() < $this->attendanceSettings->clockin_in_day;
-
         /** @phpstan-ignore-next-line */
         $this->totalTime = CarbonInterval::formatHuman($this->totalTime, true);
 
@@ -422,6 +469,7 @@ class AttendanceController extends AccountBaseController
         $attendance->late = ($request->has('late')) ? 'yes' : 'no';
         $attendance->half_day = ($request->has('halfday')) ? 'yes' : 'no';
         $attendance->save();
+
 
         return Reply::success(__('messages.attendanceSaveSuccess'));
     }
@@ -547,6 +595,18 @@ class AttendanceController extends AccountBaseController
             ]);
         }
         else {
+            $leave = Leave::where([
+                ['user_id', $request->user_id],
+                ['leave_date', $request->attendance_date]
+            ])
+            ->whereIn('duration', ['half day', 'single', 'multiple'])
+            ->whereIn('status', ['approved', 'pending'])
+            ->first();
+
+            if(isset($leave))
+            {
+                $leave->update(['status' => 'rejected']);
+            }
 
             // Check maximum attendance in a day
             if ($clockInCount < $this->attendanceSettings->clockin_in_day || $request->user_id) {
@@ -610,7 +670,7 @@ class AttendanceController extends AccountBaseController
         $userId = $request->userId;
 
         $attendances = Attendance::userAttendanceByDate($startDate, $endDate, $userId); // Getting Attendance Data
-        $holidays = Holiday::getHolidayByDates($startDate, $endDate); // Getting Holiday Data
+        $holidays = Holiday::getHolidayByDates($startDate, $endDate, $userId); // Getting Holiday Data
         $userId = $request->userId;
 
         $totalWorkingDays = $startDate->daysInMonth;
@@ -782,37 +842,26 @@ class AttendanceController extends AccountBaseController
             $clockOut = $clockOut->toDateTimeString();
         }
 
+        $period = [];
+
         if ($request->mark_attendance_by == 'month') {
             $startDate = Carbon::createFromFormat('d-m-Y', '01-' . $request->month . '-' . $request->year)->startOfMonth();
             $endDate = $startDate->copy()->endOfMonth();
-
-            $period = CarbonPeriod::create($startDate, $endDate);
-
-            $holidays = Holiday::getHolidayByDates($startDate->format('Y-m-d'), $endDate->format('Y-m-d'))->pluck('holiday_date')->toArray();
-
+            $multiDates = CarbonPeriod::create($startDate, $endDate);
         }
         else {
             $dates = explode(',', $request->multi_date);
-
             $multiDates = CarbonPeriod::create($dates[0], $dates[1]);
+        }
 
-            foreach($multiDates as $multiDate)
-            {
-                $dateRange[] = $multiDate->format('Y-m-d');
-            }
+        foreach($multiDates as $multiDate)
+        {
+            $dateRange[] = $multiDate->format('Y-m-d');
+        }
 
-            $period = [];
-            $holidays = [];
-
-            /** @phpstan-ignore-next-line */
-            foreach ($dateRange as $dateData) {
-                array_push($period, Carbon::parse($dateData));
-                $isHoliday = Holiday::checkHolidayByDate(Carbon::parse($dateData)->format('Y-m-d'));
-
-                if (!is_null($isHoliday)) {
-                    $holidays[] = $isHoliday->date->format('Y-m-d');
-                }
-            }
+        /** @phpstan-ignore-next-line */
+        foreach ($dateRange as $dateData) {
+            array_push($period, Carbon::parse($dateData));
         }
 
         $insertData = [];
@@ -820,29 +869,65 @@ class AttendanceController extends AccountBaseController
         $showClockIn = AttendanceSetting::first();
 
         foreach ($employees as $key => $userId) {
-            $userData = $employeeData->filter(function ($value) use ($userId) {
-                return $value->id == $userId;
-            })->first();
+            $userData = $employeeData->where('id', $userId)->first();
 
             if (request()->has('overwrite_attendance')) {
+                if ($request->mark_attendance_by == 'month') {
+                    $startDate = Carbon::createFromFormat('d-m-Y', '01-' . $request->month . '-' . $request->year)->startOfMonth();
+                    $endDate = $startDate->copy()->endOfMonth();
 
-                Attendance::where('user_id', $userId)->delete();
+                    Attendance::where('user_id', $userId)
+                        ->whereBetween('clock_in_time', [$startDate, $endDate])
+                        ->delete();
+                } else {
+                    $dates = explode(',', $request->multi_date);
+                    $startDate = Carbon::parse(trim($dates[0]));
+                    $endDate = Carbon::parse(trim($dates[1]));
 
+                    Attendance::where('user_id', $userId)
+                        ->whereBetween('clock_in_time', [$startDate, $endDate])
+                        ->delete();
+                }
             }
+
+            // Retrieve holidays based on employee details
+            $holidaysForUser = Holiday::where(function ($query) use ($userData) {
+                $query->where(function ($subquery) use ($userData) {
+                    $subquery->where(function ($q) use ($userData) {
+                        $q->where('department_id_json', 'like', '%"' . $userData->employeeDetails->department_id . '"%')
+                            ->orWhereNull('department_id_json');
+                    });
+                    $subquery->where(function ($q) use ($userData) {
+                        $q->where('designation_id_json', 'like', '%"' . $userData->employeeDetails->designation_id . '"%')
+                            ->orWhereNull('designation_id_json');
+                    });
+                    $subquery->where(function ($q) use ($userData) {
+                        $q->where('employment_type_json', 'like', '%"' . $userData->employeeDetails->employment_type . '"%')
+                            ->orWhereNull('employment_type_json');
+                    });
+                });
+            })->get();
 
             foreach ($period as $date) {
 
-                $leaveDates = Leave::where('user_id', $userId)
+                $leave = Leave::where('user_id', $userId)
                     ->where('leave_date', $date)
                     ->where('status', 'approved')
-                    ->pluck('leave_date')->toArray();
+                    ->first();
 
-                if(isset($leaveDates[0])) {
+                if(isset($leave)) {
 
-                    if($date->format('Y-m-d') == $leaveDates[0]->format('Y-m-d')) {
+                    if(!is_null($leave->half_day_type) && $request->half_day == 'no')
+                    {
+                        $leave->update(['status' => 'rejected']);
+                    }
+
+                    if($date->format('Y-m-d') == $leave->leave_date->format('Y-m-d') && is_null($leave->half_day_type)) {
                         continue;
                     }
                 }
+
+                $holiday = $holidaysForUser->where('date', $date)->first();
 
                 $this->attendanceSettings = $this->attendanceShift($showClockIn, $userId, $date, $request->clock_in_time);
 
@@ -853,7 +938,7 @@ class AttendanceController extends AccountBaseController
                 if (is_null($attendance)
                 && $date->greaterThanOrEqualTo($userData->employeeDetail->joining_date)
                 && $date->lessThanOrEqualTo($currentDate)
-                && !in_array($date->format('Y-m-d'), $holidays)
+                && !$holiday
                 && $this->attendanceSettings->shift_name != 'Day Off'
                 ) { // Attendance should not exist for the user for the same date
 
@@ -864,7 +949,7 @@ class AttendanceController extends AccountBaseController
                     $clockOut->setTimezone('UTC');
 
                     if ($clockIn->gt($clockOut) && !is_null($clockOut)) {
-                        
+
                         $clockOut = $clockOut->addDay();
                     }
 
@@ -888,7 +973,6 @@ class AttendanceController extends AccountBaseController
                 }
             }
         }
-
         Attendance::insertOrIgnore($insertData);
 
         $redirectUrl = urldecode($request->redirect_url);
@@ -898,6 +982,55 @@ class AttendanceController extends AccountBaseController
         }
 
         return Reply::redirect($redirectUrl, __('messages.attendanceSaveSuccess'));
+    }
+
+    public function checkHalfDay(Request $request)
+    {
+        if($request->type == 'bulkMark')
+        {
+            $startDate = Carbon::createFromFormat('d-m-Y', '01-' . $request->month . '-' . $request->year)->startOfMonth();
+            $endDate = $startDate->copy()->endOfMonth();
+            $period = CarbonPeriod::create($startDate, $endDate);
+
+            $dates = [];
+
+            foreach($period as $date)
+            {
+                $dates[] = $date;
+            }
+
+            if ($request->has('user_id') && $request->user_id !== null) {
+                $leaves = Leave::whereIn('user_id', $request->user_id)->whereIn('leave_date', $dates)->where('duration', 'half day')->get();
+            }
+
+            if(isset($leaves) && $leaves->isNotEmpty())
+            {
+                $this->halfDayExist = true;
+                $this->requestedHalfDay = $request->half_day;
+            }
+
+            return reply::dataOnly($this->data);
+        }
+        else
+        {
+            $leave = Leave::where([
+                ['user_id', $request->user_id],
+                ['leave_date', $request->attendance_date],
+                ['duration', 'half day']
+                ])->first();
+
+            if(isset($leave))
+            {
+                $halfDay = $request->halfday == null ? 'no' : 'yes';
+                $this->halfDayExist = true;
+                $this->requestedHalfDay = $halfDay;
+                $this->user = $leave->user->name;
+
+            }
+
+            return reply::dataOnly($this->data);
+        }
+
     }
 
     public function destroy($id)
@@ -949,6 +1082,8 @@ class AttendanceController extends AccountBaseController
 
     public function exportAttendanceByMember($year, $month, $id)
     {
+        abort_403(!canDataTableExport());
+
         $startDate = Carbon::createFromFormat('d-m-Y', '01-' . $month . '-' . $year)->startOfMonth()->startOfDay();
         $endDate = $startDate->copy()->endOfMonth()->endOfDay();
         $obj = User::findOrFail($id);
@@ -959,6 +1094,8 @@ class AttendanceController extends AccountBaseController
 
     public function exportAllAttendance($year, $month, $id, $department, $designation)
     {
+        abort_403(!canDataTableExport());
+
         $startDate = Carbon::createFromFormat('d-m-Y', '01-' . $month . '-' . $year)->startOfMonth()->startOfDay();
         $endDate = $startDate->copy()->endOfMonth()->endOfDay();
 
@@ -985,7 +1122,7 @@ class AttendanceController extends AccountBaseController
             $this->employees = User::allEmployees(null, true, ($this->viewAttendancePermission == 'all' ? 'all' : null));
         }
 
-        $now = Carbon::now(company()->timezone);
+        $now = now(company()->timezone);
         $this->year = $now->format('Y');
         $this->month = $now->format('m');
         $this->departments = Team::all();
@@ -1090,9 +1227,9 @@ class AttendanceController extends AccountBaseController
 
             foreach ($employee->attendance as $index => $attendance) {
 
-                $from = $attendance->clock_in_time ?: null;
+                $from = $attendance->clock_in_time?->timezone(company()->timezone);
 
-                $defaultEndDateAndTime = Carbon::createFromFormat('Y-m-d H:i:s', $attendance->clock_in_time->format('Y-m-d') . ' ' . attendance_setting()->shift->office_end_time);
+                $defaultEndDateAndTime = Carbon::createFromFormat('Y-m-d H:i:s', $from?->format('Y-m-d') . ' ' . attendance_setting()->shift->office_end_time, company()->timezone);
 
                 $to = $attendance->clock_out_time ?: $defaultEndDateAndTime;
 
@@ -1169,9 +1306,25 @@ class AttendanceController extends AccountBaseController
             }
 
             foreach ($this->holidays as $holiday) {
-                if ($final[$employee->id . '#' . $employee->name][$holiday->date->day] == 'Absent' || $final[$employee->id . '#' . $employee->name][$holiday->date->day] == '-') {
-                    $final[$employee->id . '#' . $employee->name][$holiday->date->day] = 'Holiday';
-                    $holidayOccasions[$holiday->date->day] = $holiday->occassion;
+                $departmentId = $employee->employeeDetails->department_id;
+                $designationId = $employee->employeeDetails->designation_id;
+                $employmentType = $employee->employeeDetails->employment_type;
+
+
+                $holidayDepartment = (!is_null($holiday->department_id_json)) ? json_decode($holiday->department_id_json) : [];
+                $holidayDesignation = (!is_null($holiday->designation_id_json)) ? json_decode($holiday->designation_id_json) : [];
+                $holidayEmploymentType = (!is_null($holiday->employment_type_json)) ? json_decode($holiday->employment_type_json) : [];
+
+                if (((in_array($departmentId, $holidayDepartment) || $holiday->department_id_json == null) &&
+                  (in_array($designationId, $holidayDesignation) || $holiday->designation_id_json == null) &&
+                  (in_array($employmentType, $holidayEmploymentType) || $holiday->employment_type_json == null))
+                  ) {
+
+
+                    if ($final[$employee->id . '#' . $employee->name][$holiday->date->day] == 'Absent' || $final[$employee->id . '#' . $employee->name][$holiday->date->day] == '-') {
+                        $final[$employee->id . '#' . $employee->name][$holiday->date->day] = 'Holiday';
+                        $holidayOccasions[$holiday->date->day] = $holiday->occassion;
+                    }
                 }
             }
         }
@@ -1210,7 +1363,7 @@ class AttendanceController extends AccountBaseController
             ->join('roles', 'roles.id', '=', 'role_user.role_id')
             ->leftJoin('employee_details', 'employee_details.user_id', '=', 'users.id')
             ->select('attendances.*')
-            ->whereDate('clock_in_time', Carbon::createFromFormat($this->company->date_format, $request->attendance_date)->toDateString())
+            ->whereDate('clock_in_time', companyToDateString($request->attendance_date))
             ->whereNotNull('latitude')
             ->whereNotNull('longitude');
 
@@ -1299,6 +1452,331 @@ class AttendanceController extends AccountBaseController
         $this->attendanceUser = User::findOrFail($userID);
 
         return view('attendances.ajax.add_user_attendance', $this->data);
+    }
+
+    public function qrCodeStatus(Request $request)
+    {
+
+        $attendanceSetting = AttendanceSetting::first();
+        $attendanceSetting->qr_enable = $request->qr_status;
+        $attendanceSetting->save();
+
+        return Reply::success('Success');
+    }
+
+    public function qrClockInOut(Request $request)
+    {
+
+        // Check if the user is authenticated
+        if (!Auth::check()) {
+            return redirect()->route('login')->with('info', 'Please log in to clock in.');
+        }
+
+        // Retrieve the authenticated user
+        $user = Auth::user();
+
+        // Check if the user is already clocked in for today
+        $todayAttendance = Attendance::where('user_id', $user->id)
+                                      ->whereDate('clock_in_time', now()->format('Y-m-d'))
+                                      ->whereNull('clock_out_time')
+                                      ->first();
+
+        $companies = Company::select('id', 'timezone')->get();
+        $outtimeDate = null;
+        $intimeDate = null;
+
+        foreach ($companies as $company) {
+            $trackerReminder = LogTimeFor::where('company_id', $company->id)->first();
+
+            // $startDateTime = Carbon::parse($currentDay . ' ' . $trackerReminder->time);
+            $currentTime = now()->timezone($company->timezone);
+            $time = $currentTime->format('h:i A');
+            // dd($currentTime);
+
+            if ($todayAttendance) {
+                // User is already clocked in, so clock them out
+                $this->clockOutUser($todayAttendance);
+                $message = __('messages.attendanceClockOutSuccess');
+                $clockInTime = $todayAttendance->clock_in_time;
+                $intime = Carbon::parse($clockInTime)->timezone($company->timezone);
+                $intimeDate = $intime->format('h:i A');
+
+                $clockOutTime = $todayAttendance->clock_out_time;
+                $outtime = Carbon::parse($clockOutTime)->timezone($company->timezone);
+                $outtimeDate = $outtime->format('h:i A');
+
+                // dd($todayAttendance->clock_in_time);
+                // $totalWorkingTime = Carbon::parse($intime)->diffForHumans($outtime);
+                $workingintime = Carbon::parse($clockInTime); // Assuming $clockInTime is already a Carbon instance
+                $workingouttime = Carbon::parse($todayAttendance->clock_out_time); // Assuming $todayAttendance->clock_out_time is already a Carbon instance
+
+                $totalWorkingTime = $workingintime->diff($workingouttime)->format('%h hours %i minutes');
+
+
+            } else {
+                $attendanceSetting = AttendanceSetting::first();
+                // Check if attendance setting status is enabled
+                if ($attendanceSetting->qr_enable == 1) {
+                    // User is not clocked in for today, so clock them in
+                    $res = $this->clockInUser($user, $request);
+
+                    if (isset($res['type']) && $res['type'] == 'success') {
+                        // Clock in successful, set success message
+                        $message = __('messages.attendanceClockInSuccess');
+                        $clockInTime = $todayAttendance->clock_in_time->format('h:i A');
+                        $clockOutTime = null;
+                        $totalWorkingTime = null;
+                    } else {
+                        // Clock in failed, set error message
+                        $message = $res['message'] ?? __('messages.attendanceClockInFailed');
+                        $clockInTime = null;
+                        $clockOutTime = null;
+                        $totalWorkingTime = null;
+                    }
+                } else {
+                    // Attendance feature is not enabled, prevent user from clocking in
+                    return redirect()->route('dashboard')->with('error', __('Attendance feature is currently disabled.'));
+                }
+            }
+        }
+
+        // Pass the message and other details to the view and return the view
+        return view('attendance-settings.ajax.qrview', compact('message', 'intimeDate', 'outtimeDate', 'totalWorkingTime', 'todayAttendance', 'time'));
+
+    }
+
+    private function clockInUser($user, $request)
+    {
+        $now = now();
+        $showClockIn = AttendanceSetting::first();
+
+        // Retrieve attendance settings
+        $this->attendanceSettings = $this->attendanceShiftqr($showClockIn);
+
+        // Construct start and end timestamps
+        $startTimestamp = now()->format('Y-m-d') . ' ' . $this->attendanceSettings->office_start_time;
+        $endTimestamp = now()->format('Y-m-d') . ' ' . $this->attendanceSettings->office_end_time;
+        $officeStartTime = Carbon::createFromFormat('Y-m-d H:i:s', $startTimestamp, $this->company->timezone);
+        $officeEndTime = Carbon::createFromFormat('Y-m-d H:i:s', $endTimestamp, $this->company->timezone);
+
+        // Check if the user can clock in
+        if ($showClockIn->show_clock_in_button == 'yes') {
+            $officeEndTime = now();
+        }
+        $officeStartTime = $officeStartTime->setTimezone('UTC');
+        $officeEndTime = $officeEndTime->setTimezone('UTC');
+        if ($officeStartTime->gt($officeEndTime)) {
+            $officeEndTime->addDay();
+        }
+
+        $this->cannotLogin = false;
+        $clockInCount = Attendance::getTotalUserClockInWithTime($officeStartTime, $officeEndTime, $this->user->id);
+
+        // Adjust timestamps based on office start and end times
+        // $officeStartTime = Carbon::createFromFormat('Y-m-d H:i:s', $startTimestamp, $this->company->timezone)
+        //     ->setTimezone('UTC');
+        // $officeEndTime = Carbon::createFromFormat('Y-m-d H:i:s', $endTimestamp, $this->company->timezone)
+        //     ->setTimezone('UTC');
+        //     $lateTime = $officeStartTime->addMinutes($this->attendanceSettings->late_mark_duration);
+        //     $checkTodayAttendance = Attendance::where('user_id', $this->user->id)
+        //     ->where(DB::raw('DATE(attendances.clock_in_time)'), '=', $now->format('Y-m-d'))->first();
+
+
+        // Check if the user is allowed to clock in based on settings
+        if ($showClockIn->employee_clock_in_out == 'yes') {
+
+            // Check if it's too early to clock in
+            if (is_null($this->attendanceSettings->early_clock_in) && !$now->between($officeStartTime, $officeEndTime) && $showClockIn->show_clock_in_button == 'no') {
+                $this->cannotLogin = true;
+            } else {
+                $earlyClockIn = now(company()->timezone)->addMinutes($this->attendanceSettings->early_clock_in);
+                $earlyClockIn = $earlyClockIn->setTimezone('UTC');
+
+                if ($earlyClockIn->gte($officeStartTime) || $showClockIn->show_clock_in_button == 'yes') {
+                    $this->cannotLogin = false;
+                } else {
+                    $this->cannotLogin = true;
+                }
+            }
+
+            // Check if the user can clock in from previous day
+            if ($this->cannotLogin && now()->betweenIncluded($officeStartTime->copy()->subDay(), $officeEndTime->copy()->subDay())) {
+                $this->cannotLogin = false;
+                $clockInCount = Attendance::getTotalUserClockInWithTime($officeStartTime->copy()->subDay(), $officeEndTime->copy()->subDay(), $this->user->id);
+
+            }
+        } else {
+            $this->cannotLogin = true;
+        }
+
+        // dd($this->cannotLogin);
+        // Abort if user cannot login
+        abort_403($this->cannotLogin);
+        // dd('kk2');
+        // Check user by IP
+        if (attendance_setting()->ip_check == 'yes') {
+            $ips = (array)json_decode(attendance_setting()->ip_address);
+            if (!in_array($request->ip(), $ips)) {
+                return ['type' => 'error', 'message' => __('messages.notAnAuthorisedDevice')];
+                //Reply::error(__('messages.notAnAuthorisedDevice'));
+            }
+        }
+
+        // Check user by location
+        if (attendance_setting()->radius_check == 'yes') {
+            $checkRadius = $this->isWithinRadius($request);
+            if (!$checkRadius) {
+                return ['type' => 'error', 'message' => __('messages.notAnValidLocation')];
+
+                // return Reply::error(__('messages.notAnValidLocation'));
+            }
+        }
+
+        // Check maximum attendance in a day
+        $clockInCount = Attendance::getTotalUserClockInWithTime($officeStartTime, $officeEndTime, $user->id);
+
+        if ($clockInCount >= $this->attendanceSettings->clockin_in_day) {
+            return ['type' => 'error', 'message' => __('messages.maxClockin')];
+
+            // return Reply::error(__('messages.maxClockin'));
+
+        }
+        if ($this->attendanceSettings->halfday_mark_time) {
+            $halfDayTimestamp = $now->format('Y-m-d') . ' ' . $this->attendanceSettings->halfday_mark_time;
+            $halfDayTimestamp = Carbon::createFromFormat('Y-m-d H:i:s', $halfDayTimestamp, $this->company->timezone);
+            $halfDayTimestamp = $halfDayTimestamp->setTimezone('UTC');
+            $halfDayTimestamp = $halfDayTimestamp->timestamp;
+        }
+
+
+
+        $timestamp = $now->format('Y-m-d') . ' ' . $this->attendanceSettings->office_start_time;
+        $officeStartTime = Carbon::createFromFormat('Y-m-d H:i:s', $timestamp, $this->company->timezone);
+        $officeStartTime = $officeStartTime->setTimezone('UTC');
+
+        $lateTime = $officeStartTime->addMinutes($this->attendanceSettings->late_mark_duration);
+
+        $checkTodayAttendance = Attendance::where('user_id', $this->user->id)
+            ->where(DB::raw('DATE(attendances.clock_in_time)'), '=', $now->format('Y-m-d'))->first();
+
+        // Save the attendance record
+        $attendance = new Attendance();
+        $attendance->user_id = $user->id;
+        $attendance->clock_in_time = $now;
+        $attendance->clock_in_ip = request()->ip();
+        $attendance->location_id = $request->location;
+        $attendance->work_from_type = 'office';
+        // Add more attributes as necessary...
+        if ($now->gt($lateTime)) {
+            $attendance->late = 'yes';
+        }
+
+        $leave = Leave::where('leave_date', $attendance->clock_in_time->format('Y-m-d'))
+            ->where('user_id', $this->user->id)->first();
+
+        if (isset($leave) && !is_null($leave->half_day_type)) {
+            $attendance->half_day = 'yes';
+        }
+        else {
+            $attendance->half_day = 'no';
+        }
+        $currentTimestamp = $now->setTimezone('UTC');
+        $currentTimestamp = $currentTimestamp->timestamp;;
+
+        // Check day's first record and half day time
+        if (
+            !is_null($this->attendanceSettings->halfday_mark_time)
+            && is_null($checkTodayAttendance)
+            && isset($halfDayTimestamp)
+            && ($currentTimestamp > $halfDayTimestamp)
+            && ($showClockIn->show_clock_in_button == 'no')
+        ) {
+            $attendance->half_day = 'yes';
+        }
+
+        $currentLatitude = $request->currentLatitude;
+        $currentLongitude = $request->currentLongitude;
+
+        if ($currentLatitude != '' && $currentLongitude != '') {
+            $attendance->latitude = $currentLatitude;
+            $attendance->longitude = $currentLongitude;
+        }
+
+        $attendance->employee_shift_id = $this->attendanceSettings->id;
+
+        $attendance->shift_start_time = $attendance->clock_in_time->toDateString() . ' ' . $this->attendanceSettings->office_start_time;
+
+        if (Carbon::parse($this->attendanceSettings->office_start_time)->gt(Carbon::parse($this->attendanceSettings->office_end_time))) {
+            $attendance->shift_end_time = $attendance->clock_in_time->addDay()->toDateString() . ' ' . $this->attendanceSettings->office_end_time;
+
+        }
+        else {
+            $attendance->shift_end_time = $attendance->clock_in_time->toDateString() . ' ' . $this->attendanceSettings->office_end_time;
+        }
+
+        $attendance->save();
+        return Reply::successWithData(__('messages.attendanceClockInSuccess'), ['time' => $now->format('h:i A'), 'ip' => $attendance->clock_in_ip, 'working_from' => $attendance->working_from]);
+
+
+        // return ['type' => 'success', 'message' => __('messages.attendanceSaveSuccess')];
+
+        // return Reply::successWithData(__('messages.attendanceSaveSuccess'), [
+        //     'time' => $now->format('h:i A'),
+        //     'ip' => $attendance->clock_in_ip,
+        //     'working_from' => $attendance->working_from
+        // ]);
+    }
+
+    private function clockOutUser($attendance)
+    {
+        // Update clock-out time
+        $attendance->update(['clock_out_time' => now()]);
+    }
+
+    public function attendanceShiftqr($defaultAttendanceSettings)
+    {
+        $checkPreviousDayShift = EmployeeShiftSchedule::with('shift')->where('user_id', user()->id)
+            ->where('date', now(company()->timezone)->subDay()->toDateString())
+            ->first();
+
+        $checkTodayShift = EmployeeShiftSchedule::with('shift')->where('user_id', user()->id)
+            ->where('date', now(company()->timezone)->toDateString())
+            ->first();
+
+        $backDayFromDefault = Carbon::parse(now(company()->timezone)->subDay()->format('Y-m-d') . ' ' . $defaultAttendanceSettings->office_start_time);
+
+        $backDayToDefault = Carbon::parse(now(company()->timezone)->subDay()->format('Y-m-d') . ' ' . $defaultAttendanceSettings->office_end_time);
+
+        if ($backDayFromDefault->gt($backDayToDefault)) {
+            $backDayToDefault->addDay();
+        }
+
+        $nowTime = Carbon::createFromFormat('Y-m-d H:i:s', now(company()->timezone)->toDateTimeString(), 'UTC');
+
+        if ($checkPreviousDayShift && $nowTime->betweenIncluded($checkPreviousDayShift->shift_start_time, $checkPreviousDayShift->shift_end_time)) {
+            $attendanceSettings = $checkPreviousDayShift;
+
+        }
+        else if ($nowTime->betweenIncluded($backDayFromDefault, $backDayToDefault)) {
+            $attendanceSettings = $defaultAttendanceSettings;
+
+        }
+        else if ($checkTodayShift &&
+            ($nowTime->betweenIncluded($checkTodayShift->shift_start_time, $checkTodayShift->shift_end_time)
+                || $nowTime->gt($checkTodayShift->shift_end_time)
+                || (!$nowTime->betweenIncluded($checkTodayShift->shift_start_time, $checkTodayShift->shift_end_time) && $defaultAttendanceSettings->show_clock_in_button == 'no'))
+        ) {
+            $attendanceSettings = $checkTodayShift;
+        }
+        else if ($checkTodayShift && !is_null($checkTodayShift->shift->early_clock_in)) {
+            $attendanceSettings = $checkTodayShift;
+        }
+        else {
+            $attendanceSettings = $defaultAttendanceSettings;
+        }
+
+        return $attendanceSettings->shift;
+
     }
 
 }

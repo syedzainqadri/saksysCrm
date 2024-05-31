@@ -2,6 +2,9 @@
 
 namespace App\Models;
 
+use App\Traits\HasMaskImage;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -63,6 +66,7 @@ use Illuminate\Support\Facades\Schema;
  * @property-read mixed $favicon_url
  * @property-read mixed $icon
  * @property-read mixed $light_logo_url
+ * @property-read mixed $masked_default_logo
  * @property-read mixed $login_background_url
  * @property-read mixed $logo_url
  * @property-read mixed $moment_date_format
@@ -230,12 +234,15 @@ use Illuminate\Support\Facades\Schema;
  * @method static \Illuminate\Database\Eloquent\Builder|Company whereShowNewWebhookAlert($value)
  * @property string $auth_theme_text
  * @method static \Illuminate\Database\Eloquent\Builder|Company whereAuthThemeText($value)
+ * @property int $employee_can_export_data
+ * @method static \Illuminate\Database\Eloquent\Builder|Company whereEmployeeCanExportData($value)
  * @mixin \Eloquent
  */
 class Company extends BaseModel
 {
 
     use HasFactory;
+    use HasMaskImage;
 
     protected $table = 'companies';
 
@@ -275,7 +282,7 @@ class Company extends BaseModel
             return global_setting()->light_logo_url;
         }
 
-        return asset_url_local_s3('app-logo/' . $this->light_logo, true, 'image');
+        return asset_url_local_s3('app-logo/' . $this->light_logo);
 
     }
 
@@ -285,7 +292,7 @@ class Company extends BaseModel
             return global_setting()->dark_logo_url;
         }
 
-        return asset_url_local_s3('app-logo/' . $this->logo, true, 'image');
+        return asset_url_local_s3('app-logo/' . $this->logo);
     }
 
     public function getLightLogoUrlAttribute()
@@ -294,7 +301,7 @@ class Company extends BaseModel
             return global_setting()->light_logo_url;
         }
 
-        return asset_url_local_s3('app-logo/' . $this->light_logo, true, 'image');
+        return asset_url_local_s3('app-logo/' . $this->light_logo);
     }
 
     public function getDarkLogoUrlAttribute()
@@ -304,7 +311,7 @@ class Company extends BaseModel
             return asset('img/worksuite-logo.png');
         }
 
-        return asset_url_local_s3('app-logo/' . $this->logo, true, 'image');
+        return asset_url_local_s3('app-logo/' . $this->logo);
     }
 
     public function getLoginBackgroundUrlAttribute()
@@ -317,10 +324,108 @@ class Company extends BaseModel
         return asset_url_local_s3('login-background/' . $this->login_background);
     }
 
+    public function maskedDefaultLogo(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                if (is_null($this->logo)) {
+                    return global_setting()->dark_logo_url;
+                }
+
+                return $this->generateMaskedImageAppUrl('app-logo/' . $this->logo);
+            },
+        );
+
+    }
+
+    public function maskedLogoUrl(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                if (user()) {
+                    if (user()->dark_theme) {
+                        return $this->masked_default_logo;
+                    }
+                }
+
+                if (company() && company()->auth_theme == 'dark') {
+                    return $this->masked_default_logo;
+
+                }
+
+                if (is_null($this->light_logo)) {
+                    return global_setting()->light_logo_url;
+                }
+
+                return $this->generateMaskedImageAppUrl('app-logo/' . $this->light_logo);
+            },
+        );
+    }
+
+    public function maskedLightLogoUrl(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                if (is_null($this->light_logo)) {
+                    return global_setting()->light_logo_url;
+                }
+
+                return $this->generateMaskedImageAppUrl('app-logo/' . $this->light_logo);
+            },
+        );
+
+    }
+
+    public function maskedDarkLogoUrl(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                if (is_null($this->logo)) {
+                    return asset('img/worksuite-logo.png');
+                }
+
+                return $this->generateMaskedImageAppUrl('app-logo/' . $this->logo);
+            },
+        );
+
+    }
+
+    public function maskedLoginBackgroundUrl(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                if (is_null($this->login_background) || $this->login_background == 'login-background.jpg') {
+                    return null;
+                }
+
+                return $this->generateMaskedImageAppUrl('login-background/' . $this->login_background);
+            },
+        );
+
+    }
+
+    public function maskedFaviconUrl(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                if (is_null($this->favicon)) {
+                    return global_setting()->favicon_url;
+                }
+
+                return $this->generateMaskedImageAppUrl('favicon/' . $this->favicon);
+            },
+        );
+
+    }
+
     public function getMomentDateFormatAttribute()
     {
-
         return isset($this->date_format) ? self::DATE_FORMATS[$this->date_format] : null;
+    }
+
+    public function scopeActive(Builder $query): void
+    {
+        $query->where('companies.status', 'active');
     }
 
     public function getFaviconUrlAttribute()
@@ -447,7 +552,7 @@ class Company extends BaseModel
         return $this->HasOne(SlackSetting::class);
     }
 
-    public function fileStorage()
+    public function fileStorage(): HasMany
     {
         return $this->hasMany(FileStorage::class);
     }
@@ -459,49 +564,54 @@ class Company extends BaseModel
         }
     }
 
-    public function clients()
+    public function clients(): HasMany
     {
         return $this->hasMany(User::class)->whereHas('ClientDetails');
     }
 
-    public function invoices()
+    public function invoices(): HasMany
     {
         return $this->hasMany(Invoice::class);
     }
 
-    public function estimates()
+    public function estimates(): HasMany
     {
         return $this->hasMany(Estimate::class);
     }
 
-    public function projects()
+    public function projects(): HasMany
     {
         return $this->hasMany(Project::class);
     }
 
-    public function tasks()
+    public function tasks(): HasMany
     {
         return $this->hasMany(Task::class);
     }
 
-    public function leads()
+    public function leads(): HasMany
     {
-        return $this->hasMany(Lead::class);
+        return $this->hasMany(Deal::class);
     }
 
-    public function orders()
+    public function orders(): HasMany
     {
         return $this->hasMany(Order::class);
     }
 
-    public function tickets()
+    public function tickets(): HasMany
     {
         return $this->hasMany(Ticket::class);
     }
 
-    public function contracts()
+    public function contracts(): HasMany
     {
         return $this->hasMany(Contract::class);
+    }
+
+    public function events(): HasMany
+    {
+        return $this->hasMany(Event::class);
     }
 
 }

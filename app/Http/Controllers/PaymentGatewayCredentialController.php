@@ -75,9 +75,7 @@ class PaymentGatewayCredentialController extends AccountBaseController
         $this->activeTab = $tab ?: 'paypal';
 
         if (request()->ajax()) {
-            $html = view($this->view, $this->data)->render();
-
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
 
         return view('payment-gateway-settings.index', $this->data);
@@ -169,11 +167,14 @@ class PaymentGatewayCredentialController extends AccountBaseController
         if ($request->razorpay_mode == 'test') {
             $credential->test_razorpay_key = $request->test_razorpay_key;
             $credential->test_razorpay_secret = $request->test_razorpay_secret;
+            $credential->test_razorpay_webhook_secret = $request->test_razorpay_webhook_secret;
         }
         else {
             $credential->live_razorpay_key = $request->live_razorpay_key;
             $credential->live_razorpay_secret = $request->live_razorpay_secret;
+            $credential->live_razorpay_webhook_secret = $request->live_razorpay_webhook_secret;
         }
+
 
         $credential->razorpay_mode = $request->razorpay_mode;
         $credential->razorpay_status = ($request->razorpay_status) ? 'active' : 'inactive';

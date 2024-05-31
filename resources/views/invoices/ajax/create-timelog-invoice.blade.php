@@ -2,8 +2,8 @@
 <div class="bg-white rounded b-shadow-4 create-inv">
     <!-- HEADING START -->
     <div class="px-lg-4 px-md-4 px-3 py-3">
-        <h4 class="mb-0 f-21 font-weight-normal text-capitalize">@lang('app.create') @lang('app.timeLog')
-            @lang('app.invoice')</h4>
+        <h4 class="mb-0 f-21 font-weight-normal text-capitalize">@lang('app.createTimeLogInvoice')
+            </h4>
     </div>
     <!-- HEADING END -->
     <hr class="m-0 border-top-grey">
@@ -49,7 +49,7 @@
                             <select class="form-control select-picker" data-live-search="true" data-size="8"
                                 name="project_id" id="project_id">
                                 @foreach ($projects as $project)
-                                    <option value="{{ $project->id }}">{{ mb_ucwords($project->project_name) }}
+                                    <option value="{{ $project->id }}">{{ $project->project_name }}
                                     </option>
                                 @endforeach
                             </select>
@@ -82,7 +82,7 @@
                         <input type="text" id="invoice_date" name="issue_date"
                             class="px-6 position-relative text-dark font-weight-normal form-control height-35 rounded p-0 text-left f-15"
                             placeholder="@lang('placeholders.date')"
-                            value="{{ Carbon\Carbon::now(company()->timezone)->format(company()->date_format) }}">
+                            value="{{ now(company()->timezone)->format(company()->date_format) }}">
                     </div>
                 </div>
             </div>
@@ -96,7 +96,7 @@
                         <input type="text" id="due_date" name="due_date"
                             class="px-6 position-relative text-dark font-weight-normal form-control height-35 rounded p-0 text-left f-15"
                             placeholder="@lang('placeholders.date')"
-                            value="{{ Carbon\Carbon::now(company()->timezone)->addDays($invoiceSetting->due_after)->format(company()->date_format) }}">
+                            value="{{ now(company()->timezone)->addDays($invoiceSetting->due_after)->format(company()->date_format) }}">
                     </div>
                 </div>
             </div>
@@ -396,9 +396,9 @@
 
                     $('#client_company_div').html(data.html);
                     $('#select_currency_id').html(data.currency);
-                    $('#exchange_rate').val(data.exchangeRate);
-                    $('#currency_exchange').html('( ' + companyCurrencyName +
-                        ' @lang('app.to') ' + data.currencyName + ' )');
+                    $('#exchange_rate').val(1/data.exchangeRate);
+                    let currencyExchange = (companyCurrencyName != data.currencyName) ? '( ' + data.currencyName + ' @lang('app.to') ' + companyCurrencyName + ' )' : '';
+                    $('#currency_exchange').html(currencyExchange);
                     if ($('#show_shipping_address').prop('checked') === true) {
                         checkShippingAddress();
                     }

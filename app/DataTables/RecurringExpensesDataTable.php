@@ -92,7 +92,7 @@ class RecurringExpensesDataTable extends BaseDataTable
                 ]);
             })
             ->addColumn('employee_name', function ($row) {
-                return ucfirst($row->user->name);
+                return $row->user_id ? $row->user->name : '--';
             })
             ->addColumn('status', function ($row) {
 
@@ -109,7 +109,7 @@ class RecurringExpensesDataTable extends BaseDataTable
                 return $role;
             })
             ->addColumn('status_export', function ($row) {
-                return ucfirst($row->status);
+                return $row->status;
             })
             ->addIndexColumn()
             ->rawColumns(['action', 'status', 'user_id', 'next_expense_date'])
@@ -163,7 +163,7 @@ class RecurringExpensesDataTable extends BaseDataTable
      */
     public function html()
     {
-        return $this->setBuilder('recurring-expenses-table')
+        $dataTable = $this->setBuilder('recurring-expenses-table')
             ->parameters([
                 'initComplete' => 'function () {
                     window.LaravelDataTables["recurring-expenses-table"].buttons().container()
@@ -172,8 +172,13 @@ class RecurringExpensesDataTable extends BaseDataTable
                 'fnDrawCallback' => 'function( oSettings ) {
                     $(".change-expense-status").selectpicker();
                 }',
-            ])
-            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+            ]);
+
+        if (canDataTableExport()) {
+            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+        }
+
+            return $dataTable;
     }
 
     /**

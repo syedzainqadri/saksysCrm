@@ -16,13 +16,15 @@ class OrdersDataTable extends BaseDataTable
     private $deleteOrderPermission;
     private $editOrderPermission;
     private $viewOrderPermission;
+    private $withTrashed;
 
-    public function __construct()
+    public function __construct($withTrashed = false)
     {
         parent::__construct();
         $this->viewOrderPermission = user()->permission('view_order');
         $this->deleteOrderPermission = user()->permission('delete_order');
         $this->editOrderPermission = user()->permission('edit_order');
+        $this->withTrashed = $withTrashed;
     }
 
     /**
@@ -38,7 +40,8 @@ class OrdersDataTable extends BaseDataTable
             ->addIndexColumn()
             ->addColumn('action', function ($row) {
                 $action = '<div class="task_view">
-
+<a href="' . route('orders.show', [$row->id]) . '"
+                        class="taskView  text-darkest-grey f-w-500">' . __('app.view') . '</a>
                 <div class="dropdown">
                     <a class="task_view_more d-flex align-items-center justify-content-center dropdown-toggle" type="link"
                         id="dropdownMenuLink-' . $row->id . '" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -50,7 +53,6 @@ class OrdersDataTable extends BaseDataTable
                     $action .= '<a class="dropdown-item orderStatusChange" href="javascript:;"  data-order-id="' . $row->id . '" data-status="completed"><i class="fa fa-check mr-2"></i>' . __('app.orderMarkAsComplete') . '</a>';
                 }
 
-                $action .= ' <a href="' . route('orders.show', [$row->id]) . '" class="dropdown-item"><i class="fa fa-eye mr-2"></i>' . __('app.view') . '</a>';
 
                 if ($this->viewOrderPermission == 'all' || ($this->viewOrderPermission == 'both' && ($row->added_by == user()->id || $row->client_id == user()->id)) || ($this->viewOrderPermission == 'owned' && $row->client_id == user()->id) || ($this->viewOrderPermission == 'added' && $row->added_by == user()->id)) {
                     $action .= '<a class="dropdown-item" href="' . route('orders.download', [$row->id]) . '">
@@ -59,7 +61,9 @@ class OrdersDataTable extends BaseDataTable
                                 </a>';
                 }
 
-                if (!in_array('client', user_roles()) && !in_array($row->status, ['completed', 'canceled', 'refunded']) && ($this->editOrderPermission == 'all' || ($this->editOrderPermission == 'both' && ($row->added_by == user()->id || $row->client_id == user()->id)) || ($this->editOrderPermission == 'added' && $row->added_by == user()->id) || ($this->editOrderPermission == 'owned' && $row->client_id == user()->id))) {
+                $showEditbtn = (!is_null($row->project) && is_null($row->project->deleted_at)) ? true : (is_null($row->project) ? true : false);
+
+                if ($showEditbtn && !in_array('client', user_roles()) && !in_array($row->status, ['completed', 'canceled', 'refunded']) && ($this->editOrderPermission == 'all' || ($this->editOrderPermission == 'both' && ($row->added_by == user()->id || $row->client_id == user()->id)) || ($this->editOrderPermission == 'added' && $row->added_by == user()->id) || ($this->editOrderPermission == 'owned' && $row->client_id == user()->id))) {
                     $action .= '<a class="dropdown-item" href="' . route('orders.edit', $row->id) . '" >
                         <i class="fa fa-edit mr-2"></i>
                         ' . trans('app.edit') . '
@@ -85,29 +89,15 @@ class OrdersDataTable extends BaseDataTable
 
                 return '<div class="media align-items-center">
                         <div class="media-body">
-                    <h5 class="mb-0 f-13 text-darkest-grey"><a href="' . route('orders.show', [$row->id]) . '">' . $row->order_number . '</a></h5>
+                    <h5 class="mb-0 f-13 text-darkest-grey"><a href="' . route('orders.show', [$row->id]) . '">' . $row->custom_order_number . '</a></h5>
                     </div>
                   </div>';
 
             })
-            ->addColumn('order', function ($row) {
-                return $row->order_number;
-            })
-            ->addColumn('order_number_export', function ($row) {
-                return $row->order_number;
-
-            })
-            ->addColumn('client_name', function ($row) {
-                return $row->client->name;
-            })
-            ->editColumn('name', function ($row) {
-
-                $client = $row->client;
-
-                return view('components.client', [
-                    'user' => $client
-                ]);
-            })
+            ->addColumn('order', fn($row) => $row->custom_order_number)
+            ->addColumn('order_number_export', fn($row) => $row->custom_order_number)
+            ->addColumn('client_name', fn($row) => $row->client->name)
+            ->editColumn('name', fn($row) => view('components.client', ['user' => $row->client]))
             ->editColumn('status', function ($row) {
 
                 if ((in_array('admin', user_roles()) || in_array('employee', user_roles())) && ($this->editOrderPermission == 'all' || ($this->editOrderPermission == 'both' && ($row->added_by == user()->id || $row->client_id == user()->id)) || ($this->editOrderPermission == 'added' && $row->added_by == user()->id) || ($this->editOrderPermission == 'owned' && $row->client_id == user()->id))) {
@@ -157,20 +147,9 @@ class OrdersDataTable extends BaseDataTable
 
                 return $status;
             })
-            ->editColumn('total', function ($row) {
-                $currencyId = $row->currency->id;
-
-                return currency_format($row->total, $currencyId);
-            })
-            ->editColumn(
-                'order_date',
-                function ($row) {
-                    return Carbon::parse($row->order_date)->timezone($this->company->timezone)->translatedFormat($this->company->date_format);
-                }
-            )
-            ->addColumn('order_status', function ($row) {
-                return ucfirst($row->status);
-            })
+            ->editColumn('total', fn($row) => currency_format($row->total, $row->currency->id))
+            ->editColumn('order_date', fn($row) => Carbon::parse($row->order_date)->timezone($this->company->timezone)->translatedFormat($this->company->date_format))
+            ->addColumn('order_status', fn($row) => $row->status)
             ->orderColumn('order_number', 'created_at $1')
             ->orderColumn('name', 'client_id $1')
             ->rawColumns(['action', 'status', 'total', 'name', 'order_number'])
@@ -188,21 +167,33 @@ class OrdersDataTable extends BaseDataTable
         $model = Order::with([
             'currency:id,currency_symbol,currency_code', 'client', 'payment'
         ])
+            ->with(
+                [
+                    'project' => function ($q) {
+                        $q->withTrashed();
+                        $q->select('id', 'project_name', 'project_short_code', 'client_id', 'deleted_at');
+                    },
+                ]
+            )
             ->with('client', 'client.session', 'client.clientDetails', 'payment')
-            ->select('orders.id', 'orders.client_id', 'orders.currency_id', 'orders.total', 'orders.status', 'orders.order_date', 'orders.show_shipping_address', 'orders.added_by', 'orders.order_number', 'orders.custom_order_number');
+            ->select('orders.id', 'orders.client_id', 'orders.project_id', 'orders.currency_id', 'orders.total', 'orders.status', 'orders.order_date', 'orders.show_shipping_address', 'orders.added_by', 'orders.order_number', 'orders.custom_order_number');
 
         if ($request->startDate !== null && $request->startDate != 'null' && $request->startDate != '') {
-            $startDate = Carbon::createFromFormat($this->company->date_format, $request->startDate)->toDateString();
+            $startDate = companyToDateString($request->startDate);
             $model = $model->where(DB::raw('DATE(orders.`order_date`)'), '>=', $startDate);
         }
 
         if ($request->endDate !== null && $request->endDate != 'null' && $request->endDate != '') {
-            $endDate = Carbon::createFromFormat($this->company->date_format, $request->endDate)->toDateString();
+            $endDate = companyToDateString($request->endDate);
             $model = $model->where(DB::raw('DATE(orders.`order_date`)'), '<=', $endDate);
         }
 
         if ($request->status != 'all' && !is_null($request->status)) {
             $model = $model->where('orders.status', '=', $request->status);
+        }
+
+        if ($request->projectId != 'all' && !is_null($request->projectId)) {
+            $model = $model->where('orders.project_id', '=', $request->projectId);
         }
 
         if ($request->clientID != 'all' && !is_null($request->clientID)) {
@@ -213,7 +204,13 @@ class OrdersDataTable extends BaseDataTable
             $model->where(function ($query) {
                 $query->where('orders.order_number', 'like', '%' . request('searchText') . '%')
                     ->orWhere('orders.custom_order_number', 'like', '%' . request('searchText') . '%')
-                    ->orWhere('orders.total', 'like', '%' . request('searchText') . '%');
+                    ->orWhere('orders.total', 'like', '%' . request('searchText') . '%')
+                    ->orWhere('orders.status', 'like', '%' . request('searchText') . '%')
+                    ->orWhere(function ($query) {
+                        $query->whereHas('client', function ($q) {
+                            $q->where('name', 'like', '%' . request('searchText') . '%');
+                        });
+                    });
             });
         }
 
@@ -236,6 +233,15 @@ class OrdersDataTable extends BaseDataTable
             $model->where('orders.client_id', user()->id);
         }
 
+        if (!$this->withTrashed) {
+            $model = $model->where(function ($query) {
+                $query->whereHas('project', function ($q) {
+                        $q->whereNull('deleted_at');
+                })->orWhereNull('orders.project_id');
+            });
+            
+        }
+
         return $model;
     }
 
@@ -246,7 +252,7 @@ class OrdersDataTable extends BaseDataTable
      */
     public function html()
     {
-        return $this->setBuilder('orders-table', 0)
+        $dataTable = $this->setBuilder('orders-table', 0)
             ->parameters([
                 'initComplete' => 'function () {
                     window.LaravelDataTables["orders-table"].buttons().container()
@@ -260,8 +266,13 @@ class OrdersDataTable extends BaseDataTable
                     });
 
                 }',
-            ])
-            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+            ]);
+
+        if (canDataTableExport()) {
+            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+        }
+
+        return $dataTable;
     }
 
     /**
@@ -273,7 +284,8 @@ class OrdersDataTable extends BaseDataTable
     {
         return [
             __('app.id') => ['data' => 'id', 'name' => 'id', 'visible' => false, 'title' => __('app.id')],
-            __('app.order') . __('app.no') => ['data' => 'order_number_export', 'name' => 'order_number_export', 'visible' => false, 'title' => __('app.order') . ' ' . __('app.no')],
+            __('app.order') . __('app.no') => ['data' => 'order_number_export', 'name' => 'order_number_export', 'visible' => false, 'title' => __('app.order') . ' ' . __('app.no'), 'exportable' => false],
+            __('app.orderNumber') => ['data' => 'order_number', 'name' => 'order_number', 'visible' => true, 'title' => __('app.orderNumber')],
             __('app.client_name') => ['data' => 'client_name', 'name' => 'project.client.name', 'visible' => false, 'title' => __('app.client_name')],
             __('app.client') => ['data' => 'name', 'name' => 'name', 'visible' => !in_array('client', user_roles()), 'exportable' => false, 'title' => __('app.client')],
             __('modules.invoices.total') => ['data' => 'total', 'name' => 'total', 'title' => __('modules.invoices.total')],

@@ -2,16 +2,13 @@
 
 namespace App\DataTables;
 
-use App\Models\LeadFollowup;
-use App\Models\CustomFieldGroup;
+use App\Models\DealFollowUp;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
-use Yajra\DataTables\Html\Editor\Editor;
-use Yajra\DataTables\Html\Editor\Fields;
-use Yajra\DataTables\Services\DataTable;
 
 class LeadFollowupDataTable extends BaseDataTable
 {
+
     /**
      * Build DataTable class.
      *
@@ -35,7 +32,7 @@ class LeadFollowupDataTable extends BaseDataTable
 
                 $action .= '<a class="dropdown-item edit-table-row-lead" href="javascript:;" data-followup-id="' . $row->id . '">
                 <i class="fa fa-edit mr-2"></i>
-                ' . trans('app.edit')  . '
+                ' . trans('app.edit') . '
                 </a>';
 
                 $action .= '<a class="dropdown-item delete-table-row-lead" href="javascript:;" data-followup-id="' . $row->id . '">
@@ -46,31 +43,32 @@ class LeadFollowupDataTable extends BaseDataTable
                 $action .= '</div>
                     </div>
                 </div>';
+
                 return $action;
             })
-            ->addColumn('status', function($row) {
+            ->addColumn('status', function ($row) {
 
                 $status = '';
 
                 $status .= '<select class="form-control statusChange status" data-followup-id = " ' . $row->id . '">';
 
-                $status .= '<option value="incomplete"';
+                $status .= '<option value="pending"';
 
-                if ($row->status == 'incomplete') {
+                if ($row->status == 'pending') {
+                    $status .= 'selected';
+                }
+
+                $status .= ' data-content="<i class=\'fa fa-circle mr-2 text-warning\'></i>'
+                    . trans('app.pending') . ' " > ' . trans('app.pending') . '</option>';
+
+                $status .= '<option value="canceled"';
+
+                if ($row->status == 'canceled') {
                     $status .= 'selected';
                 }
 
                 $status .= ' data-content="<i class=\'fa fa-circle mr-2 text-red\'></i>'
-                 . trans('app.incomplete') .' " > ' . trans('app.incomplete') . '</option>';
-
-                 $status .= '<option value="canceled"';
-
-                if ($row->status == 'canceled') {
-                     $status .= 'selected';
-                }
-
-                $status .= ' data-content="<i class=\'fa fa-circle mr-2 text-warning\'></i>'
-                 . trans('app.canceled') .' " > ' . trans('app.canceled') . '</option>';
+                    . trans('app.canceled') . ' " > ' . trans('app.canceled') . '</option>';
 
                 $status .= '<option value="completed"';
 
@@ -78,42 +76,33 @@ class LeadFollowupDataTable extends BaseDataTable
                     $status .= 'selected';
                 }
 
-                 $status .= ' data-content="<i class=\'fa fa-circle mr-2 text-dark-green\'></i>'. trans('app.completed') . '" > '. trans('app.completed'). '</option>';
+                $status .= ' data-content="<i class=\'fa fa-circle mr-2 text-dark-green\'></i>' . trans('app.completed') . '" > ' . trans('app.completed') . '</option>';
 
-                 $status .= '</select>';
+                $status .= '</select>';
 
-                 return $status;
+                return $status;
             })
-            ->addColumn('statusChange', function ($row) {
-                return $row->status;
-            })
-            ->addColumn('created_at', function ($row) {
-                return $row->created_at->timezone(company()->timezone)->format(company()->date_format. ' '.company()->time_format);
-            })
-            ->addColumn('next_follow_up', function ($row) {
-                return $row->next_follow_up_date->format(company()->date_format. ' '.company()->time_format);
-            })
+            ->addColumn('statusChange', fn($row) => $row->status)
+            ->addColumn('created_at', fn($row) => $row->created_at->timezone(company()->timezone)->format(company()->date_format . ' ' . company()->time_format))
+            ->addColumn('next_follow_up', fn($row) => $row->next_follow_up_date->format(company()->date_format . ' ' . company()->time_format))
             ->smart(false)
-            ->setRowId(function ($row) {
-                return 'row-' . $row->id;
-            })
-
+            ->setRowId(fn($row) => 'row-' . $row->id)
             ->rawColumns(['action', 'status']);
     }
 
     /**
      * Get query source of dataTable.
      *
-     * @param \App\Models\LeadFollowup $model
+     * @param LeadFollowup $model
      * @return \Illuminate\Database\Eloquent\Builder
      */
 
-    public function query(LeadFollowup $model)
+    public function query(DealFollowup $model)
     {
         $lead = $model->newQuery();
 
         if (request()->has('leadId') && request()->leadId != '') {
-            $lead = $lead->where('lead_id', request()->leadId);
+            $lead = $lead->where('deal_id', request()->leadId);
         }
 
         return $lead;
@@ -126,22 +115,25 @@ class LeadFollowupDataTable extends BaseDataTable
      */
     public function html()
     {
-        return $this->setBuilder('leadfollowup-table')
+        $dataTable = $this->setBuilder('leadfollowup-table')
             ->parameters([
-            'initComplete' => 'function () {
-                window.LaravelDataTables["leadfollowup-table"].buttons().container()
-                .appendTo("#table-actions")
-            }',
-            'fnDrawCallback' => 'function( oSettings ) {
+                'initComplete' => 'function () {
+                        window.LaravelDataTables["leadfollowup-table"].buttons().container()
+                        .appendTo("#table-actions")
+                }',
+                'fnDrawCallback' => 'function( oSettings ) {
                 $("body").tooltip({
                     selector: \'[data-toggle="tooltip"]\'
                 });
                 $(".statusChange").selectpicker();
             }',
-            ])
+            ]);
 
-            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+        if (canDataTableExport()) {
+            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+        }
 
+        return $dataTable;
     }
 
     /**

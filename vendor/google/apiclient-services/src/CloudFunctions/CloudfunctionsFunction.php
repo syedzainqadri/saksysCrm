@@ -25,6 +25,10 @@ class CloudfunctionsFunction extends \Google\Collection
   /**
    * @var string
    */
+  public $createTime;
+  /**
+   * @var string
+   */
   public $description;
   /**
    * @var string
@@ -44,6 +48,10 @@ class CloudfunctionsFunction extends \Google\Collection
    * @var string
    */
   public $name;
+  /**
+   * @var bool
+   */
+  public $satisfiesPzs;
   protected $serviceConfigType = ServiceConfig::class;
   protected $serviceConfigDataType = '';
   /**
@@ -56,6 +64,8 @@ class CloudfunctionsFunction extends \Google\Collection
    * @var string
    */
   public $updateTime;
+  protected $upgradeInfoType = UpgradeInfo::class;
+  protected $upgradeInfoDataType = '';
   /**
    * @var string
    */
@@ -74,6 +84,20 @@ class CloudfunctionsFunction extends \Google\Collection
   public function getBuildConfig()
   {
     return $this->buildConfig;
+  }
+  /**
+   * @param string
+   */
+  public function setCreateTime($createTime)
+  {
+    $this->createTime = $createTime;
+  }
+  /**
+   * @return string
+   */
+  public function getCreateTime()
+  {
+    return $this->createTime;
   }
   /**
    * @param string
@@ -160,6 +184,20 @@ class CloudfunctionsFunction extends \Google\Collection
     return $this->name;
   }
   /**
+   * @param bool
+   */
+  public function setSatisfiesPzs($satisfiesPzs)
+  {
+    $this->satisfiesPzs = $satisfiesPzs;
+  }
+  /**
+   * @return bool
+   */
+  public function getSatisfiesPzs()
+  {
+    return $this->satisfiesPzs;
+  }
+  /**
    * @param ServiceConfig
    */
   public function setServiceConfig(ServiceConfig $serviceConfig)
@@ -214,6 +252,20 @@ class CloudfunctionsFunction extends \Google\Collection
   public function getUpdateTime()
   {
     return $this->updateTime;
+  }
+  /**
+   * @param UpgradeInfo
+   */
+  public function setUpgradeInfo(UpgradeInfo $upgradeInfo)
+  {
+    $this->upgradeInfo = $upgradeInfo;
+  }
+  /**
+   * @return UpgradeInfo
+   */
+  public function getUpgradeInfo()
+  {
+    return $this->upgradeInfo;
   }
   /**
    * @param string

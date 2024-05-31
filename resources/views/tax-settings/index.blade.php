@@ -42,8 +42,8 @@
                         @forelse($taxes as $key => $tax)
                             <tr id="tax-{{ $tax->id }}">
                                 <td>{{ $key + 1 }}</td>
-                                <td>{{ strtoupper($tax->tax_name) }}</td>
-                                <td>{{ mb_ucwords($tax->rate_percent) }}</td>
+                                <td>{{ $tax->tax_name }}</td>
+                                <td>{{ $tax->rate_percent }}</td>
                                 <td class="text-right pr-20">
                                     <div class="task_view">
                                         <a class="task_view_more d-flex align-items-center justify-content-center edit-tax"

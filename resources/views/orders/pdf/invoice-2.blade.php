@@ -330,6 +330,7 @@
 
         .word-break {
             word-wrap:break-word;
+            word-break: break-all;
         }
 
 
@@ -345,7 +346,7 @@
 
             <div class="company-info">
                 <span class="company-name">
-                    {{ mb_ucwords(company()->company_name) }}
+                    {{ company()->company_name }}
                 </span>
 
                 <span class="spacer"></span>
@@ -394,11 +395,18 @@
             <section id="client-info">
                 @if(($order->client->name || $order->client->email || $order->client->mobile || $order->clientDetails->company_name || $order->clientDetails->address )
                     && ($invoiceSetting->show_client_name == 'yes' || $invoiceSetting->show_client_email == 'yes' || $invoiceSetting->show_client_phone == 'yes' || $invoiceSetting->show_client_company_name == 'yes' || $invoiceSetting->show_client_company_address == 'yes'))
+                    @if ($order->project)
+                    <span>@lang('modules.invoices.project'):</span>
+                    <div>
+                        <span class="bold">{{$order->project->project_name}}</span>
+                    </div>
+                    @endif
+
                     <span>@lang('modules.invoices.billedTo'):</span>
 
                     @if ($order->client->name && $invoiceSetting->show_client_name == 'yes')
                         <div>
-                            <span class="bold">{{ mb_ucwords($order->client->name) }}</span>
+                            <span class="bold">{{ $order->client->name_salutation }}</span>
                         </div>
                     @endif
 
@@ -410,13 +418,13 @@
 
                     @if ($order->client->mobile && $invoiceSetting->show_client_phone == 'yes')
                         <div>
-                            <span>{{ $order->client->mobile }}</span>
+                            <span>{{ $order->client->mobile_with_phonecode }}</span>
                         </div>
                     @endif
 
                     @if ($order->clientDetails->company_name && $invoiceSetting->show_client_company_name == 'yes')
                         <div>
-                            <span>{{ mb_ucwords($order->clientDetails->company_name) }}</span>
+                            <span>{{ $order->clientDetails->company_name }}</span>
                         </div>
                     @endif
 
@@ -458,10 +466,11 @@
                         <th>@lang("app.hsnSac")</th>
                     @endif
                     @if ($order->unit != null)
-                    <th class="qty">{{ ucwords($order->unit->unit_type) }}</th>
+                    <th class="qty">{{ $order->unit->unit_type }}</th>
                     @else
                     <th class="qty"> </th>
                     @endif
+                    <th>@lang("app.sku")</th>
                     <th>@lang("modules.invoices.unitPrice")</th>
                     <th>@lang("modules.invoices.tax")</th>
                     <th>@lang("modules.invoices.price") ({!! htmlentities($order->currency->currency_code)  !!})</th>
@@ -472,10 +481,10 @@
                     @if($item->type == 'item')
                         <tr data-iterate="item">
                             <td>{{ ++$count }}</td> <!-- Don't remove this column as it's needed for the row commands -->
-                            <td>
-                                {{ ucfirst($item->item_name) }}
+                            <td class="word-break">
+                                {{ $item->item_name }}
                                 @if(!is_null($item->item_summary))
-                                    <p class="item-summary">{!! nl2br(strip_tags($item->item_summary, ['p', 'b', 'strong', 'a'])) !!}</p>
+                                    <p class="item-summary word-break">{!! nl2br(pdfStripTags($item->item_summary)) !!}</p>
                                 @endif
                                 @if ($item->orderItemImage)
                                     <p class="mt-2">
@@ -487,8 +496,9 @@
                                 <td>{{ $item->hsn_sac_code ? $item->hsn_sac_code : '--' }}</td>
                             @endif
                             <td>{{ $item->quantity }}</td>
+                            <td>{{ $item->sku }}</td>
                             <td>{{ currency_format($item->unit_price, $order->currency_id, false) }}</td>
-                            <td>{{ strtoupper($item->tax_list) }}</td>
+                            <td>{{ $item->tax_list }}</td>
                             <td>{{ currency_format($item->amount, $order->currency_id, false) }}</td>
                         </tr>
                     @endif
@@ -498,23 +508,23 @@
 
             <table cellpadding="0" cellspacing="0">
                 <tr>
-                    <td colspan="{{ $invoiceSetting->hsn_sac_code_show ? '5' : '4' }}">@lang("modules.invoices.subTotal"):</td>
+                    <td colspan="{{ $invoiceSetting->hsn_sac_code_show ? '6' : '5' }}">@lang("modules.invoices.subTotal"):</td>
                     <td>{{ currency_format($order->sub_total, $order->currency_id, false) }}</td>
                 </tr>
                 @if($discount != 0 && $discount != '')
                 <tr data-iterate="tax">
-                    <td colspan="{{ $invoiceSetting->hsn_sac_code_show ? '5': '4' }}">@lang("modules.invoices.discount"):</td>
+                    <td colspan="{{ $invoiceSetting->hsn_sac_code_show ? '6': '5' }}">@lang("modules.invoices.discount"):</td>
                     <td>-{{ currency_format($discount, $order->currency_id, false) }}</td>
                 </tr>
                 @endif
                 @foreach($taxes as $key=>$tax)
                 <tr data-iterate="tax">
-                    <td colspan="{{ $invoiceSetting->hsn_sac_code_show ? '5': '4' }}">{{ mb_strtoupper($key) }}:</td>
+                    <td colspan="{{ $invoiceSetting->hsn_sac_code_show ? '6': '5' }}">{{ $key }}:</td>
                     <td>{{ currency_format($tax, $order->currency_id, false) }}</td>
                 </tr>
                 @endforeach
                 <tr class="amount-total">
-                    <td colspan="{{ $invoiceSetting->hsn_sac_code_show ? '5': '4' }}">
+                    <td colspan="{{ $invoiceSetting->hsn_sac_code_show ? '6': '5' }}">
                         @lang("modules.invoices.total"):
                     </td>
                     <td>
@@ -528,6 +538,11 @@
         <section id="terms">
             @if(!is_null($order->note))
                 <div class="word-break item-summary">{!! nl2br($order->note) !!}</div>
+            @endif
+            @if (isset($invoiceSetting->other_info))
+                <div class="word-break item-summary description">
+                    {!! nl2br($invoiceSetting->other_info) !!}
+                </div>
             @endif
         </section>
 

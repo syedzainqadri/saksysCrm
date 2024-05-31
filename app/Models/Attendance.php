@@ -55,6 +55,7 @@ use Illuminate\Support\Facades\DB;
  * @property \Illuminate\Support\Carbon|null $shift_end_time
  * @property int|null $employee_shift_id
  * @property string $work_from_type
+ * @property \Illuminate\Support\Carbon $attendance
  * @property-read \App\Models\Company|null $company
  * @property-read \App\Models\CompanyAddress|null $location
  * @property-read \App\Models\EmployeeShift|null $shift
@@ -65,6 +66,10 @@ use Illuminate\Support\Facades\DB;
  * @method static \Illuminate\Database\Eloquent\Builder|Attendance whereShiftStartTime($value)
  * @method static \Illuminate\Database\Eloquent\Builder|Attendance whereWorkFromType($value)
  * @property string $overwrite_attendance
+ * @property string $status
+ * @property string $occassion
+ * @property string $date
+ * @property string $status
  * @method static \Illuminate\Database\Eloquent\Builder|Attendance whereOverwriteAttendance($value)
  * @mixin \Eloquent
  */
@@ -78,6 +83,7 @@ class Attendance extends BaseModel
         'clock_out_time' => 'datetime',
         'shift_end_time' => 'datetime',
         'shift_start_time' => 'datetime',
+        'date' => 'datetime',
     ];
     protected $appends = ['clock_in_date'];
     protected $guarded = ['id'];
@@ -100,7 +106,7 @@ class Attendance extends BaseModel
 
     public function getClockInDateAttribute()
     {
-        return $this->clock_in_time->timezone($this->company->timezone)->toDateString();
+        return $this->clock_in_time?->timezone($this->company?->timezone)->toDateString();
     }
 
     public static function attendanceByDate($date)

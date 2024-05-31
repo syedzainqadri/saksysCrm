@@ -26,9 +26,13 @@ namespace App\Models;
 class StorageSetting extends BaseModel
 {
 
-    const HASH_TEMP_FILE_TIME = 30;
+    const HASH_TEMP_FILE_TIME = 60;
 
     protected $table = 'file_storage_settings';
+
+    protected $casts = [
+        'auth_keys' => 'encrypted'
+    ];
 
     protected $fillable = ['filesystem', 'auth_keys', 'status'];
 
@@ -53,7 +57,8 @@ class StorageSetting extends BaseModel
         'eu-west-3' => 'Europe (Paris) eu-west-3',
         'eu-north-1' => 'Europe (Stockholm) eu-north-1',
         'me-south-1' => 'Middle East (Bahrain) me-south-1',
-        'sa-east-1' => 'South America (São Paulo)	 sa-east-1'
+        'me-central-1' => 'Middle East (UAE) (me-central-1)',
+        'sa-east-1' => 'South America (São Paulo) sa-east-1',
     ];
 
     const DIGITALOCEAN_REGIONS = [

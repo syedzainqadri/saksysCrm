@@ -658,7 +658,6 @@ namespace App\Models{
  * @property-read \App\Models\Currency|null $currency
  * @property-read mixed $icon
  * @property-read mixed $issue_on
- * @property-read mixed $original_cn_number
  * @property-read mixed $total_amount
  * @property-read \App\Models\Invoice|null $invoice
  * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\Invoice[] $invoices
@@ -1162,7 +1161,6 @@ namespace App\Models{
  * @property-read \App\Models\Currency|null $currency
  * @property-read mixed $extras
  * @property-read mixed $icon
- * @property-read mixed $original_estimate_number
  * @property-read mixed $total_amount
  * @property-read mixed $valid_date
  * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\EstimateItem[] $items
@@ -1567,7 +1565,6 @@ namespace App\Models{
  * @property-read mixed $extras
  * @property-read mixed $icon
  * @property-read mixed $issue_on
- * @property-read mixed $original_invoice_number
  * @property-read mixed $total_amount
  * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\InvoiceItems[] $items
  * @property-read int|null $items_count
@@ -1789,11 +1786,11 @@ namespace App\Models{
  * @property int|null $last_updated_by
  * @property-read \App\Models\User|null $client
  * @property-read \App\Models\Currency|null $currency
- * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\LeadFiles[] $files
+ * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\DealFile[] $files
  * @property-read int|null $files_count
- * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\LeadFollowUp[] $follow
+ * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\DealFollowUp[] $follow
  * @property-read int|null $follow_count
- * @property-read \App\Models\LeadFollowUp|null $followup
+ * @property-read \App\Models\DealFollowUp|null $followup
  * @property-read mixed $extras
  * @property-read mixed $icon
  * @property-read mixed $image_url
@@ -1938,29 +1935,29 @@ namespace App\Models{
  * @property-read mixed $file_url
  * @property-read mixed $icon
  * @property-read \App\Models\Lead $lead
- * @method static \Illuminate\Database\Eloquent\Builder|LeadFiles newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder|LeadFiles newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder|LeadFiles query()
- * @method static \Illuminate\Database\Eloquent\Builder|LeadFiles whereAddedBy($value)
- * @method static \Illuminate\Database\Eloquent\Builder|LeadFiles whereCreatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder|LeadFiles whereDescription($value)
- * @method static \Illuminate\Database\Eloquent\Builder|LeadFiles whereDropboxLink($value)
- * @method static \Illuminate\Database\Eloquent\Builder|LeadFiles whereFilename($value)
- * @method static \Illuminate\Database\Eloquent\Builder|LeadFiles whereGoogleUrl($value)
- * @method static \Illuminate\Database\Eloquent\Builder|LeadFiles whereHashname($value)
- * @method static \Illuminate\Database\Eloquent\Builder|LeadFiles whereId($value)
- * @method static \Illuminate\Database\Eloquent\Builder|LeadFiles whereLastUpdatedBy($value)
- * @method static \Illuminate\Database\Eloquent\Builder|LeadFiles whereLeadId($value)
- * @method static \Illuminate\Database\Eloquent\Builder|LeadFiles whereSize($value)
- * @method static \Illuminate\Database\Eloquent\Builder|LeadFiles whereUpdatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder|LeadFiles whereUserId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|DealFile newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder|DealFile newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder|DealFile query()
+ * @method static \Illuminate\Database\Eloquent\Builder|DealFile whereAddedBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|DealFile whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|DealFile whereDescription($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|DealFile whereDropboxLink($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|DealFile whereFilename($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|DealFile whereGoogleUrl($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|DealFile whereHashname($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|DealFile whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|DealFile whereLastUpdatedBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|DealFile whereLeadId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|DealFile whereSize($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|DealFile whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|DealFile whereUserId($value)
  */
-	class LeadFiles extends \Eloquent {}
+	class DealFile extends \Eloquent {}
 }
 
 namespace App\Models{
 /**
- * App\Models\LeadFollowUp
+ * App\Models\DealFollowUp
  *
  * @property int $id
  * @property int $lead_id
@@ -1972,19 +1969,19 @@ namespace App\Models{
  * @property int|null $last_updated_by
  * @property-read mixed $icon
  * @property-read \App\Models\Lead $lead
- * @method static \Illuminate\Database\Eloquent\Builder|LeadFollowUp newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder|LeadFollowUp newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder|LeadFollowUp query()
- * @method static \Illuminate\Database\Eloquent\Builder|LeadFollowUp whereAddedBy($value)
- * @method static \Illuminate\Database\Eloquent\Builder|LeadFollowUp whereCreatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder|LeadFollowUp whereId($value)
- * @method static \Illuminate\Database\Eloquent\Builder|LeadFollowUp whereLastUpdatedBy($value)
- * @method static \Illuminate\Database\Eloquent\Builder|LeadFollowUp whereLeadId($value)
- * @method static \Illuminate\Database\Eloquent\Builder|LeadFollowUp whereNextFollowUpDate($value)
- * @method static \Illuminate\Database\Eloquent\Builder|LeadFollowUp whereRemark($value)
- * @method static \Illuminate\Database\Eloquent\Builder|LeadFollowUp whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|DealFollowUp newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder|DealFollowUp newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder|DealFollowUp query()
+ * @method static \Illuminate\Database\Eloquent\Builder|DealFollowUp whereAddedBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|DealFollowUp whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|DealFollowUp whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|DealFollowUp whereLastUpdatedBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|DealFollowUp whereLeadId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|DealFollowUp whereNextFollowUpDate($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|DealFollowUp whereRemark($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|DealFollowUp whereUpdatedAt($value)
  */
-	class LeadFollowUp extends \Eloquent {}
+	class DealFollowUp extends \Eloquent {}
 }
 
 namespace App\Models{

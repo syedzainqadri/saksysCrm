@@ -48,6 +48,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int|null $company_id
  * @property-read \App\Models\Company|null $company
  * @method static \Illuminate\Database\Eloquent\Builder|ContractFile whereCompanyId($value)
+ * @property-read mixed $file
  * @mixin \Eloquent
  */
 class ContractFile extends BaseModel
@@ -56,15 +57,20 @@ class ContractFile extends BaseModel
     use IconTrait, HasCompany;
 
     const FILE_PATH = 'contract-files';
-    protected $appends = ['file_url', 'icon'];
+    protected $appends = ['file_url', 'icon', 'file'];
 
     public function getFileUrlAttribute()
     {
-        if ((!is_null($this->external_link) && $this->external_link != '')) {
-            return $this->external_link;
+        if($this->external_link){
+            return str($this->external_link)->contains('http') ? $this->external_link : asset_url_local_s3($this->external_link);
         }
 
         return asset_url_local_s3(ContractFile::FILE_PATH . '/' . $this->contract_id . '/' . $this->hashname);
+    }
+
+    public function getFileAttribute()
+    {
+        return $this->external_link ?: (ContractFile::FILE_PATH . '/' . $this->contract_id . '/' . $this->hashname);
     }
 
     public function contract(): BelongsTo

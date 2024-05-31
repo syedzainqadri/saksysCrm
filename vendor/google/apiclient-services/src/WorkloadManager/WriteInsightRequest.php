@@ -19,17 +19,31 @@ namespace Google\Service\WorkloadManager;
 
 class WriteInsightRequest extends \Google\Model
 {
+  /**
+   * @var string
+   */
+  public $agentVersion;
   protected $insightType = Insight::class;
   protected $insightDataType = '';
   /**
    * @var string
    */
-  public $instanceId;
-  /**
-   * @var string
-   */
   public $requestId;
 
+  /**
+   * @param string
+   */
+  public function setAgentVersion($agentVersion)
+  {
+    $this->agentVersion = $agentVersion;
+  }
+  /**
+   * @return string
+   */
+  public function getAgentVersion()
+  {
+    return $this->agentVersion;
+  }
   /**
    * @param Insight
    */
@@ -43,20 +57,6 @@ class WriteInsightRequest extends \Google\Model
   public function getInsight()
   {
     return $this->insight;
-  }
-  /**
-   * @param string
-   */
-  public function setInstanceId($instanceId)
-  {
-    $this->instanceId = $instanceId;
-  }
-  /**
-   * @return string
-   */
-  public function getInstanceId()
-  {
-    return $this->instanceId;
   }
   /**
    * @param string

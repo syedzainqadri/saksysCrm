@@ -10,7 +10,7 @@ class TaskLabelListObserver
 
     public function creating(TaskLabelList $model)
     {
-        if(company()) {
+        if (company()) {
             $model->company_id = company()->id;
         }
     }

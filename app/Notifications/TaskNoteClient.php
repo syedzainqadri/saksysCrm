@@ -44,7 +44,7 @@ class TaskNoteClient extends BaseNotification
         }
 
         if ($this->emailSetting->send_slack == 'yes' && $this->company->slackSetting->status == 'active') {
-            array_push($via, 'slack');
+            $this->slackUserNameCheck($notifiable) ? array_push($via, 'slack') : null;
         }
 
         if ($this->emailSetting->send_push == 'yes') {
@@ -66,7 +66,7 @@ class TaskNoteClient extends BaseNotification
         $url = route('tasks.show', [$this->task->id, 'view' => 'notes']);
         $url = getDomainSpecificUrl($url, $this->company);
 
-        $content = __('email.taskNote.subject') . ' - ' . ucfirst($this->task->heading) . ' #' . $this->task->task_short_code . '<br>' . (!is_null($this->task->project)) ? __('app.project') . ' - ' . ucfirst($this->task->project->project_name) : '';
+        $content = __('email.taskNote.subject') . ' - ' . $this->task->heading . ' #' . $this->task->task_short_code . '<br>' . (!is_null($this->task->project)) ? __('app.project') . ' - ' . $this->task->project->project_name : '';
 
         return $build
             ->subject(__('email.taskNote.subject') . ' #' . $this->task->task_short_code . ' - ' . config('app.name') . '.')
@@ -103,20 +103,8 @@ class TaskNoteClient extends BaseNotification
      */
     public function toSlack($notifiable)
     {
-        $slack = $notifiable->company->slackSetting;
-
-        if (count($notifiable->employee) > 0 && (!is_null($notifiable->employee[0]->slack_username) && ($notifiable->employee[0]->slack_username != ''))) {
-            return (new SlackMessage())
-                ->from(config('app.name'))
-                ->image($slack->slack_logo_url)
-                ->to('@' . $notifiable->employee[0]->slack_username)
-                ->content('*' . __('email.taskNote.subject') . '*' . "\n" . ucfirst($this->task->heading) . "\n" . ' #' . $this->task->task_short_code);
-        }
-
-        return (new SlackMessage())
-            ->from(config('app.name'))
-            ->image($slack->slack_logo_url)
-            ->content('*' . __('email.taskNote.subject') . '*' . "\n" .'This is a redirected notification. Add slack username for *' . $notifiable->name . '*');
+        return $this->slackBuild($notifiable)
+            ->content('*' . __('email.taskNote.subject') . '*' . "\n" . $this->task->heading . "\n" . ' #' . $this->task->task_short_code);
     }
 
     // phpcs:ignore
@@ -124,7 +112,7 @@ class TaskNoteClient extends BaseNotification
     {
         return OneSignalMessage::create()
             ->setSubject(__('email.taskNote.subject'))
-            ->setBody(__('email.taskNote.subject') . ' - ' . ucfirst($this->task->heading) . ' #' . $this->task->task_short_code);
+            ->setBody(__('email.taskNote.subject') . ' - ' . $this->task->heading . ' #' . $this->task->task_short_code);
     }
 
 }

@@ -76,12 +76,12 @@ $addTaskPermission = user()->permission('add_tasks');
                                 )
 
                                 @if (is_null($myActiveTimer->activeBreak))
-                                    <x-forms.button-secondary icon="pause-circle" data-time-id="{{ $myActiveTimer->id }}" id="pause-timer-btn">@lang('modules.timeLogs.pauseTimer')</x-forms.button-secondary>
+                                    <x-forms.button-secondary icon="pause-circle" data-time-id="{{ $myActiveTimer->id }}" id="pause-timer-btn" data-url="{{ url()->current() }}">@lang('modules.timeLogs.pauseTimer')</x-forms.button-secondary>
                                 @else
-                                    <x-forms.button-secondary id="resume-timer-btn" icon="play-circle"
+                                    <x-forms.button-secondary id="resume-timer-btn" icon="play-circle" data-url="{{ url()->current() }}"
                                     data-time-id="{{ $myActiveTimer->activeBreak->id }}">@lang('modules.timeLogs.resumeTimer')</x-forms.button-secondary>
                                 @endif
-                                <x-forms.button-primary class="ml-3 stop-active-timer" data-time-id="{{ $myActiveTimer->id }}" icon="stop-circle">@lang('modules.timeLogs.stopTimer')</x-forms.button-primary>
+                                <x-forms.button-primary class="ml-3 stop-active-timer" data-url="{{ url()->current() }}" data-time-id="{{ $myActiveTimer->id }}" icon="stop-circle">@lang('modules.timeLogs.stopTimer')</x-forms.button-primary>
                             @endif
                         </div>
                     </div>
@@ -99,7 +99,7 @@ $addTaskPermission = user()->permission('add_tasks');
                                     <option value="">--</option>
                                     @foreach ($projects as $data)
                                         <option value="{{ $data->id }}">
-                                            {{ mb_ucwords($data->project_name) }}
+                                            {{ $data->project_name }}
                                         </option>
                                     @endforeach
                                 </x-forms.select>
@@ -144,12 +144,14 @@ $addTaskPermission = user()->permission('add_tasks');
                     <x-slot name="thead">
                         <th>#</th>
                         <th>@lang('app.task')</th>
-                        <th id="employee-header">@lang('app.employee')</th>
+                        <th id="employee-header" width="5%" style="width: 20px !important;">@lang('app.employee')</th>
                         <th class="text-right w-180">@lang('modules.timeLogs.startTime')</th>
                         <th class="text-right w-150">@lang('app.action')</th>
                     </x-slot>
 
                     @forelse ($activeTimers as $key => $item)
+                        @if (is_null($item->activeBreak))
+
                         <tr id="timer-{{ $item->id }}">
                             <td>{{ $key + 1 }}</td>
                             <td>
@@ -160,7 +162,8 @@ $addTaskPermission = user()->permission('add_tasks');
                                     <p class="text-lightest mb-0 project-name">{{ $item->task->project->project_name }}</p>
                                 @endif
                             </td>
-                            <td class="text-right employee-user" >
+                            <td class="text-right employee-user"  width="5%">
+                               <div style="display: none"> {{ $item->user->name }} </div>
                                 <x-employee-image :user="$item->user" />
                             </td>
                             <td class="text-right">
@@ -193,6 +196,7 @@ $addTaskPermission = user()->permission('add_tasks');
                                 @endif
                             </td>
                         </tr>
+                        @endif
 
                     @empty
                         <tr>
@@ -219,9 +223,10 @@ $addTaskPermission = user()->permission('add_tasks');
     $(function(){
 
         $(document).ready(function () {
+
             $('#active-timer-table').DataTable({
                 dom: "<'row'<'col-sm-12'tr>><'d-flex'<'flex-grow-1'l><i><p>>",
-                pageLength:{{companyOrGlobalSetting()->datatable_row_limit ?? 10}}
+                pageLength:{{companyOrGlobalSetting()->datatable_row_limit ?? 10}},
             });
         });
 
@@ -281,5 +286,15 @@ $addTaskPermission = user()->permission('add_tasks');
     });
 
     init(MODAL_XL);
+
+@if(!is_null($myActiveTimer) && Route::current()->getName() != "timelogs.start_timer")
+    $('.stop-active-timer').click(function(){
+        var url = "{{ route('timelogs.stopper_alert', ':id') }}?via=timelog";
+        var id = "{{$selfActiveTimer->id}}"
+        url = url.replace(':id', id);
+        $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
+        $.ajaxModal(MODAL_LG, url);
+    })
+@endif
 
 </script>

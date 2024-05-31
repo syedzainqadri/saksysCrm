@@ -1,74 +1,92 @@
 <div class="table-responsive p-20">
 
-
+    <div id="update-area" class="mt-20 mb-20 col-md-12 white-box d-none">
+        {{__('app.loading')}}
+    </div>
     <div class="alert alert-danger d-none" id="custom-module-alert"></div>
+
+    @includeIf('languagepack::module-activated-alert')
+
+    @include('custom-modules.sections.universal-bundle')
 
     <x-table class="table-bordered table-hover custom-modules-table" headType="thead-light">
         <x-slot name="thead">
             <th>@lang('app.name')</th>
-            <th>Purchase Code</th>
-            <th>@lang('app.currentVersion')</th>
-            <th>@lang('app.latestVersion')</th>
+            @if (!$universalBundle)
+            <th>@lang('app.purchaseCode')</th>
+            @endif
+            <th>@lang('app.moduleVersion')</th>
+            @if (!$universalBundle)
+            <th class="text-right">@lang('app.notify')</th>
+            @endif
             <th class="text-right">@lang('app.status')</th>
         </x-slot>
 
         @forelse ($allModules as $key=>$module)
+        @php
+            $fetchSetting = null;
+            if (in_array($module, $worksuitePlugins) && config(strtolower($module) . '.setting'))
+            {
+                $fetchSetting = config(strtolower($module) . '.setting')::first();
+            }
+        @endphp
             <tr>
-                <td>{{ $key }}</td>
+                <td><span>{{ $key }}</span>
+                    @if (module_enabled('UniversalBundle') && isInstallFromUniversalBundleModule($key))
+                            <i class="icon text-info fas fa-info-circle cursor-pointer" data-toggle="tooltip"
+                              data-original-title="{{__('universalbundle::app.moduleInfo')}}"></i>
+                    @else
+{{--                        @if ($fetchSetting?->purchase_code && $fetchSetting?->supported_until)--}}
+{{--                            <i class="icon text-info fas fa-info-circle cursor-pointer"--}}
+{{--                            data-toggle="popover" data-placement="top" data-html="true" data-trigger="hover"--}}
+{{--                            data-content="@include('custom-modules.sections.support-date')"></i>--}}
+{{--                        @endif--}}
+                    @endif
+{{--                    @if ($fetchSetting?->license_type && !(module_enabled('UniversalBundle') && isInstallFromUniversalBundleModule($key)))--}}
+{{--                        <span class="ml-2 badge badge-secondary">{{ $fetchSetting->license_type }}</span>--}}
+{{--                        @if(str_contains($fetchSetting->license_type, 'Regular'))--}}
+{{--                            <a href="{{ \Froiden\Envato\Helpers\FroidenApp::buyExtendedUrl(config(strtolower($module) . '.envato_item_id')) }}"--}}
+{{--                            target="_blank">Upgrade now</a>--}}
+{{--                        @endif--}}
+{{--                    @endif--}}
+                </td>
+                @if (!$universalBundle)
                 <td>
-                    @if (in_array($module, $worksuitePlugins))
-
-                        @if (config(strtolower($module) . '.setting'))
-                            @php
-                                $settingInstance = config(strtolower($module) . '.setting');
-
-                                $fetchSetting = $settingInstance::first();
-                            @endphp
-
-                            @if (config(strtolower($module) . '.verification_required'))
-                                @if ($fetchSetting->purchase_code)
-                                    <span class="blur-code purchase-code">{{ $fetchSetting->purchase_code }}</span>
-                                    <div class="show-hide-purchase-code d-inline" data-toggle="tooltip"
-                                         data-original-title="{{__('messages.showHidePurchaseCode')}}">
-                                        <i class="icon far fa-eye-slash cursor-pointer"></i>
-                                    </div>
-                                    <div class="verify-module d-inline" data-toggle="tooltip"
-                                         data-original-title="{{__('messages.changePurchaseCode')}}"
-                                         data-module="{{ strtolower($module) }}"
-                                    >
-                                        <i class="icon far fa-edit cursor-pointer"></i>
-                                    </div>
-                                @else
-                                    <a href="javascript:;" class="verify-module f-w-500"
-                                       data-module="{{ strtolower($module) }}">@lang('app.verifyEnvato')</a>
-                                @endif
-                            @endif
+                    @if ($fetchSetting)
+                        @if (config(strtolower($module) . '.verification_required'))
+                            @include('custom-modules.sections.purchase-code')
                         @endif
                     @endif
                 </td>
+                @endif
                 <td>
                     @if (config(strtolower($module) . '.setting'))
-                        <span class="badge badge-secondary">{{ File::get($module->getPath() . '/version.txt') }}</span>
-                    @endif
-                </td>
-                <td>
-                    @if (config(strtolower($module) . '.setting') && isset($version[config(strtolower($module) . '.envato_item_id')]))
+                        @include('custom-modules.sections.version')
 
-                        @if ($version[config(strtolower($module) . '.envato_item_id')] > File::get($module->getPath() . '/version.txt'))
-                            <span class="badge badge-primary" data-toggle="tooltip"
-                                  data-original-title="Please upgrade the module to latest version">
-                                {{ $version[config(strtolower($module) . '.envato_item_id')] ?? '-' }}
-                            </span>
-                        @else
-                            <span class="badge badge-secondary">
-                                {{ $version[config(strtolower($module) . '.envato_item_id')] ?? '-' }}
-                            </span>
+                        @if ($plugins->where('envato_id', config(strtolower($module) . '.envato_item_id'))->first() && !(module_enabled('UniversalBundle') && isInstallFromUniversalBundleModule($key)))
+                            @include('custom-modules.sections.module-update')
                         @endif
                     @endif
+
                 </td>
+
+                @if (!$universalBundle)
                 <td class="text-right">
-                    <div class="custom-control custom-switch"  data-toggle="tooltip"
-                         data-original-title="Activate or deactivate {{$key}} module">
+                    @if ($fetchSetting)
+                    <div class="custom-control custom-switch ml-2 d-inline-block"  data-toggle="tooltip"
+                         data-original-title="@lang('app.moduleNotifySwitchMessage', ['name' => $module])">
+                        <input type="checkbox" class="custom-control-input change-module-notification"
+                                @checked($fetchSetting->notify_update)
+                               id="module-notification-{{ $key }}" data-module-name="{{ $module }}">
+                        <label class="custom-control-label cursor-pointer" for="module-notification-{{ $key }}"></label>
+                    </div>
+                    @endif
+                </td>
+                @endif
+
+                <td class="text-right">
+                    <div class="custom-control custom-switch ml-2 d-inline-block"  data-toggle="tooltip"
+                         data-original-title="@lang('app.moduleSwitchMessage', ['name' => $module])">
                         <input type="checkbox" @if (in_array($module, $worksuitePlugins)) checked
                                @endif class="custom-control-input change-module-status"
                                id="module-{{ $key }}" data-module-name="{{ $module }}">
@@ -137,3 +155,4 @@
     });
 
 </script>
+@includeIf('vendor.froiden-envato.update.update_module')

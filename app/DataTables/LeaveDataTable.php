@@ -158,7 +158,7 @@ class LeaveDataTable extends BaseDataTable
                         </a>';
                 }
 
-                if ($row->duration == 'multiple' && !is_null($row->unique_id)) {
+                if (($row->duration == 'multiple' && !is_null($row->unique_id)) && $this->approveRejectPermission == 'all') {
                     $actions .= '<a class="dropdown-item view-related-leave" data-leave-id=' . $row->id . '
                              data-unique-id="' . $row->unique_id . '" data-leave-type-id="' . $row->leave_type_id . '" href="javascript:;">
                                 <i class="fa fa-eye mr-2"></i>
@@ -178,8 +178,10 @@ class LeaveDataTable extends BaseDataTable
 
                     if ($this->reportingPermission == 'approved' && $row->manager_status_permission == '')
                     {
-                        $actions .= '<a class="dropdown-item leave-action-approved" data-leave-id=' . $row->id . '
-                                 data-leave-action="approved" data-user-id="' . $row->user_id . '" data-leave-type-id="' . $row->leave_type_id . '" href="javascript:;">
+                        $approveAll = $row->duration == 'multiple' ? 'approveAll' : 'single';
+                        $leaveID = $row->duration == 'multiple' ? $row->unique_id : $row->id;
+                        $actions .= '<a class="dropdown-item leave-action-approved" data-leave-id=' . $leaveID . '
+                                 data-leave-action="approved" data-type="'. $approveAll .'" data-user-id="' . $row->user_id . '" data-leave-type-id="' . $row->leave_type_id . '" href="javascript:;">
                                     <i class="fa fa-check mr-2"></i>
                                     ' . __('app.approve') . '
                             </a>';
@@ -233,9 +235,7 @@ class LeaveDataTable extends BaseDataTable
                 return $actions;
             })
             ->smart(false)
-            ->setRowId(function ($row) {
-                return 'row-' . $row->id;
-            })
+            ->setRowId(fn($row) => 'row-' . $row->id)
             ->rawColumns(['status', 'leave_type', 'action', 'check', 'employee', 'duration']);
     }
 
@@ -327,7 +327,7 @@ class LeaveDataTable extends BaseDataTable
      */
     public function html()
     {
-        return $this->setBuilder('leaves-table', 2)
+        $dataTable = $this->setBuilder('leaves-table', 2)
             ->parameters([
                 'initComplete' => 'function () {
                    window.LaravelDataTables["leaves-table"].buttons().container()
@@ -339,8 +339,13 @@ class LeaveDataTable extends BaseDataTable
                     });
                     $(".statusChange").selectpicker();
                 }',
-            ])
-            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+            ]);
+
+        if (canDataTableExport()) {
+            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+        }
+
+        return $dataTable;
     }
 
     /**

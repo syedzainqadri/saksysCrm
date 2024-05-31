@@ -30,6 +30,12 @@
     padding: 0;
     overflow: hidden;
     }
+
+    .ql-editor {
+        text-align: left;
+        white-space: unset;
+    }
+
     </style>
 <!-- TAB CONTENT START -->
 
@@ -42,15 +48,15 @@
         <div class="row p-20">
             <div class="col-md-12">
                 <a class="f-15 f-w-500" href="javascript:;" id="add-comment"><i
-                        class="icons icon-plus font-weight-bold mr-1"></i>@lang('app.add')
-                    @lang('modules.tasks.comment')</a>
+                        class="icons icon-plus font-weight-bold mr-1"></i>@lang('modules.contracts.addComment')
+                </a>
             </div>
         </div>
         <x-form id="save-comment-data-form" class="d-none">
             <div class="col-md-12 p-20 ">
                 <div class="media">
                     <img src="{{ user()->image_url }}" class="align-self-start mr-3 taskEmployeeImg rounded"
-                        alt="{{ mb_ucfirst(user()->name) }}">
+                        alt="{{ user()->name }}">
                     <div class="media-body bg-white">
                         <div class="form-group">
                             <div id="task-comment"></div>
@@ -76,12 +82,12 @@
             <div class="card w-100 rounded-1 border-2 mb-3 p-2 comment">
                 <div class="card-horizontal">
                     <div class="card-img my-1 ml-0 mx-1">
-                        <img src="{{ $comment->user->image_url }}" alt="{{ mb_ucwords($comment->user->name) }}">
+                        <img src="{{ $comment->user->image_url }}" alt="{{ $comment->user->name }}">
                     </div>
                     <div class="card-body border-0 pl-0 py-1 ml-3">
                         <div class="row">
                             <div class="col-md-6 d-inline-flex">
-                                <h4 class="card-title f-15 f-w-500 text-dark mr-3">{{ mb_ucwords($comment->user->name) }}</h4>
+                                <h4 class="card-title f-15 f-w-500 text-dark mr-3">{{ $comment->user->name }}</h4>
                                 <span class="cursor-pointer card-date f-11 text-lightest mb-0 comment-time" data-toggle="tooltip"
                                 data-original-title="{{ $comment->created_at->timezone(company()->timezone)->translatedFormat(company()->date_format . ' ' . company()->time_format) }}">
                                 {{$comment->created_at->timezone(company()->timezone)->diffForHumans()}}
@@ -128,7 +134,7 @@
                         @endphp
                         <div class="card-text f-14 text-dark-grey ">
                             <div class="card-text f-14 text-dark-grey text-justify ql-editor">
-                                {!! ucfirst($comment->comment) !!}
+                                {!! $comment->comment !!}
 
                             </div>
                             <div id="emoji-{{$comment->id}}">

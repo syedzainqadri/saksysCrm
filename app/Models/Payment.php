@@ -5,6 +5,8 @@ namespace App\Models;
 use Carbon\Carbon;
 use App\Traits\HasCompany;
 use App\Models\OfflinePaymentMethod;
+use App\Models\Currency;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -21,6 +23,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property float $amount
  * @property string|null $gateway
  * @property string|null $transaction_id
+ * @property string $exchange_rate
+ * @property float $price
+ * @property float $default_currency_price
  * @property int|null $currency_id
  * @property string|null $plan_id
  * @property string|null $customer_id
@@ -89,13 +94,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @method static \Illuminate\Database\Eloquent\Builder|Payment whereDefaultCurrencyId($value)
  * @method static \Illuminate\Database\Eloquent\Builder|Payment whereExchangeRate($value)
  * @method static \Illuminate\Database\Eloquent\Builder|Payment whereQuickbooksPaymentId($value)
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BankTransaction> $transactions
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BankTransaction> $transactions
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BankTransaction> $transactions
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BankTransaction> $transactions
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BankTransaction> $transactions
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BankTransaction> $transactions
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\BankTransaction> $transactions
  * @mixin \Eloquent
  */
 class Payment extends BaseModel
@@ -110,7 +108,7 @@ class Payment extends BaseModel
         'payment_gateway_response' => 'object'
     ];
 
-    protected $appends = ['total_amount', 'paid_date', 'file_url'];
+    protected $appends = ['total_amount', 'paid_date', 'file_url', 'default_currency_price'];
     protected $with = ['currency', 'order'];
 
     public function client()
@@ -192,4 +190,24 @@ class Payment extends BaseModel
         return $this->belongsTo(OfflinePaymentMethod::class, 'offline_method_id');
     }
 
+    public function defaultCurrencyPrice() : Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                if ($this->currency_id == company()->currency_id) {
+                    return $this->amount;
+                }
+
+                // Retrieve the currency associated with the payment
+                $currency = Currency::find($this->currency_id);
+
+                if($currency && $currency->exchange_rate){
+                    return $this->amount * (1/(float)$currency->exchange_rate);
+                }
+
+                // If exchange rate is not available or invalid, return the original amount
+                return $this->amount;
+            },
+        );
+    }
 }

@@ -3,6 +3,7 @@
 namespace App\DataTables;
 
 use App\DataTables\BaseDataTable;
+use App\Helper\Common;
 use App\Models\LeadNote;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
@@ -31,11 +32,8 @@ class LeadNotesDataTable extends BaseDataTable
 
         return datatables()
             ->eloquent($query)
-            ->addColumn('check', function ($row) {
-                return '<input type="checkbox" class="select-table-row" id="datatable-row-' . $row->id . '"  name="datatable_ids[]" value="' . $row->id . '" onclick="dataTableRowCheck(' . $row->id . ')">';
-            })
+            ->addColumn('check', fn($row) => $this->checkBox($row))
             ->addColumn('action', function ($row) {
-
                 $action = '<div class="task_view">';
 
                 $action .= '<div class="dropdown">
@@ -78,13 +76,11 @@ class LeadNotesDataTable extends BaseDataTable
             })
             ->editColumn('title', function ($row) {
                 if (!in_array('admin', user_roles()) && $row->ask_password == 1) {
-                    return '<a href="javascript:;" class="ask-for-password" style="color:black;" data-lead-note-id="' . $row->id . '">' . mb_ucwords($row->title) . '</a>';
+                    return '<a href="javascript:;" class="ask-for-password" style="color:black;" data-lead-note-id="' . $row->id . '">' . $row->title . '</a>';
                 }
                 else {
-                    return '<a href="' . route('lead-notes.show', $row->id) . '" class="openRightModal" style="color:black;">' . mb_ucwords($row->title) . '</a>';
+                    return '<a href="' . route('lead-notes.show', $row->id) . '" class="openRightModal" style="color:black;">' . $row->title . '</a>';
                 }
-
-                // return mb_ucwords($row->title);
             })
             ->editColumn('type', function ($row) {
                 if ($row->type == '0') {
@@ -99,9 +95,7 @@ class LeadNotesDataTable extends BaseDataTable
             })
             ->addIndexColumn()
             ->smart(false)
-            ->setRowId(function ($row) {
-                return 'row-' . $row->id;
-            })
+            ->setRowId(fn($row) => 'row-' . $row->id)
             ->rawColumns(['action', 'check', 'title', 'type']);
     }
 
@@ -141,7 +135,7 @@ class LeadNotesDataTable extends BaseDataTable
      */
     public function html()
     {
-        return $this->setBuilder('lead-notes-table', 2)
+        $dataTable = $this->setBuilder('lead-notes-table', 2)
             ->parameters([
                 'initComplete' => 'function () {
                    window.LaravelDataTables["lead-notes-table"].buttons().container()
@@ -150,8 +144,13 @@ class LeadNotesDataTable extends BaseDataTable
                 'fnDrawCallback' => 'function( oSettings ) {
                   //
                 }',
-            ])
-            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+            ]);
+
+        if (canDataTableExport()) {
+            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+        }
+
+        return $dataTable;
     }
 
     /**

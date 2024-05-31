@@ -36,5 +36,4 @@ namespace App\Models;
 class PusherSetting extends BaseModel
 {
 
-
 }

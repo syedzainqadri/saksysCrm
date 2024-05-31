@@ -84,7 +84,7 @@
                                 <tr>
                                     <td class="border-bottom-0 btrr-mbl btlr text-dark text-left pl-0">@lang('modules.invoices.invoiceNumber') #</td>
                                     <td >@lang('modules.payments.paymentDate')<sup class="text-red f-14 mr-1">*</sup></td>
-                                    <td>@lang('modules.invoices.paymentMethod')<sup class="text-red f-14 mr-1">*</sup></td>
+                                    <td>@lang('modules.invoices.paymentMethod')</td>
                                     <td>@lang('modules.payments.offlinePaymentMethod')</td>
                                     @if($linkPaymentPermission == 'all') <td>@lang('app.menu.bankaccount')</td> @endif
                                     <td>@lang('modules.payments.transactionId')</td>
@@ -106,7 +106,7 @@
                                                     id="payment_date{{ $key }}" name="payment_date[]"
                                                     class="payment_date px-6 position-relative text-dark font-weight-normal form-control height-35 rounded p-0 text-left f-15 w-100"
                                                     placeholder="@lang('placeholders.date')"
-                                                    value="{{ Carbon\Carbon::now(company()->timezone)->format(company()->date_format) }}">
+                                                    value="{{ now(company()->timezone)->format(company()->date_format) }}">
                                             </div>
                                         </td>
                                         <td class="border-bottom-0 btrr-mbl btlr">
@@ -177,8 +177,8 @@
                                                         @if($viewBankAccountPermission != 'none')
                                                             @foreach ($bankDetails as $bankDetail)
                                                                 @if ($pendingPayment->currency->id == $bankDetail->currency_id)
-                                                                    <option @if ($pendingPayment->bank_account_id == $bankDetail->id) selected @endif value="{{ $bankDetail->id }}">@if($bankDetail->type == 'bank')
-                                                                        {{ $bankDetail->bank_name }} | @endif {{ mb_ucwords($bankDetail->account_name) }}
+                                                                    <option @selected ($pendingPayment->bank_account_id == $bankDetail->id) value="{{ $bankDetail->id }}">@if($bankDetail->type == 'bank')
+                                                                        {{ $bankDetail->bank_name }} | @endif {{ $bankDetail->account_name }}
                                                                     </option>
                                                                 @endif
                                                             @endforeach
@@ -206,7 +206,7 @@
                                         <td class="border-bottom-0 btrr-mbl btlr text-right pr-0">
                                             <input type="hidden" id="due_amount{{ $key }}"
                                                 value="{{ $pendingPayment->amountDue() }}">
-                                            {{ !is_null($pendingPayment->amountDue()) ? currency_format($pendingPayment->amountDue(), $pendingPayment->currency->id, $pendingPayment->currency->currency_symbol) : currency_format($pendingPayment->amountDue()) }}
+                                            {{ !is_null($pendingPayment->amountDue()) ? currency_format($pendingPayment->amountDue(), $pendingPayment->currency->id, $pendingPayment->currency->currency_symbol) : currency_format($pendingPayment->amountDue(), $pendingPayment->currency->id) }}
                                         </td>
                                     </tr>
                                 @empty

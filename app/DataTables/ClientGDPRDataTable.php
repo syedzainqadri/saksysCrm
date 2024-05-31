@@ -23,30 +23,14 @@ class ClientGDPRDataTable extends BaseDataTable
             ->eloquent($query)
             ->addIndexColumn()
             ->editColumn('status', function ($row) {
-                if ($row->status == 'agree') {
-                    $status = __('modules.gdpr.optIn');
-                }
-                elseif ($row->status == 'disagree') {
-                    $status = __('modules.gdpr.optOut');
-                }
-                else {
-                    $status = '';
-                }
-
-                return $status;
+                return match ($row->status) {
+                    'agree' => __('modules.gdpr.optIn'),
+                    'disagree' => __('modules.gdpr.optOut'),
+                    default => ''
+                };
             })
-            ->editColumn(
-                'created_at',
-                function ($row) {
-                    return Carbon::parse($row->created_at)->translatedFormat($this->company->date_format);
-                }
-            )
-            ->editColumn(
-                'action',
-                function ($row) {
-                    return $row->status;
-                }
-            )
+            ->editColumn('created_at', fn($row) => Carbon::parse($row->created_at)->translatedFormat($this->company->date_format))
+            ->editColumn('action', fn($row) => $row->status)
             ->rawColumns(['status']);
     }
 
@@ -71,7 +55,7 @@ class ClientGDPRDataTable extends BaseDataTable
      */
     public function html()
     {
-        return $this->setBuilder('client-gdpr-table')
+        $dataTable = $this->setBuilder('client-gdpr-table')
             ->parameters([
                 'initComplete' => 'function () {
                    window.LaravelDataTables["client-gdpr-table"].buttons().container()
@@ -83,8 +67,13 @@ class ClientGDPRDataTable extends BaseDataTable
                     });
                     $(".statusChange").selectpicker();
                 }',
-            ])
-            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+            ]);
+
+        if (canDataTableExport()) {
+            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+        }
+
+        return $dataTable;
     }
 
     /**

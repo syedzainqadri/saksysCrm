@@ -8,6 +8,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Artisan;
 use Maatwebsite\Excel\HeadingRowImport;
 use Maatwebsite\Excel\Imports\HeadingRowFormatter;
+use ReflectionClass;
 
 trait ImportExcel
 {
@@ -15,7 +16,7 @@ trait ImportExcel
     public function importFileProcess($request, $importClass)
     {
         // get class name from $importClass
-        $this->importClassName = (new \ReflectionClass($importClass))->getShortName();
+        $this->importClassName = (new ReflectionClass($importClass))->getShortName();
 
         $this->file = Files::upload($request->import_file, Files::IMPORT_FOLDER);
         $excelData = Excel::toArray(new $importClass, public_path(Files::UPLOAD_FOLDER . '/' . Files::IMPORT_FOLDER . '/' . $this->file))[0];
@@ -52,7 +53,7 @@ trait ImportExcel
     public function importJobProcess($request, $importClass, $importJobClass)
     {
         // get class name from $importClass
-        $importClassName = (new \ReflectionClass($importClass))->getShortName();
+        $importClassName = (new ReflectionClass($importClass))->getShortName();
 
         // clear previous import
         Artisan::call('queue:clear database --queue=' . $importClassName);

@@ -41,7 +41,7 @@ class AutoTaskReminder extends BaseNotification
         }
 
         if ($this->emailSetting->send_slack == 'yes' && $this->company->slackSetting->status == 'active') {
-            array_push($via, 'slack');
+            $this->slackUserNameCheck($notifiable) ? array_push($via, 'slack') : null;
         }
 
         if ($this->emailSetting->send_push == 'yes') {
@@ -66,7 +66,7 @@ class AutoTaskReminder extends BaseNotification
 
         $dueDate = (!is_null($this->task->due_date)) ? $this->task->due_date->format($this->company->date_format) : null;
 
-        $content = ucfirst($this->task->heading) . ' #' . $this->task->task_short_code . '<p>
+        $content = $this->task->heading . ' #' . $this->task->task_short_code . '<p>
             <b style="color: green">' . __('email.dueOn') . ': ' . $dueDate . '</b>
         </p>';
 
@@ -75,6 +75,7 @@ class AutoTaskReminder extends BaseNotification
             ->markdown('mail.task.reminder', [
                 'url' => $url,
                 'content' => $content,
+                'themeColor' => $this->company->header_color,
                 'notifiableName' => $notifiable->name
             ]);
     }
@@ -103,22 +104,12 @@ class AutoTaskReminder extends BaseNotification
      */
     public function toSlack($notifiable)
     {
-        $slack = $notifiable->company->slackSetting;
 
         $dueDate = (!is_null($this->task->due_date)) ? $this->task->due_date->format($this->company->date_format) : null;
 
-        if (count($notifiable->employee) > 0 && (!is_null($notifiable->employee[0]->slack_username) && ($notifiable->employee[0]->slack_username != ''))) {
-            return (new SlackMessage())
-                ->from(config('app.name'))
-                ->image($slack->slack_logo_url)
-                ->to('@' . $notifiable->employee[0]->slack_username)
-                ->content('*' . __('email.reminder.subject') . '*' . "\n" . ucfirst($this->task->heading) . "\n" . ' #' . $this->task->task_short_code . "\n" . __('app.dueDate') . ': ' . $dueDate);
-        }
+        return $this->slackBuild($notifiable)
+            ->content('*' . __('email.reminder.subject') . '*' . "\n" . $this->task->heading . "\n" . ' #' . $this->task->task_short_code . "\n" . __('app.dueDate') . ': ' . $dueDate);
 
-        return (new SlackMessage())
-            ->from(config('app.name'))
-            ->image($slack->slack_logo_url)
-            ->content('*' . __('email.reminder.subject') . '*' . "\n" . 'This is a redirected notification. Add slack username for *' . $notifiable->name . '*');
     }
 
     // phpcs:ignore

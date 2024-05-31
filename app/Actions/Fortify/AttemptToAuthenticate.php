@@ -3,14 +3,12 @@
 namespace App\Actions\Fortify;
 
 use App\Helper\Reply;
-use App\Http\Requests\ClockIn\ClockInRequest;
 use App\Models\Attendance;
 use App\Models\AttendanceSetting;
 use App\Models\EmployeeShiftSchedule;
 use App\Models\GlobalSetting;
 use App\Models\Holiday;
 use App\Models\Leave;
-use App\Models\Company;
 use App\Models\CompanyAddress;
 use App\Models\User;
 use App\Scopes\ActiveScope;
@@ -20,9 +18,7 @@ use Illuminate\Contracts\Auth\StatefulGuard;
 use Illuminate\Validation\ValidationException;
 use Laravel\Fortify\Fortify;
 use Laravel\Fortify\LoginRateLimiter;
-use GuzzleHttp\Client;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
 
 class AttemptToAuthenticate
 {
@@ -85,9 +81,7 @@ class AttemptToAuthenticate
                 return $this->googleRecaptchaMessage();
             }
 
-            $secret = $globalSetting->google_recaptcha_v2_status == 'active' ? $globalSetting->google_recaptcha_v2_secret_key : $globalSetting->google_recaptcha_v3_secret_key;
-
-            $validateRecaptcha = $this->validateGoogleRecaptcha($gRecaptchaResponse, $secret);
+            $validateRecaptcha = GlobalSetting::validateGoogleRecaptcha($gRecaptchaResponse);
 
             if (!$validateRecaptcha) {
                 return $this->googleRecaptchaMessage();
@@ -110,6 +104,7 @@ class AttemptToAuthenticate
 
     public function checkAutoClockinConditions($authUser)
     {
+        
         $globalSetting = GlobalSetting::first();
         $showClockIn = $authUser->company->AttendanceSetting;
 
@@ -132,7 +127,7 @@ class AttemptToAuthenticate
             $cannotLogin = true;
         }
         else {
-            $earlyClockIn = Carbon::now($globalSetting->timezone)->addMinutes($attendanceSettings->early_clock_in);
+            $earlyClockIn = now($globalSetting->timezone)->addMinutes($attendanceSettings->early_clock_in);
             $earlyClockIn = $earlyClockIn->setTimezone('UTC');
 
             if($earlyClockIn->gte($officeStartTime)){
@@ -143,7 +138,7 @@ class AttemptToAuthenticate
             }
         }
 
-        if ($cannotLogin == true && now()->betweenIncluded($officeStartTime->copy()->subDay(), $officeEndTime->copy()->subDay())) {
+        if ($cannotLogin && now()->betweenIncluded($officeStartTime->copy()->subDay(), $officeEndTime->copy()->subDay())) {
             $cannotLogin = false;
         }
 
@@ -166,7 +161,7 @@ class AttemptToAuthenticate
         // Check Holiday by date
         $checkTodayHoliday = Holiday::where('date', $currentDate)->first();
 
-        if ($cannotLogin == false && $currentClockIn == null && $checkTodayLeave == null && is_null($checkTodayHoliday)) {
+        if (!$cannotLogin && $currentClockIn == null && $checkTodayLeave == null && is_null($checkTodayHoliday)) {
             return true;
         }
 
@@ -205,7 +200,7 @@ class AttemptToAuthenticate
             $cannotLogin = true;
         }
         else {
-            $earlyClockIn = Carbon::now($globalSetting->timezone)->addMinutes($attendanceSettings->early_clock_in);
+            $earlyClockIn = now($globalSetting->timezone)->addMinutes($attendanceSettings->early_clock_in);
             $earlyClockIn = $earlyClockIn->setTimezone('UTC');
 
             if($earlyClockIn->gte($officeStartTime)){
@@ -218,12 +213,12 @@ class AttemptToAuthenticate
 
         ($showClockIn->auto_clock_in == 'yes') ? $cannotLogin = false : $cannotLogin = true;
 
-        if ($cannotLogin == true && now()->betweenIncluded($officeStartTime->copy()->subDay(), $officeEndTime->copy()->subDay())) {
+        if ($cannotLogin && now()->betweenIncluded($officeStartTime->copy()->subDay(), $officeEndTime->copy()->subDay())) {
             $cannotLogin = false;
             $clockInCount = Attendance::getTotalUserClockInWithTime($officeStartTime->copy()->subDay(), $officeEndTime->copy()->subDay(), $authUser);
         }
 
-        if ($cannotLogin == true) {
+        if ($cannotLogin) {
             abort(403, __('messages.permissionDenied'));
         }
 
@@ -237,7 +232,7 @@ class AttemptToAuthenticate
         }
 
         // Check maximum attendance in a day
-        if ($clockInCount < $attendanceSettings->clockin_in_day && $cannotLogin == false) {
+        if ($clockInCount < $attendanceSettings->clockin_in_day && !$cannotLogin) {
 
             // Set TimeZone And Convert into timestamp
             $currentTimestamp = $now->setTimezone('UTC');
@@ -388,6 +383,7 @@ class AttemptToAuthenticate
 
         $this->guard->login($user, $request->filled('remember'));
 
+        event(new \App\Events\UserLoginEvent($user, $request->ip()));
         return $next($request);
     }
 
@@ -420,25 +416,6 @@ class AttemptToAuthenticate
             Fortify::username() => $request->{Fortify::username()},
             'password' => $request->password,
         ]));
-    }
-
-    public function validateGoogleRecaptcha($googleRecaptchaResponse, $secret)
-    {
-        $client = new Client();
-
-        $googleRecaptchaResponse = is_null($googleRecaptchaResponse) ? '' : $googleRecaptchaResponse;
-
-        $response = $client->post('https://www.google.com/recaptcha/api/siteverify',
-            [
-                'form_params' => [
-                    'secret' => $secret,
-                    'response' => $googleRecaptchaResponse
-                ]
-            ]
-        );
-        $body = json_decode((string)$response->getBody());
-
-        return $body->success;
     }
 
     public function googleRecaptchaMessage()

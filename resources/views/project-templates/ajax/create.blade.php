@@ -7,7 +7,7 @@ $addProjectCategoryPermission = user()->permission('manage_project_category');
         <x-form id="save-project-data-form">
             <div class="add-client bg-white rounded">
                 <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
-                    @lang('app.project') @lang('app.details')</h4>
+                    @lang('app.projectDetails')</h4>
                 <div class="row p-20">
                     <div class="col-md-6">
                         <x-forms.text class="mr-0 mr-lg-2 mr-md-2" :fieldLabel="__('modules.projects.projectName')"
@@ -25,7 +25,7 @@ $addProjectCategoryPermission = user()->permission('manage_project_category');
                                         data-live-search="true">
                                     <option value="">--</option>
                                     @foreach ($categories as $category)
-                                        <option value="{{ $category->id }}">{{ mb_ucwords($category->category_name) }}
+                                        <option value="{{ $category->id }}">{{ $category->category_name }}
                                         </option>
                                     @endforeach
                                 </select>

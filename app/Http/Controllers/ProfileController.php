@@ -15,10 +15,13 @@ use Illuminate\Support\Facades\Hash;
 class ProfileController extends AccountBaseController
 {
 
+    // phpcs:ignore
     public function update(UpdateProfile $request, $id)
     {
+        $redirect = false;
+
         // For profile image to be uploaded locally
-        $user = User::withoutGlobalScope(ActiveScope::class)->findOrFail($id);
+        $user = user();
         $user->name = $request->name;
         $user->email = $request->email;
         $user->salutation = $request->salutation;
@@ -49,6 +52,10 @@ class ProfileController extends AccountBaseController
             $user->telegram_user_id = $request->telegram_user_id;
         }
 
+        if ($user->isDirty('locale')) {
+            $redirect = true;
+        }
+
         $user->save();
 
         if ($user->clientDetails) {
@@ -70,7 +77,7 @@ class ProfileController extends AccountBaseController
             $redirectUrl = route('profile-settings.index');
         }
 
-        return Reply::successWithData(__('messages.updateSuccess'), ['redirectUrl' => $redirectUrl]);
+        return Reply::successWithData(__('messages.updateSuccess'), ['redirectUrl' => $redirectUrl, 'redirect' => $redirect]);
     }
 
     public function addEmployeeDetail($request, $user)
@@ -82,10 +89,16 @@ class ProfileController extends AccountBaseController
             $employee->user_id = $user->id;
         }
 
-        $employee->date_of_birth = $request->date_of_birth ? Carbon::createFromFormat($this->company->date_format, $request->date_of_birth)->format('Y-m-d') : null;
+        $employee->date_of_birth = $request->date_of_birth ? companyToYmd($request->date_of_birth) : null;
         $employee->address = $request->address;
         $employee->slack_username = $request->slack_username;
         $employee->about_me = $request->about_me;
+
+        if (in_array('employee', user_roles())) {
+            $employee->marital_status = $request->marital_status;
+            $employee->marriage_anniversary_date = $request->marriage_anniversary_date ? companyToYmd($request->marriage_anniversary_date) : null;
+        }
+
         $employee->save();
     }
 

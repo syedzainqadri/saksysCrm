@@ -62,7 +62,6 @@
 
         i{
           font-size: 10px;
-          color: $white_shade;
           font-weight: 700;
         }
       }
@@ -180,6 +179,7 @@
   display: block !important;
   white-space: nowrap;
   overflow: auto;
+  overflow-x: hidden;
 
   @include media-breakpoint-down(md){
     height: calc(100% - 63px);
@@ -203,6 +203,9 @@
       line-height: 1.87;
       white-space: nowrap;
       display: block;
+        width: 230px;
+        overflow: hidden;
+      text-overflow: ellipsis;
       align-items: center;
       padding: 10px 20px 10px 20px;
 

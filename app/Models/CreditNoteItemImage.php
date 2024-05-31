@@ -28,6 +28,7 @@ use App\Traits\IconTrait;
  * @method static \Illuminate\Database\Eloquent\Builder|CreditNoteItemImage whereId($value)
  * @method static \Illuminate\Database\Eloquent\Builder|CreditNoteItemImage whereSize($value)
  * @method static \Illuminate\Database\Eloquent\Builder|CreditNoteItemImage whereUpdatedAt($value)
+ * @property-read mixed $file
  * @mixin \Eloquent
  */
 class CreditNoteItemImage extends BaseModel
@@ -35,21 +36,23 @@ class CreditNoteItemImage extends BaseModel
 
     use IconTrait;
 
-    protected $appends = ['file_url', 'icon'];
+    const FILE_PATH = 'credit-note-files';
+
+    protected $appends = ['file_url', 'icon', 'file'];
     protected $fillable = ['credit_note_item_id', 'filename', 'hashname', 'size', 'external_link'];
 
     public function getFileUrlAttribute()
     {
-        if (empty($this->external_link)) {
-            return asset_url_local_s3('credit-note-files/' . $this->credit_note_item_id . '/' . $this->hashname);
-        }
-        elseif (!empty($this->external_link)) {
-            return $this->external_link;
-        }
-        else {
-            return '';
+        if($this->external_link){
+            return str($this->external_link)->contains('http') ? $this->external_link : asset_url_local_s3($this->external_link);
         }
 
+        return asset_url_local_s3(CreditNoteItemImage::FILE_PATH . '/' . $this->credit_note_item_id . '/' . $this->hashname);
+    }
+
+    public function getFileAttribute()
+    {
+        return $this->external_link ?: (CreditNoteItemImage::FILE_PATH . '/' . $this->credit_note_item_id . '/' . $this->hashname);
     }
 
 }

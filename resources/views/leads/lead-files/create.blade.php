@@ -17,7 +17,6 @@
     <x-forms.button-primary id="save-files" disabled icon="check">@lang('app.save')</x-forms.button-primary>
 </div>
 
-<script src="{{ asset('vendor/jquery/dropzone.min.js') }}"></script>
 
 <script>
     $(document).ready(function() {
@@ -26,7 +25,7 @@
         //Dropzone class
         leadDropzone = new Dropzone("div#file-upload-dropzone", {
             dictDefaultMessage: "{{ __('app.dragDrop') }}",
-            url: "{{ route('lead-files.store') }}",
+            url: "{{ route('deal-files.store') }}",
             headers: {
                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
             },

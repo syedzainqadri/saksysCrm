@@ -29,6 +29,11 @@ class EmployeeVisaController extends AccountBaseController
         });
     }
 
+    public function index()
+    {
+        return redirect()->route('employees.index');
+    }
+
     /**
      * Show the form for creating a new resource.
      *
@@ -53,7 +58,7 @@ class EmployeeVisaController extends AccountBaseController
         $visa->country_id = $request->country;
 
         if($request->has('file')) {
-            $visa->file = Files::uploadLocalOrS3($request->file, VisaDetail::FILE_PATH, 300);
+            $visa->file = Files::uploadLocalOrS3($request->file, VisaDetail::FILE_PATH);
         }
 
         $visa->save();
@@ -71,14 +76,12 @@ class EmployeeVisaController extends AccountBaseController
     public function show($id)
     {
         $this->visa = VisaDetail::findOrFail($id);
+        $this->view = 'employees.ajax.visa';
 
-        if (request()->ajax())
-        {
-            $html = view('employees.ajax.visa', $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
         }
 
-        $this->view = 'employees.ajax.visa';
         return view('employees.create', $this->data);
     }
 
@@ -111,7 +114,7 @@ class EmployeeVisaController extends AccountBaseController
 
         if($request->has('file')) {
             Files::deleteFile($visa->image, VisaDetail::FILE_PATH);
-            $visa->file = Files::uploadLocalOrS3($request->file, VisaDetail::FILE_PATH, 300);
+            $visa->file = Files::uploadLocalOrS3($request->file, VisaDetail::FILE_PATH);
         }
 
         $visa->save();

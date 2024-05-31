@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helper\Reply;
 use Carbon\Carbon;
 use Froiden\Envato\Traits\AppBoot;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -78,7 +79,7 @@ class Controller extends BaseController
 
             setlocale(LC_TIME, $this->locale . '_' . mb_strtoupper($this->locale));
 
-            if (config('app.env') !== 'development') {
+            if (config('app.env') == 'codecanyon') {
                 config(['app.debug' => $this->global->app_debug]);
             }
 
@@ -93,6 +94,13 @@ class Controller extends BaseController
     public function checkMigrateStatus()
     {
         return check_migrate_status();
+    }
+
+    public function returnAjax($view)
+    {
+        $html = view($view, $this->data)->render();
+
+        return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
     }
 
 }

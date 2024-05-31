@@ -26,7 +26,7 @@
                                             data-live-search="true">
                                         @foreach ($icons as $item)
                                             <option data-icon="{{ $item->icon }}" data-content="<i class='bi bi-{{ $item->icon }}'></i> {{ $item->title }}" value="{{ $item->id }}">
-                                                {{ mb_ucwords($item->title) }}
+                                                {{ $item->title }}
                                             </option>
                                         @endforeach
                                     </select>

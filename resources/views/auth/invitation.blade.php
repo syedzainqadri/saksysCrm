@@ -47,7 +47,15 @@
                        placeholder="@lang('placeholders.password')" id="password">
             </div>
 
-            <button type="submit" id="submit-signup"
+            @if ($globalSetting->sign_up_terms == 'yes')
+                <div class="form-group text-left" >
+                    <input autocomplete="off" id="read_agreement"
+                        name="terms_and_conditions" type="checkbox" >
+                    <label for="read_agreement">@lang('app.acceptTerms') <a href="{{ $globalSetting->terms_link }}" target="_blank" id="terms_link" >@lang('app.termsAndCondition')</a></label>
+                </div>
+            @endif
+
+            <button type="button" id="submit-signup"
                     class="btn-primary f-w-500 rounded w-100 height-50 f-18">
                 @lang('app.signUp') <i class="fa fa-arrow-right pl-1"></i>
             </button>

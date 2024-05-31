@@ -8,8 +8,8 @@ use Sentry\SentrySdk;
 use Throwable;
 
 /**
- * @method void setup() Setup the feature in the environment.
- * @method void setupInactive() Setup the feature in the environment in an inactive state (when no DSN was set).
+ * @method void onBoot() Setup the feature in the environment.
+ * @method void onBootInactive() Setup the feature in the environment in an inactive state (when no DSN was set).
  *
  * @internal
  */
@@ -23,16 +23,16 @@ abstract class Feature
     /**
      * In-memory cache for the tracing feature flag.
      *
-     * @var bool|null
+     * @var array<string, bool>
      */
-    private $isTracingFeatureEnabled;
+    private $isTracingFeatureEnabled = [];
 
     /**
      * In-memory cache for the breadcumb feature flag.
      *
-     * @var bool|null
+     * @var array<string, bool>
      */
-    private $isBreadcrumbFeatureEnabled;
+    private $isBreadcrumbFeatureEnabled = [];
 
     /**
      * @param Container $container The Laravel application container.
@@ -50,13 +50,21 @@ abstract class Feature
     abstract public function isApplicable(): bool;
 
     /**
-     * Initializes the feature.
+     * Register the feature in the environment.
+     */
+    public function register(): void
+    {
+        // ...
+    }
+
+    /**
+     * Initialize the feature.
      */
     public function boot(): void
     {
-        if (method_exists($this, 'setup') && $this->isApplicable()) {
+        if (method_exists($this, 'onBoot') && $this->isApplicable()) {
             try {
-                $this->container->call([$this, 'setup']);
+                $this->container->call([$this, 'onBoot']);
             } catch (Throwable $exception) {
                 // If the feature setup fails, we don't want to prevent the rest of the SDK from working.
             }
@@ -64,13 +72,13 @@ abstract class Feature
     }
 
     /**
-     * Initializes the feature in an inactive state (when no DSN was set).
+     * Initialize the feature in an inactive state (when no DSN was set).
      */
     public function bootInactive(): void
     {
-        if (method_exists($this, 'setupInactive') && $this->isApplicable()) {
+        if (method_exists($this, 'onBootInactive') && $this->isApplicable()) {
             try {
-                $this->container->call([$this, 'setupInactive']);
+                $this->container->call([$this, 'onBootInactive']);
             } catch (Throwable $exception) {
                 // If the feature setup fails, we don't want to prevent the rest of the SDK from working.
             }
@@ -118,11 +126,11 @@ abstract class Feature
      */
     protected function isTracingFeatureEnabled(string $feature, bool $default = true): bool
     {
-        if ($this->isTracingFeatureEnabled === null) {
-            $this->isTracingFeatureEnabled = $this->isFeatureEnabled('tracing', $feature, $default);
+        if (!array_key_exists($feature, $this->isTracingFeatureEnabled)) {
+            $this->isTracingFeatureEnabled[$feature] = $this->isFeatureEnabled('tracing', $feature, $default);
         }
 
-        return $this->isTracingFeatureEnabled;
+        return $this->isTracingFeatureEnabled[$feature];
     }
 
     /**
@@ -130,11 +138,11 @@ abstract class Feature
      */
     protected function isBreadcrumbFeatureEnabled(string $feature, bool $default = true): bool
     {
-        if ($this->isBreadcrumbFeatureEnabled === null) {
-            $this->isBreadcrumbFeatureEnabled = $this->isFeatureEnabled('breadcrumbs', $feature, $default);
+        if (!array_key_exists($feature, $this->isBreadcrumbFeatureEnabled)) {
+            $this->isBreadcrumbFeatureEnabled[$feature] = $this->isFeatureEnabled('breadcrumbs', $feature, $default);
         }
 
-        return $this->isBreadcrumbFeatureEnabled;
+        return $this->isBreadcrumbFeatureEnabled[$feature];
     }
 
     /**

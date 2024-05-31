@@ -33,7 +33,19 @@ $addProductPermission = user()->permission('add_product');
             <!-- INVOICE NUMBER END -->
             <!-- CLIENT START -->
             <div class="col-md-4 mb-4">
-                <x-client-selection-dropdown :clients="$clients" :selected="null" />
+                @if (isset($client))
+                    <div class="form-group">
+                        <x-forms.label fieldId="due_date" :fieldLabel="__('app.client')">
+                        </x-forms.label>
+                        <div class="input-group">
+                            <input type="hidden" name="client_id" id="client_id" value="{{ $client->id }}">
+                            <input type="text" value="{{ $client->name_salutation }}"
+                                class="form-control height-35 f-15 readonly-background" readonly>
+                        </div>
+                    </div>
+                @else
+                    <x-client-selection-dropdown :clients="$clients" :selected="null" />
+                @endif
             </div>
             <!-- CLIENT END -->
             <!-- BILLING ADDRESS START -->
@@ -42,7 +54,11 @@ $addProductPermission = user()->permission('add_product');
                     <label class="f-14 text-dark-grey mb-12 text-capitalize w-100"
                         for="usr">@lang('modules.invoices.billingAddress')</label>
                     <p class="f-15" id="client_billing_address">
-                        <span class="text-lightest">@lang('messages.selectCustomerForBillingAddress')</span>
+                        @if (isset($client))
+                            {!! nl2br($client->clientDetails->address) !!}
+                        @else
+                            <span class="text-lightest">@lang('messages.selectCustomerForBillingAddress')</span>
+                        @endif
                     </p>
                 </div>
             </div>
@@ -71,6 +87,30 @@ $addProductPermission = user()->permission('add_product');
             <!-- SHIPPING ADDRESS END -->
 
             <div class="col-md-4">
+                @if (isset($project) && !is_null($project))
+                <div class="form-group mb-4">
+                    <x-forms.label fieldId="due_date" :fieldLabel="__('app.project')">
+                    </x-forms.label>
+                    <div class="input-group">
+                        <input type="hidden" name="project_id" id="project_id" value="{{ $project->id }}">
+                        <input type="text" value="{{ $project->project_name }}"
+                            class="form-control height-35 f-15 readonly-background" readonly>
+                    </div>
+                </div>
+                @else
+                <div class="form-group c-inv-select">
+                    <x-forms.label fieldId="project_id" :fieldLabel="__('app.project')">
+                    </x-forms.label>
+                    <div class="form-group mb-0">
+                        <select name="project_id" id="project_id" data-live-search="true" class="form-control select-picker">
+                            <option value="">--</option>
+                        </select>
+                    </div>
+                </div>
+                @endif
+            </div>
+
+            <div class="col-md-4">
                 <div class="form-group c-inv-select mb-4">
                     <x-forms.label fieldId="company_address_id" :fieldLabel="__('modules.invoices.generatedBy')">
                     </x-forms.label>
@@ -87,7 +127,7 @@ $addProductPermission = user()->permission('add_product');
             </div>
 
             <!-- Order Status -->
-            <div class="col-md-4">
+            <div class="col-md-4 mb-4">
                 <x-forms.label fieldId="status" :fieldLabel="__('app.status')" :fieldRequired="true" class="mt-0"></x-forms.label>
 
                 <select class="form-control select-picker" name="status" id="status">
@@ -105,6 +145,30 @@ $addProductPermission = user()->permission('add_product');
 
                 </select>
             </div>
+
+            @if($linkInvoicePermission == 'all')
+                <div class="col-md-4">
+                    <div class="form-group c-inv-select mb-4 d-none">
+                        <x-forms.label fieldId="bank_account_id" :fieldLabel="__('app.bankaccount')">
+                        </x-forms.label>
+                        <div class="select-others height-35 rounded">
+                            <select class="form-control select-picker" data-live-search="true" data-size="8"
+                                    name="bank_account_id" id="bank_account_id">
+                                <option value="">--</option>
+                                @if($viewBankAccountPermission != 'none')
+                                    @foreach ($bankDetails as $bankDetail)
+                                        <option value="{{ $bankDetail->id }}">@if($bankDetail->type == 'bank')
+                                            {{ $bankDetail->bank_name }} | @endif
+                                            {{ $bankDetail->account_name }}
+                                        </option>
+                                    @endforeach
+                                @endif
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mt-3"></div>
+            @endif
 
             <input type="hidden" id="calculate_tax" value="after_discount">
         </div>
@@ -126,30 +190,33 @@ $addProductPermission = user()->permission('add_product');
                     </x-forms.input-group>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="form-group c-inv-select mb-4">
-                <x-forms.input-group>
-                    <select class="form-control select-picker" data-live-search="true" data-size="8" id="add-products" title="{{ __('app.menu.selectProduct') }}">
-                        @foreach ($products as $item)
-                            <option data-content="{{ $item->name }}" value="{{ $item->id }}">
-                                {{ $item->name }}</option>
-                        @endforeach
-                    </select>
-                    <x-slot name="preappend">
-                        <a href="javascript:;"
-                            class="btn btn-outline-secondary border-grey toggle-product-category"
-                            data-toggle="tooltip" data-original-title="{{ __('modules.productCategory.filterByCategory') }}"><i class="fa fa-filter"></i></a>
-                    </x-slot>
-                    @if ($addProductPermission == 'all' || $addProductPermission == 'added')
-                        <x-slot name="append">
-                            <a href="{{ route('products.create') }}" data-redirect-url="no"
-                                class="btn btn-outline-secondary border-grey openRightModal"
-                                data-toggle="tooltip" data-original-title="{{ __('app.add').' '.__('modules.dashboard.newproduct') }}">@lang('app.add')</a>
+
+            @if(in_array('products', user_modules()) || in_array('purchase', user_modules()))
+                <div class="col-md-3">
+                    <div class="form-group c-inv-select mb-4">
+                    <x-forms.input-group>
+                        <select class="form-control select-picker" data-live-search="true" data-size="8" id="add-products" title="{{ __('app.menu.selectProduct') }}">
+                            @foreach ($products as $item)
+                                <option data-content="{{ $item->name }}@if($item->sku) ({{ $item->sku }})@endif" value="{{ $item->id }}">
+                                    {{ $item->name }}</option>
+                            @endforeach
+                        </select>
+                        <x-slot name="preappend">
+                            <a href="javascript:;"
+                                class="btn btn-outline-secondary border-grey toggle-product-category"
+                                data-toggle="tooltip" data-original-title="{{ __('modules.productCategory.filterByCategory') }}"><i class="fa fa-filter"></i></a>
                         </x-slot>
-                    @endif
-                </x-forms.input-group>
+                        @if ($addProductPermission == 'all' || $addProductPermission == 'added')
+                            <x-slot name="append">
+                                <a href="{{ route('products.create') }}" data-redirect-url="no"
+                                    class="btn btn-outline-secondary border-grey openRightModal"
+                                    data-toggle="tooltip" data-original-title="{{ __('app.add').' '.__('modules.dashboard.newproduct') }}">@lang('app.add')</a>
+                            </x-slot>
+                        @endif
+                    </x-forms.input-group>
+                    </div>
                 </div>
-            </div>
+            @endif
         </div>
 
         <x-alert class="my-4 mx-4" id="alertMessage" type="danger">@lang('messages.addItem')</x-alert>
@@ -191,9 +258,9 @@ $addProductPermission = user()->permission('add_product');
                                                                 class="select-others select-tax height-35 rounded border-0">
                                                                 <select class="form-control select-picker"
                                                                     id="discount_type" name="discount_type">
-                                                                    <option @if (isset($estimate) && $estimate->discount_type == 'percent') selected @endif value="percent">%
+                                                                    <option @selected(isset($estimate) && $estimate->discount_type == 'percent') value="percent">%
                                                                     </option>
-                                                                    <option @if (isset($estimate) && $estimate->discount_type == 'fixed') selected @endif value="fixed">
+                                                                    <option @selected(isset($estimate) && $estimate->discount_type == 'fixed') value="fixed">
                                                                         @lang('modules.invoices.amount')</option>
                                                                 </select>
                                                             </div>
@@ -293,6 +360,14 @@ $addProductPermission = user()->permission('add_product');
 
         const hsn_status = {{ $invoiceSetting->hsn_sac_code_show }};
 
+        $('#status').change(function() {
+            if($(this).val() == 'completed') {
+                $('#bank_account_id').closest('.c-inv-select').removeClass('d-none');
+            } else {
+                $('#bank_account_id').closest('.c-inv-select').addClass('d-none');
+            }
+        });
+
         $('#client_list_id').change(function() {
             var id = $(this).val();
             changeClient(id);
@@ -325,6 +400,8 @@ $addProductPermission = user()->permission('add_product');
                                 .address));
                             $('#add-shipping-field').addClass('d-none');
                             $('#client_shipping_address').removeClass('d-none');
+                            $('#project_id').html(response.project);
+                            $('#project_id').selectpicker('refresh');
 
                             if (response.data.client_details.shipping_address === null) {
                                 var addShippingLink =
@@ -338,7 +415,7 @@ $addProductPermission = user()->permission('add_product');
 
                         } else {
                             $('#client_billing_address').html(
-                                '<span class="text-lightest">@lang("messages.selectCustomerForBillingAddress")</span>'
+                                "<span class='text-lightest'>@lang('messages.selectCustomerForBillingAddress')</span>"
                             );
                         }
                     } else {

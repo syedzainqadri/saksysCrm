@@ -67,6 +67,10 @@ class LeaveType extends BaseModel
 
     use HasCompany;
 
+    protected $casts = [
+        'monthly_limit' => 'float',
+    ];
+
     public function leaves(): HasMany
     {
         return $this->hasMany(Leave::class, 'leave_type_id');
@@ -114,7 +118,6 @@ class LeaveType extends BaseModel
                 ->join('users', 'users.id', 'employee_leave_quotas.user_id')
                 ->join('employee_details', 'employee_details.user_id', 'users.id')->where('users.id', $user->id);
 
-
                 if (!is_null($leaveTypeId)) {
                     $leaveTypes = $leaveTypes->where('leave_types.id', $leaveTypeId);
                 }
@@ -146,27 +149,62 @@ class LeaveType extends BaseModel
 
     }
 
-    public static function leaveTypeCodition($leave, $userRole)
+    public function leaveTypeCondition(LeaveType $leave, User $user)
     {
-        $currentDate = Carbon::now()->format('Y-m-d');
+        $currentDate = now();
+
+        if (!$user->employee)
+        {
+            return false;
+        }
+
+        $userRole = $user->roles->pluck('id')->toArray();
 
         $leaveRole = $leave->role;
 
         if(!is_null($leave->effective_type) && !is_null($leave->effective_after)){
-            $effectiveDate = $leave->effective_type == 'days' ? Carbon::parse($leave->joining_date)->addDays($leave->effective_after)->format('Y-m-d') : Carbon::parse($leave->joining_date)->addMonths($leave->effective_after)->format('Y-m-d');
+            $effectiveDate = $leave->effective_type == 'days' ? $user->employeeDetail->joining_date->addDays($leave->effective_after) : $user->employeeDetail->joining_date->addMonths($leave->effective_after);
         }
 
-        $probation = Carbon::parse($leave->probation_end_date)->format('Y-m-d');
-        $noticePeriod = Carbon::parse($leave->notice_period_start_date)->format('Y-m-d');
+        $probation = Carbon::parse($leave->probation_end_date);
+        $noticePeriod = Carbon::parse($leave->notice_period_start_date);
 
-        if((is_null($leave->probation_end_date) || ($leave->allowed_probation == 0 && $probation < $currentDate) || $leave->allowed_probation == 1) &&
-        (is_null($leave->notice_period_start_date) || ($leave->allowed_notice == 0 && $noticePeriod > $currentDate) || $leave->allowed_notice == 1) &&
-        (!is_null($leave->gender) && in_array($leave->usergender, json_decode($leave->gender))) &&
-        (!is_null($leave->marital_status) && in_array($leave->maritalStatus, json_decode($leave->marital_status))) &&
-        (!is_null($leave->department) && in_array($leave->employee_department, json_decode($leave->department))) &&
-        (!is_null($leave->designation) && in_array($leave->employee_designation, json_decode($leave->designation))) &&
-        (!is_null($leave->role) && array_intersect($userRole, json_decode($leaveRole))) &&
-        (is_null($leave->effective_after) || $currentDate > $effectiveDate)){ /** @phpstan-ignore-line */
+        if(
+            (
+                is_null($leave->probation_end_date)
+                || ($leave->allowed_probation == 0 && $probation->lt($currentDate))
+                || $leave->allowed_probation == 1
+            )
+            && (
+                is_null($leave->notice_period_start_date)
+                || ($leave->allowed_notice == 0 && $noticePeriod->gt($currentDate))
+                || $leave->allowed_notice == 1
+            )
+            && (
+                !is_null($leave->gender)
+                && in_array($user->gender, json_decode($leave->gender))
+            )
+            && (
+                !is_null($leave->marital_status)
+                && in_array($user->employeeDetail->marital_status->value, json_decode($leave->marital_status))
+            )
+            && (
+                !is_null($leave->department)
+                && in_array($user->employeeDetail->department->id, json_decode($leave->department))
+            )
+            && (
+                !is_null($leave->designation)
+                && in_array($user->employeeDetail->designation->id, json_decode($leave->designation))
+            )
+            && (
+                !is_null($leave->role)
+                && !empty(array_intersect($userRole, json_decode($leaveRole)))
+            )
+            && (
+                is_null($leave->effective_after)
+                || $currentDate->gt($effectiveDate)
+            )
+        ) {
             return true;
         }
 

@@ -123,22 +123,4 @@ class SecuritySettingController extends AccountBaseController
         return view('security-settings.verify-recaptcha-v3', $this->data);
     }
 
-    public function validateGoogleRecaptcha($googleRecaptchaResponse, $secret)
-    {
-        $client = new Client();
-        $response = $client->post('https://www.google.com/recaptcha/api/siteverify',
-            [
-                'form_params' => [
-                    'secret' => $secret,
-                    'response' => $googleRecaptchaResponse,
-                    'remoteip' => $_SERVER['REMOTE_ADDR']
-                ]
-            ]
-        );
-
-        $body = json_decode((string)$response->getBody());
-
-        return $body->success;
-    }
-
 }

@@ -7,9 +7,11 @@ use App\Models\BankAccount;
 use App\Models\BankTransaction;
 use App\Models\Expense;
 use App\Models\Notification;
+use App\Traits\EmployeeActivityTrait;
 
 class ExpenseObserver
 {
+    use EmployeeActivityTrait;
 
     public function saving(Expense $expense)
     {
@@ -33,6 +35,7 @@ class ExpenseObserver
     public function created(Expense $expense)
     {
         if (!isRunningInConsoleOrSeeding()) {
+            self::createEmployeeActivity(user()->id, 'expenses-created', $expense->id, 'expenses');
 
             if ($expense->user_id == user()->id) {
                 event(new NewExpenseEvent($expense, 'member'));
@@ -47,7 +50,7 @@ class ExpenseObserver
 
         if (!isRunningInConsoleOrSeeding()) {
 
-            if(!is_null($expense->bank_account_id) && $expense->status == 'approved'){
+            if (!is_null($expense->bank_account_id) && $expense->status == 'approved') {
 
                 $bankAccount = BankAccount::find($expense->bank_account_id);
                 $bankBalance = $bankAccount->bank_balance;
@@ -81,17 +84,16 @@ class ExpenseObserver
 
         if (!isRunningInConsoleOrSeeding()) {
 
-            if(!is_null($expense->bank_account_id) && $expense->status == 'approved'){
+            if (!is_null($expense->bank_account_id) && $expense->status == 'approved') {
 
-                if($expense->isDirty('bank_account_id'))
-                {
+                if ($expense->isDirty('bank_account_id')) {
                     $account = $expense->getOriginal('bank_account_id');
                     $oldPrice = $expense->getOriginal('price');
                     $newPrice = $expense->price;
 
                     $bankAccount = BankAccount::find($account);
 
-                    if($bankAccount && $expense->getOriginal('status') == 'approved'){
+                    if ($bankAccount && $expense->getOriginal('status') == 'approved') {
 
                         $bankBalance = $bankAccount->bank_balance;
                         $bankBalance += $oldPrice;
@@ -114,7 +116,7 @@ class ExpenseObserver
 
                     $newBankAccount = BankAccount::find($expense->bank_account_id);
 
-                    if($newBankAccount){
+                    if ($newBankAccount) {
                         $newBankBalance = $newBankAccount->bank_balance;
                         $newBankBalance -= $newPrice;
 
@@ -135,8 +137,7 @@ class ExpenseObserver
                     }
 
                 }
-                elseif(!$expense->isDirty('bank_account_id') && $expense->isDirty('price'))
-                {
+                elseif (!$expense->isDirty('bank_account_id') && $expense->isDirty('price')) {
                     $bankAccount = BankAccount::find($expense->bank_account_id);
                     $bankBalance = $bankAccount->bank_balance;
 
@@ -144,7 +145,7 @@ class ExpenseObserver
                     $oldPrice = $expense->getOriginal('price');
                     $newPrice = $expense->price;
 
-                    if($expense->getOriginal('price') > $expense->price){
+                    if ($expense->getOriginal('price') > $expense->price) {
                         $newBalance = $oldPrice - $newPrice;
                         $bankBalance += $newBalance;
 
@@ -161,7 +162,7 @@ class ExpenseObserver
                         $transaction->save();
                     }
 
-                    if($expense->getOriginal('price') < $expense->price){
+                    if ($expense->getOriginal('price') < $expense->price) {
                         $newBalance = $newPrice - $oldPrice;
                         $bankBalance -= $newBalance;
 
@@ -182,8 +183,7 @@ class ExpenseObserver
                     $bankAccount->save();
 
                 }
-                elseif($expense->isDirty('status'))
-                {
+                elseif ($expense->isDirty('status')) {
                     $bankAccount = BankAccount::find($expense->bank_account_id);
                     $bankBalance = $bankAccount->bank_balance;
 
@@ -207,11 +207,10 @@ class ExpenseObserver
 
             }
 
-            if($expense->isDirty('status') && $expense->status != 'approved')
-            {
+            if ($expense->isDirty('status') && $expense->getOriginal('status') == 'approved' && $expense->status != 'approved') {
                 $bankAccount = BankAccount::find($expense->bank_account_id);
 
-                if(!is_null($bankAccount)){
+                if (!is_null($bankAccount)) {
                     $bankBalance = $bankAccount->bank_balance;
 
                     $newBalance = $bankBalance + $expense->price;
@@ -241,6 +240,8 @@ class ExpenseObserver
     public function updated(Expense $expense)
     {
         if (!isRunningInConsoleOrSeeding()) {
+            self::createEmployeeActivity(user()->id, 'expenses-updated', $expense->id, 'expenses');
+
             if ($expense->isDirty('status') && $expense->user_id != user()->id) {
                 event(new NewExpenseEvent($expense, 'status'));
             }
@@ -258,14 +259,14 @@ class ExpenseObserver
             ->where('data', 'like', '{"id":' . $expense->id . ',%')
             ->delete();
 
-        if(!is_null($expense->bank_account_id) && $expense->status == 'approved'){
+        if (!is_null($expense->bank_account_id) && $expense->status == 'approved') {
 
             $account = $expense->bank_account_id;
             $price = $expense->price;
 
             $bankAccount = BankAccount::find($account);
 
-            if($bankAccount){
+            if ($bankAccount) {
                 $bankBalance = $bankAccount->bank_balance;
                 $bankBalance += $price;
 
@@ -274,7 +275,7 @@ class ExpenseObserver
                 $transaction->type = 'Cr';
                 $transaction->bank_account_id = $account;
                 $transaction->amount = round($price, 2);
-                $transaction->transaction_date = $expense->purchase_date;;
+                $transaction->transaction_date = $expense->purchase_date;
                 $transaction->bank_balance = round($bankBalance, 2);
                 $transaction->transaction_relation = 'expense';
                 $transaction->transaction_related_to = $expense->item_name;
@@ -286,6 +287,14 @@ class ExpenseObserver
             }
         }
 
+    }
+
+    public function deleted(Expense $expense)
+    {
+        if (user()) {
+            self::createEmployeeActivity(user()->id, 'expenses-deleted');
+
+        }
     }
 
 }

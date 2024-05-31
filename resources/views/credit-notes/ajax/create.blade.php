@@ -2,7 +2,7 @@
 <div class="bg-white rounded b-shadow-4 create-inv">
     <!-- HEADING START -->
     <div class="px-lg-4 px-md-4 px-3 py-3">
-        <h4 class="mb-0 f-21 font-weight-normal text-capitalize">@lang('app.menu.credit-note') @lang('app.details')</h4>
+        <h4 class="mb-0 f-21 font-weight-normal text-capitalize">@lang('app.creditNoteDetails')</h4>
     </div>
     <!-- HEADING END -->
     <hr class="m-0 border-top-grey">
@@ -78,7 +78,7 @@
                     <x-forms.label fieldId="client_id" :fieldLabel="__('app.client')">
                     </x-forms.label>
                     <p>
-                        {{ $creditNote->client->name }}
+                        {{ $creditNote->client->name_salutation }}
                     </p>
                 </div>
             </div>
@@ -169,10 +169,10 @@
                                                 multiple="multiple" class="select-picker type customSequence border-0"
                                                 data-size="3" disabled>
                                                 @foreach ($taxes as $tax)
-                                                    <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ strtoupper($tax->tax_name) .':'. $tax->rate_percent }}%" @if (isset($item->taxes) && array_search($tax->id, json_decode($item->taxes)) !== false)
+                                                    <option data-rate="{{ $tax->rate_percent }}" data-tax-text="{{ $tax->tax_name .':'. $tax->rate_percent }}%" @if (isset($item->taxes) && array_search($tax->id, json_decode($item->taxes)) !== false)
                                                     selected @endif
                                                     value="{{ $tax->id }}">
-                                                    {{ strtoupper($tax->tax_name) }}:{{ $tax->rate_percent }}%
+                                                    {{ $tax->tax_name }}:{{ $tax->rate_percent }}%
                                                     </option>
                                                 @endforeach
                                             </select>
@@ -197,7 +197,7 @@
                                         <input type="file"
                                         class="dropify"
                                         name="invoice_item_image[]"
-                                        data-allowed-file-extensions="png jpg jpeg"
+                                        data-allowed-file-extensions="png jpg jpeg bmp"
                                         data-messages-default="test"
                                         data-height="70"
                                         data-id="{{ $item->id }}"
@@ -205,7 +205,7 @@
                                         data-default-file="{{ $item->invoiceItemImage ? $item->invoiceItemImage->file_url : '' }}"
                                         disabled="disabled"
                                         />
-                                        <input type="hidden" name="invoice_item_image_url[]" value="{{ $item->invoiceItemImage ? (!empty($item->invoiceItemImage->external_link) ? $item->invoiceItemImage->external_link : $item->invoiceItemImage->file_url) : '' }}">
+                                        <input type="hidden" name="invoice_item_image_url[]" value="{{ $item->invoiceItemImage ? $item->invoiceItemImage->file : '' }}">
                                     </td>
                                 </tr>
                             </tbody>
@@ -278,7 +278,7 @@
                                 </td>
                             </tr>
                             <tr>
-                                <td>@lang('app.adjustment') @lang('app.amount')</td>
+                                <td>@lang('app.adjustmentAmount')</td>
                                 <td colspan="2" class="p-0 border-0">
                                     <table width="100%" id="invoice-taxes">
                                         <tr>

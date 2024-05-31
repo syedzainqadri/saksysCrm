@@ -56,10 +56,8 @@ class AppreciationController extends AccountBaseController
         $this->view = 'appreciations.ajax.create';
 
         if (request()->ajax()) {
-            $html = view($this->view, $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
-
 
         return view('appreciations.create', $this->data);
     }
@@ -112,12 +110,12 @@ class AppreciationController extends AccountBaseController
             || ($this->viewPermission == 'both' && ($this->appreciation->added_by == user()->id || $this->appreciation->award_to == user()->id))
         ));
 
+        $this->view = 'appreciations.ajax.show';
+
         if (request()->ajax()) {
-            $html = view('appreciations.ajax.show', $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
 
-        $this->view = 'appreciations.ajax.show';
         return view('appreciations.create', $this->data);
     }
 
@@ -143,12 +141,12 @@ class AppreciationController extends AccountBaseController
         $this->employees = User::allEmployees(null, true, 'all');
         $this->appreciationTypes = Award::with('awardIcon')->where('status', 'active')->get();
 
-        if (request()->ajax()) {
-            $html = view('appreciations.ajax.edit', $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
-        }
 
         $this->view = 'appreciations.ajax.edit';
+
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
+        }
 
         return view('appreciations.create', $this->data);
 
@@ -201,6 +199,7 @@ class AppreciationController extends AccountBaseController
         ));
 
         Appreciation::destroy($id);
+
         return Reply::successWithData(__('messages.deleteSuccess'), ['redirectUrl' => route('appreciations.index')]);
 
     }
@@ -210,6 +209,7 @@ class AppreciationController extends AccountBaseController
         switch ($request->action_type) {
         case 'delete':
             $this->deleteRecords($request);
+
             return Reply::success(__('messages.deleteSuccess'));
         default:
             return Reply::error(__('messages.selectAction'));

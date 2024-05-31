@@ -2,138 +2,88 @@
 
 namespace Sentry\Laravel\Features;
 
-use Illuminate\Console\Scheduling\Event as SchedulingEvent;
-use Illuminate\Contracts\Cache\Factory as Cache;
-use Illuminate\Contracts\Foundation\Application;
-use Sentry\CheckIn;
-use Sentry\CheckInStatus;
-use Sentry\Event as SentryEvent;
-use Sentry\SentrySdk;
+use Illuminate\Contracts\Events\Dispatcher;
+use Illuminate\Console\Events as ConsoleEvents;
+use Sentry\Breadcrumb;
+use Sentry\Laravel\Integration;
+use Sentry\State\Scope;
+use Symfony\Component\Console\Input\ArgvInput;
+use Symfony\Component\Console\Input\InputInterface;
 
 class ConsoleIntegration extends Feature
 {
-    /**
-     * @var array<string, CheckIn> The list of checkins that are currently in progress.
-     */
-    private $checkInStore = [];
-
-    /**
-     * @var Cache The cache repository.
-     */
-    private $cache;
+    private const FEATURE_KEY = 'command_info';
 
     public function isApplicable(): bool
     {
-        return $this->container()->make(Application::class)->runningInConsole();
+        return true;
     }
 
-    public function setup(Cache $cache): void
+    public function onBoot(Dispatcher $events): void
     {
-        $this->cache = $cache;
-
-        $startCheckIn  = function (string $mutex, string $slug, bool $useCache, int $useCacheTtlInMinutes) {
-            $this->startCheckIn($mutex, $slug, $useCache, $useCacheTtlInMinutes);
-        };
-        $finishCheckIn = function (string $mutex, string $slug, CheckInStatus $status, bool $useCache) {
-            $this->finishCheckIn($mutex, $slug, $status, $useCache);
-        };
-
-        SchedulingEvent::macro('sentryMonitor', function (string $monitorSlug) use ($startCheckIn, $finishCheckIn) {
-            /** @var SchedulingEvent $this */
-            return $this
-                ->before(function () use ($startCheckIn, $monitorSlug) {
-                    /** @var SchedulingEvent $this */
-                    $startCheckIn($this->mutexName(), $monitorSlug, $this->runInBackground, $this->expiresAt);
-                })
-                ->onSuccess(function () use ($finishCheckIn, $monitorSlug) {
-                    /** @var SchedulingEvent $this */
-                    $finishCheckIn($this->mutexName(), $monitorSlug, CheckInStatus::ok(), $this->runInBackground);
-                })
-                ->onFailure(function () use ($finishCheckIn, $monitorSlug) {
-                    /** @var SchedulingEvent $this */
-                    $finishCheckIn($this->mutexName(), $monitorSlug, CheckInStatus::error(), $this->runInBackground);
-                });
-        });
+        $events->listen(ConsoleEvents\CommandStarting::class, [$this, 'commandStarting']);
+        $events->listen(ConsoleEvents\CommandFinished::class, [$this, 'commandFinished']);
     }
 
-    public function setupInactive(): void
+    public function commandStarting(ConsoleEvents\CommandStarting $event): void
     {
-        SchedulingEvent::macro('sentryMonitor', function (string $monitorSlug) {
-            // When there is no Sentry DSN set there is nothing for us to do, but we still want to allow the user to setup the macro
-            return $this;
-        });
-    }
-
-    private function startCheckIn(string $mutex, string $slug, bool $useCache, int $useCacheTtlInMinutes): void
-    {
-        $checkIn = $this->createCheckIn($slug, CheckInStatus::inProgress());
-
-        $cacheKey = $this->buildCacheKey($mutex, $slug);
-
-        $this->checkInStore[$cacheKey] = $checkIn;
-
-        if ($useCache) {
-            $this->cache->store()->put($cacheKey, $checkIn->getId(), $useCacheTtlInMinutes * 60);
-        }
-
-        $this->sendCheckIn($checkIn);
-    }
-
-    private function finishCheckIn(string $mutex, string $slug, CheckInStatus $status, bool $useCache): void
-    {
-        $cacheKey = $this->buildCacheKey($mutex, $slug);
-
-        $checkIn = $this->checkInStore[$cacheKey] ?? null;
-
-        if ($checkIn === null && $useCache) {
-            $checkInId = $this->cache->store()->get($cacheKey);
-
-            if ($checkInId !== null) {
-                $checkIn = $this->createCheckIn($slug, $status, $checkInId);
-            }
-        }
-
-        // This should never happen (because we should always start before we finish), but better safe than sorry
-        if ($checkIn === null) {
+        if (!$event->command) {
             return;
         }
 
-        // We don't need to keep the checkIn ID stored since we finished executing the command
-        unset($this->checkInStore[$mutex]);
+        Integration::configureScope(static function (Scope $scope) use ($event): void {
+            $scope->setTag('command', $event->command);
+        });
 
-        if ($useCache) {
-            $this->cache->store()->forget($cacheKey);
+        if ($this->isBreadcrumbFeatureEnabled(self::FEATURE_KEY)) {
+            Integration::addBreadcrumb(new Breadcrumb(
+                Breadcrumb::LEVEL_INFO,
+                Breadcrumb::TYPE_DEFAULT,
+                'artisan.command',
+                'Starting Artisan command: ' . $event->command,
+                [
+                    'input' => $this->extractConsoleCommandInput($event->input),
+                ]
+            ));
+        }
+    }
+
+    public function commandFinished(ConsoleEvents\CommandFinished $event): void
+    {
+        if ($this->isBreadcrumbFeatureEnabled(self::FEATURE_KEY)) {
+            Integration::addBreadcrumb(new Breadcrumb(
+                Breadcrumb::LEVEL_INFO,
+                Breadcrumb::TYPE_DEFAULT,
+                'artisan.command',
+                'Finished Artisan command: ' . $event->command,
+                [
+                    'exit' => $event->exitCode,
+                    'input' => $this->extractConsoleCommandInput($event->input),
+                ]
+            ));
         }
 
-        $checkIn->setStatus($status);
+        // Flush any and all events that were possibly generated by the command
+        Integration::flushEvents();
 
-        $this->sendCheckIn($checkIn);
+        Integration::configureScope(static function (Scope $scope): void {
+            $scope->removeTag('command');
+        });
     }
 
-    private function sendCheckIn(CheckIn $checkIn): void
+    /**
+     * Extract the command input arguments if possible.
+     *
+     * @param \Symfony\Component\Console\Input\InputInterface|null $input
+     *
+     * @return string|null
+     */
+    private function extractConsoleCommandInput(?InputInterface $input): ?string
     {
-        $event = SentryEvent::createCheckIn();
-        $event->setCheckIn($checkIn);
+        if ($input instanceof ArgvInput) {
+            return (string)$input;
+        }
 
-        SentrySdk::getCurrentHub()->captureEvent($event);
-    }
-
-    private function createCheckIn(string $slug, CheckInStatus $status, string $id = null): CheckIn
-    {
-        $options = SentrySdk::getCurrentHub()->getClient()->getOptions();
-
-        return new CheckIn(
-            $slug,
-            $status,
-            $id,
-            $options->getRelease(),
-            $options->getEnvironment()
-        );
-    }
-
-    private function buildCacheKey(string $mutex, string $slug): string
-    {
-        // We use the mutex name as part of the cache key to avoid collisions between the same commands with the same schedule but with different slugs
-        return 'sentry:checkIn:' . sha1("{$mutex}:{$slug}");
+        return null;
     }
 }

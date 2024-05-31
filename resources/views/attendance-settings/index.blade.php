@@ -7,6 +7,8 @@ $manageShiftPermission = user()->permission('manage_employee_shifts');
     <!-- SETTINGS START -->
     <div class="w-100 d-flex ">
 
+
+
         <x-setting-sidebar :activeMenu="$activeSettingMenu" />
 
         <x-setting-card>
@@ -25,22 +27,26 @@ $manageShiftPermission = user()->permission('manage_employee_shifts');
                                     aria-controls="nav-ticketTypes" aria-selected="true">@lang('app.menu.employeeShifts')
                                 </a>
                             @endif
+                            <a class="nav-item nav-link f-15 qrcode"
+                            href="{{ route('attendance-settings.index') }}?tab=qrcode"  role="tab"
+                            aria-controls="nav-ticketTy" aria-selected="true">@lang('app.qrCode')
+                        </a>
                         </div>
                     </nav>
                 </div>
             </x-slot>
 
-            <x-slot name="buttons">
-                <div class="row">
+                <x-slot name="buttons">
+                    <div class="row">
 
-                    <div class="col-md-12 mb-2">
-                        <x-forms.button-primary icon="plus" id="addEmployeeShift" class="shift-btn mb-2 d-none actionBtn">
-                            @lang('app.addNew') @lang('modules.attendance.shift')
-                        </x-forms.button-primary>
+                        <div class="col-md-12 mb-2">
+                            <x-forms.button-primary icon="plus" id="addEmployeeShift" class="shift-btn mb-2 d-none actionBtn">
+                                @lang('app.addNewShift')
+                            </x-forms.button-primary>
+                        </div>
+
                     </div>
-
-                </div>
-            </x-slot>
+                </x-slot>
 
 
             @include($view)

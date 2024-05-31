@@ -44,21 +44,15 @@
                                 <option value="">--</option>
                                 @if (isset($leaveTypes))
                                     @foreach ($leaveTypes as $leaveType)
-                                        <option value="{{ $leaveType->id }}">{{ mb_ucwords($leaveType->type_name) }}
+                                        <option value="{{ $leaveType->id }}">{{ $leaveType->type_name }} ({{ $leaveType->no_of_leaves }})
                                         </option>
                                     @endforeach
                                 @endif
 
                                 @if (isset($leaveQuotas))
-                                    @foreach ($leaveQuotas as $leave)
-                                        @php
-                                            $leaveType = new \App\Models\LeaveType();
-                                        @endphp
-
-                                        @if ($leave->employeeLeave > 0)
-                                            @if($leaveType->leaveTypeCodition($leave, $userRole))
-                                                    <option value="{{ $leave->id }}">{{ mb_ucwords($leave->type_name) }}</option>
-                                            @endif
+                                    @foreach ($leaveQuotas as $leaveQuota)
+                                        @if($leaveQuota->leaveType->leaveTypeCondition($leaveQuota->leaveType, $defaultAssign))
+                                            <option value="{{ $leaveQuota->leaveType->id }}">{{ $leaveQuota->leaveType->type_name }} ({{ $leaveQuota->leaves_remaining }})</option>
                                         @endif
                                     @endforeach
                                 @endif
@@ -145,7 +139,6 @@
 
 {{-- this plugin is used only in leaves create form --}}
 <script src="{{ asset('vendor/jquery/bootstrap-datepicker.min.js') }}"></script>
-<script src="{{ asset('vendor/jquery/dropzone.min.js') }}"></script>
 <script src="{{ asset('vendor/jquery/daterangepicker.min.js')}}" defer=""></script>
 
 
@@ -247,6 +240,9 @@
                     format: 'yyyy-mm-d'
 
                 });
+            }
+            else{
+                $('.date-range-days').html('');
             }
         });
 
@@ -351,9 +347,9 @@
                 success: function(response) {
                     if(response.status == 'success'){
                         if(response.users > 0 && response.users < 2){
-                            $('#users').text(response.users+' @lang('modules.leaves.employeeOnLeave')');
+                            $('#users').text(response.users+` @lang('modules.leaves.employeeOnLeave')`);
                         }else if(response.users > 0){
-                            $('#users').text(response.users+' @lang('modules.leaves.employeesOnLeave')');
+                            $('#users').text(response.users+` @lang('modules.leaves.employeesOnLeave')`);
                         }else{
                             $('#users').text('');
                         }

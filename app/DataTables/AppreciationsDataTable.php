@@ -34,21 +34,17 @@ class AppreciationsDataTable extends BaseDataTable
     {
         return datatables()
             ->eloquent($query)
-            ->addColumn('check', function ($row) {
-                return '<input type="checkbox" class="select-table-row" id="datatable-row-' . $row->id . '"  name="datatable_ids[]" value="' . $row->id . '" onclick="dataTableRowCheck(' . $row->id . ')">';
-            })
+            ->addColumn('check', fn($row) => $this->checkBox($row))
             ->addColumn('action', function ($row) {
 
                 $action = '<div class="task_view">
-
+                    <a href="' . route('appreciations.show', [$row->id]) . '" class="taskView text-darkest-grey f-w-500 openRightModal">' . __('app.view') . '</a>
                     <div class="dropdown">
                         <a class="task_view_more d-flex align-items-center justify-content-center dropdown-toggle" type="link"
                             id="dropdownMenuLink-' . $row->id . '" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                             <i class="icon-options-vertical icons"></i>
                         </a>
                         <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuLink-' . $row->id . '" tabindex="0">';
-
-                $action .= '<a href="' . route('appreciations.show', $row->id) . '" class="dropdown-item openRightModal" ><i class="fa fa-eye mr-2"></i>' . __('app.view') . '</a>';
 
                 if ($this->editAppreciationPermission == 'all' || ($this->editAppreciationPermission == 'added' && user()->id == $row->added_by) || ($this->editAppreciationPermission == 'owned' && user()->id == $row->award_to) || ($this->editAppreciationPermission == 'both' && ($row->added_by == user()->id || user()->id == $row->award_to))) {
                     $action .= '<a class="dropdown-item openRightModal" href="' . route('appreciations.edit', [$row->id]) . '">
@@ -70,54 +66,14 @@ class AppreciationsDataTable extends BaseDataTable
 
                 return $action;
             })
-            ->editColumn(
-                'award_id',
-                function ($row) {
-                    if (isset($row->award->awardIcon)) {
-                        return view('components.award-icon', [
-                            'award' => $row->award
-                        ]).' <span class="align-self-center ml-2">' . mb_ucwords($row->award->title) . '</span>';
-                    }
-
-                    return '-';
-
-                }
-            )
-            ->addColumn(
-                'appreciation_type',
-                function ($row) {
-                    if ($row->award) {
-                        return mb_ucwords($row->award->title);
-                    }
-
-                    return '-';
-                }
-            )
-            ->editColumn(
-                'award_date',
-                function ($row) {
-                    return $row->award_date->translatedFormat($this->company->date_format);
-                }
-            )
-            ->editColumn(
-                'award_to',
-                function ($row) {
-                    return view('components.employee', [
-                        'user' => $row->awardTo
-                    ]);
-                }
-            )
-            ->addColumn(
-                'award_employee',
-                function ($row) {
-                    return $row->awardTo->name;
-                }
-            )
+            ->editColumn('award_id', fn($row) => isset($row->award?->awardIcon) ? view('components.award-icon', ['award' => $row->award]) . ' <span class="align-self-center ml-2">' . $row->award->title . '</span>' : '-')
+            ->addColumn('appreciation_type', fn($row) => $row->award ? $row->award->title : '-')
+            ->addColumn('award_date', fn($row) => $row->award_date->translatedFormat($this->company->date_format))
+            ->addColumn('award_to', fn($row) => view('components.employee', ['user' => $row->awardTo]))
+            ->addColumn('award_employee', fn($row) => $row->awardTo->name)
             ->addIndexColumn()
             ->smart(false)
-            ->setRowId(function ($row) {
-                return 'row-' . $row->id;
-            })
+            ->setRowId(fn($row) => 'row-' . $row->id)
             ->rawColumns(['check', 'action', 'award_id', 'award_to']);
     }
 
@@ -154,7 +110,6 @@ class AppreciationsDataTable extends BaseDataTable
         if ($this->viewAppreciationPermission == 'both') {
             $model->where(function ($q) {
                 $q->where('appreciations.added_by', '=', user()->id);
-
                 $q->orWhere('appreciations.award_to', '=', user()->id);
             });
         }
@@ -189,8 +144,7 @@ class AppreciationsDataTable extends BaseDataTable
      */
     public function html()
     {
-        return $this->setBuilder('user-appreciation-table', 3)
-            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]))
+        $dataTable = $this->setBuilder('user-appreciation-table', 3)
             ->parameters([
                 'initComplete' => 'function () {
                    window.LaravelDataTables["user-appreciation-table"].buttons().container()
@@ -202,6 +156,12 @@ class AppreciationsDataTable extends BaseDataTable
                     })
                 }',
             ]);
+
+        if (canDataTableExport()) {
+            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+        }
+
+        return $dataTable;
     }
 
     /**

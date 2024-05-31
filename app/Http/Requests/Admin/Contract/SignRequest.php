@@ -29,7 +29,8 @@ class SignRequest extends FormRequest
         $rules = [
             'first_name' => 'required',
             'last_name' => 'required',
-            'email' => 'required|email:rfc',
+            'place' => 'required',
+            'email' => 'required|email:rfc,strict',
         ];
 
         if(request('signature_type') == 'upload'){

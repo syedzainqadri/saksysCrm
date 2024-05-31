@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Company;
 use App\Models\Expense;
 use App\Models\ExpenseRecurring;
 use Illuminate\Console\Command;
@@ -31,31 +32,48 @@ class AutoCreateRecurringExpenses extends Command
 
     public function handle()
     {
-        $recurringExpenses = ExpenseRecurring::with('recurrings')->where('status', 'active')->get();
 
-        foreach ($recurringExpenses as $recurring) {
-
-            if (is_null($recurring->next_expense_date)) {
-                continue;
-            }
-
-            $totalExistingCount = $recurring->recurrings->count();
-
-            if ($recurring->unlimited_recurring == 1 || ($totalExistingCount < $recurring->billing_cycle)) {
-
-                if ($recurring->next_expense_date->timezone($recurring->company->timezone)->isToday()) {
-                    $this->makeExpense($recurring);
-                    $this->saveNextInvoiceDate($recurring);
+        Company::active()
+            ->select([
+                'companies.id as id',
+                'timezone',
+                'expenses_recurring.id as rid',
+                'expenses_recurring.*',
+            ])
+            ->join('expenses_recurring', 'expenses_recurring.company_id', '=', 'companies.id')
+            ->where('expenses_recurring.status', 'active')
+            ->whereNotNull('next_expense_date')
+            ->chunk(50, function ($companies) {
+                foreach ($companies as $company) {
+                    $this->info('Running for company:' . $company->id);
+                    $this->createRecurringExpenses($company);
                 }
+            });
+
+
+        return Command::SUCCESS;
+    }
+
+    private function createRecurringExpenses($company): int
+    {
+
+        $totalExistingCount = $company->recurrings->count();
+
+        if ($company->unlimited_recurring == 1 || ($totalExistingCount < $company->billing_cycle)) {
+
+            if ($company->next_expense_date->timezone($company->timezone)->isToday()) {
+                $this->makeExpense($company);
+                $this->saveNextInvoiceDate($company);
             }
         }
+
     }
 
     private function makeExpense($recurring)
     {
         $expense = new Expense();
-        $expense->company_id = $recurring->company_id;
-        $expense->expenses_recurring_id = $recurring->id;
+        $expense->company_id = $recurring->id;
+        $expense->expenses_recurring_id = $recurring->rid;
         $expense->category_id = $recurring->category_id;
         $expense->project_id = $recurring->project_id;
         $expense->currency_id = $recurring->currency_id;

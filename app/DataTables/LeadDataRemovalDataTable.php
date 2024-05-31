@@ -82,7 +82,7 @@ class LeadDataRemovalDataTable extends BaseDataTable
      */
     public function html()
     {
-        return $this->setBuilder('removal-request-lead')
+        $dataTable = $this->setBuilder('removal-request-lead')
             ->parameters([
                 'initComplete' => 'function () {
                    window.LaravelDataTables["removal-request-lead"].buttons().container()
@@ -94,8 +94,13 @@ class LeadDataRemovalDataTable extends BaseDataTable
                     });
                     $(".statusChange").selectpicker();
                 }',
-            ])
-            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+            ]);
+
+        if (canDataTableExport()) {
+            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+        }
+
+        return $dataTable;
     }
 
     /**

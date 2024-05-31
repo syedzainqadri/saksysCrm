@@ -28,6 +28,7 @@ namespace App\Models;
  */
 class LanguageSetting extends BaseModel
 {
+
     const LANGUAGES_TRANS = [
         'en' => 'English',
         'ar' => 'عربي',
@@ -45,6 +46,7 @@ class LanguageSetting extends BaseModel
         'ro' => 'Română',
         'ru' => 'Русский',
         'tr' => 'Türk',
+        'ja' => '日本語',
         'zh-CN' => '中国人',
         'zh-TW' => '中國人'
     ];
@@ -60,6 +62,34 @@ class LanguageSetting extends BaseModel
             'language_code' => 'ar',
             'flag_code' => 'sa',
             'language_name' => 'Arabic',
+            'status' => 'disabled',
+
+        ],
+        [
+            'language_code' => 'bg',
+            'flag_code' => 'bg',
+            'language_name' => 'Bulgarian',
+            'status' => 'disabled',
+
+        ],
+        [
+            'language_code' => 'th',
+            'flag_code' => 'th',
+            'language_name' => 'Thai',
+            'status' => 'disabled',
+
+        ],
+        [
+            'language_code' => 'sr',
+            'flag_code' => 'rs',
+            'language_name' => 'Serbian',
+            'status' => 'disabled',
+
+        ],
+        [
+            'language_code' => 'ka',
+            'flag_code' => 'ge',
+            'language_name' => 'Georgian',
             'status' => 'disabled',
 
         ],
@@ -99,9 +129,30 @@ class LanguageSetting extends BaseModel
 
         ],
         [
-            'language_code' => 'gr',
+            'language_code' => 'ja',
+            'flag_code' => 'jp',
+            'language_name' => 'Japanese',
+            'status' => 'disabled',
+
+        ],
+        [
+            'language_code' => 'el',
             'flag_code' => 'gr',
             'language_name' => 'Greek',
+            'status' => 'disabled',
+
+        ],
+        [
+            'language_code' => 'hi',
+            'flag_code' => 'in',
+            'language_name' => 'Hindi',
+            'status' => 'disabled',
+
+        ],
+        [
+            'language_code' => 'id',
+            'flag_code' => 'id',
+            'language_name' => 'Indonesian',
             'status' => 'disabled',
 
         ],
@@ -162,6 +213,13 @@ class LanguageSetting extends BaseModel
 
         ],
         [
+            'language_code' => 'vi',
+            'flag_code' => 'vn',
+            'language_name' => 'Vietnamese',
+            'status' => 'disabled',
+
+        ],
+        [
             'language_code' => 'zh-CN',
             'flag_code' => 'cn',
             'language_name' => 'Chinese (S)',
@@ -172,6 +230,13 @@ class LanguageSetting extends BaseModel
             'language_code' => 'zh-TW',
             'flag_code' => 'cn',
             'language_name' => 'Chinese (T)',
+            'status' => 'disabled',
+
+        ],
+        [
+            'language_code' => 'sq',
+            'flag_code' => 'al',
+            'language_name' => 'Albanian',
             'status' => 'disabled',
 
         ],

@@ -107,6 +107,15 @@
                <option {{ companyOrGlobalSetting()->datatable_row_limit == 100 ? 'selected' : '' }} value="100">100</option>
             </x-forms.select>
         </div>
+        @if (company())
+            <div class="col-lg-3 mt-lg-5">
+                <x-forms.checkbox :checked="company()->employee_can_export_data"
+                                :fieldLabel="__('app.employeeCanExportData')"
+                                fieldName="employee_can_export_data"
+                                fieldId="employee_can_export_data"/>
+            </div>
+        @endif
+
     </div>
 </div>
 

@@ -19,8 +19,9 @@ class TimeLogsDataTable extends BaseDataTable
     private $viewTimelogPermission;
     private $approveTimelogPermission;
     private $viewTimelogEarningsPermission;
+    private $ignoreDeletedAtCondition;
 
-    public function __construct()
+    public function __construct($ignoreDeletedAtCondition = false)
     {
         parent::__construct();
         $this->editTimelogPermission = user()->permission('edit_timelogs');
@@ -28,6 +29,7 @@ class TimeLogsDataTable extends BaseDataTable
         $this->viewTimelogPermission = user()->permission('view_timelogs');
         $this->approveTimelogPermission = user()->permission('approve_timelogs');
         $this->viewTimelogEarningsPermission = user()->permission('view_timelog_earnings');
+        $this->ignoreDeletedAtCondition = $ignoreDeletedAtCondition;
     }
 
     /**
@@ -39,9 +41,7 @@ class TimeLogsDataTable extends BaseDataTable
 
         $datatables = datatables()->eloquent($query);
         $datatables->addIndexColumn();
-        $datatables->addColumn('check', function ($row) {
-            return '<input type="checkbox" class="select-table-row" id="datatable-row-' . $row->id . '"  name="datatable_ids[]" value="' . $row->id . '" onclick="dataTableRowCheck(' . $row->id . ')">';
-        });
+        $datatables->addColumn('check', fn($row) => $this->checkBox($row));
         $datatables->addColumn('action', function ($row) {
             $action = '<div class="task_view">
 
@@ -73,10 +73,12 @@ class TimeLogsDataTable extends BaseDataTable
                     )
                     || ($this->editTimelogPermission == 'both' && (($row->project && $row->project->client_id == user()->id) || $row->user_id == user()->id || $row->added_by == user()->id))
                 ) {
-                    $action .= '<a class="dropdown-item openRightModal" href="' . route('timelogs.edit', [$row->id]) . '">
+                    if(is_null($row->project_id) || ($row->project && is_null($row->project->deleted_at))) {
+                        $action .= '<a class="dropdown-item openRightModal" href="' . route('timelogs.edit', [$row->id]) . '">
                                 <i class="fa fa-edit mr-2"></i>
                                 ' . trans('app.edit') . '
                             </a>';
+                    }
                 }
 
                 if ($this->deleteTimelogPermission == 'all'
@@ -94,7 +96,7 @@ class TimeLogsDataTable extends BaseDataTable
                     || ($this->editTimelogPermission == 'added' && user()->id == $row->added_by)
                     || ($row->project_admin == user()->id)
                 ) {
-                    $action .= '<a class="dropdown-item stop-active-timer" href="javascript:;" data-time-id="' . $row->id . '">
+                    $action .= '<a class="dropdown-item stop-active-timer" href="javascript:;" data-time-id="' . $row->id . '" data-url="">
                                 <i class="fa fa-stop-circle mr-2"></i>
                                 ' . trans('app.stop') . '
                             </a>';
@@ -107,30 +109,19 @@ class TimeLogsDataTable extends BaseDataTable
 
             return $action;
         });
-        $datatables->addColumn('employee_name', function ($row) {
-            return $row->user->name;
-        });
-
-
-        $datatables->editColumn('name', function ($row) {
-            return view('components.employee', [
-                'user' => $row->user
-            ]);
-        });
-        $datatables->editColumn('start_time', function ($row) {
-            return $row->start_time->timezone($this->company->timezone)->translatedFormat($this->company->date_format . ' ' . $this->company->time_format);
-        });
+        $datatables->addColumn('employee_name', fn($row) => $row->user->name);
+        $datatables->editColumn('name', fn($row) => view('components.employee', ['user' => $row->user]));
+        $datatables->editColumn('start_time', fn($row) => $row->start_time->timezone($this->company->timezone)->translatedFormat($this->company->date_format . ' ' . $this->company->time_format));
         $datatables->editColumn('end_time', function ($row) {
             if (!is_null($row->end_time)) {
                 return $row->end_time->timezone($this->company->timezone)->translatedFormat($this->company->date_format . ' ' . $this->company->time_format);
-
             }
-            elseif (!is_null($row->activeBreak)) {
+
+            if (!is_null($row->activeBreak)) {
                 return "<span class='badge badge-secondary'><i class='fa fa-pause-circle'></i> " . __('modules.timeLogs.paused') . '</span>';
             }
-            else {
-                return "<span class='badge badge-primary'><i class='fa fa-clock'></i> " . __('app.active') . '</span>';
-            }
+
+            return "<span class='badge badge-primary'><i class='fa fa-clock'></i> " . __('app.active') . '</span>';
         });
         $datatables->editColumn('total_hours', function ($row) {
             if (is_null($row->end_time)) {
@@ -138,12 +129,14 @@ class TimeLogsDataTable extends BaseDataTable
                 $totalMinutes = (($row->activeBreak) ? $row->activeBreak->start_time->diffInMinutes($row->start_time) : now()->diffInMinutes($row->start_time)) - $row->breaks->sum('total_minutes');
 
                 $timeLog = '<span data-trigger="hover"  data-toggle="popover" data-content="' . $row->memo . '">' . CarbonInterval::formatHuman($totalMinutes) . '</span>';
+                /** @phpstan-ignore-line */
 
                 $timeLog .= ' <i data-toggle="tooltip" data-original-title="' . __('app.active') . '" class="fa fa-hourglass-start" ></i>';
             }
             else {
                 $totalMinutes = $row->total_minutes - $row->breaks->sum('total_minutes');
                 $timeLog = '<span data-trigger="hover"  data-toggle="popover" data-content="' . $row->memo . '">' . CarbonInterval::formatHuman($totalMinutes) . ' ' . '</span>';
+                /** @phpstan-ignore-line */
 
                 if ($row->approved) {
                     $timeLog .= ' <i data-toggle="tooltip" data-original-title="' . __('app.approved') . '" class="fa fa-check-circle text-primary"></i>';
@@ -152,13 +145,8 @@ class TimeLogsDataTable extends BaseDataTable
 
             return $timeLog;
         });
-        $datatables->editColumn('earnings', function ($row) {
-            if (is_null($row->hourly_rate)) {
-                return '--';
-            }
+        $datatables->editColumn('earnings', fn($row) => is_null($row->hourly_rate) ? '--' : currency_format($row->earnings, company()->currency_id));
 
-            return currency_format($row->earnings);
-        });
         $datatables->editColumn('project_name', function ($row) {
             $name = '';
 
@@ -174,24 +162,11 @@ class TimeLogsDataTable extends BaseDataTable
 
             return $name;
         });
-        $datatables->addColumn('task_name', function ($row) {
-            return !is_null($row->task_id) ? $row->task->heading : '--';
-        });
-        $datatables->addColumn('task_project_name', function ($row) {
-            return !is_null($row->project_id) ? $row->project->project_name : '--';
-        });
-        $datatables->addColumn('short_code', function ($row) {
-            if (!is_null($row->project)) {
-                return $row->project->project_short_code;
-            }
-            else {
-                return '--';
-            }
-        });
+        $datatables->addColumn('task_name', fn($row) => $row->task?->heading ?? '--');
+        $datatables->addColumn('task_project_name', fn($row) => $row->project?->project_name ?? '--');
+        $datatables->addColumn('short_code', fn($row) => $row->project?->project_short_code ?? '--');
         $datatables->addIndexColumn();
-        $datatables->setRowId(function ($row) {
-            return 'row-' . $row->id;
-        });
+        $datatables->setRowId(fn($row) => 'row-' . $row->id);
         $datatables->orderColumn('project_name', 'tasks.heading $1');
         $datatables->removeColumn('project_id');
         $datatables->removeColumn('total_minutes');
@@ -238,7 +213,7 @@ class TimeLogsDataTable extends BaseDataTable
 
 
         if ($request->startDate !== null && $request->startDate != 'null' && $request->startDate != '') {
-            $startDate = Carbon::createFromFormat($this->company->date_format, $request->startDate)->toDateString();
+            $startDate = companyToDateString($request->startDate);
 
             if (!is_null($startDate)) {
                 $model->where(DB::raw('DATE(project_time_logs.`start_time`)'), '>=', $startDate);
@@ -246,7 +221,7 @@ class TimeLogsDataTable extends BaseDataTable
         }
 
         if ($request->endDate !== null && $request->endDate != 'null' && $request->endDate != '') {
-            $endDate = Carbon::createFromFormat($this->company->date_format, $request->endDate)->toDateString();
+            $endDate = companyToDateString($request->endDate);
 
             if (!is_null($endDate)) {
                 $model->where(function ($query) use ($endDate) {
@@ -328,7 +303,9 @@ class TimeLogsDataTable extends BaseDataTable
             }
         }
 
-        $model->whereNull('tasks.deleted_at');
+        if (!$this->ignoreDeletedAtCondition) {
+            $model->whereNull('tasks.deleted_at');
+        }
 
         return $model;
     }
@@ -340,7 +317,7 @@ class TimeLogsDataTable extends BaseDataTable
      */
     public function html()
     {
-        return $this->setBuilder('timelogs-table', 2)
+        $dataTable = $this->setBuilder('timelogs-table', 2)
             ->parameters([
                 'initComplete' => 'function () {
                     window.LaravelDataTables["timelogs-table"].buttons().container()
@@ -357,8 +334,13 @@ class TimeLogsDataTable extends BaseDataTable
 
                    // $(\'[data-toggle="popover"]\').popover();
                 }',
-            ])
-            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+            ]);
+
+        if (canDataTableExport()) {
+            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+        }
+
+        return $dataTable;
     }
 
     /**
@@ -378,7 +360,7 @@ class TimeLogsDataTable extends BaseDataTable
             '#' => ['data' => 'DT_RowIndex', 'orderable' => false, 'searchable' => false, 'visible' => !showId()],
             __('app.id') => ['data' => 'id', 'name' => 'id', 'title' => __('app.id'), 'visible' => showId()],
             __('modules.taskCode') => ['data' => 'short_code', 'name' => 'project_short_code', 'title' => __('modules.taskCode')],
-            __('app.task') => ['data' => 'project_name', 'name' => 'tasks.heading','exportable' => false, 'width' => '200', 'title' => __('app.task')],
+            __('app.task') => ['data' => 'project_name', 'name' => 'tasks.heading', 'exportable' => false, 'width' => '200', 'title' => __('app.task')],
             __('app.tasks') => ['data' => 'task_name', 'visible' => false, 'name' => 'task_name', 'title' => __('app.tasks')],
             __('app.project') => ['data' => 'task_project_name', 'visible' => false, 'name' => 'task_project_name', 'title' => __('app.project')],
             __('app.employee') => ['data' => 'name', 'name' => 'users.name', 'exportable' => false, 'title' => __('app.employee')],

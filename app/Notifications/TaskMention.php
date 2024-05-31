@@ -32,7 +32,7 @@ class TaskMention extends BaseNotification
     /**
      * Get the notification's delivery channels.
      *
-     * @param  mixed $notifiable
+     * @param mixed $notifiable
      * @return array
      */
     public function via($notifiable)
@@ -45,7 +45,7 @@ class TaskMention extends BaseNotification
         }
 
         if ($this->emailSetting->send_slack == 'yes' && $this->company->slackSetting->status == 'active') {
-            array_push($via, 'slack');
+            $this->slackUserNameCheck($notifiable) ? array_push($via, 'slack') : null;
         }
 
         if ($this->emailSetting->send_push == 'yes') {
@@ -58,7 +58,7 @@ class TaskMention extends BaseNotification
     /**
      * Get the mail representation of the notification.
      *
-     * @param  mixed $notifiable
+     * @param mixed $notifiable
      * @return \Illuminate\Notifications\Messages\MailMessage
      */
     public function toMail($notifiable)
@@ -68,7 +68,7 @@ class TaskMention extends BaseNotification
 
         $dueDate = (!is_null($this->task->due_date)) ? $this->task->due_date->format($this->company->date_format) : null;
 
-        $content = ucfirst($this->task->heading) . ' #' . $this->task->task_short_code . '<p>
+        $content = $this->task->heading . ' #' . $this->task->task_short_code . '<p>
             <b style="color: green">' . __('app.dueDate') . ': ' . $dueDate . '</b>
         </p>';
 
@@ -76,11 +76,11 @@ class TaskMention extends BaseNotification
             ->subject(__('email.newTask.mentionSubject') . ' #' . $this->task->task_short_code . ' - ' . config('app.name') . '.')
             ->markdown(
                 'mail.email', [
-                'url' => $url,
-                'content' => $content,
-                'themeColor' => $this->company->header_color,
-                'actionText' => __('email.taskNote.action'),
-                'notifiableName' => $notifiable->name
+                    'url' => $url,
+                    'content' => $content,
+                    'themeColor' => $this->company->header_color,
+                    'actionText' => __('email.taskNote.action'),
+                    'notifiableName' => $notifiable->name
                 ]
             );
 
@@ -89,7 +89,7 @@ class TaskMention extends BaseNotification
     /**
      * Get the array representation of the notification.
      *
-     * @param  mixed $notifiable
+     * @param mixed $notifiable
      * @return array
      */
 //phpcs:ignore
@@ -105,26 +105,18 @@ class TaskMention extends BaseNotification
     /**
      * Get the Slack representation of the notification.
      *
-     * @param  mixed $notifiable
+     * @param mixed $notifiable
      * @return SlackMessage
      */
     public function toSlack($notifiable)
     {
-        $slack = $notifiable->company->slackSetting;
         $dueDate = (!is_null($this->task->due_date)) ? $this->task->due_date->format($this->company->date_format) : null;
+        $url = route('tasks.show', $this->task->id);
+        $url = getDomainSpecificUrl($url, $this->company);
 
-        if (count($notifiable->employee) > 0 && (!is_null($notifiable->employee[0]->slack_username) && ($notifiable->employee[0]->slack_username != ''))) {
-            return (new SlackMessage())
-                ->from(config('app.name'))
-                ->image($slack->slack_logo_url)
-                ->to('@' . $notifiable->employee[0]->slack_username)
-                ->content('*' . __('email.newTask.mentionSubject') . '*' . "\n" . '<' . route('tasks.show', $this->task->id) . '|' . ucfirst($this->task->heading) . '>' . "\n" . ' #' . $this->task->task_short_code . "\n" . __('app.dueDate') . ': ' . $dueDate . (!is_null($this->task->project) ? "\n" . __('app.project') . ' - ' . ucfirst($this->task->project->project_name) : ''));
-        }
+        return $this->slackBuild($notifiable)
+            ->content('*' . __('email.newTask.mentionSubject') . '*' . "\n" . '<' . $url . '|' . $this->task->heading . '>' . "\n" . ' #' . $this->task->task_short_code . "\n" . __('app.dueDate') . ': ' . $dueDate . (!is_null($this->task->project) ? "\n" . __('app.project') . ' - ' . $this->task->project->project_name : ''));
 
-        return (new SlackMessage())
-            ->from(config('app.name'))
-            ->image($slack->slack_logo_url)
-            ->content('*' . __('email.newTask.mentionSubject') . '*' . "\n" .'This is a redirected notification. Add slack username for *' . $notifiable->name . '*');
     }
 
     // phpcs:ignore

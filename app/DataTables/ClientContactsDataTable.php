@@ -3,6 +3,7 @@
 namespace App\DataTables;
 
 use App\DataTables\BaseDataTable;
+use App\Helper\Common;
 use App\Models\ClientContact;
 use Carbon\Carbon;
 use Yajra\DataTables\Html\Button;
@@ -11,14 +12,12 @@ use Yajra\DataTables\Html\Column;
 class ClientContactsDataTable extends BaseDataTable
 {
 
-    private $viewClientPermission;
     private $editClientPermission;
     private $deleteClientPermission;
 
     public function __construct()
     {
         parent::__construct();
-        $this->viewClientPermission = user()->permission('view_client_contacts');
         $this->editClientPermission = user()->permission('edit_client_contacts');
         $this->deleteClientPermission = user()->permission('delete_client_contacts');
     }
@@ -34,9 +33,7 @@ class ClientContactsDataTable extends BaseDataTable
 
         return datatables()
             ->eloquent($query)
-            ->addColumn('check', function ($row) {
-                return '<input type="checkbox" class="select-table-row" id="datatable-row-' . $row->id . '"  name="datatable_ids[]" value="' . $row->id . '" onclick="dataTableRowCheck(' . $row->id . ')">';
-            })
+            ->addColumn('check', fn($row) => $this->checkBox($row))
             ->addColumn('action', function ($row) {
 
                 $action = '<div class="task_view">
@@ -68,29 +65,12 @@ class ClientContactsDataTable extends BaseDataTable
 
                 return $action;
             })
-            ->editColumn(
-                'contact_name',
-                function ($row) {
-                    return ucfirst($row->contact_name);
-                }
-            )
-            ->editColumn(
-                'title',
-                function ($row) {
-                    return ucfirst($row->title);
-                }
-            )
-            ->editColumn(
-                'created_at',
-                function ($row) {
-                    return Carbon::parse($row->created_at)->translatedFormat($this->company->date_format);
-                }
-            )
+            ->editColumn('contact_name', fn($row) => $row->contact_name)
+            ->editColumn('title', fn($row) => $row->title)
+            ->editColumn('created_at', fn($row) => Carbon::parse($row->created_at)->translatedFormat($this->company->date_format))
             ->addIndexColumn()
             ->smart(false)
-            ->setRowId(function ($row) {
-                return 'row-' . $row->id;
-            })
+            ->setRowId(fn($row) => 'row-' . $row->id)
             ->rawColumns(['contact_name', 'action', 'check']);
     }
 
@@ -112,7 +92,7 @@ class ClientContactsDataTable extends BaseDataTable
      */
     public function html()
     {
-        return $this->setBuilder('clients-table')
+        $dataTable = $this->setBuilder('clients-table')
             ->parameters([
                 'initComplete' => 'function () {
                    window.LaravelDataTables["clients-table"].buttons().container()
@@ -122,8 +102,13 @@ class ClientContactsDataTable extends BaseDataTable
                   //
                 }',
                 /* 'buttons'      => ['excel'] */
-            ])
-            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+            ]);
+
+        if (canDataTableExport()) {
+            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+        }
+
+        return $dataTable;
     }
 
     /**

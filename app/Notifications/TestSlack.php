@@ -2,8 +2,6 @@
 
 namespace App\Notifications;
 
-use Illuminate\Notifications\Messages\SlackMessage;
-
 class TestSlack extends BaseNotification
 {
 
@@ -58,20 +56,13 @@ class TestSlack extends BaseNotification
 
     public function toSlack($notifiable)
     {
-        $slack = $notifiable->company->slackSetting;
 
-        if (count($notifiable->employee) > 0 && !is_null($notifiable->employee[0]->slack_username)) {
-            return (new SlackMessage())
-                ->from(config('app.name'))
-                ->image(asset_url_local_s3('slack-logo/' . $slack->slack_logo))
-                ->to('@' . $notifiable->employee[0]->slack_username)
+        if ($this->slackUserNameCheck($notifiable)) {
+            return $this->slackBuild($notifiable)
                 ->content('This is a test notification.');
         }
 
-        return (new SlackMessage())
-            ->from(config('app.name'))
-            ->image(asset_url_local_s3('slack-logo/' . $slack->slack_logo))
-            ->content('*' . 'Test slack' . '*' . "\n" .'This is a redirected notification. Add slack username for *' . $notifiable->name . '*');
+        return $this->slackRedirectMessage('email.test.slack', $notifiable);
     }
 
 }

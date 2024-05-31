@@ -38,7 +38,13 @@ class AcceptInviteRequest extends FormRequest
             $rules['email_address'] = 'required';
         }
 
-        $rules['email'] = 'required|email:rfc|unique:users,email,null,id,company_id,' . $invite->company->id;
+        $global = global_setting();
+
+        if ($global && $global->sign_up_terms == 'yes') {
+            $rules['terms_and_conditions'] = 'required';
+        }
+
+        $rules['email'] = 'required|email:rfc,strict|unique:users,email,null,id,company_id,' . $invite->company->id;
 
         return $rules;
     }

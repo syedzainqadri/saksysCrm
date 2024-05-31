@@ -109,11 +109,11 @@
 
                                         <x-forms.button-cancel class="ml-3"
                                             :link="route('2fa_codes_download')">
-                                            @lang('app.download') @lang('app.recoveryCode')
+                                            @lang('app.downloadRecoveryCode')
                                         </x-forms.button-cancel>
 
                                         <x-forms.button-cancel class="ml-3" id="regenerate-codes">
-                                            @lang('app.regenerate') @lang('app.recoveryCode')
+                                            @lang('app.regenerateRecoveryCode')
                                         </x-forms.button-cancel>
                                     @else
                                         <x-forms.button-primary class="validate-2fa">

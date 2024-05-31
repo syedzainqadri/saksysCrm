@@ -41,7 +41,7 @@ class EstimateDeclined extends BaseNotification
         }
 
         if ($this->emailSetting->send_slack == 'yes' && $this->company->slackSetting->status == 'active') {
-            array_push($via, 'slack');
+            $this->slackUserNameCheck($notifiable) ? array_push($via, 'slack') : null;
         }
 
         return $via;
@@ -90,20 +90,7 @@ class EstimateDeclined extends BaseNotification
 
     public function toSlack($notifiable)
     {
-        $slack = $notifiable->company->slackSetting;
-
-        if (count($notifiable->employee) > 0 && (!is_null($notifiable->employee[0]->slack_username) && ($notifiable->employee[0]->slack_username != ''))) {
-            return (new SlackMessage())
-                ->from(config('app.name'))
-                ->to('@' . $notifiable->employee[0]->slack_username)
-                ->image($slack->slack_logo_url)
-                ->content(__('email.hello')  . ' ' .  mb_ucwords($notifiable->name) .' '. __('email.estimateDeclined.subject'));
-        }
-
-        return (new SlackMessage())
-            ->from(config('app.name'))
-            ->image($slack->slack_logo_url)
-            ->content(__('email.hello')  . ' ' .  mb_ucwords($notifiable->name) .' '. __('email.estimateDeclined.subject'));
+        return $this->slackBuild($notifiable)->content(__('email.hello') . ' ' . $notifiable->name . ' ' . __('email.estimateDeclined.subject'));
 
     }
 

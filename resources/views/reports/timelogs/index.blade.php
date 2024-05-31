@@ -7,13 +7,13 @@
 
 @section('filter-section')
 
-
     <x-filters.filter-box>
         <!-- DATE START -->
         <div class="select-box d-flex pr-2 border-right-grey border-right-grey-sm-0">
             <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.duration')</p>
             <div class="select-status d-flex">
-                <input type="text" class="position-relative text-dark form-control border-0 p-2 text-left f-14 f-w-500 border-additional-grey"
+                <input type="text"
+                    class="position-relative text-dark form-control border-0 p-2 text-left f-14 f-w-500 border-additional-grey"
                     id="datatableRange2" placeholder="@lang('placeholders.dateRange')">
             </div>
         </div>
@@ -42,7 +42,7 @@
                     data-size="8">
                     <option value="all">@lang('app.all')</option>
                     @foreach ($projects as $project)
-                        <option value="{{ $project->id }}">{{ mb_ucwords($project->project_name) }}</option>
+                        <option value="{{ $project->id }}">{{ $project->project_name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -54,7 +54,9 @@
             <x-forms.button-secondary class="btn-xs d-none" id="reset-filters" icon="times-circle">
                 @lang('app.clearFilters')
             </x-forms.button-secondary>
+
         </div>
+
         <!-- RESET END -->
 
         <!-- MORE FILTERS START -->
@@ -66,7 +68,7 @@
                 <div class="select-filter mb-4">
                     <div class="select-others">
                         <select class="form-control select-picker" name="client" id="client" data-live-search="true"
-                            data-size="8">
+                            data-container="body" data-size="8">
                             <option value="all">@lang('app.all')</option>
                             @foreach ($clients as $client)
                                 <x-user-option :user="$client" />
@@ -81,8 +83,8 @@
                 <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('app.status')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
-                        <select class="form-control select-picker" name="status" id="status" data-live-search="true" data-container="body"
-                            data-size="8">
+                        <select class="form-control select-picker" name="status" id="status" data-live-search="true"
+                            data-container="body" data-size="8">
                             <option value="all">@lang('app.all')</option>
                             <option value="1">@lang('app.approved')</option>
                             <option value="0">@lang('app.pending')</option>
@@ -96,7 +98,8 @@
                 <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('app.invoiceGenerate')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
-                        <select class="form-control select-picker" name="invoice_generate" id="invoice_generate" data-container="body" data-live-search="true" data-size="8">
+                        <select class="form-control select-picker" name="invoice_generate" id="invoice_generate"
+                            data-container="body" data-live-search="true" data-size="8">
                             <option value="all">@lang('app.all')</option>
                             <option value="1">@lang('app.yes')</option>
                             <option value="0">@lang('app.no')</option>
@@ -109,6 +112,7 @@
         <!-- MORE FILTERS END -->
     </x-filters.filter-box>
 
+
 @endsection
 
 @section('content')
@@ -120,8 +124,17 @@
             <x-cards.data id="task-chart-card" :title="__($pageTitle)" padding="false">
             </x-cards.data>
             <!-- TASK STATUS END -->
+            <div class="d-grid d-lg-flex d-md-flex action-bar align-items-center mt-4">
+            <div id="table-actions" class="flex-grow-1 align-items-center">
+            </div>
 
-            <div id="table-actions" class="flex-grow-1 align-items-center mt-4">
+                <div class="btn-group mt-2 mt-lg-0 mt-md-0 ml-0 ml-lg-3 ml-md-3" role="group">
+                    <a href="{{ route('time-log-report.index') }}" class="btn btn-secondary f-14 btn-active" data-toggle="tooltip"
+                        data-original-title="@lang('app.menu.timeLogReport')"><i class="side-icon bi bi-list-ul"></i></a>
+
+                    <a href="{{ route('time-log-consolidated.report') }}" class="btn btn-secondary f-14" data-toggle="tooltip"
+                        data-original-title="@lang('app.timelogConsolidatedReport')"><i class="side-icon bi bi-clipboard-data"></i></a>
+                </div>
             </div>
 
         </div>
@@ -136,15 +149,13 @@
         <!-- Task Box End -->
     </div>
     <!-- CONTENT WRAPPER END -->
-
 @endsection
 
 @push('scripts')
     @include('sections.datatable_js')
 
     <script type="text/javascript">
-
-        function getDate()  {
+        function getDate() {
             var start = moment().clone().startOf('month');
             var end = moment();
 
@@ -163,7 +174,6 @@
             });
 
         });
-
     </script>
 
 
@@ -292,6 +302,5 @@
             });
         }
         pieChart();
-
     </script>
 @endpush

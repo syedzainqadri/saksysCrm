@@ -2,29 +2,29 @@
 
 namespace App\Http\Controllers;
 
-use Carbon\Carbon;
+use App\Events\ContractSignedEvent;
 use App\Helper\Files;
 use App\Helper\Reply;
-use App\Models\Invoice;
+use App\Http\Requests\Admin\Contract\SignRequest;
+use App\Http\Requests\EstimateAcceptRequest;
+use App\Models\AcceptEstimate;
 use App\Models\Contract;
+use App\Models\ContractSign;
 use App\Models\Estimate;
+use App\Models\EstimateItem;
+use App\Models\EstimateItemImage;
+use App\Models\Invoice;
+use App\Models\InvoiceItemImage;
+use App\Models\InvoiceItems;
 use App\Models\SmtpSetting;
 use App\Scopes\ActiveScope;
-use App\Models\ContractSign;
-use App\Models\EstimateItem;
-use App\Models\InvoiceItems;
-use Illuminate\Http\Request;
-use App\Models\AcceptEstimate;
-use Laravel\Socialite\Two\User;
-use Illuminate\Support\Facades\DB;
-use App\Events\ContractSignedEvent;
-use Illuminate\Support\Facades\App;
-use Nwidart\Modules\Facades\Module;
 use App\Traits\UniversalSearchTrait;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Redirect;
-use App\Http\Requests\EstimateAcceptRequest;
-use App\Http\Requests\Admin\Contract\SignRequest;
+use Nwidart\Modules\Facades\Module;
 
 class PublicUrlController extends Controller
 {
@@ -74,7 +74,7 @@ class PublicUrlController extends Controller
         $sign->contract_id = $this->contract->id;
         $sign->email = $request->email;
         $sign->place = $request->place;
-        $sign->date = Carbon::now()->format('Y-m-d');
+        $sign->date = now()->format('Y-m-d');
         $imageName = null;
 
         if ($request->signature_type == 'signature') {
@@ -119,14 +119,10 @@ class PublicUrlController extends Controller
         $pdf->setOption('isHtml5ParserEnabled', true);
         $pdf->setOption('isRemoteEnabled', true);
 
-        App::setLocale($this->invoiceSetting->locale);
-        Carbon::setLocale($this->invoiceSetting->locale);
+        App::setLocale($this->invoiceSetting->locale ?? 'en');
+        Carbon::setLocale($this->invoiceSetting->locale ?? 'en');
 
         $pdf->loadView('contracts.contract-pdf', ['contract' => $contract, 'company' => $company, 'fields' => $fields, 'invoiceSetting' => $this->invoiceSetting]);
-
-        $dom_pdf = $pdf->getDomPDF();
-        $canvas = $dom_pdf->getCanvas();
-        $canvas->page_text(530, 820, 'Page {PAGE_NUM} of {PAGE_COUNT}', null, 10);
 
         $filename = 'contract-' . $contract->id;
 
@@ -251,8 +247,8 @@ class PublicUrlController extends Controller
 
         $invoice->company_id = $company->id;
         $invoice->client_id = $estimate->client_id;
-        $invoice->issue_date = Carbon::now($company->timezone)->format('Y-m-d');
-        $invoice->due_date = Carbon::now($company->timezone)->addDays($company->invoiceSetting->due_after)->format('Y-m-d');
+        $invoice->issue_date = now($company->timezone)->format('Y-m-d');
+        $invoice->due_date = now($company->timezone)->addDays($company->invoiceSetting->due_after)->format('Y-m-d');
         $invoice->sub_total = round($estimate->sub_total, 2);
         $invoice->discount = round($estimate->discount, 2);
         $invoice->discount_type = $estimate->discount_type;
@@ -268,7 +264,7 @@ class PublicUrlController extends Controller
         foreach ($estimate->items as $item) :
 
             if (!is_null($item)) {
-                InvoiceItems::create(
+                $invoiceItem = InvoiceItems::create(
                     [
                         'invoice_id' => $invoice->id,
                         'item_name' => $item->item_name,
@@ -280,6 +276,24 @@ class PublicUrlController extends Controller
                         'taxes' => $item->taxes
                     ]
                 );
+
+                $estimateItemImage = $item->estimateItemImage;
+
+                if(!is_null($estimateItemImage)) {
+
+                    $file = new InvoiceItemImage();
+
+                    $file->invoice_item_id = $invoiceItem->id;
+
+                    $fileName = Files::generateNewFileName($estimateItemImage->filename);
+
+                    Files::copy(EstimateItemImage::FILE_PATH . '/' . $estimateItemImage->item->id . '/' . $estimateItemImage->hashname, InvoiceItemImage::FILE_PATH . '/' . $invoiceItem->id . '/' . $fileName);
+
+                    $file->filename = $estimateItemImage->filename;
+                    $file->hashname = $fileName;
+                    $file->size = $estimateItemImage->size;
+                    $file->save();
+                }
             }
 
         endforeach;
@@ -305,8 +319,8 @@ class PublicUrlController extends Controller
     {
         $this->estimate = Estimate::with('client', 'clientdetails')->where('hash', $id)->firstOrFail();
         $this->invoiceSetting = $this->estimate->company->invoiceSetting;
-        App::setLocale($this->invoiceSetting->locale);
-        Carbon::setLocale($this->invoiceSetting->locale);
+        App::setLocale($this->invoiceSetting->locale ?? 'en');
+        Carbon::setLocale($this->invoiceSetting->locale ?? 'en');
 
         $pdfOption = $this->domPdfObjectForDownload($id);
         $pdf = $pdfOption['pdf'];
@@ -321,8 +335,8 @@ class PublicUrlController extends Controller
         $this->estimate = Estimate::where('hash', $id)->firstOrFail();
         $this->company = $this->estimate->company;
         $this->invoiceSetting = $this->company->invoiceSetting;
-        App::setLocale($this->invoiceSetting->locale);
-        Carbon::setLocale($this->invoiceSetting->locale);
+        App::setLocale($this->invoiceSetting->locale ?? 'en');
+        Carbon::setLocale($this->invoiceSetting->locale ?? 'en');
 
         $this->discount = 0;
 
@@ -382,9 +396,6 @@ class PublicUrlController extends Controller
 
         $pdf->loadView('estimates.pdf.' . $this->invoiceSetting->template, $this->data);
 
-        $dom_pdf = $pdf->getDomPDF();
-        $canvas = $dom_pdf->getCanvas();
-        $canvas->page_text(530, 820, 'Page {PAGE_NUM} of {PAGE_COUNT}', null, 10);
         $filename = $this->estimate->estimate_number;
 
         return [
@@ -395,7 +406,7 @@ class PublicUrlController extends Controller
 
     public function checkEnv()
     {
-        $plugins = Module::all();
+        $plugins = Module::all(); /* @phpstan-ignore-line */
         $updateArray = [];
         $updateArrayEnabled = [];
 

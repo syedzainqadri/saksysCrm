@@ -3,6 +3,7 @@
 namespace App\DataTables;
 
 use App\DataTables\BaseDataTable;
+use App\Helper\Common;
 use App\Models\EmployeeShiftChangeRequest;
 use Carbon\Carbon;
 use DataTables;
@@ -22,9 +23,7 @@ class ShiftChangeRequestDataTable extends BaseDataTable
     {
         return (new EloquentDataTable($query))
             ->addIndexColumn()
-            ->addColumn('check', function ($row) {
-                return '<input type="checkbox" class="select-table-row" id="datatable-row-' . $row->id . '"  name="datatable_ids[]" value="' . $row->id . '" onclick="dataTableRowCheck(' . $row->id . ')">';
-            })
+            ->addColumn('check', fn($row) => $this->checkBox($row))
             ->addColumn('action', function ($row) {
                 $action = '<div class="task_view">
 
@@ -63,12 +62,10 @@ class ShiftChangeRequestDataTable extends BaseDataTable
                 return $row->shiftSchedule->date->translatedFormat(company()->date_format);
             })
             ->editColumn('status', function ($row) {
-                return ucfirst($row->status);
+                return $row->status;
             })
             ->addIndexColumn()
-            ->setRowId(function ($row) {
-                return 'row-' . $row->id;
-            })
+            ->setRowId(fn($row) => 'row-' . $row->id)
             ->rawColumns(['action', 'name', 'check', 'shift']);
     }
 
@@ -89,7 +86,7 @@ class ShiftChangeRequestDataTable extends BaseDataTable
         $model = $model->join('employee_shifts', 'employee_shifts.id', '=', 'employee_shift_schedules.employee_shift_id');
 
         if ($request->startDate !== null && $request->startDate != 'null' && $request->startDate != '') {
-            $startDate = Carbon::createFromFormat($this->company->date_format, $request->startDate)->toDateString();
+            $startDate = companyToDateString($request->startDate);
 
             if (!is_null($startDate)) {
                 $model->where(DB::raw('DATE(employee_shift_change_requests.`created_at`)'), '>=', $startDate);
@@ -97,7 +94,7 @@ class ShiftChangeRequestDataTable extends BaseDataTable
         }
 
         if ($request->endDate !== null && $request->endDate != 'null' && $request->endDate != '') {
-            $endDate = Carbon::createFromFormat($this->company->date_format, $request->endDate)->toDateString();
+            $endDate = companyToDateString($request->endDate);
 
             if (!is_null($endDate)) {
                 $model->where(function ($query) use ($endDate) {
@@ -128,7 +125,7 @@ class ShiftChangeRequestDataTable extends BaseDataTable
      */
     public function html()
     {
-        return $this->setBuilder('shift-table', 2)
+        $dataTable = $this->setBuilder('shift-table', 2)
             ->parameters([
                 'initComplete' => 'function () {
                     window.LaravelDataTables["shift-table"].buttons().container()
@@ -138,8 +135,13 @@ class ShiftChangeRequestDataTable extends BaseDataTable
                    //
                    $(".select-picker").selectpicker();
                  }',
-            ])
-            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+            ]);
+
+        if (canDataTableExport()) {
+            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+        }
+
+        return $dataTable;
     }
 
     /**

@@ -68,7 +68,7 @@ class InvoiceFilesController extends AccountBaseController
 
         InvoiceFiles::destroy($id);
 
-        $this->files = InvoiceFiles::where('invoice_id', $file->invoice_id)->orderBy('id', 'desc')->get();
+        $this->files = InvoiceFiles::where('invoice_id', $file->invoice_id)->orderByDesc('id')->get();
         $view = view('invoices.files.show', $this->data)->render();
 
         return Reply::successWithData(__('messages.deleteSuccess'), ['view' => $view]);

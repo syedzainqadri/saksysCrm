@@ -11,7 +11,7 @@ if (!is_null($user) && $user->session) {
 }
 @endphp
 
-<div class="media align-items-center mw-250">
+<div class="media align-items-center mw-250 @if($user->status != 'active') inactive @endif">
     @if (!is_null($user))
         <a href="{{ route('clients.show', [$user->id]) }}" class="position-relative">
             @if ($active)
@@ -19,11 +19,12 @@ if (!is_null($user) && $user->session) {
                     title="@lang('modules.client.online')"><i class="fa fa-circle"></i></span>
             @endif
             <img src="{{ $user->image_url }}" class="mr-2 taskEmployeeImg rounded-circle"
-                alt="{{ ucfirst($user->name) }}" title="{{ ucfirst($user->name) }}">
+                alt="{{ $user->name }}" title="{{ $user->name }}">
         </a>
-        <div class="media-body">
+        <div class="media-body text-truncate ">
             <h5 class="mb-0 f-12"><a href="{{ route('clients.show', [$user->id]) }}"
-                    class="text-darkest-grey">{{ mb_ucfirst($user->name) }}</a>
+                    class="text-darkest-grey">{{ $user->name_salutation }} @if($user->status != 'active')
+                        <i data-toggle="tooltip" data-original-title="@lang('app.inactive')" class='fa fa-circle mr-1 text-red f-10'></i> @endif</a>
                 @if (isset($user->admin_approval) && $user->admin_approval == 0)
                     <i class="bi bi-person-x text-red" data-toggle="tooltip"
                         data-original-title="@lang('modules.dashboard.verificationPending')"></i>
@@ -31,8 +32,8 @@ if (!is_null($user) && $user->session) {
                     <span class="badge badge-secondary">@lang('app.itsYou')</span>
                 @endif
             </h5>
-            <p class="mb-0 f-12 text-dark-grey">
-                {{ !is_null($user->clientDetails) && !is_null($user->clientDetails->company_name) ? mb_ucwords($user->clientDetails->company_name) : ' ' }}
+            <p class="mb-0 f-12 text-dark-grey text-truncate">
+                {{ !is_null($user->clientDetails) && !is_null($user->clientDetails->company_name) ? $user->clientDetails->company_name : ' ' }}
             </p>
         </div>
     @else

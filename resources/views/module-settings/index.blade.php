@@ -5,50 +5,48 @@
     <!-- SETTINGS START -->
     <div class="w-100 d-flex ">
 
-        <x-setting-sidebar :activeMenu="$activeSettingMenu" />
+            <x-setting-sidebar :activeMenu="$activeSettingMenu"/>
 
         <x-setting-card>
             <x-slot name="header">
                 <div class="s-b-n-header" id="tabs">
                     <nav class="tabs px-4 border-bottom-grey">
                         <div class="nav" id="nav-tab" role="tablist">
-                            <a class="nav-item nav-link f-15 active admin"
-                                href="{{ route('module-settings.index') }}?tab=admin" role="tab"
-                                aria-controls="nav-ticketAgents" aria-selected="true">@lang('app.admin')
-                            </a>
+                                <a class="nav-item nav-link f-15 active admin"
+                                    href="{{ route('module-settings.index') }}?tab=admin" role="tab"
+                                    aria-controls="nav-ticketAgents" aria-selected="true">@lang('app.admin')
+                                </a>
 
-                            <a class="nav-item nav-link f-15 employee"
-                                href="{{ route('module-settings.index') }}?tab=employee" role="tab"
-                                aria-controls="nav-ticketTypes" aria-selected="true">@lang('app.employee')
-                            </a>
+                                <a class="nav-item nav-link f-15 employee"
+                                    href="{{ route('module-settings.index') }}?tab=employee" role="tab"
+                                    aria-controls="nav-ticketTypes" aria-selected="true">@lang('app.employee')
+                                </a>
 
-                            <a class="nav-item nav-link f-15 client"
-                                href="{{ route('module-settings.index') }}?tab=client" role="tab"
-                                aria-controls="nav-ticketChannel" aria-selected="true">@lang('app.client')
-                            </a>
-
-                            <a class="nav-item nav-link f-15 custom" href="{{ route('custom-modules.index') }}?tab=custom"
-                                role="tab" aria-controls="nav-ticketChannel"
-                                aria-selected="true">@lang('app.menu.customModule')
-                            </a>
+                                <a class="nav-item nav-link f-15 client"
+                                    href="{{ route('module-settings.index') }}?tab=client" role="tab"
+                                    aria-controls="nav-ticketChannel" aria-selected="true">@lang('app.client')
+                                </a>
+                                <a class="nav-item nav-link f-15 custom" href="{{ route('custom-modules.index') }}?tab=custom"
+                                   role="tab" aria-controls="nav-ticketChannel"
+                                   aria-selected="true">@lang('app.menu.customModule')
+                                </a>
 
                         </div>
                     </nav>
                 </div>
             </x-slot>
+                <x-slot name="buttons">
+                    <div class="row">
 
-            <x-slot name="buttons">
-                <div class="row">
+                        <div class="col-md-12 my-2">
+                            <x-forms.link-primary :link="route('custom-modules.create')" icon="cog">
+                                @lang('app.install')/@lang('app.update')
+                                @lang('app.module')
+                            </x-forms.link-primary>
+                        </div>
 
-                    <div class="col-md-12 my-4">
-                        <x-forms.link-primary :link="route('custom-modules.create')" icon="cog">
-                            @lang('app.install')/@lang('app.update')
-                            @lang('app.module')
-                        </x-forms.link-primary>
                     </div>
-
-                </div>
-            </x-slot>
+                </x-slot>
 
             {{-- include tabs here --}}
             @include($view)
@@ -142,6 +140,9 @@
                     '_token': token,
                     'status': moduleStatus,
                     'name': name
+                },
+                success: function () {
+                    window.location.reload();
                 }
             });
         });

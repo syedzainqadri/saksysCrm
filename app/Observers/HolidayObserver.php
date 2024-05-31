@@ -5,30 +5,29 @@ namespace App\Observers;
 use App\Models\User;
 use App\Models\Holiday;
 use App\Events\HolidayEvent;
-use App\Models\EmployeeDetails;
 
 class HolidayObserver
 {
 
-    public function saving(Holiday $lead)
+    public function saving(Holiday $holiday)
     {
         if (!isRunningInConsoleOrSeeding()) {
-            $lead->last_updated_by = user()->id;
+            $holiday->last_updated_by = user()->id;
         }
     }
 
-    public function creating(Holiday $lead)
+    public function creating(Holiday $holiday)
     {
         if (!isRunningInConsoleOrSeeding()) {
-            $lead->added_by = user()->id;
+            $holiday->added_by = user()->id;
         }
 
         if (company()) {
-            $lead->company_id = company()->id;
+            $holiday->company_id = company()->id;
         }
     }
 
-    public function created (Holiday $holiday)
+    public function created(Holiday $holiday)
     {
         $notifyUser = User::allEmployees();
         event(new HolidayEvent($holiday, request()->date, request()->occassion, $notifyUser));

@@ -2,6 +2,7 @@
 
 namespace App\DataTables;
 
+use App\Helper\Common;
 use App\Models\ProjectTemplateTask;
 use Yajra\DataTables\Html\Column;
 
@@ -30,9 +31,7 @@ class ProjectTemplateTasksDataTable extends BaseDataTable
     {
         return datatables()
             ->eloquent($query)
-            ->addColumn('check', function ($row) {
-                return '<input type="checkbox" class="select-table-row" id="datatable-row-' . $row->id . '"  name="datatable_ids[]" value="' . $row->id . '" onclick="dataTableRowCheck(' . $row->id . ')">';
-            })
+            ->addColumn('check', fn($row) => $this->checkBox($row))
             ->addColumn('action', function ($row) {
                 $action = '<div class="task_view">
 
@@ -69,13 +68,11 @@ class ProjectTemplateTasksDataTable extends BaseDataTable
 
                 return '<div class="media align-items-center">
                         <div class="media-body">
-                    <h5 class="mb-0 f-13 text-darkest-grey"><a href="' . route('project-template-task.show', [$row->id]) . '" class="openRightModal">' . ucfirst($row->heading) . '</a></h5>
+                    <h5 class="mb-0 f-13 text-darkest-grey"><a href="' . route('project-template-task.show', [$row->id]) . '" class="openRightModal">' . $row->heading . '</a></h5>
                     </div>
                   </div>';
             })
-            ->setRowId(function ($row) {
-                return 'row-' . $row->id;
-            })
+            ->setRowId(fn($row) => 'row-' . $row->id)
             ->rawColumns(['action', 'heading', 'check']);
     }
 
@@ -108,7 +105,7 @@ class ProjectTemplateTasksDataTable extends BaseDataTable
      */
     public function html()
     {
-        return $this->setBuilder('allTasks-table', 0)
+        $dataTable = $this->setBuilder('allTasks-table', 0)
             ->parameters([
                 'initComplete' => 'function () {
                    window.LaravelDataTables["allTasks-table"].buttons().container()
@@ -118,6 +115,8 @@ class ProjectTemplateTasksDataTable extends BaseDataTable
                     $("#allTasks-table .select-picker").selectpicker();
                 }',
             ]);
+
+        return $dataTable;
     }
 
     /**

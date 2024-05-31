@@ -16,7 +16,6 @@
             </div>
         </div>
         <!-- DATE END -->
-
         <div class="select-box d-flex py-2 {{ !in_array('client', user_roles()) ? 'px-lg-2 px-md-2 px-0' : '' }}  border-right-grey border-right-grey-sm-0 pr-2 pl-2">
             <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.status')</p>
             <div class="select-status">
@@ -25,7 +24,7 @@
                     <option {{ request('status') == 'overdue' ? 'selected' : '' }} value="overdue">@lang('app.overdue')
                     </option>
                     @foreach ($projectStatus as $status)
-                        <option value="{{$status->status_name}}">{{ ucfirst($status->status_name) }}</option>
+                        <option value="{{$status->status_name}}">{{ $status->status_name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -194,13 +193,12 @@ $deleteProjectPermission = user()->permission('delete_projects');
     <!-- CONTENT WRAPPER START -->
     <div class="content-wrapper">
         <!-- Add Task Export Buttons Start -->
-        <div class="d-block d-lg-flex d-md-flex justify-content-between action-bar">
+        <div class="d-grid d-lg-flex d-md-flex action-bar">
             <div id="table-actions" class="flex-grow-1 align-items-center mb-2 mb-lg-0 mb-md-0">
                 @if ($addProjectPermission == 'all' || $addProjectPermission == 'added' || $addProjectPermission == 'both')
                     <x-forms.link-primary :link="route('projects.create')"
                         class="mr-3 openRightModal float-left mb-2 mb-lg-0 mb-md-0" icon="plus">
-                        @lang('app.add')
-                        @lang('app.project')
+                        @lang('app.addProject')
                     </x-forms.link-primary>
                 @endif
                 @if ($viewProjectTemplatePermission == 'all' || in_array($manageProjectTemplatePermission , ['added', 'all']))
@@ -212,7 +210,7 @@ $deleteProjectPermission = user()->permission('delete_projects');
 
 
                 @if ($addProjectPermission == 'all' || $addProjectPermission == 'added' || $addProjectPermission == 'both')
-                    <x-forms.link-secondary :link="route('projects.import')" class="mr-3 float-left mb-2 mb-lg-0 mb-md-0" icon="file-upload">
+                    <x-forms.link-secondary :link="route('projects.import')" class="mr-3 float-left mb-2 mb-lg-0 mb-md-0 d-none d-lg-block" icon="file-upload">
                         @lang('app.importExcel')
                     </x-forms.link-secondary>
                 @endif
@@ -231,18 +229,15 @@ $deleteProjectPermission = user()->permission('delete_projects');
                     </div>
                     <div class="select-status mr-3 d-none quick-action-field" id="change-status-action">
                         <select name="status" class="form-control select-picker">
-                            <option value="not started">@lang('app.notStarted')</option>
-                            <option value="in progress">@lang('app.inProgress')</option>
-                            <option value="on hold">@lang('app.onHold')</option>
-                            <option value="canceled">@lang('app.canceled')</option>
-                            <option value="finished">@lang('app.finished')</option>
+                            @foreach ($projectStatus as $status)
+                                 <option value="{{ $status->status_name }}">{{ $status->status_name }}</option>
+                            @endforeach
                         </select>
                     </div>
                 </x-datatable.actions>
             @endif
 
-
-            <div class="btn-group ml-0 ml-lg-3 ml-md-3" role="group">
+            <div class="btn-group mt-2 mt-lg-0 mt-md-0 ml-0 ml-lg-3 ml-md-3" role="group">
                 <a href="{{ route('projects.index') }}" class="btn btn-secondary f-14 btn-active projects" data-toggle="tooltip"
                     data-original-title="@lang('app.menu.projects')"><i class="side-icon bi bi-list-ul"></i></a>
 

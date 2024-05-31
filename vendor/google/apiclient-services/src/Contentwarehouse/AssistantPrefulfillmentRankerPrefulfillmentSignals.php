@@ -19,22 +19,6 @@ namespace Google\Service\Contentwarehouse;
 
 class AssistantPrefulfillmentRankerPrefulfillmentSignals extends \Google\Model
 {
-  /**
-   * @var float
-   */
-  public $bindingSetAuis;
-  /**
-   * @var string
-   */
-  public $bindingSetInvalidReason;
-  /**
-   * @var float
-   */
-  public $bindingSetPauis;
-  /**
-   * @var string
-   */
-  public $bindingSetValidity;
   public $calibratedParsingScore;
   /**
    * @var bool
@@ -56,13 +40,14 @@ class AssistantPrefulfillmentRankerPrefulfillmentSignals extends \Google\Model
    * @var bool
    */
   public $generatedByLegacyAquaDomain;
-  public $groundabilityScore;
-  protected $groundingProviderFeaturesType = AssistantGroundingRankerGroundingProviderFeatures::class;
-  protected $groundingProviderFeaturesDataType = '';
   /**
    * @var bool
    */
   public $hasAnswerGroup;
+  /**
+   * @var bool
+   */
+  public $hasIntentUpdate;
   /**
    * @var float
    */
@@ -74,13 +59,21 @@ class AssistantPrefulfillmentRankerPrefulfillmentSignals extends \Google\Model
   public $intentNameAuisScore;
   public $intentNameAuisScoreExp;
   /**
-   * @var float
+   * @var string
    */
-  public $intentNamePauis;
+  public $intentType;
   /**
    * @var bool
    */
-  public $isFeasible;
+  public $isAquaMediaIntent;
+  /**
+   * @var bool
+   */
+  public $isCommunicationOpaRawTargetIntent;
+  /**
+   * @var bool
+   */
+  public $isDummyIntent;
   /**
    * @var bool
    */
@@ -88,7 +81,35 @@ class AssistantPrefulfillmentRankerPrefulfillmentSignals extends \Google\Model
   /**
    * @var bool
    */
+  public $isHighConfidencePodcastIntent;
+  /**
+   * @var bool
+   */
+  public $isIntentFromOrbit;
+  /**
+   * @var bool
+   */
   public $isMediaControlIntent;
+  /**
+   * @var bool
+   */
+  public $isMediaIntent;
+  /**
+   * @var bool
+   */
+  public $isNspDescopedIntent;
+  /**
+   * @var bool
+   */
+  public $isNspEnabledIntent;
+  /**
+   * @var bool
+   */
+  public $isNspIntent;
+  /**
+   * @var bool
+   */
+  public $isNspTargetIntent;
   /**
    * @var bool
    */
@@ -96,7 +117,31 @@ class AssistantPrefulfillmentRankerPrefulfillmentSignals extends \Google\Model
   /**
    * @var bool
    */
+  public $isPodcastGenericIntent;
+  /**
+   * @var bool
+   */
   public $isPodcastIntent;
+  /**
+   * @var bool
+   */
+  public $isRadioIntent;
+  /**
+   * @var bool
+   */
+  public $isSageDisabledIntent;
+  /**
+   * @var bool
+   */
+  public $isSageInNageIntent;
+  /**
+   * @var bool
+   */
+  public $isSageIntent;
+  /**
+   * @var bool
+   */
+  public $isScoreBasedIntent;
   /**
    * @var bool
    */
@@ -104,32 +149,29 @@ class AssistantPrefulfillmentRankerPrefulfillmentSignals extends \Google\Model
   /**
    * @var bool
    */
+  public $isValidSmarthomeIntent;
+  /**
+   * @var bool
+   */
   public $isVideoIntent;
+  /**
+   * @var float
+   */
+  public $kScore;
   /**
    * @var int
    */
   public $kscorerRank;
-  protected $laaFeaturesType = AssistantGroundingRankerLaaFeatures::class;
-  protected $laaFeaturesDataType = '';
-  /**
-   * @var bool
-   */
-  public $maskCandidateLevelFeatures;
   public $maxHgrScoreAcrossBindingSets;
+  public $nspIntentParseScore;
   /**
    * @var int
    */
   public $nspRank;
-  /**
-   * @var float
-   */
-  public $numAlternativeHypothesis;
   public $numConstraints;
   public $numConstraintsSatisfied;
   public $numGroundableArgs;
   public $numGroundedArgs;
-  public $numVariables;
-  public $numVariablesGrounded;
   /**
    * @var int
    */
@@ -138,6 +180,10 @@ class AssistantPrefulfillmentRankerPrefulfillmentSignals extends \Google\Model
    * @var string
    */
   public $phase;
+  /**
+   * @var bool
+   */
+  public $platinumSource;
   public $pq2tVsAssistantIbstCosine;
   public $pq2tVsIbstCosine;
   /**
@@ -147,80 +193,20 @@ class AssistantPrefulfillmentRankerPrefulfillmentSignals extends \Google\Model
   /**
    * @var string
    */
-  public $rankerName;
-  /**
-   * @var string
-   */
   public $searchDispatch;
+  protected $smarthomeIntentMetadataType = AssistantPfrSmartHomeIntentMetadata::class;
+  protected $smarthomeIntentMetadataDataType = '';
   /**
    * @var string
    */
   public $subIntentType;
+  protected $tiebreakingMetadataType = AssistantPfrTiebreakingMetadata::class;
+  protected $tiebreakingMetadataDataType = '';
   /**
-   * @var float
+   * @var bool
    */
-  public $topHypothesisConfidence;
-  /**
-   * @var float
-   */
-  public $verticalConfidenceScore;
+  public $usesGroundingBox;
 
-  /**
-   * @param float
-   */
-  public function setBindingSetAuis($bindingSetAuis)
-  {
-    $this->bindingSetAuis = $bindingSetAuis;
-  }
-  /**
-   * @return float
-   */
-  public function getBindingSetAuis()
-  {
-    return $this->bindingSetAuis;
-  }
-  /**
-   * @param string
-   */
-  public function setBindingSetInvalidReason($bindingSetInvalidReason)
-  {
-    $this->bindingSetInvalidReason = $bindingSetInvalidReason;
-  }
-  /**
-   * @return string
-   */
-  public function getBindingSetInvalidReason()
-  {
-    return $this->bindingSetInvalidReason;
-  }
-  /**
-   * @param float
-   */
-  public function setBindingSetPauis($bindingSetPauis)
-  {
-    $this->bindingSetPauis = $bindingSetPauis;
-  }
-  /**
-   * @return float
-   */
-  public function getBindingSetPauis()
-  {
-    return $this->bindingSetPauis;
-  }
-  /**
-   * @param string
-   */
-  public function setBindingSetValidity($bindingSetValidity)
-  {
-    $this->bindingSetValidity = $bindingSetValidity;
-  }
-  /**
-   * @return string
-   */
-  public function getBindingSetValidity()
-  {
-    return $this->bindingSetValidity;
-  }
   public function setCalibratedParsingScore($calibratedParsingScore)
   {
     $this->calibratedParsingScore = $calibratedParsingScore;
@@ -299,28 +285,6 @@ class AssistantPrefulfillmentRankerPrefulfillmentSignals extends \Google\Model
   {
     return $this->generatedByLegacyAquaDomain;
   }
-  public function setGroundabilityScore($groundabilityScore)
-  {
-    $this->groundabilityScore = $groundabilityScore;
-  }
-  public function getGroundabilityScore()
-  {
-    return $this->groundabilityScore;
-  }
-  /**
-   * @param AssistantGroundingRankerGroundingProviderFeatures
-   */
-  public function setGroundingProviderFeatures(AssistantGroundingRankerGroundingProviderFeatures $groundingProviderFeatures)
-  {
-    $this->groundingProviderFeatures = $groundingProviderFeatures;
-  }
-  /**
-   * @return AssistantGroundingRankerGroundingProviderFeatures
-   */
-  public function getGroundingProviderFeatures()
-  {
-    return $this->groundingProviderFeatures;
-  }
   /**
    * @param bool
    */
@@ -334,6 +298,20 @@ class AssistantPrefulfillmentRankerPrefulfillmentSignals extends \Google\Model
   public function getHasAnswerGroup()
   {
     return $this->hasAnswerGroup;
+  }
+  /**
+   * @param bool
+   */
+  public function setHasIntentUpdate($hasIntentUpdate)
+  {
+    $this->hasIntentUpdate = $hasIntentUpdate;
+  }
+  /**
+   * @return bool
+   */
+  public function getHasIntentUpdate()
+  {
+    return $this->hasIntentUpdate;
   }
   /**
    * @param float
@@ -380,32 +358,60 @@ class AssistantPrefulfillmentRankerPrefulfillmentSignals extends \Google\Model
     return $this->intentNameAuisScoreExp;
   }
   /**
-   * @param float
+   * @param string
    */
-  public function setIntentNamePauis($intentNamePauis)
+  public function setIntentType($intentType)
   {
-    $this->intentNamePauis = $intentNamePauis;
+    $this->intentType = $intentType;
   }
   /**
-   * @return float
+   * @return string
    */
-  public function getIntentNamePauis()
+  public function getIntentType()
   {
-    return $this->intentNamePauis;
+    return $this->intentType;
   }
   /**
    * @param bool
    */
-  public function setIsFeasible($isFeasible)
+  public function setIsAquaMediaIntent($isAquaMediaIntent)
   {
-    $this->isFeasible = $isFeasible;
+    $this->isAquaMediaIntent = $isAquaMediaIntent;
   }
   /**
    * @return bool
    */
-  public function getIsFeasible()
+  public function getIsAquaMediaIntent()
   {
-    return $this->isFeasible;
+    return $this->isAquaMediaIntent;
+  }
+  /**
+   * @param bool
+   */
+  public function setIsCommunicationOpaRawTargetIntent($isCommunicationOpaRawTargetIntent)
+  {
+    $this->isCommunicationOpaRawTargetIntent = $isCommunicationOpaRawTargetIntent;
+  }
+  /**
+   * @return bool
+   */
+  public function getIsCommunicationOpaRawTargetIntent()
+  {
+    return $this->isCommunicationOpaRawTargetIntent;
+  }
+  /**
+   * @param bool
+   */
+  public function setIsDummyIntent($isDummyIntent)
+  {
+    $this->isDummyIntent = $isDummyIntent;
+  }
+  /**
+   * @return bool
+   */
+  public function getIsDummyIntent()
+  {
+    return $this->isDummyIntent;
   }
   /**
    * @param bool
@@ -424,6 +430,34 @@ class AssistantPrefulfillmentRankerPrefulfillmentSignals extends \Google\Model
   /**
    * @param bool
    */
+  public function setIsHighConfidencePodcastIntent($isHighConfidencePodcastIntent)
+  {
+    $this->isHighConfidencePodcastIntent = $isHighConfidencePodcastIntent;
+  }
+  /**
+   * @return bool
+   */
+  public function getIsHighConfidencePodcastIntent()
+  {
+    return $this->isHighConfidencePodcastIntent;
+  }
+  /**
+   * @param bool
+   */
+  public function setIsIntentFromOrbit($isIntentFromOrbit)
+  {
+    $this->isIntentFromOrbit = $isIntentFromOrbit;
+  }
+  /**
+   * @return bool
+   */
+  public function getIsIntentFromOrbit()
+  {
+    return $this->isIntentFromOrbit;
+  }
+  /**
+   * @param bool
+   */
   public function setIsMediaControlIntent($isMediaControlIntent)
   {
     $this->isMediaControlIntent = $isMediaControlIntent;
@@ -434,6 +468,76 @@ class AssistantPrefulfillmentRankerPrefulfillmentSignals extends \Google\Model
   public function getIsMediaControlIntent()
   {
     return $this->isMediaControlIntent;
+  }
+  /**
+   * @param bool
+   */
+  public function setIsMediaIntent($isMediaIntent)
+  {
+    $this->isMediaIntent = $isMediaIntent;
+  }
+  /**
+   * @return bool
+   */
+  public function getIsMediaIntent()
+  {
+    return $this->isMediaIntent;
+  }
+  /**
+   * @param bool
+   */
+  public function setIsNspDescopedIntent($isNspDescopedIntent)
+  {
+    $this->isNspDescopedIntent = $isNspDescopedIntent;
+  }
+  /**
+   * @return bool
+   */
+  public function getIsNspDescopedIntent()
+  {
+    return $this->isNspDescopedIntent;
+  }
+  /**
+   * @param bool
+   */
+  public function setIsNspEnabledIntent($isNspEnabledIntent)
+  {
+    $this->isNspEnabledIntent = $isNspEnabledIntent;
+  }
+  /**
+   * @return bool
+   */
+  public function getIsNspEnabledIntent()
+  {
+    return $this->isNspEnabledIntent;
+  }
+  /**
+   * @param bool
+   */
+  public function setIsNspIntent($isNspIntent)
+  {
+    $this->isNspIntent = $isNspIntent;
+  }
+  /**
+   * @return bool
+   */
+  public function getIsNspIntent()
+  {
+    return $this->isNspIntent;
+  }
+  /**
+   * @param bool
+   */
+  public function setIsNspTargetIntent($isNspTargetIntent)
+  {
+    $this->isNspTargetIntent = $isNspTargetIntent;
+  }
+  /**
+   * @return bool
+   */
+  public function getIsNspTargetIntent()
+  {
+    return $this->isNspTargetIntent;
   }
   /**
    * @param bool
@@ -452,6 +556,20 @@ class AssistantPrefulfillmentRankerPrefulfillmentSignals extends \Google\Model
   /**
    * @param bool
    */
+  public function setIsPodcastGenericIntent($isPodcastGenericIntent)
+  {
+    $this->isPodcastGenericIntent = $isPodcastGenericIntent;
+  }
+  /**
+   * @return bool
+   */
+  public function getIsPodcastGenericIntent()
+  {
+    return $this->isPodcastGenericIntent;
+  }
+  /**
+   * @param bool
+   */
   public function setIsPodcastIntent($isPodcastIntent)
   {
     $this->isPodcastIntent = $isPodcastIntent;
@@ -462,6 +580,76 @@ class AssistantPrefulfillmentRankerPrefulfillmentSignals extends \Google\Model
   public function getIsPodcastIntent()
   {
     return $this->isPodcastIntent;
+  }
+  /**
+   * @param bool
+   */
+  public function setIsRadioIntent($isRadioIntent)
+  {
+    $this->isRadioIntent = $isRadioIntent;
+  }
+  /**
+   * @return bool
+   */
+  public function getIsRadioIntent()
+  {
+    return $this->isRadioIntent;
+  }
+  /**
+   * @param bool
+   */
+  public function setIsSageDisabledIntent($isSageDisabledIntent)
+  {
+    $this->isSageDisabledIntent = $isSageDisabledIntent;
+  }
+  /**
+   * @return bool
+   */
+  public function getIsSageDisabledIntent()
+  {
+    return $this->isSageDisabledIntent;
+  }
+  /**
+   * @param bool
+   */
+  public function setIsSageInNageIntent($isSageInNageIntent)
+  {
+    $this->isSageInNageIntent = $isSageInNageIntent;
+  }
+  /**
+   * @return bool
+   */
+  public function getIsSageInNageIntent()
+  {
+    return $this->isSageInNageIntent;
+  }
+  /**
+   * @param bool
+   */
+  public function setIsSageIntent($isSageIntent)
+  {
+    $this->isSageIntent = $isSageIntent;
+  }
+  /**
+   * @return bool
+   */
+  public function getIsSageIntent()
+  {
+    return $this->isSageIntent;
+  }
+  /**
+   * @param bool
+   */
+  public function setIsScoreBasedIntent($isScoreBasedIntent)
+  {
+    $this->isScoreBasedIntent = $isScoreBasedIntent;
+  }
+  /**
+   * @return bool
+   */
+  public function getIsScoreBasedIntent()
+  {
+    return $this->isScoreBasedIntent;
   }
   /**
    * @param bool
@@ -480,6 +668,20 @@ class AssistantPrefulfillmentRankerPrefulfillmentSignals extends \Google\Model
   /**
    * @param bool
    */
+  public function setIsValidSmarthomeIntent($isValidSmarthomeIntent)
+  {
+    $this->isValidSmarthomeIntent = $isValidSmarthomeIntent;
+  }
+  /**
+   * @return bool
+   */
+  public function getIsValidSmarthomeIntent()
+  {
+    return $this->isValidSmarthomeIntent;
+  }
+  /**
+   * @param bool
+   */
   public function setIsVideoIntent($isVideoIntent)
   {
     $this->isVideoIntent = $isVideoIntent;
@@ -490,6 +692,20 @@ class AssistantPrefulfillmentRankerPrefulfillmentSignals extends \Google\Model
   public function getIsVideoIntent()
   {
     return $this->isVideoIntent;
+  }
+  /**
+   * @param float
+   */
+  public function setKScore($kScore)
+  {
+    $this->kScore = $kScore;
+  }
+  /**
+   * @return float
+   */
+  public function getKScore()
+  {
+    return $this->kScore;
   }
   /**
    * @param int
@@ -505,34 +721,6 @@ class AssistantPrefulfillmentRankerPrefulfillmentSignals extends \Google\Model
   {
     return $this->kscorerRank;
   }
-  /**
-   * @param AssistantGroundingRankerLaaFeatures
-   */
-  public function setLaaFeatures(AssistantGroundingRankerLaaFeatures $laaFeatures)
-  {
-    $this->laaFeatures = $laaFeatures;
-  }
-  /**
-   * @return AssistantGroundingRankerLaaFeatures
-   */
-  public function getLaaFeatures()
-  {
-    return $this->laaFeatures;
-  }
-  /**
-   * @param bool
-   */
-  public function setMaskCandidateLevelFeatures($maskCandidateLevelFeatures)
-  {
-    $this->maskCandidateLevelFeatures = $maskCandidateLevelFeatures;
-  }
-  /**
-   * @return bool
-   */
-  public function getMaskCandidateLevelFeatures()
-  {
-    return $this->maskCandidateLevelFeatures;
-  }
   public function setMaxHgrScoreAcrossBindingSets($maxHgrScoreAcrossBindingSets)
   {
     $this->maxHgrScoreAcrossBindingSets = $maxHgrScoreAcrossBindingSets;
@@ -540,6 +728,14 @@ class AssistantPrefulfillmentRankerPrefulfillmentSignals extends \Google\Model
   public function getMaxHgrScoreAcrossBindingSets()
   {
     return $this->maxHgrScoreAcrossBindingSets;
+  }
+  public function setNspIntentParseScore($nspIntentParseScore)
+  {
+    $this->nspIntentParseScore = $nspIntentParseScore;
+  }
+  public function getNspIntentParseScore()
+  {
+    return $this->nspIntentParseScore;
   }
   /**
    * @param int
@@ -554,20 +750,6 @@ class AssistantPrefulfillmentRankerPrefulfillmentSignals extends \Google\Model
   public function getNspRank()
   {
     return $this->nspRank;
-  }
-  /**
-   * @param float
-   */
-  public function setNumAlternativeHypothesis($numAlternativeHypothesis)
-  {
-    $this->numAlternativeHypothesis = $numAlternativeHypothesis;
-  }
-  /**
-   * @return float
-   */
-  public function getNumAlternativeHypothesis()
-  {
-    return $this->numAlternativeHypothesis;
   }
   public function setNumConstraints($numConstraints)
   {
@@ -601,22 +783,6 @@ class AssistantPrefulfillmentRankerPrefulfillmentSignals extends \Google\Model
   {
     return $this->numGroundedArgs;
   }
-  public function setNumVariables($numVariables)
-  {
-    $this->numVariables = $numVariables;
-  }
-  public function getNumVariables()
-  {
-    return $this->numVariables;
-  }
-  public function setNumVariablesGrounded($numVariablesGrounded)
-  {
-    $this->numVariablesGrounded = $numVariablesGrounded;
-  }
-  public function getNumVariablesGrounded()
-  {
-    return $this->numVariablesGrounded;
-  }
   /**
    * @param int
    */
@@ -644,6 +810,20 @@ class AssistantPrefulfillmentRankerPrefulfillmentSignals extends \Google\Model
   public function getPhase()
   {
     return $this->phase;
+  }
+  /**
+   * @param bool
+   */
+  public function setPlatinumSource($platinumSource)
+  {
+    $this->platinumSource = $platinumSource;
+  }
+  /**
+   * @return bool
+   */
+  public function getPlatinumSource()
+  {
+    return $this->platinumSource;
   }
   public function setPq2tVsAssistantIbstCosine($pq2tVsAssistantIbstCosine)
   {
@@ -678,20 +858,6 @@ class AssistantPrefulfillmentRankerPrefulfillmentSignals extends \Google\Model
   /**
    * @param string
    */
-  public function setRankerName($rankerName)
-  {
-    $this->rankerName = $rankerName;
-  }
-  /**
-   * @return string
-   */
-  public function getRankerName()
-  {
-    return $this->rankerName;
-  }
-  /**
-   * @param string
-   */
   public function setSearchDispatch($searchDispatch)
   {
     $this->searchDispatch = $searchDispatch;
@@ -702,6 +868,20 @@ class AssistantPrefulfillmentRankerPrefulfillmentSignals extends \Google\Model
   public function getSearchDispatch()
   {
     return $this->searchDispatch;
+  }
+  /**
+   * @param AssistantPfrSmartHomeIntentMetadata
+   */
+  public function setSmarthomeIntentMetadata(AssistantPfrSmartHomeIntentMetadata $smarthomeIntentMetadata)
+  {
+    $this->smarthomeIntentMetadata = $smarthomeIntentMetadata;
+  }
+  /**
+   * @return AssistantPfrSmartHomeIntentMetadata
+   */
+  public function getSmarthomeIntentMetadata()
+  {
+    return $this->smarthomeIntentMetadata;
   }
   /**
    * @param string
@@ -718,32 +898,32 @@ class AssistantPrefulfillmentRankerPrefulfillmentSignals extends \Google\Model
     return $this->subIntentType;
   }
   /**
-   * @param float
+   * @param AssistantPfrTiebreakingMetadata
    */
-  public function setTopHypothesisConfidence($topHypothesisConfidence)
+  public function setTiebreakingMetadata(AssistantPfrTiebreakingMetadata $tiebreakingMetadata)
   {
-    $this->topHypothesisConfidence = $topHypothesisConfidence;
+    $this->tiebreakingMetadata = $tiebreakingMetadata;
   }
   /**
-   * @return float
+   * @return AssistantPfrTiebreakingMetadata
    */
-  public function getTopHypothesisConfidence()
+  public function getTiebreakingMetadata()
   {
-    return $this->topHypothesisConfidence;
+    return $this->tiebreakingMetadata;
   }
   /**
-   * @param float
+   * @param bool
    */
-  public function setVerticalConfidenceScore($verticalConfidenceScore)
+  public function setUsesGroundingBox($usesGroundingBox)
   {
-    $this->verticalConfidenceScore = $verticalConfidenceScore;
+    $this->usesGroundingBox = $usesGroundingBox;
   }
   /**
-   * @return float
+   * @return bool
    */
-  public function getVerticalConfidenceScore()
+  public function getUsesGroundingBox()
   {
-    return $this->verticalConfidenceScore;
+    return $this->usesGroundingBox;
   }
 }
 

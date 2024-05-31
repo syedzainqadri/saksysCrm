@@ -2,78 +2,66 @@
 
 namespace App\Http\Controllers;
 
-use Carbon\Carbon;
-use App\Models\Role;
-use App\Models\Task;
-use App\Models\Team;
-use App\Models\User;
-use App\Helper\Files;
-use App\Helper\Reply;
-use App\Models\Module;
-use App\Models\Pinned;
-use App\Models\Expense;
-use App\Models\Invoice;
-use App\Models\Payment;
-use App\Models\Project;
-use App\Models\SubTask;
-use App\Models\Currency;
-use App\Models\TaskFile;
-use App\Models\TaskUser;
-use App\Models\Discussion;
-use App\Models\Permission;
-use App\Models\BankAccount;
-use App\Models\MentionUser;
-use App\Models\ProjectFile;
-use App\Models\ProjectNote;
-use App\Models\SubTaskFile;
-use App\Scopes\ActiveScope;
-use App\Traits\ImportExcel;
-use Illuminate\Http\Request;
-use App\Models\ProjectMember;
-use App\Imports\ProjectImport;
-use App\Jobs\ImportProjectJob;
-use App\Models\MessageSetting;
-use App\Models\PermissionRole;
-use App\Models\PermissionType;
-use App\Models\ProjectSetting;
-use App\Models\ProjectTimeLog;
-use App\Models\UserPermission;
-use App\Models\DiscussionReply;
-use App\Models\ProjectActivity;
-use App\Models\ProjectCategory;
-use App\Models\ProjectTemplate;
-use App\Models\TaskboardColumn;
-use App\Traits\ProjectProgress;
-use App\Models\ProjectMilestone;
-use App\DataTables\TasksDataTable;
-use App\Models\DiscussionCategory;
-use Illuminate\Support\Facades\DB;
-use App\Models\ProjectTimeLogBreak;
-use Illuminate\Support\Facades\Bus;
-use App\Models\ProjectStatusSetting;
-use Maatwebsite\Excel\Facades\Excel;
+use App\DataTables\ArchiveProjectsDataTable;
+use App\DataTables\ArchiveTasksDataTable;
+use App\DataTables\DiscussionDataTable;
 use App\DataTables\ExpensesDataTable;
 use App\DataTables\InvoicesDataTable;
+use App\DataTables\OrdersDataTable;
 use App\DataTables\PaymentsDataTable;
-use App\DataTables\ProjectsDataTable;
-use App\DataTables\TimeLogsDataTable;
-use App\DataTables\DiscussionDataTable;
-use Illuminate\Support\Facades\Artisan;
-use Maatwebsite\Excel\HeadingRowImport;
-use App\DataTables\ArchiveTasksDataTable;
 use App\DataTables\ProjectNotesDataTable;
-use App\Http\Requests\Project\StoreProject;
-use App\DataTables\ArchiveProjectsDataTable;
-use App\Http\Requests\Project\UpdateProject;
-use Maatwebsite\Excel\Imports\HeadingRowFormatter;
-use App\Http\Requests\Admin\Employee\ImportRequest;
+use App\DataTables\ProjectsDataTable;
+use App\DataTables\TasksDataTable;
+use App\DataTables\TicketDataTable;
+use App\DataTables\TimeLogsDataTable;
+use App\Helper\Files;
+use App\Helper\Reply;
 use App\Http\Requests\Admin\Employee\ImportProcessRequest;
+use App\Http\Requests\Admin\Employee\ImportRequest;
+use App\Http\Requests\Project\StoreProject;
+use App\Http\Requests\Project\UpdateProject;
+use App\Imports\ProjectImport;
+use App\Jobs\ImportProjectJob;
+use App\Models\BankAccount;
+use App\Models\Currency;
+use App\Models\DiscussionCategory;
+use App\Models\Expense;
+use App\Models\Invoice;
+use App\Models\MessageSetting;
+use App\Models\Payment;
+use App\Models\Pinned;
+use App\Models\Project;
+use App\Models\ProjectActivity;
+use App\Models\ProjectCategory;
+use App\Models\ProjectFile;
+use App\Models\ProjectMember;
+use App\Models\ProjectMilestone;
+use App\Models\ProjectNote;
+use App\Models\ProjectStatusSetting;
+use App\Models\ProjectTemplate;
+use App\Models\ProjectTimeLog;
+use App\Models\ProjectTimeLogBreak;
+use App\Models\SubTask;
+use App\Models\SubTaskFile;
+use App\Models\Task;
+use App\Models\TaskUser;
+use App\Models\TaskboardColumn;
+use App\Models\Team;
+use App\Models\User;
+use App\Scopes\ActiveScope;
+use App\Traits\ImportExcel;
+use App\Traits\ProjectProgress;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Symfony\Component\Mailer\Exception\TransportException;
 
 class ProjectController extends AccountBaseController
 {
 
     use ProjectProgress, ImportExcel;
+
+    private $onlyTrashedRecords = true;
 
     public function __construct()
     {
@@ -219,7 +207,7 @@ class ProjectController extends AccountBaseController
         abort_403(!in_array($this->addPermission, ['all', 'added']));
 
         $this->pageTitle = __('app.addProject');
-        $this->clients = User::allClients(null, true, ($this->addPermission == 'all' ? 'all' : null));
+        $this->clients = User::allClients(null, false, ($this->addPermission == 'all' ? 'all' : null));
         $this->categories = ProjectCategory::all();
         $this->templates = ProjectTemplate::all();
         $this->currencies = Currency::all();
@@ -267,13 +255,11 @@ class ProjectController extends AccountBaseController
 
         $this->userData = $userData;
 
-        if (request()->ajax()) {
-            $html = view('projects.ajax.create', $this->data)->render();
-
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
-        }
-
         $this->view = 'projects.ajax.create';
+
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
+        }
 
         return view('projects.create', $this->data);
 
@@ -286,6 +272,7 @@ class ProjectController extends AccountBaseController
      */
     public function store(StoreProject $request)
     {
+
         $this->addPermission = user()->permission('add_projects');
 
         abort_403(!in_array($this->addPermission, ['all', 'added']));
@@ -294,8 +281,8 @@ class ProjectController extends AccountBaseController
 
         try {
 
-            $startDate = Carbon::createFromFormat($this->company->date_format, $request->start_date)->format('Y-m-d');
-            $deadline = !$request->has('without_deadline') ? Carbon::createFromFormat($this->company->date_format, $request->deadline)->format('Y-m-d') : null;
+            $startDate = companyToYmd($request->start_date);
+            $deadline = !$request->has('without_deadline') ? companyToYmd($request->deadline) : null;
 
             $project = new Project();
             $project->project_name = $request->project_name;
@@ -328,9 +315,9 @@ class ProjectController extends AccountBaseController
                     $project->category_id = $request->category_id;
                 }
 
-                $request->client_view_task = $request->client_view_task ? 'enable' : 'disable';
-                $project->allow_client_notification = ($request->client_view_task) && ($request->client_task_notification) ? 'enable' : 'disable';
-                $request->manual_timelog = $request->manual_timelog ? 'enable' : 'disable';
+                $project->client_view_task = $request->client_view_task ? 'enable' : 'disable';
+                $project->allow_client_notification = $request->client_task_notification ? 'enable' : 'disable';
+                $project->manual_timelog = $request->manual_timelog ? 'enable' : 'disable';
 
                 if ($request->team_id > 0) {
                     $project->team_id = $request->team_id;
@@ -466,7 +453,7 @@ class ProjectController extends AccountBaseController
             $this->fields = $this->project->getCustomFieldGroupsWithFields()->fields;
         }
 
-        $this->clients = User::allClients(null, true, ($this->editPermission == 'all' ? 'all' : null));
+        $this->clients = User::allClients(null, false, ($this->editPermission == 'all' ? 'all' : null));
         $this->categories = ProjectCategory::all();
         $this->currencies = Currency::all();
         $this->teams = Team::all();
@@ -492,15 +479,13 @@ class ProjectController extends AccountBaseController
 
         $this->userData = $userData;
 
-        if (request()->ajax()) {
-            $html = view('projects.ajax.edit', $this->data)->render();
+        $this->view = 'projects.ajax.edit';
 
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
         }
 
-
         abort_403(user()->permission('edit_projects') == 'added' && $this->project->added_by != user()->id);
-        $this->view = 'projects.ajax.edit';
 
         return view('projects.create', $this->data);
 
@@ -520,10 +505,10 @@ class ProjectController extends AccountBaseController
 
         $project->project_summary = trim_editor($request->project_summary);
 
-        $project->start_date = Carbon::createFromFormat($this->company->date_format, $request->start_date)->format('Y-m-d');
+        $project->start_date = companyToYmd($request->start_date);
 
         if (!$request->has('without_deadline')) {
-            $project->deadline = Carbon::createFromFormat($this->company->date_format, $request->deadline)->format('Y-m-d');
+            $project->deadline = companyToYmd($request->deadline);
         }
         else {
             $project->deadline = null;
@@ -669,10 +654,10 @@ class ProjectController extends AccountBaseController
             || ($this->viewPermission == 'owned' && in_array(user()->id, $memberIds) && in_array('employee', user_roles()))
             || ($this->viewPermission == 'both' && (user()->id == $this->project->client_id || user()->id == $this->project->added_by))
             || ($this->viewPermission == 'both' && (in_array(user()->id, $memberIds) || user()->id == $this->project->added_by) && in_array('employee', user_roles()))
-           || (($this->viewPermission == 'none') || (!is_null(($this->project->mentionProject))) && in_array(user()->id, $mentionIds))
+           || (($this->viewPermission == 'none') && (!is_null(($this->project->mentionProject))) && in_array(user()->id, $mentionIds))
         ));
 
-        $this->pageTitle = ucfirst($this->project->project_name);
+        $this->pageTitle = $this->project->project_name;
 
         if ($this->project->getCustomFieldGroupsWithFields()) {
             $this->fields = $this->project->getCustomFieldGroupsWithFields()->fields;
@@ -735,9 +720,18 @@ class ProjectController extends AccountBaseController
 
             return $this->burndownChart($this->project);
         case 'activity':
-            $this->activities = ProjectActivity::getProjectActivities($id, 10);
+            $this->activities = [];
+
+            if(!in_array('client', user_roles())){
+                $this->activities = ProjectActivity::getProjectActivities($id, 10);
+            }
+
             $this->view = 'projects.ajax.activity';
             break;
+        case 'tickets':
+            return $this->tickets($this->project->project_admin == user()->id);
+        case 'orders':
+            return $this->orders();
         default:
             $this->taskChart = $this->taskChartData($id);
             $hoursLogged = $this->project->times()->sum('total_minutes');
@@ -752,17 +746,16 @@ class ProjectController extends AccountBaseController
                 ->where('project_id', $id)
                 ->sum('amount');
 
-            $this->hoursLogged = intdiv($hoursLogged - $breakMinutes, 60);
+            $this->hoursLogged = intdiv($hoursLogged - $breakMinutes, 60).'.'.(($hoursLogged - $breakMinutes) % 60);
             $this->expenses = Expense::where(['project_id' => $id, 'status' => 'approved'])->sum('price');
+            $this->profit = $this->earnings - $this->expenses;
+
             $this->view = 'projects.ajax.overview';
             break;
         }
 
-
         if (request()->ajax()) {
-            $html = view($this->view, $this->data)->render();
-
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
 
         $this->activeTab = $tab ?: 'overview';
@@ -971,7 +964,7 @@ class ProjectController extends AccountBaseController
         foreach ($tasks as $task) {
             $data[$count] = [
                 'id' => 'task-' . $task->id,
-                'name' => ucfirst($task->heading),
+                'name' => $task->heading,
                 'start' => ((!is_null($task->start_date)) ? $task->start_date->format('Y-m-d') : ((!is_null($task->due_date)) ? $task->due_date->format('Y-m-d') : null)),
                 'end' => (!is_null($task->due_date)) ? $task->due_date->format('Y-m-d') : $task->start_date->format('Y-m-d'),
                 'progress' => 0,
@@ -992,7 +985,7 @@ class ProjectController extends AccountBaseController
 
     public function invoices()
     {
-        $dataTable = new InvoicesDataTable;
+        $dataTable = new InvoicesDataTable($this->onlyTrashedRecords);
         $viewPermission = user()->permission('view_project_invoices');
         abort_403(!in_array($viewPermission, ['all', 'added', 'owned']));
 
@@ -1057,7 +1050,7 @@ class ProjectController extends AccountBaseController
                 $bankName = $bankDetail->bank_name.' |';
             }
 
-            $bankData .= '<option value="' . $bankDetail->id . '">'.$bankName .' '.mb_ucwords($bankDetail->account_name). '</option>';
+            $bankData .= '<option value="' . $bankDetail->id . '">'.$bankName .' '.$bankDetail->account_name. '</option>';
         }
 
         $exchangeRate = Currency::where('id', $request->currencyId)->pluck('exchange_rate')->toArray();
@@ -1091,7 +1084,9 @@ class ProjectController extends AccountBaseController
         }
         else {
 
-            $members = ProjectMember::with('user')->where('project_id', $id)->get();
+            $members = ProjectMember::with('user')->where('project_id', $id)->whereHas('user', function ($q) {
+                $q->where('status', 'active');
+            })->get();
 
 
             foreach ($members as $item) {
@@ -1118,7 +1113,7 @@ class ProjectController extends AccountBaseController
 
     public function timelogs($projectAdmin = false)
     {
-        $dataTable = new TimeLogsDataTable();
+        $dataTable = new TimeLogsDataTable($this->onlyTrashedRecords);
 
         if (!$projectAdmin) {
             $viewPermission = user()->permission('view_project_timelogs');
@@ -1135,7 +1130,7 @@ class ProjectController extends AccountBaseController
 
     public function expenses()
     {
-        $dataTable = new ExpensesDataTable();
+        $dataTable = new ExpensesDataTable($this->onlyTrashedRecords);
         $viewPermission = user()->permission('view_project_expenses');
         abort_403(!in_array($viewPermission, ['all', 'added', 'owned']));
 
@@ -1150,7 +1145,7 @@ class ProjectController extends AccountBaseController
 
     public function payments()
     {
-        $dataTable = new PaymentsDataTable();
+        $dataTable = new PaymentsDataTable($this->onlyTrashedRecords);
         $viewPermission = user()->permission('view_project_payments');
         abort_403(!in_array($viewPermission, ['all', 'added', 'owned']));
 
@@ -1282,6 +1277,22 @@ class ProjectController extends AccountBaseController
 
     }
 
+    public function tickets($projectAdmin = false)
+    {
+        $dataTable = new TicketDataTable($this->onlyTrashedRecords);
+
+        if (!$projectAdmin) {
+            $viewPermission = user()->permission('view_tickets');
+            abort_403(!in_array($viewPermission, ['all', 'added', 'owned', 'both']));
+        }
+
+        $this->activeTab = request()->tab ?: 'profile';
+        $this->view = 'projects.ajax.tickets';
+
+        return $dataTable->render('projects.show', $this->data);
+
+    }
+
     public function burndownChart($project)
     {
         $viewPermission = user()->permission('view_project_burndown_chart');
@@ -1300,8 +1311,13 @@ class ProjectController extends AccountBaseController
 
         if (!$projectAdmin) {
             $viewPermission = user()->permission('view_project_rating');
-            abort_403(!in_array($viewPermission, ['all', 'added']));
+            abort_403(!in_array($viewPermission, ['all', 'added', 'owned', 'both']));
         }
+
+        $this->deleteRatingPermission = user()->permission('delete_project_rating');
+        $this->editRatingPermission = user()->permission('edit_project_rating');
+        $this->addRatingPermission = user()->permission('add_project_rating');
+
 
         $tab = request('tab');
         $this->activeTab = $tab ?: 'rating';
@@ -1356,14 +1372,11 @@ class ProjectController extends AccountBaseController
         $this->addPermission = user()->permission('add_projects');
         abort_403(!in_array($this->addPermission, ['all', 'added']));
 
+        $this->view = 'projects.ajax.import';
 
         if (request()->ajax()) {
-            $html = view('projects.ajax.import', $this->data)->render();
-
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
-
-        $this->view = 'projects.ajax.import';
 
         return view('projects.create', $this->data);
     }
@@ -1437,11 +1450,11 @@ class ProjectController extends AccountBaseController
             $name = '';
 
             if (!is_null($item->project_id)) {
-                $name .= "<h5 class='f-12 text-darkest-grey'>" . ucfirst($item->heading) . "</h5><div class='text-muted f-11'>" . $item->project->project_name . '</div>';
+                $name .= "<h5 class='f-12 text-darkest-grey'>" . $item->heading . "</h5><div class='text-muted f-11'>" . $item->project->project_name . '</div>';
 
             }
             else {
-                $name .= "<span class='text-dark-grey f-11'>" . ucfirst($item->heading) . '</span>';
+                $name .= "<span class='text-dark-grey f-11'>" . $item->heading . '</span>';
             }
 
             $options .= '<option data-content="' . $name . '" value="' . $item->id . '">' . $item->heading . '</option>';
@@ -1485,7 +1498,7 @@ class ProjectController extends AccountBaseController
 
         $this->employees = User::allEmployees(null, true, ($addPermission == 'all' ? 'all' : null));
 
-        $this->clients = User::allClients(null, true, ($addPermission == 'all' ? 'all' : null));
+        $this->clients = User::allClients(null, false, ($addPermission == 'all' ? 'all' : null));
 
         if (in_array('client', user_roles())) {
             $this->client = User::withoutGlobalScope(ActiveScope::class)->findOrFail(user()->id);
@@ -1698,6 +1711,36 @@ class ProjectController extends AccountBaseController
                 }
             }
         }
+    }
+
+    public function getProjects(Request $request)
+    {
+        $projects = Project::query()
+            ->when(($request->requesterType == 'client' && $request->clientId), function ($query) use ($request) {
+                $query->where('client_id', $request->clientId);
+            })
+            ->when(($request->requesterType == 'employee' && $request->userId), function ($query) use ($request) {
+                $query->whereHas('members', function ($q) use ($request) {
+                    $q->where('user_id', $request->userId);
+                });
+            })
+            ->get();
+
+        return Reply::dataOnly(['projects' => $projects]);
+    }
+
+    public function orders()
+    {
+        $dataTable = new OrdersDataTable($this->onlyTrashedRecords);
+        $viewPermission = user()->permission('view_project_orders');
+        abort_403(!in_array($viewPermission, ['all', 'added', 'owned']));
+
+        $tab = request('tab');
+        $this->activeTab = $tab ?: 'overview';
+
+        $this->view = 'projects.ajax.orders';
+
+        return $dataTable->render('projects.show', $this->data);
     }
 
 }

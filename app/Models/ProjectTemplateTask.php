@@ -36,6 +36,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @method static \Illuminate\Database\Eloquent\Builder|ProjectTemplateTask whereProjectTemplateId($value)
  * @method static \Illuminate\Database\Eloquent\Builder|ProjectTemplateTask whereProjectTemplateTaskCategoryId($value)
  * @method static \Illuminate\Database\Eloquent\Builder|ProjectTemplateTask whereUpdatedAt($value)
+ * @property-read \App\Models\TaskCategory|null $category
  * @mixin \Eloquent
  */
 class ProjectTemplateTask extends BaseModel
@@ -59,6 +60,11 @@ class ProjectTemplateTask extends BaseModel
     public function subtasks(): HasMany
     {
         return $this->hasMany(ProjectTemplateSubTask::class);
+    }
+
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(TaskCategory::class, 'project_template_task_category_id');
     }
 
 }

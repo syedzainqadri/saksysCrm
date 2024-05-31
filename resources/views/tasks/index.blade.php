@@ -69,7 +69,7 @@ $viewUnassignedTasksPermission = user()->permission('view_unassigned_tasks');
                     <select class="form-control select-picker" name="date_filter_on" id="date_filter_on">
                         <option value="start_date">@lang('app.startDate')</option>
                         <option value="due_date">@lang('app.dueDate')</option>
-                        <option value="completed_on">@lang('app.date') @lang('app.completed')</option>
+                        <option value="completed_on">@lang('app.dateCompleted')</option>
                     </select>
                 </div>
             </div>
@@ -121,8 +121,7 @@ $viewUnassignedTasksPermission = user()->permission('view_unassigned_tasks');
                             data-container="body" data-size="8">
                             <option value="all">@lang('app.all')</option>
                             @foreach ($employees as $employee)
-                                <x-user-option :user="$employee"
-                                               :selected="request('assignee') == 'me' && $employee->id == user()->id">
+                                <x-user-option :user="$employee">
                                 </x-user-option>
                             @endforeach
                             @if ($viewUnassignedTasksPermission == 'all')
@@ -220,19 +219,18 @@ $viewUnassignedTasksPermission = user()->permission('view_unassigned_tasks');
     <!-- CONTENT WRAPPER START -->
     <div class="content-wrapper">
         <!-- Add Task Export Buttons Start -->
-        <div class="d-block d-lg-flex d-md-flex justify-content-between action-bar">
+        <div class="d-grid d-lg-flex d-md-flex action-bar">
             <div id="table-actions" class="flex-grow-1 align-items-center">
                 @if ($addTaskPermission == 'all' || $addTaskPermission == 'added')
                     <x-forms.link-primary :link="route('tasks.create')" class="mr-3 openRightModal float-left" icon="plus">
-                        @lang('app.add')
-                        @lang('app.task')
+                        @lang('app.addTask')
                     </x-forms.link-primary>
                 @endif
 
                 @if (!in_array('client', user_roles()))
                     <x-forms.button-secondary id="filter-my-task" class="mr-3 float-left" icon="user">
                         @lang('modules.tasks.myTask')
-                    </x-forms.button-primary>
+                    </x-forms.button-secondary>
                 @endif
 
             </div>
@@ -254,7 +252,7 @@ $viewUnassignedTasksPermission = user()->permission('view_unassigned_tasks');
                 </div>
             </x-datatable.actions>
 
-            <div class="btn-group mt-3 mt-lg-0 mt-md-0 ml-lg-3" role="group">
+            <div class="btn-group mt-2 mt-lg-0 mt-md-0 ml-0 ml-lg-3 ml-md-3" role="group">
                 <a href="{{ route('tasks.index') }}" class="btn btn-secondary f-14 btn-active task" data-toggle="tooltip"
                     data-original-title="@lang('app.menu.tasks')"><i class="side-icon bi bi-list-ul"></i></a>
 
@@ -286,6 +284,13 @@ $viewUnassignedTasksPermission = user()->permission('view_unassigned_tasks');
     @include('sections.datatable_js')
 
     <script>
+        $(document).ready(()=>{
+            let assignedVal = "{{ $assignedTo }}";
+            if(assignedVal){
+                $('.filter-box #assignedTo').val(assignedVal);
+            }
+        });
+
         $('#allTasks-table').on('preXhr.dt', function(e, settings, data) {
 
             var dateRangePicker = $('#datatableRange').data('daterangepicker');
@@ -597,38 +602,38 @@ $viewUnassignedTasksPermission = user()->permission('view_unassigned_tasks');
             })
         });
 
-        $('#allTasks-table').on('click', '.stop-timer', function() {
-            var id = $(this).data('time-id');
-            var url = "{{ route('timelogs.stop_timer', ':id') }}";
-            url = url.replace(':id', id);
-            var token = '{{ csrf_token() }}';
-            $.easyAjax({
-                url: url,
-                blockUI: true,
-                container: '#allTasks-table',
-                type: "POST",
-                data: {
-                    timeId: id,
-                    _token: token
-                },
-                success: function(response) {
-                    if (response.activeTimerCount > 0) {
-                        $('#show-active-timer .active-timer-count').html(response.activeTimerCount);
-                    } else {
-                        $('#show-active-timer .active-timer-count').addClass('d-none');
-                    }
+        // $('#allTasks-table').on('click', '.stop-timer', function() {
+        //     var id = $(this).data('time-id');
+        //     var url = "{{ route('timelogs.stop_timer', ':id') }}";
+        //     url = url.replace(':id', id);
+        //     var token = '{{ csrf_token() }}';
+        //     $.easyAjax({
+        //         url: url,
+        //         blockUI: true,
+        //         container: '#allTasks-table',
+        //         type: "POST",
+        //         data: {
+        //             timeId: id,
+        //             _token: token
+        //         },
+        //         success: function(response) {
+        //             if (response.activeTimerCount > 0) {
+        //                 $('#show-active-timer .active-timer-count').html(response.activeTimerCount);
+        //             } else {
+        //                 $('#show-active-timer .active-timer-count').addClass('d-none');
+        //             }
 
-                    if (response.activeTimer == null) {
-                        $('#timer-clock').html('');
-                        runTimeClock = false;
-                    }
+        //             if (response.activeTimer == null) {
+        //                 $('#timer-clock').html('');
+        //                 runTimeClock = false;
+        //             }
 
-                    if ($('#allTasks-table').length) {
-                        window.LaravelDataTables["allTasks-table"].draw(false);
-                    }
-                }
-            })
-        });
+        //             if ($('#allTasks-table').length) {
+        //                 window.LaravelDataTables["allTasks-table"].draw(false);
+        //             }
+        //         }
+        //     })
+        // });
 
         $('#allTasks-table').on('click', '.resume-timer', function() {
             var id = $(this).data('time-id');
@@ -694,6 +699,13 @@ $viewUnassignedTasksPermission = user()->permission('view_unassigned_tasks');
             })
         });
 
+        $('#allTasks-table').on('click', '.stop-timer', function() {
+            var url = "{{ route('timelogs.stopper_alert', ':id') }}?via=timelog";
+            var id = $(this).data('time-id');
+            url = url.replace(':id', id);
+            $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
+            $.ajaxModal(MODAL_LG, url);
+        })
 
     </script>
 @endpush

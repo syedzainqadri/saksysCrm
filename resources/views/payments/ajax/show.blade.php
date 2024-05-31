@@ -2,7 +2,7 @@
     <div class="col-sm-12">
         <x-cards.data :title="__('modules.payments.paymentDetails')" class=" mt-4">
             <x-cards.data-row :label="__('app.amount')"
-                :value="currency_format($payment->amount, ($payment->currency ? $payment->currency->id : company()->currency->id))" />
+                :value="currency_format($payment->amount, ($payment->currency ? $payment->currency->id : company()->currency_id))" />
 
             <x-cards.data-row :label="__('app.paymentOn')" :value="$payment->paid_on->translatedFormat(company()->date_format)" />
 
@@ -20,7 +20,7 @@
                 $bankName = isset($payment->transactions[0]) && $payment->transactions[0]->bankAccount->bank_name ? $payment->transactions[0]->bankAccount->bank_name.' |' : ''
             @endphp
             <x-cards.data-row :label="__('app.menu.bankaccount')"
-            :value="(count($payment->transactions) > 0 ? $bankName.' '.mb_ucwords($payment->transactions[0]->bankAccount->account_name) : '--')" />
+            :value="(count($payment->transactions) > 0 ? $bankName.' '.$payment->transactions[0]->bankAccount->account_name : '--')" />
 
             <x-cards.data-row :label="__('app.transactionId')" :value="$payment->transaction_id ?? '--'" />
 
@@ -55,7 +55,7 @@
                 <p class="mb-0 text-dark-grey f-14">
                     @if (!is_null($payment->bill))
                         <a target="_blank" class="text-dark-grey"
-                            href="{{ $payment->file_url }}"><i class="fa fa-external-link-alt"></i> <u>@lang('app.view') @lang('app.receipt')</u></a>
+                            href="{{ $payment->file_url }}"><i class="fa fa-external-link-alt"></i> <u>@lang('app.viewReceipt')</u></a>
                     @else
                         --
                     @endif

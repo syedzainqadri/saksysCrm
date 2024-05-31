@@ -14,6 +14,8 @@ declare(strict_types=1);
 
 namespace Gitlab\Api;
 
+use Symfony\Component\OptionsResolver\Exception\InvalidOptionsException;
+use Symfony\Component\OptionsResolver\Exception\UndefinedOptionsException;
 use Symfony\Component\OptionsResolver\Options;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
@@ -208,15 +210,28 @@ class Groups extends AbstractApi
      * @param int|string $group_id
      * @param int        $user_id
      * @param int        $access_level
+     * @param array      $parameters
      *
      * @return mixed
      */
-    public function addMember($group_id, int $user_id, int $access_level)
+    public function addMember($group_id, int $user_id, int $access_level, array $parameters = [])
     {
-        return $this->post('groups/'.self::encodePath($group_id).'/members', [
+        $dateNormalizer = function (OptionsResolver $optionsResolver, \DateTimeInterface $date): string {
+            return $date->format('Y-m-d');
+        };
+
+        $resolver = $this->createOptionsResolver()
+            ->setDefined('expires_at')
+            ->setAllowedTypes('expires_at', \DateTimeInterface::class)
+            ->setNormalizer('expires_at', $dateNormalizer)
+        ;
+
+        $parameters = \array_merge([
             'user_id' => $user_id,
             'access_level' => $access_level,
-        ]);
+        ], $resolver->resolve($parameters));
+
+        return $this->post('groups/'.self::encodePath($group_id).'/members', $parameters);
     }
 
     /**
@@ -493,13 +508,35 @@ class Groups extends AbstractApi
 
     /**
      * @param int|string $group_id
-     * @param array      $parameters
+     * @param array      $parameters {
+     *
+     *     @var bool     $with_counts               Whether or not to include issue and merge request counts. Defaults to false.
+     *     @var bool     $include_ancestor_groups   Include ancestor groups. Defaults to true.
+     *     @var bool     $include_descendant_groups Include descendant groups. Defaults to false.
+     *     @var bool     $only_group_labels         Toggle to include only group labels or also project labels. Defaults to true.
+     *     @var string   $search                    Keyword to filter labels by.
+     * }
      *
      * @return mixed
      */
     public function labels($group_id, array $parameters = [])
     {
         $resolver = $this->createOptionsResolver();
+
+        $resolver->setDefined('with_counts')
+            ->setAllowedTypes('with_counts', 'bool');
+
+        $resolver->setDefined('include_ancestor_groups')
+            ->setAllowedTypes('include_ancestor_groups', 'bool');
+
+        $resolver->setDefined('include_descendant_groups')
+            ->setAllowedTypes('include_descendant_groups', 'bool');
+
+        $resolver->setDefined('only_group_labels')
+            ->setAllowedTypes('only_group_labels', 'bool');
+
+        $resolver->setDefined('search')
+            ->setAllowedTypes('search', 'string');
 
         return $this->get('groups/'.self::encodePath($group_id).'/labels', $resolver->resolve($parameters));
     }
@@ -943,5 +980,55 @@ class Groups extends AbstractApi
     public function deleteDeployToken($group_id, int $token_id)
     {
         return $this->delete('groups/'.self::encodePath($group_id).'/deploy_tokens/'.self::encodePath($token_id));
+    }
+
+    /**
+     * @param int|string $id
+     * @param array $parameters {
+     *
+     *     @var string $scope        The scope to search in
+     *     @var string $search       The search query
+     *     @var string $state        Filter by state. Issues and merge requests are supported; it is ignored for other scopes.
+     *     @var bool   $confidential Filter by confidentiality. Issues scope is supported; it is ignored for other scopes.
+     *     @var string $order_by     Allowed values are created_at only. If this is not set, the results are either sorted by created_at in descending order for basic search, or by the most relevant documents when using advanced search.
+     *     @var string $sort         Return projects sorted in asc or desc order (default is desc)
+     * }
+     *
+     * @throws UndefinedOptionsException If an option name is undefined
+     * @throws InvalidOptionsException   If an option doesn't fulfill the specified validation rules
+     *
+     * @return mixed
+     */
+    public function search($id, array $parameters = [])
+    {
+        $resolver = $this->createOptionsResolver();
+        $booleanNormalizer = function (Options $resolver, $value): string {
+            return $value ? 'true' : 'false';
+        };
+        $resolver->setDefined('confidential')
+            ->setAllowedTypes('confidential', 'bool')
+            ->setNormalizer('confidential', $booleanNormalizer);
+        $scope = [
+            'issues',
+            'merge_requests',
+            'milestones',
+            'projects',
+            'users',
+            'blobs',
+            'commits',
+            'notes',
+            'wiki_blobs',
+        ];
+        $resolver->setRequired('scope')
+            ->setAllowedValues('scope', $scope);
+        $resolver->setRequired('search');
+        $resolver->setDefined('order_by')
+            ->setAllowedValues('order_by', ['created_at']);
+        $resolver->setDefined('sort')
+            ->setAllowedValues('sort', ['asc', 'desc']);
+        $resolver->setDefined('state')
+            ->setAllowedValues('state', ['opened', 'closed']);
+
+        return $this->get('groups/'.self::encodePath($id).'/search', $resolver->resolve($parameters));
     }
 }

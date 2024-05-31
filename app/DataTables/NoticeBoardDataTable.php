@@ -2,6 +2,7 @@
 
 namespace App\DataTables;
 
+use App\Helper\Common;
 use App\Models\Notice;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -11,6 +12,7 @@ use Yajra\DataTables\Html\Column;
 class NoticeBoardDataTable extends BaseDataTable
 {
 
+    private $viewNoticePermission;
     private $editNoticePermission;
     private $deleteNoticePermission;
 
@@ -32,12 +34,12 @@ class NoticeBoardDataTable extends BaseDataTable
     {
         return datatables()
             ->eloquent($query)
-            ->addColumn('check', function ($row) {
-                return '<input type="checkbox" class="select-table-row" id="datatable-row-' . $row->id . '"  name="datatable_ids[]" value="' . $row->id . '" onclick="dataTableRowCheck(' . $row->id . ')">';
-            })
+            ->addColumn('check', fn($row) => $this->checkBox($row))
             ->addColumn('action', function ($row) {
 
                 $action = '<div class="task_view">
+                <a href="' . route('notices.show', [$row->id]) . '"
+                        class="taskView openRightModal text-darkest-grey f-w-500">' . __('app.view') . '</a>
 
                     <div class="dropdown">
                         <a class="task_view_more d-flex align-items-center justify-content-center dropdown-toggle" type="link"
@@ -45,8 +47,6 @@ class NoticeBoardDataTable extends BaseDataTable
                             <i class="icon-options-vertical icons"></i>
                         </a>
                         <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuLink-' . $row->id . '" tabindex="0">';
-
-                $action .= '<a href="' . route('notices.show', $row->id) . '" class="dropdown-item openRightModal" ><i class="fa fa-eye mr-2"></i>' . __('app.view') . '</a>';
 
                 if ($this->editNoticePermission == 'all' || ($this->editNoticePermission == 'added' && user()->id == $row->added_by) || ($this->editNoticePermission == 'owned' && in_array($row->to, user_roles())) || ($this->editNoticePermission == 'both' && (in_array($row->to, user_roles()) || $row->added_by == user()->id))
                 ) {
@@ -91,9 +91,7 @@ class NoticeBoardDataTable extends BaseDataTable
             )
             ->addIndexColumn()
             ->smart(false)
-            ->setRowId(function ($row) {
-                return 'row-' . $row->id;
-            })
+            ->setRowId(fn($row) => 'row-' . $row->id)
             ->rawColumns(['action', 'heading', 'check']);
     }
 
@@ -107,12 +105,12 @@ class NoticeBoardDataTable extends BaseDataTable
         $model = $model->select('id', 'heading', 'to', 'created_at', 'added_by', 'department_id');
 
         if ($request->startDate !== null && $request->startDate != 'null' && $request->startDate != '') {
-            $startDate = Carbon::createFromFormat($this->company->date_format, $request->startDate)->toDateString();
+            $startDate = companyToDateString($request->startDate);
             $model = $model->where(DB::raw('DATE(notices.`created_at`)'), '>=', $startDate);
         }
 
         if ($request->endDate !== null && $request->endDate != 'null' && $request->endDate != '') {
-            $endDate = Carbon::createFromFormat($this->company->date_format, $request->endDate)->toDateString();
+            $endDate = companyToDateString($request->endDate);
             $model = $model->where(DB::raw('DATE(notices.`created_at`)'), '<=', $endDate);
         }
 
@@ -156,8 +154,7 @@ class NoticeBoardDataTable extends BaseDataTable
      */
     public function html()
     {
-        return $this->setBuilder('notice-board-table', 3)
-            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]))
+        $dataTable = $this->setBuilder('notice-board-table', 3)
             ->parameters([
                 'initComplete' => 'function () {
                    window.LaravelDataTables["notice-board-table"].buttons().container()
@@ -169,6 +166,12 @@ class NoticeBoardDataTable extends BaseDataTable
                     })
                 }',
             ]);
+
+        if (canDataTableExport()) {
+            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+        }
+
+        return $dataTable;
     }
 
     /**

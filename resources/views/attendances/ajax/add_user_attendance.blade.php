@@ -5,7 +5,7 @@ $deleteAttendancePermission = user()->permission('delete_attendance');
 
 <div class="modal-header">
     <h5 class="modal-title" id="modelHeading">
-        @lang('app.mark')  @lang('app.menu.attendance')
+        @lang('modules.attendance.markAttendance')
     </h5>
     <button type="button"  class="close" data-dismiss="modal" aria-label="Close"><span
             aria-hidden="true">×</span></button>
@@ -74,7 +74,7 @@ $deleteAttendancePermission = user()->permission('delete_attendance');
                         search="true">
                             @foreach ($location as $locations)
                                 <option value="{{ $locations->id }}">
-                                    {{ mb_ucwords($locations->location) }}</option>
+                                    {{ $locations->location }}</option>
                             @endforeach
                         </x-forms.select>
                     </div>
@@ -145,6 +145,7 @@ $deleteAttendancePermission = user()->permission('delete_attendance');
                     if(response.status == 'success'){
                         $(MODAL_XL).modal('hide');
                         $(MODAL_LG).modal('hide');
+                        showTable();
                     }
                 }
             })

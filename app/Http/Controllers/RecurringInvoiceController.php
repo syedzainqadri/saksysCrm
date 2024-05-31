@@ -102,8 +102,7 @@ class RecurringInvoiceController extends AccountBaseController
         $this->view = 'recurring-invoices.ajax.create';
 
         if (request()->ajax()) {
-            $html = view($this->view, $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
 
         return view('recurring-invoices.create', $this->data);
@@ -136,10 +135,6 @@ class RecurringInvoiceController extends AccountBaseController
             if (!is_numeric($amt)) {
                 return Reply::error(__('messages.amountNumber'));
             }
-
-            if ((int)$amt <= 0) {
-                return Reply::error(__('messages.amountIsZero'));
-            }
         }
 
         foreach ($items as $itm) {
@@ -153,8 +148,8 @@ class RecurringInvoiceController extends AccountBaseController
         $recurringInvoice = new RecurringInvoice();
         $recurringInvoice->project_id = $request->project_id ?? null;
         $recurringInvoice->client_id = $request->has('client_id') ? $request->client_id : null;
-        $recurringInvoice->issue_date = !is_null($request->issue_date) ? Carbon::createFromFormat($this->company->date_format, $request->issue_date)->format('Y-m-d') : Carbon::now()->format('Y-m-d');
-        $recurringInvoice->due_date = !is_null($request->issue_date) ? Carbon::createFromFormat($this->company->date_format, $request->issue_date)->addDays($invoiceSetting->due_after)->format('Y-m-d') : Carbon::now()->addDays($invoiceSetting->due_after)->format('Y-m-d');
+        $recurringInvoice->issue_date = !is_null($request->issue_date) ? companyToYmd($request->issue_date) : now()->format('Y-m-d');
+        $recurringInvoice->due_date = !is_null($request->issue_date) ? Carbon::createFromFormat($this->company->date_format, $request->issue_date)->addDays($invoiceSetting->due_after)->format('Y-m-d') : now()->addDays($invoiceSetting->due_after)->format('Y-m-d');
         $recurringInvoice->sub_total = $request->sub_total;
         $recurringInvoice->discount = round($request->discount_value, 2);
         $recurringInvoice->discount_type = $request->discount_type;
@@ -185,8 +180,8 @@ class RecurringInvoiceController extends AccountBaseController
             $invoice->project_id = $request->project_id ?? null;
             $invoice->client_id = $request->client_id ?: null;
             $invoice->invoice_number = Invoice::lastInvoiceNumber() + 1;
-            $invoice->issue_date = Carbon::now()->format('Y-m-d');
-            $invoice->due_date = Carbon::now()->addDays($invoiceSetting->due_after)->format('Y-m-d');
+            $invoice->issue_date = now()->format('Y-m-d');
+            $invoice->due_date = now()->addDays($invoiceSetting->due_after)->format('Y-m-d');
             $invoice->sub_total = round($request->sub_total, 2);
             $invoice->discount = round($request->discount_value, 2);
             $invoice->discount_type = $request->discount_type;
@@ -285,9 +280,9 @@ class RecurringInvoiceController extends AccountBaseController
         }
 
         if (request()->ajax()) {
-            $html = view($this->view, $this->data)->render();
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+            return $this->returnAjax($this->view);
         }
+
 
         $this->activeTab = $tab ?: 'overview';
 
@@ -389,7 +384,7 @@ class RecurringInvoiceController extends AccountBaseController
 
             $invoice->project_id = $request->project_id ?? null;
             $invoice->client_id = $request->client_id;
-            $invoice->issue_date = Carbon::createFromFormat($this->company->date_format, $request->issue_date)->format('Y-m-d');
+            $invoice->issue_date = companyToYmd($request->issue_date);
             $invoice->due_date = Carbon::createFromFormat($this->company->date_format, $request->issue_date)->addDays($invoiceSetting->due_after)->format('Y-m-d');
             $invoice->sub_total = $request->sub_total;
             $invoice->total = $request->total;
@@ -476,10 +471,10 @@ class RecurringInvoiceController extends AccountBaseController
                                 'invoice_recurring_item_id' => $invoiceItem->id,
                             ],
                             [
-                                'filename' => !isset($invoice_item_image_url[$key]) ? $invoice_item_image[$key]->getClientOriginalName() : '',
-                                'hashname' => !isset($invoice_item_image_url[$key]) ? $filename : '',
-                                'size' => !isset($invoice_item_image_url[$key]) ? $invoice_item_image[$key]->getSize() : '',
-                                'external_link' => $invoice_item_image_url[$key] ?? ''
+                                'filename' => isset($invoice_item_image[$key]) ? $invoice_item_image[$key]->getClientOriginalName() : null,
+                                'hashname' => isset($invoice_item_image[$key]) ? $filename : null,
+                                'size' => isset($invoice_item_image[$key]) ? $invoice_item_image[$key]->getSize() : null,
+                                'external_link' => isset($invoice_item_image[$key]) ? null : ($invoice_item_image_url[$key] ?? null),
                             ]
                         );
                     }

@@ -29,14 +29,18 @@ class UpdatePrefixSetting extends FormRequest
         if(in_array('invoices', user_modules())){
             $rules['invoice_prefix'] = 'required';
             $rules['credit_note_prefix'] = 'required';
+            $rules['invoice_digit'] = 'nullable|integer|min:0|max:10';
+            $rules['credit_note_digit'] = 'nullable|integer|min:0|max:10';
         }
 
         if(in_array('estimates', user_modules())){
             $rules['estimate_prefix'] = 'required';
+            $rules['estimate_digit'] = 'nullable|integer|min:0|max:10';
         }
 
         if(in_array('orders', user_modules())){
             $rules['order_prefix'] = 'required';
+            $rules['order_digit'] = 'nullable|integer|min:0|max:10';
         }
 
         return $rules;

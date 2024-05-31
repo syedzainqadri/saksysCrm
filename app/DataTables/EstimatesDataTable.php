@@ -7,6 +7,7 @@ use App\Models\Estimate;
 use App\Models\CustomField;
 use App\Models\CustomFieldGroup;
 use App\DataTables\BaseDataTable;
+use App\Models\GlobalSetting;
 use Illuminate\Database\Eloquent\Model;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
@@ -58,10 +59,10 @@ class EstimatesDataTable extends BaseDataTable
 
             $action .= '<a href="' . route('estimates.show', [$row->id]) . '" class="dropdown-item"><i class="fa fa-eye mr-2"></i>' . __('app.view') . '</a>';
 
-            $action .= '<a class="dropdown-item btn-copy" data-clipboard-text="' . route('front.estimate.show', $row->hash) . '">
+            $action .= '<a class="dropdown-item btn-copy" data-clipboard-text="' . url()->temporarySignedRoute('front.estimate.show', now()->addDays(GlobalSetting::SIGNED_ROUTE_EXPIRY), $row->hash) . '">
                         <i class="fa fa-copy mr-2"></i> ' . __('modules.estimates.copyLink') . ' </a>';
 
-            $action .= '<a class="dropdown-item" href="' . route('front.estimate.show', $row->hash) . '" target="_blank"><i class="fa fa-external-link-alt mr-2"></i>' . trans('modules.estimates.viewLink') . '</a>';
+            $action .= '<a class="dropdown-item" href="' . url()->temporarySignedRoute('front.estimate.show', now()->addDays(GlobalSetting::SIGNED_ROUTE_EXPIRY), $row->hash) . '" target="_blank"><i class="fa fa-external-link-alt mr-2"></i>' . trans('modules.estimates.viewLink') . '</a>';
 
 
             if ($row->status != 'draft') {
@@ -124,7 +125,7 @@ class EstimatesDataTable extends BaseDataTable
 
             return $action;
         });
-        $datatables->addColumn('original_estimate_number', function ($row) {
+        $datatables->addColumn('estimate_number', function ($row) {
             return '<a href="' . route('estimates.show', $row->id) . '" class="text-darkest-grey">' . $row->estimate_number . '</a>';
         });
         $datatables->addColumn('client_name', function ($row) {
@@ -157,7 +158,7 @@ class EstimatesDataTable extends BaseDataTable
             }
 
             if (!$row->send_status && $row->status != 'draft' && $row->status != 'canceled') {
-                $status .= ' <span class="badge badge-secondary my-2"> ' . mb_strtoupper(__('modules.invoices.notSent')) . '</span>';
+                $status .= ' <span class="badge badge-secondary my-2"> ' . __('modules.invoices.notSent') . '</span>';
             }
 
             return $status;
@@ -182,7 +183,7 @@ class EstimatesDataTable extends BaseDataTable
         // Custom Fields For export
         $customFieldColumns = CustomField::customFieldData($datatables, Estimate::CUSTOM_FIELD_MODEL);
 
-        $datatables->rawColumns(array_merge(['name', 'action', 'status', 'original_estimate_number'], $customFieldColumns));
+        $datatables->rawColumns(array_merge(['name', 'action', 'status', 'estimate_number'], $customFieldColumns));
 
         return $datatables;
     }
@@ -220,12 +221,12 @@ class EstimatesDataTable extends BaseDataTable
             ]);
 
         if ($request->startDate !== null && $request->startDate != 'null' && $request->startDate != '') {
-            $startDate = Carbon::createFromFormat($this->company->date_format, $request->startDate)->toDateString();
+            $startDate = companyToDateString($request->startDate);
             $model = $model->where(DB::raw('DATE(estimates.`valid_till`)'), '>=', $startDate);
         }
 
         if ($request->endDate !== null && $request->endDate != 'null' && $request->endDate != '') {
-            $endDate = Carbon::createFromFormat($this->company->date_format, $request->endDate)->toDateString();
+            $endDate = companyToDateString($request->endDate);
             $model = $model->where(DB::raw('DATE(estimates.`valid_till`)'), '<=', $endDate);
         }
 
@@ -283,7 +284,7 @@ class EstimatesDataTable extends BaseDataTable
      */
     public function html()
     {
-        return $this->setBuilder('invoices-table')
+        $dataTable = $this->setBuilder('invoices-table')
             ->parameters([
                 'initComplete' => 'function () {
                     window.LaravelDataTables["invoices-table"].buttons().container()
@@ -294,8 +295,13 @@ class EstimatesDataTable extends BaseDataTable
                         selector: \'[data-toggle="tooltip"]\'
                     })
                 }',
-            ])
-            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+            ]);
+
+        if (canDataTableExport()) {
+            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+        }
+
+        return $dataTable;
     }
 
     /**
@@ -309,7 +315,7 @@ class EstimatesDataTable extends BaseDataTable
         $data = [
             '#' => ['data' => 'DT_RowIndex', 'orderable' => false, 'searchable' => false, 'visible' => false, 'title' => '#'],
             __('app.id') => ['data' => 'id', 'name' => 'id', 'title' => __('app.id'), 'visible' => false],
-            __('app.estimate') . '#' => ['data' => 'original_estimate_number', 'name' => 'original_estimate_number', 'title' => __('app.estimate')],
+            __('app.estimate') . '#' => ['data' => 'estimate_number', 'name' => 'estimate_number', 'title' => __('app.estimate')],
             __('app.client') => ['data' => 'name', 'name' => 'users.name', 'exportable' => false, 'title' => __('app.client'), 'visible' => !in_array('client', user_roles())],
             __('app.customers') => ['data' => 'client_name', 'name' => 'users.name', 'visible' => false, 'title' => __('app.customers')],
             __('app.email') => ['data' => 'email', 'name' => 'users.email',  'visible' => false, 'title' => __('app.email')],

@@ -23,7 +23,7 @@ class ProjectFileController extends AccountBaseController
 
             $this->storeFiles($request);
 
-            $this->files = ProjectFile::where('project_id', $request->project_id)->orderBy('id', 'desc')->get();
+            $this->files = ProjectFile::where('project_id', $request->project_id)->orderByDesc('id')->get();
             $view = view('projects.files.show', $this->data)->render();
 
             return Reply::dataOnly(['status' => 'success', 'view' => $view]);
@@ -65,7 +65,7 @@ class ProjectFileController extends AccountBaseController
 
         ProjectFile::destroy($id);
 
-        $this->files = ProjectFile::where('project_id', $file->project_id)->orderBy('id', 'desc')->get();
+        $this->files = ProjectFile::where('project_id', $file->project_id)->orderByDesc('id')->get();
 
         $view = view('projects.files.show', $this->data)->render();
 

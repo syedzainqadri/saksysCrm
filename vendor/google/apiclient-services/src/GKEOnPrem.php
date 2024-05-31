@@ -45,7 +45,6 @@ class GKEOnPrem extends \Google\Service
   public $projects_locations_bareMetalClusters_bareMetalNodePools;
   public $projects_locations_bareMetalClusters_bareMetalNodePools_operations;
   public $projects_locations_bareMetalClusters_operations;
-  public $projects_locations_bareMetalStandaloneClusters_bareMetalStandaloneNodePools;
   public $projects_locations_operations;
   public $projects_locations_vmwareAdminClusters;
   public $projects_locations_vmwareAdminClusters_operations;
@@ -53,6 +52,7 @@ class GKEOnPrem extends \Google\Service
   public $projects_locations_vmwareClusters_operations;
   public $projects_locations_vmwareClusters_vmwareNodePools;
   public $projects_locations_vmwareClusters_vmwareNodePools_operations;
+  public $rootUrlTemplate;
 
   /**
    * Constructs the internal representation of the GKEOnPrem service.
@@ -65,6 +65,7 @@ class GKEOnPrem extends \Google\Service
   {
     parent::__construct($clientOrConfig);
     $this->rootUrl = $rootUrl ?: 'https://gkeonprem.googleapis.com/';
+    $this->rootUrlTemplate = $rootUrl ?: 'https://gkeonprem.UNIVERSE_DOMAIN/';
     $this->servicePath = '';
     $this->batchPath = 'batch';
     $this->version = 'v1';
@@ -264,6 +265,10 @@ class GKEOnPrem extends \Google\Service
                 'etag' => [
                   'location' => 'query',
                   'type' => 'string',
+                ],
+                'ignoreErrors' => [
+                  'location' => 'query',
+                  'type' => 'boolean',
                 ],
                 'validateOnly' => [
                   'location' => 'query',
@@ -784,26 +789,6 @@ class GKEOnPrem extends \Google\Service
                 'pageToken' => [
                   'location' => 'query',
                   'type' => 'string',
-                ],
-              ],
-            ],
-          ]
-        ]
-    );
-    $this->projects_locations_bareMetalStandaloneClusters_bareMetalStandaloneNodePools = new GKEOnPrem\Resource\ProjectsLocationsBareMetalStandaloneClustersBareMetalStandaloneNodePools(
-        $this,
-        $this->serviceName,
-        'bareMetalStandaloneNodePools',
-        [
-          'methods' => [
-            'enroll' => [
-              'path' => 'v1/{+parent}/bareMetalStandaloneNodePools:enroll',
-              'httpMethod' => 'POST',
-              'parameters' => [
-                'parent' => [
-                  'location' => 'path',
-                  'type' => 'string',
-                  'required' => true,
                 ],
               ],
             ],

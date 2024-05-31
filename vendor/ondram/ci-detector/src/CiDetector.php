@@ -26,10 +26,11 @@ class CiDetector implements CiDetectorInterface
     public const CI_SOURCEHUT = 'SourceHut';
     public const CI_TEAMCITY = 'TeamCity';
     public const CI_TRAVIS = 'Travis CI';
+    /**
+     * @deprecated Will be removed in next major version
+     */
     public const CI_WERCKER = 'Wercker';
-
-    /** @var Env */
-    private $environment;
+    private Env $environment;
 
     final public function __construct()
     {
@@ -95,10 +96,8 @@ class CiDetector implements CiDetectorInterface
 
         foreach ($ciServers as $ciClass) {
             $callback = [$ciClass, 'isDetected'];
-            if (is_callable($callback)) {
-                if ($callback($this->environment)) {
-                    return new $ciClass($this->environment);
-                }
+            if (is_callable($callback) && $callback($this->environment)) {
+                return new $ciClass($this->environment);
             }
         }
 

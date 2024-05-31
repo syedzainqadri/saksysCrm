@@ -32,7 +32,7 @@
                 <select class="form-control select-picker" name="designation" id="designation">
                     <option value="all">@lang('app.all')</option>
                     @foreach ($designations as $designation)
-                        <option value="{{ $designation->id }}">{{ ucfirst($designation->name) }}</option>
+                        <option value="{{ $designation->id }}">{{ $designation->name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -74,7 +74,7 @@
                                 id="department">
                             <option value="all">@lang('app.all')</option>
                             @foreach ($departments as $department)
-                                <option value="{{ $department->id }}">{{ ucfirst($department->team_name) }}</option>
+                                <option value="{{ $department->id }}">{{ $department->team_name }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -89,11 +89,7 @@
                         <select class="form-control select-picker" name="role" id="role" data-container="body">
                             <option value="all">@lang('app.all')</option>
                             @foreach ($roles as $role)
-                                @if (in_array($role->name, ['admin', 'client', 'employee']))
-                                    <option value="{{ $role->id }}">{{ __('app.' . $role->name) }}</option>
-                                @else
-                                    <option value="{{ $role->id }}">{{ ucfirst($role->name) }}</option>
-                                @endif
+                                    <option value="{{ $role->id }}">{{ $role->display_name }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -108,8 +104,6 @@
                             <option value="all">@lang('app.all')</option>
                             <option selected value="active">@lang('app.active')</option>
                             <option value="deactive">@lang('app.inactive')</option>
-                            <option {{ request('status') == 'ex_employee' ? 'selected' : '' }} value="ex_employee">
-                                @lang('modules.employees.exEmployee')</option>
                         </select>
                     </div>
                 </div>
@@ -124,6 +118,23 @@
                             <option value="male">@lang('app.male')</option>
                             <option value="female">@lang('app.female')</option>
                             <option value="others">@lang('app.others')</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="more-filter-items">
+                <label class="f-14 text-dark-grey mb-12 text-capitalize" for="usr">@lang('modules.employees.employmentType')</label>
+                <div class="select-filter mb-4">
+                    <div class="select-others">
+                        <select class="form-control select-picker" name="employmentType" id="employmentType" data-container="body">
+                            <option value="all">@lang('app.all')</option>
+                            <option value="probation">@lang('app.onProbation')</option>
+                            <option value="internship">@lang('app.onInternship')</option>
+                            <option value="notice_period">@lang('app.onNoticePeriod')</option>
+                            <option value="new_hires">@lang('app.newHires')</option>
+                            <option value="long_standing">@lang('app.longStanding')</option>
+
                         </select>
                     </div>
                 </div>
@@ -150,17 +161,16 @@
             <div id="table-actions" class="d-block d-lg-flex align-items-center">
                 @if ($addEmployeePermission == 'all')
                     <x-forms.link-primary :link="route('employees.create')" class="mr-3 openRightModal" icon="plus">
-                        @lang('app.add')
-                        @lang('app.employee')
+                        @lang('app.addEmployee')
                     </x-forms.link-primary>
 
                     <x-forms.button-secondary class="mr-3 invite-member mb-2 mb-lg-0" icon="plus">
-                        @lang('app.invite') @lang('app.employee')
+                        @lang('app.inviteEmployee')
                     </x-forms.button-secondary>
                 @endif
 
                 @if ($addEmployeePermission == 'all')
-                    <x-forms.link-secondary :link="route('employees.import')" class="mr-3 openRightModal mb-2 mb-lg-0"
+                    <x-forms.link-secondary :link="route('employees.import')" class="mr-3 openRightModal mb-2 mb-lg-0 d-none d-lg-block"
                                             icon="file-upload">
                         @lang('app.importExcel')
                     </x-forms.link-secondary>
@@ -225,6 +235,7 @@
             const skill = $('#skill').val();
             const designation = $('#designation').val();
             const department = $('#department').val();
+            const employmentType = $('#employmentType').val();
             const searchText = $('#search-text-field').val();
             data['status'] = status;
             data['employee'] = employee;
@@ -233,6 +244,7 @@
             data['skill'] = skill;
             data['designation'] = designation;
             data['department'] = department;
+            data['employmentType'] = employmentType;
             data['searchText'] = searchText;
 
             /* If any of these following filters are applied, then dashboard conditions will not work  */
@@ -249,7 +261,7 @@
             window.LaravelDataTables["employees-table"].draw(false);
         }
 
-        $('#employee, #status, #role, #gender, #skill, #designation, #department').on('change keyup',
+        $('#employee, #status, #role, #gender, #skill, #designation, #department, #employmentType').on('change keyup',
             function () {
                 if ($('#status').val() != "all") {
                     $('#reset-filters').removeClass('d-none');
@@ -262,6 +274,8 @@
                 } else if ($('#designation').val() != "all") {
                     $('#reset-filters').removeClass('d-none');
                 } else if ($('#department').val() != "all") {
+                    $('#reset-filters').removeClass('d-none');
+                }else if ($('#employmentType').val() != "all") {
                     $('#reset-filters').removeClass('d-none');
                 } else {
                     $('#reset-filters').addClass('d-none');

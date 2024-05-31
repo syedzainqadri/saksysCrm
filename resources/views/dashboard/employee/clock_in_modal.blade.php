@@ -5,7 +5,7 @@
 </div>
 
 @if ($cannotLogin == false)
-<x-form id="startTimerForm">
+<x-form id="clockInForm">
     <div class="modal-body">
             <div class="row justify-content-between">
                 <div class="col" id="task_div">
@@ -55,23 +55,7 @@
 
 @if ($attendanceSettings->radius_check == 'yes' || $attendanceSettings->save_current_location)
     <script>
-        const currentLatitude = document.getElementById("current-latitude");
-        const currentLongitude = document.getElementById("current-longitude");
-        const x = document.getElementById("current-latitude");
-
-        function getLocation() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(showPosition);
-            }
-        }
-
-        function showPosition(position) {
-            currentLatitude.value = position.coords.latitude;
-            currentLongitude.value = position.coords.longitude;
-        }
-
-        getLocation();
-
+       setCurrentLocation();
     </script>
 @endif
 
@@ -86,7 +70,7 @@
         });
     });
 
-    $('#save-clock-in').click(function () {
+    $('body').on('click', '#save-clock-in', function () {
         const workingFrom = $('#working_from').val();
         const location = $('#location').val();
         const work_from_type = $('#work_from_type').val();
@@ -102,7 +86,7 @@
             buttonSelector: "#save-clock-in",
             disableButton: true,
             blockUI: true,
-            container: '#startTimerForm',
+            container: '#clockInForm',
             data: {
                 working_from: workingFrom,
                 location: location,

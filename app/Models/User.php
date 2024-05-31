@@ -2,7 +2,10 @@
 
 namespace App\Models;
 
+use App\Enums\Salutation;
+use App\Notifications\ResetPassword;
 use App\Scopes\ActiveScope;
+use App\Traits\HasMaskImage;
 use App\Traits\HasCompany;
 use Illuminate\Auth\Authenticatable;
 use Illuminate\Auth\Passwords\CanResetPassword;
@@ -10,6 +13,7 @@ use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -23,6 +27,7 @@ use Illuminate\Support\Str;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Fortify\TwoFactorAuthenticationProvider;
 use Trebol\Entrust\Traits\EntrustUserTrait;
+use Yajra\DataTables\Html\Editor\Fields\BelongsTo;
 
 /**
  * App\Models\User
@@ -208,6 +213,9 @@ use Trebol\Entrust\Traits\EntrustUserTrait;
  * @property-read Collection<int, \App\Models\TicketGroup> $agentGroup
  * @property-read Collection<int, \App\Models\ProjectTimeLog> $timeLogs
  * @property-read Collection<int, \App\Models\VisaDetail> $visa
+ * @property-read Collection<int, \App\Models\TicketGroup> $agentGroup
+ * @property-read Collection<int, \App\Models\ProjectTimeLog> $timeLogs
+ * @property-read Collection<int, \App\Models\VisaDetail> $visa
  * @mixin \Eloquent
  */
 class User extends BaseModel implements AuthenticatableContract, AuthorizableContract, CanResetPasswordContract
@@ -215,6 +223,8 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
 
     use Notifiable, EntrustUserTrait, Authenticatable, Authorizable, CanResetPassword, HasFactory, TwoFactorAuthenticatable;
     use HasCompany;
+    use HasMaskImage;
+
 
     const ALL_ADDED_BOTH = ['all', 'added', 'both'];
 
@@ -224,7 +234,7 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
         static::addGlobalScope(new ActiveScope());
     }
 
-    protected $with = ['clientDetails', 'employeeDetail'];
+    protected $with = ['clientDetails', 'employeeDetail', 'leaves', 'roles'];
 
     /**
      * The attributes that are mass assignable.
@@ -250,37 +260,54 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'last_login' => 'datetime',
-        'two_factor_expires_at	' => 'array'
+        'two_factor_expires_at	' => 'array',
+        'salutation' => Salutation::class,
     ];
 
-    protected $appends = ['image_url', 'modules', 'mobile_with_phonecode'];
+    protected $appends = ['image_url', 'modules', 'mobile_with_phonecode', 'name_salutation'];
+
+    public function getNameSalutationAttribute()
+    {
+        return ($this->salutation ? $this->salutation->label() . ' ' : '') . $this->name;
+    }
 
     public function getImageUrlAttribute()
     {
-        $gravatarHash = md5(strtolower(trim($this->email)));
+        $gravatarHash = !is_null($this->email) ? md5(strtolower(trim($this->email))) : md5($this->id);
 
         return ($this->image) ? asset_url_local_s3('avatar/' . $this->image) : 'https://www.gravatar.com/avatar/' . $gravatarHash . '.png?s=200&d=mp';
     }
 
+    public function maskedImageUrl(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                return ($this->image) ? $this->generateMaskedImageAppUrl('avatar/' . $this->image) : 'https://www.gravatar.com/avatar/' . md5($this->id) . '.png?s=200&d=mp';
+            },
+        );
+
+    }
+
     public function hasGravatar($email)
     {
-        // Craft a potential url and test its headers
+        // Craft a potential URL for the Gravatar and test its headers
         $hash = md5(strtolower(trim($email)));
-
         $uri = 'http://www.gravatar.com/avatar/' . $hash . '?d=404';
         $headers = @get_headers($uri);
 
-        $has_valid_avatar = true;
+        // Check if the Gravatar URL returns a valid response
+        $hasValidAvatar = true;
 
         try {
             if (!preg_match('|200|', $headers[0])) {
-                $has_valid_avatar = false;
+                $hasValidAvatar = false;
             }
         } catch (\Exception $e) {
-            $has_valid_avatar = true;
+            // If an exception occurs, assume the Gravatar is valid
+            $hasValidAvatar = true;
         }
 
-        return $has_valid_avatar;
+        return $hasValidAvatar;
     }
 
     public function getMobileWithPhoneCodeAttribute()
@@ -342,6 +369,16 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
     }
 
     // phpcs:ignore
+    public function routeNotificationForVonage($notification)
+    {
+        if (!is_null($this->mobile) && !is_null($this->country_phonecode)) {
+            return $this->country_phonecode . $this->mobile;
+        }
+
+        return null;
+    }
+
+    // phpcs:ignore
     public function routeNotificationForMsg91($notification)
     {
         if (!is_null($this->mobile) && !is_null($this->country_phonecode)) {
@@ -358,7 +395,7 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
 
     public function lead(): HasOne
     {
-        return $this->hasOne(Lead::class, 'user_id');
+        return $this->hasOne(Deal::class, 'user_id');
     }
 
     public function attendance(): HasMany
@@ -431,6 +468,11 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
         return $this->hasMany(LeadAgent::class, 'user_id');
     }
 
+    public function leadAgentCategory(): BelongsToMany
+    {
+        return $this->belongsToMany(LeadCategory::class, 'lead_agent_categories', 'lead_category_id', 'user_id');
+    }
+
     public function group(): HasMany
     {
         return $this->hasMany(EmployeeTeam::class, 'user_id');
@@ -475,7 +517,7 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
 
     public function tickets(): HasMany
     {
-        return $this->hasMany(Ticket::class, 'user_id')->orderBy('id', 'desc');
+        return $this->hasMany(Ticket::class, 'user_id')->orderByDesc('id');
     }
 
     public function leaves(): HasMany
@@ -503,7 +545,7 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
         return $this->hasMany(ProjectTimeLog::class, 'user_id');
     }
 
-    public static function allClients($exceptId = null, $active = false, $overRidePermission = null, $companyId = null)
+    public static function allClients($exceptId = null, $active = true, $overRidePermission = null, $companyId = null)
     {
         if (!isRunningInConsoleOrSeeding() && !is_null($overRidePermission)) {
             $viewClientPermission = $overRidePermission;
@@ -521,7 +563,7 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
             ->join('role_user', 'role_user.user_id', '=', 'users.id')
             ->join('roles', 'roles.id', '=', 'role_user.role_id')
             ->join('client_details', 'users.id', '=', 'client_details.user_id')
-            ->select('users.id', 'users.name', 'users.email', 'users.created_at', 'client_details.company_name', 'users.image', 'users.email_notifications', 'users.mobile', 'users.country_id')
+            ->select('users.id', 'users.name', 'users.email', 'users.created_at', 'client_details.company_name', 'users.image', 'users.email_notifications', 'users.mobile', 'users.country_id', 'users.salutation', 'users.status')
             ->where('roles.name', 'client');
 
         if (!is_null($exceptId)) {
@@ -534,8 +576,10 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
             }
         }
 
-        if (!$active) {
-
+        if ($active) {
+            $clients->where('users.status', 'active');
+        }
+        else {
             $clients->withoutGlobalScope(ActiveScope::class);
         }
 
@@ -603,12 +647,11 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
 
         if (!isRunningInConsoleOrSeeding() && user()) {
             if (isset($viewEmployeePermission)) {
-                if ($viewEmployeePermission == 'added' && !in_array('client', user_roles())) {
+                if (($viewEmployeePermission == 'added' && !in_array('client', user_roles()))) {
                     $users->where(function ($q) {
                         $q->where('employee_details.user_id', user()->id);
                         $q->orWhere('employee_details.added_by', user()->id);
                     });
-
 
                 }
                 elseif ($viewEmployeePermission == 'owned' && !in_array('client', user_roles())) {
@@ -639,9 +682,9 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
 
         }
 
-        if(!isRunningInConsoleOrSeeding() && user() && in_array('client', user_roles())) {
+        if (!isRunningInConsoleOrSeeding() && user() && in_array('client', user_roles())) {
             $clientEmployess = Project::where('client_id', user()->id)->join('project_members', 'project_members.project_id', '=', 'projects.id')
-            ->select('project_members.user_id')->get()->pluck('user_id');
+                ->select('project_members.user_id')->get()->pluck('user_id');
 
             $users->whereIn('users.id', $clientEmployess);
         }
@@ -765,7 +808,7 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
 
     public function sticky(): HasMany
     {
-        return $this->hasMany(StickyNote::class, 'user_id')->orderBy('updated_at', 'desc');
+        return $this->hasMany(StickyNote::class, 'user_id')->orderByDesc('updated_at');
     }
 
     public function userChat(): HasMany
@@ -832,16 +875,14 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
     public function getUserOtherRoleAttribute()
     {
         $userRole = null;
-        $roles = cache()->remember(
+
+        $nonClientRoles = cache()->remember(
             'non-client-roles',
-            60 * 60 * 24,
-            function () {
-                return Role::where('name', '<>', 'client')
-                    ->orderBy('id', 'asc')->get();
-            }
+            now()->addDay(),
+            fn() => Role::where('name', '<>', 'client')->orderBy('id')->get()
         );
 
-        foreach ($roles as $role) {
+        foreach ($nonClientRoles as $role) {
             foreach ($this->role as $urole) {
                 if ($role->id == $urole->role_id) {
                     $userRole = $role->name;
@@ -861,32 +902,48 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
      */
     public function permission($permission)
     {
-        return Cache::rememberForever('permission-' . $permission . '-' . $this->id, function () use ($permission) {
-            $permissionType = UserPermission::join('permissions', 'user_permissions.permission_id', '=', 'permissions.id')
-                ->join('permission_types', 'user_permissions.permission_type_id', '=', 'permission_types.id')
-                ->select('permission_types.name')
-                ->where('permissions.name', $permission)
-                ->where('user_permissions.user_id', $this->id)
-                ->first();
+        $cacheKey = 'permission-' . $permission . '-' . $this->id;
 
-            return $permissionType ? $permissionType->name : false;
-        });
+        if (cache()->has($cacheKey)) {
+            return cache($cacheKey);
+        }
+
+        $permissionType = UserPermission::join('permissions', 'user_permissions.permission_id', '=', 'permissions.id')
+            ->join('permission_types', 'user_permissions.permission_type_id', '=', 'permission_types.id')
+            ->select('permission_types.name')
+            ->where('permissions.name', $permission)
+            ->where('user_permissions.user_id', $this->id)
+            ->first();
+
+        $permissionType = $permissionType ? $permissionType->name : false;
+
+        cache([$cacheKey => $permissionType]);
+
+        return $permissionType;
 
     }
 
     public function permissionTypeId($permission)
     {
-        return Cache::rememberForever('permission-id-' . $permission . '-' . $this->id, function () use ($permission) {
+        $cacheKey = 'permission-id-' . $permission . '-' . $this->id;
 
-            $permissionType = UserPermission::join('permissions', 'user_permissions.permission_id', '=', 'permissions.id')
-                ->join('permission_types', 'user_permissions.permission_type_id', '=', 'permission_types.id')
-                ->select('permission_types.name', 'permission_types.id')
-                ->where('permissions.name', $permission)
-                ->where('user_permissions.user_id', $this->id)
-                ->first();
+        if (cache()->has($cacheKey)) {
+            return cache($cacheKey);
+        }
 
-            return $permissionType ? $permissionType->name : false;
-        });
+        $permissionType = UserPermission::join('permissions', 'user_permissions.permission_id', '=', 'permissions.id')
+            ->join('permission_types', 'user_permissions.permission_type_id', '=', 'permission_types.id')
+            ->select('permission_types.name', 'permission_types.id')
+            ->where('permissions.name', $permission)
+            ->where('user_permissions.user_id', $this->id)
+            ->first();
+
+        $permissionName = $permissionType ? $permissionType->name : false;
+
+        cache([$cacheKey => $permissionName]);
+
+        return $permissionName;
+
     }
 
     /**
@@ -916,15 +973,20 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
     public function assignUserRolePermission($roleId)
     {
         $rolePermissions = PermissionRole::where('role_id', $roleId)->get();
+        $data = [];
 
-        foreach ($rolePermissions as $key => $value) {
-            $userPermission = UserPermission::where('permission_id', $value->permission_id)
-                ->where('user_id', $this->id)
-                ->firstOrNew();
-            $userPermission->permission_id = $value->permission_id;
-            $userPermission->user_id = $this->id;
-            $userPermission->permission_type_id = $value->permission_type_id;
-            $userPermission->save();
+        UserPermission::where('user_id', $this->id)->delete();
+
+        foreach ($rolePermissions as $permission) {
+            $data[] = [
+                'permission_id' => $permission->permission_id,
+                'user_id' => $this->id,
+                'permission_type_id' => $permission->permission_type_id,
+            ];
+        }
+
+        foreach (array_chunk($data, 100) as $item) {
+            UserPermission::insert($item);
         }
     }
 
@@ -949,24 +1011,6 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
             $userPermission->user_id = $this->id;
             $userPermission->permission_type_id = $value->permission_type_id;
             $userPermission->save();
-        }
-    }
-
-    public function insertUserRolePermission($roleId)
-    {
-        $rolePermissions = PermissionRole::where('role_id', $roleId)->get();
-        $data = [];
-
-        foreach ($rolePermissions as $permission) {
-            $data[] = [
-                'permission_id' => $permission->permission_id,
-                'user_id' => $this->id,
-                'permission_type_id' => $permission->permission_type_id,
-            ];
-        }
-
-        foreach (array_chunk($data, 100) as $item) {
-            UserPermission::insert($item);
         }
     }
 
@@ -1018,13 +1062,15 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
 
     public function userBadge()
     {
-        $itsYou = ' <span class="ml-2 badge badge-secondary pr-1">' . __('app.itsYou') . '</span>';
+        $itsYou = ' <span class="ml-1 badge badge-secondary pr-1">' . __('app.itsYou') . '</span>';
+        /** @phpstan-ignore-next-line */
+        $name = $this->name_salutation;
 
         if (user() && user()->id == $this->id) {
-            return mb_ucfirst($this->name) . $itsYou;
+            return $name . $itsYou;
         }
 
-        return mb_ucfirst($this->name);
+        return $name;
     }
 
     public function estimates(): HasMany
@@ -1042,6 +1088,102 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
         return $query->whereHas('roles', function ($q) {
             $q->where('name', 'employee');
         })->whereHas('employeeDetail');
+    }
+
+    /**
+     * Send the password reset notification.
+     *
+     * @param string $token
+     * @return void
+     */
+    public function sendPasswordResetNotification($token)
+    {
+        $this->notify(new ResetPassword($token));
+    }
+
+    public static function allLeaveReportEmployees($exceptId = null, $active = false, $overRidePermission = null, $companyId = null)
+    {
+        if (!isRunningInConsoleOrSeeding() && !is_null($overRidePermission)) {
+            $viewEmployeePermission = $overRidePermission;
+
+        }
+        elseif (!isRunningInConsoleOrSeeding() && user()) {
+            $viewEmployeePermission = user()->permission('view_leave_report');
+        }
+
+        $users = User::withRole('employee')
+            ->join('employee_details', 'employee_details.user_id', '=', 'users.id')
+            ->leftJoin('designations', 'employee_details.designation_id', '=', 'designations.id')
+            ->select('users.id', 'users.company_id', 'users.name', 'users.email', 'users.created_at', 'users.image', 'designations.name as designation_name', 'users.email_notifications', 'users.mobile', 'users.country_id');
+
+        if (!is_null($exceptId)) {
+            if (is_array($exceptId)) {
+                $users->whereNotIn('users.id', $exceptId);
+
+            }
+            else {
+                $users->where('users.id', '<>', $exceptId);
+            }
+        }
+
+        if (!is_null($companyId)) {
+            $users->where('users.company_id', $companyId);
+        }
+
+        if (!$active) {
+            $users->withoutGlobalScope(ActiveScope::class);
+        }
+
+        if (!isRunningInConsoleOrSeeding() && user()) {
+            if (isset($viewEmployeePermission)) {
+                if ($viewEmployeePermission == 'added' && !in_array('client', user_roles())) {
+                    $users->where(function ($q) {
+                        $q->where('employee_details.added_by', user()->id);
+                    });
+                }
+
+                elseif ($viewEmployeePermission == 'owned' && !in_array('client', user_roles())) {
+                    $users->where('users.id', user()->id);
+
+                }
+                elseif ($viewEmployeePermission == 'both' && !in_array('client', user_roles())) {
+                    $users->where(function ($q) {
+                        $q->where('employee_details.user_id', user()->id);
+                        $q->orWhere('employee_details.added_by', user()->id);
+                    });
+
+                }
+                elseif (($viewEmployeePermission == 'none' || $viewEmployeePermission == '') && !in_array('client', user_roles())) {
+                    $users->where('users.id', user()->id);
+                }
+            }
+
+            if (in_array('client', user_roles())) {
+                $clientEmployees = Project::where('client_id', user()->id)
+                    ->join('project_members', 'project_members.project_id', '=', 'projects.id')
+                    ->select('project_members.user_id')
+                    ->get()
+                    ->pluck('user_id');
+
+                $users->whereIn('users.id', $clientEmployees);
+            }
+
+        }
+
+        if (!isRunningInConsoleOrSeeding() && user() && in_array('client', user_roles())) {
+            $clientEmployees = Project::where('client_id', user()->id)
+                ->join('project_members', 'project_members.project_id', '=', 'projects.id')
+                ->select('project_members.user_id')
+                ->get()
+                ->pluck('user_id');
+
+            $users->whereIn('users.id', $clientEmployees);
+        }
+
+        $users->orderBy('users.name');
+        $users->groupBy('users.id');
+
+        return $users->get();
     }
 
 }

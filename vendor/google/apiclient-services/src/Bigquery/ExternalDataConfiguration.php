@@ -42,6 +42,10 @@ class ExternalDataConfiguration extends \Google\Collection
    * @var string[]
    */
   public $decimalTargetTypes;
+  /**
+   * @var string
+   */
+  public $fileSetSpecType;
   protected $googleSheetsOptionsType = GoogleSheetsOptions::class;
   protected $googleSheetsOptionsDataType = '';
   protected $hivePartitioningOptionsType = HivePartitioningOptions::class;
@@ -50,6 +54,10 @@ class ExternalDataConfiguration extends \Google\Collection
    * @var bool
    */
   public $ignoreUnknownValues;
+  /**
+   * @var string
+   */
+  public $jsonExtension;
   protected $jsonOptionsType = JsonOptions::class;
   protected $jsonOptionsDataType = '';
   /**
@@ -180,6 +188,20 @@ class ExternalDataConfiguration extends \Google\Collection
     return $this->decimalTargetTypes;
   }
   /**
+   * @param string
+   */
+  public function setFileSetSpecType($fileSetSpecType)
+  {
+    $this->fileSetSpecType = $fileSetSpecType;
+  }
+  /**
+   * @return string
+   */
+  public function getFileSetSpecType()
+  {
+    return $this->fileSetSpecType;
+  }
+  /**
    * @param GoogleSheetsOptions
    */
   public function setGoogleSheetsOptions(GoogleSheetsOptions $googleSheetsOptions)
@@ -220,6 +242,20 @@ class ExternalDataConfiguration extends \Google\Collection
   public function getIgnoreUnknownValues()
   {
     return $this->ignoreUnknownValues;
+  }
+  /**
+   * @param string
+   */
+  public function setJsonExtension($jsonExtension)
+  {
+    $this->jsonExtension = $jsonExtension;
+  }
+  /**
+   * @return string
+   */
+  public function getJsonExtension()
+  {
+    return $this->jsonExtension;
   }
   /**
    * @param JsonOptions

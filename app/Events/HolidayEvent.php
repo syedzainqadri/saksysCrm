@@ -13,6 +13,7 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 
 class HolidayEvent
 {
+
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     /**

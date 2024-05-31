@@ -32,13 +32,11 @@ class ClientContactController extends AccountBaseController
 
         $this->clientId = request('client');
 
-        if (request()->ajax()) {
-            $html = view('clients.contacts.create', $this->data)->render();
-
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
-        }
-
         $this->view = 'clients.contacts.create';
+
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
+        }
 
         return view('clients.create', $this->data);
     }
@@ -65,13 +63,12 @@ class ClientContactController extends AccountBaseController
 
         $this->clientId = $this->contact->user_id;
 
-        if (request()->ajax()) {
-            $html = view('clients.contacts.edit', $this->data)->render();
-
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
-        }
 
         $this->view = 'clients.contacts.edit';
+
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
+        }
 
         return view('clients.create', $this->data);
 

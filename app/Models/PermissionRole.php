@@ -105,7 +105,7 @@ class PermissionRole extends BaseModel
             'view_leaves_taken' => PermissionType::ALL,
 
             'add_lead' => PermissionType::ADDED,
-            'view_lead' => PermissionType::BOTH,
+            'view_lead' => PermissionType::ALL,
             'edit_lead' => PermissionType::ADDED,
             'view_lead_files' => PermissionType::ADDED,
             'add_lead_files' => PermissionType::ALL,
@@ -113,7 +113,6 @@ class PermissionRole extends BaseModel
             'add_lead_follow_up' => PermissionType::ALL,
             'edit_lead_follow_up' => PermissionType::ADDED,
             'delete_lead_follow_up' => PermissionType::ADDED,
-            'change_lead_status' => PermissionType::BOTH,
 
             'view_holiday' => PermissionType::ALL,
 
@@ -205,29 +204,32 @@ class PermissionRole extends BaseModel
             ->where('company_id', $companyId)
             ->first();
 
-        PermissionRole::whereHas('permission', function ($query) use ($modulePermissions) {
-            $query->where('module_id', $modulePermissions->id);
-        })->where('role_id', $adminRole->id)->delete();
+        if ($adminRole) {
+            PermissionRole::whereHas('permission', function ($query) use ($modulePermissions) {
+                $query->where('module_id', $modulePermissions->id);
+            })->where('role_id', $adminRole->id)->delete();
 
-        foreach ($modulePermissions->permissionsAll as $permission) {
-
-            PermissionRole::create([
-                'permission_id' => $permission->id,
-                'role_id' => $adminRole->id,
-                'permission_type_id' => PermissionType::ALL
-            ]);
-        }
-
-        foreach ($adminRole->roleuser as $roleuser) {
 
             foreach ($modulePermissions->permissionsAll as $permission) {
 
-                UserPermission::firstOrCreate([
+                PermissionRole::create([
                     'permission_id' => $permission->id,
-                    'user_id' => $roleuser->user_id,
+                    'role_id' => $adminRole->id,
                     'permission_type_id' => PermissionType::ALL
                 ]);
+            }
 
+            foreach ($adminRole->roleuser as $roleuser) {
+
+                foreach ($modulePermissions->permissionsAll as $permission) {
+
+                    UserPermission::firstOrCreate([
+                        'permission_id' => $permission->id,
+                        'user_id' => $roleuser->user_id,
+                        'permission_type_id' => PermissionType::ALL
+                    ]);
+
+                }
             }
         }
 

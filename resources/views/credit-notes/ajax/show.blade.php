@@ -21,7 +21,7 @@
         <div class="invoice-table-wrapper">
             <table width="100%" class="">
                 <tr class="inv-logo-heading">
-                    <td><img src="{{ invoice_setting()->logo_url }}" alt="{{ mb_ucwords(company()->company_name) }}"
+                    <td><img src="{{ invoice_setting()->logo_url }}" alt="{{ company()->company_name }}"
                             id="logo" /></td>
                     <td align="right" class="font-weight-bold f-21 text-dark text-uppercase mt-4 mt-lg-0 mt-md-0">
                         @lang('app.credit-note')</td>
@@ -29,7 +29,7 @@
                 <tr class="inv-num">
                     <td class="f-14 text-dark">
                         <p class="mt-3 mb-0">
-                            {{ mb_ucwords(company()->company_name) }}<br>
+                            {{ company()->company_name }}<br>
                             @if (!is_null($settings))
                                 {!! nl2br(default_address()->address) !!}<br>
                                 {{ company()->company_phone }}
@@ -57,7 +57,7 @@
                             @endif
                             <tr>
                                 <td class="bg-light-grey border-right-0 f-w-500">
-                                    @lang('app.credit-note') @lang('app.date')</td>
+                                    @lang('app.creditNoteDate')</td>
                                 <td class="border-left-0">{{ $creditNote->issue_date->translatedFormat(company()->date_format) }}
                                 </td>
                             </tr>
@@ -73,8 +73,8 @@
                     <td class="f-14 text-dark">
                         <p class="mb-0 text-left"><span
                                 class="text-dark-grey text-capitalize">@lang("modules.invoices.billedTo")</span><br>
-                            {{ mb_ucwords($client->name) }}<br>
-                            {{ mb_ucwords($client->clientDetails->company_name) }}<br>
+                            {{ $client->name_salutation }}<br>
+                            {{ $client->clientDetails->company_name }}<br>
                             {!! nl2br($client->clientDetails->address) !!}
 
                             @if (($invoiceSetting->show_project == 1) && (isset($creditNote->project)))
@@ -117,14 +117,14 @@
                             @foreach ($creditNote->items as $item)
                                 @if ($item->type == 'item')
                                     <tr class="text-dark font-weight-semibold f-13">
-                                        <td>{{ ucfirst($item->item_name) }}</td>
+                                        <td>{{ $item->item_name }}</td>
                                         @if ($creditNoteSetting->hsn_sac_code_show)
                                             <td align="right">{{ $item->hsn_sac_code ? $item->hsn_sac_code : '--' }}</td>
                                         @endif
                                         <td align="right">{{ $item->quantity }}@if($item->unit)<br><span class="f-11 text-dark-grey">{{ $item->unit->unit_type }}</span>@endif</td>
                                         <td align="right">
                                             {{ currency_format($item->unit_price, $creditNote->currency_id, false) }}</td>
-                                        <td align="right">{{ strtoupper($item->tax_list) }}</td>
+                                        <td align="right">{{ $item->tax_list }}</td>
                                         <td align="right">{{ currency_format($item->amount, $creditNote->currency_id, false) }}
                                         </td>
                                     </tr>
@@ -163,12 +163,12 @@
                                         @foreach ($taxes as $key => $tax)
                                             <tr class="text-dark-grey" align="right">
                                                 <td class="w-50 border-top-0 border-left-0">
-                                                    {{ mb_strtoupper($key) }}</td>
+                                                    {{ $key }}</td>
                                             </tr>
                                         @endforeach
                                         <tr class=" text-dark-grey " align="right">
                                             <td class="w-50 border-bottom-0 border-left-0">
-                                                @lang('app.adjustment') @lang('app.amount')</td>
+                                                @lang('app.adjustmentAmount')</td>
                                         </tr>
                                         <tr class=" text-dark-grey font-weight-bold" align="right">
                                             <td class="w-50 border-bottom-0 border-left-0">
@@ -241,7 +241,7 @@
                                 <table>
                                     <tr width="100%" class="font-weight-semibold f-13">
                                         <td class="border-left-0 border-right-0 border-top-0">
-                                            {{ ucfirst($item->item_name) }}</td>
+                                            {{ $item->item_name }}</td>
                                     </tr>
                                     @if ($item->item_summary != '' || $item->creditNoteItemImage)
                                         <tr>
@@ -300,7 +300,7 @@
 
                 @foreach ($taxes as $key => $tax)
                     <tr>
-                        <th width="50%" class="text-dark-grey font-weight-normal">{{ mb_strtoupper($key) }}</th>
+                        <th width="50%" class="text-dark-grey font-weight-normal">{{ $key }}</th>
                         <td width="50%" class="text-dark-grey font-weight-normal">
                             {{ currency_format($tax, $creditNote->currency_id, false) }}</td>
                     </tr>
@@ -347,6 +347,18 @@
                         </table>
                     </td>
                 </tr>
+                @if (isset($invoiceSetting->other_info))
+                    <tr>
+                        <td align="vertical-align: text-top">
+                            <table>
+                                <tr>
+                                    <p class="text-dark-grey">{!! nl2br($invoiceSetting->other_info) !!}
+                                    </p>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                @endif
             </table>
         </div>
     </div>

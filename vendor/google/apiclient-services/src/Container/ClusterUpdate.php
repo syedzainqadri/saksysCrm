@@ -32,6 +32,8 @@ class ClusterUpdate extends \Google\Collection
   protected $desiredBinaryAuthorizationDataType = '';
   protected $desiredClusterAutoscalingType = ClusterAutoscaling::class;
   protected $desiredClusterAutoscalingDataType = '';
+  protected $desiredContainerdConfigType = ContainerdConfig::class;
+  protected $desiredContainerdConfigDataType = '';
   protected $desiredCostManagementConfigType = CostManagementConfig::class;
   protected $desiredCostManagementConfigDataType = '';
   protected $desiredDatabaseEncryptionType = DatabaseEncryption::class;
@@ -47,7 +49,15 @@ class ClusterUpdate extends \Google\Collection
   /**
    * @var bool
    */
+  public $desiredEnableCiliumClusterwideNetworkPolicy;
+  /**
+   * @var bool
+   */
   public $desiredEnableFqdnNetworkPolicy;
+  /**
+   * @var bool
+   */
+  public $desiredEnableMultiNetworking;
   /**
    * @var bool
    */
@@ -64,6 +74,10 @@ class ClusterUpdate extends \Google\Collection
    * @var string
    */
   public $desiredImageType;
+  /**
+   * @var string
+   */
+  public $desiredInTransitEncryptionConfig;
   protected $desiredIntraNodeVisibilityConfigType = IntraNodeVisibilityConfig::class;
   protected $desiredIntraNodeVisibilityConfigDataType = '';
   protected $desiredK8sBetaApisType = K8sBetaAPIConfig::class;
@@ -94,8 +108,12 @@ class ClusterUpdate extends \Google\Collection
    * @var string
    */
   public $desiredMonitoringService;
+  protected $desiredNetworkPerformanceConfigType = ClusterNetworkPerformanceConfig::class;
+  protected $desiredNetworkPerformanceConfigDataType = '';
   protected $desiredNodePoolAutoConfigNetworkTagsType = NetworkTags::class;
   protected $desiredNodePoolAutoConfigNetworkTagsDataType = '';
+  protected $desiredNodePoolAutoConfigResourceManagerTagsType = ResourceManagerTags::class;
+  protected $desiredNodePoolAutoConfigResourceManagerTagsDataType = '';
   protected $desiredNodePoolAutoscalingType = NodePoolAutoscaling::class;
   protected $desiredNodePoolAutoscalingDataType = '';
   /**
@@ -110,6 +128,8 @@ class ClusterUpdate extends \Google\Collection
   public $desiredNodeVersion;
   protected $desiredNotificationConfigType = NotificationConfig::class;
   protected $desiredNotificationConfigDataType = '';
+  protected $desiredParentProductConfigType = ParentProductConfig::class;
+  protected $desiredParentProductConfigDataType = '';
   protected $desiredPrivateClusterConfigType = PrivateClusterConfig::class;
   protected $desiredPrivateClusterConfigDataType = '';
   /**
@@ -228,6 +248,20 @@ class ClusterUpdate extends \Google\Collection
     return $this->desiredClusterAutoscaling;
   }
   /**
+   * @param ContainerdConfig
+   */
+  public function setDesiredContainerdConfig(ContainerdConfig $desiredContainerdConfig)
+  {
+    $this->desiredContainerdConfig = $desiredContainerdConfig;
+  }
+  /**
+   * @return ContainerdConfig
+   */
+  public function getDesiredContainerdConfig()
+  {
+    return $this->desiredContainerdConfig;
+  }
+  /**
    * @param CostManagementConfig
    */
   public function setDesiredCostManagementConfig(CostManagementConfig $desiredCostManagementConfig)
@@ -300,6 +334,20 @@ class ClusterUpdate extends \Google\Collection
   /**
    * @param bool
    */
+  public function setDesiredEnableCiliumClusterwideNetworkPolicy($desiredEnableCiliumClusterwideNetworkPolicy)
+  {
+    $this->desiredEnableCiliumClusterwideNetworkPolicy = $desiredEnableCiliumClusterwideNetworkPolicy;
+  }
+  /**
+   * @return bool
+   */
+  public function getDesiredEnableCiliumClusterwideNetworkPolicy()
+  {
+    return $this->desiredEnableCiliumClusterwideNetworkPolicy;
+  }
+  /**
+   * @param bool
+   */
   public function setDesiredEnableFqdnNetworkPolicy($desiredEnableFqdnNetworkPolicy)
   {
     $this->desiredEnableFqdnNetworkPolicy = $desiredEnableFqdnNetworkPolicy;
@@ -310,6 +358,20 @@ class ClusterUpdate extends \Google\Collection
   public function getDesiredEnableFqdnNetworkPolicy()
   {
     return $this->desiredEnableFqdnNetworkPolicy;
+  }
+  /**
+   * @param bool
+   */
+  public function setDesiredEnableMultiNetworking($desiredEnableMultiNetworking)
+  {
+    $this->desiredEnableMultiNetworking = $desiredEnableMultiNetworking;
+  }
+  /**
+   * @return bool
+   */
+  public function getDesiredEnableMultiNetworking()
+  {
+    return $this->desiredEnableMultiNetworking;
   }
   /**
    * @param bool
@@ -394,6 +456,20 @@ class ClusterUpdate extends \Google\Collection
   public function getDesiredImageType()
   {
     return $this->desiredImageType;
+  }
+  /**
+   * @param string
+   */
+  public function setDesiredInTransitEncryptionConfig($desiredInTransitEncryptionConfig)
+  {
+    $this->desiredInTransitEncryptionConfig = $desiredInTransitEncryptionConfig;
+  }
+  /**
+   * @return string
+   */
+  public function getDesiredInTransitEncryptionConfig()
+  {
+    return $this->desiredInTransitEncryptionConfig;
   }
   /**
    * @param IntraNodeVisibilityConfig
@@ -550,6 +626,20 @@ class ClusterUpdate extends \Google\Collection
     return $this->desiredMonitoringService;
   }
   /**
+   * @param ClusterNetworkPerformanceConfig
+   */
+  public function setDesiredNetworkPerformanceConfig(ClusterNetworkPerformanceConfig $desiredNetworkPerformanceConfig)
+  {
+    $this->desiredNetworkPerformanceConfig = $desiredNetworkPerformanceConfig;
+  }
+  /**
+   * @return ClusterNetworkPerformanceConfig
+   */
+  public function getDesiredNetworkPerformanceConfig()
+  {
+    return $this->desiredNetworkPerformanceConfig;
+  }
+  /**
    * @param NetworkTags
    */
   public function setDesiredNodePoolAutoConfigNetworkTags(NetworkTags $desiredNodePoolAutoConfigNetworkTags)
@@ -562,6 +652,20 @@ class ClusterUpdate extends \Google\Collection
   public function getDesiredNodePoolAutoConfigNetworkTags()
   {
     return $this->desiredNodePoolAutoConfigNetworkTags;
+  }
+  /**
+   * @param ResourceManagerTags
+   */
+  public function setDesiredNodePoolAutoConfigResourceManagerTags(ResourceManagerTags $desiredNodePoolAutoConfigResourceManagerTags)
+  {
+    $this->desiredNodePoolAutoConfigResourceManagerTags = $desiredNodePoolAutoConfigResourceManagerTags;
+  }
+  /**
+   * @return ResourceManagerTags
+   */
+  public function getDesiredNodePoolAutoConfigResourceManagerTags()
+  {
+    return $this->desiredNodePoolAutoConfigResourceManagerTags;
   }
   /**
    * @param NodePoolAutoscaling
@@ -632,6 +736,20 @@ class ClusterUpdate extends \Google\Collection
   public function getDesiredNotificationConfig()
   {
     return $this->desiredNotificationConfig;
+  }
+  /**
+   * @param ParentProductConfig
+   */
+  public function setDesiredParentProductConfig(ParentProductConfig $desiredParentProductConfig)
+  {
+    $this->desiredParentProductConfig = $desiredParentProductConfig;
+  }
+  /**
+   * @return ParentProductConfig
+   */
+  public function getDesiredParentProductConfig()
+  {
+    return $this->desiredParentProductConfig;
   }
   /**
    * @param PrivateClusterConfig

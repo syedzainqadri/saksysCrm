@@ -17,6 +17,13 @@ class StoreRequest extends FormRequest
         return true;
     }
 
+    public function prepareForValidation()
+    {
+            $this->merge([
+                'description' => trim_editor($this->description)
+            ]);
+    }
+
     /**
      * Get the validation rules that apply to the request.
      *
@@ -25,16 +32,14 @@ class StoreRequest extends FormRequest
     public function rules()
     {
         return [
-            'description' => [
-                'required',
-                function ($attribute, $value, $fail) {
-                    $comment = trim_editor($value);;
+            'description' => 'required',
+        ];
+    }
 
-                    if ($comment == '') {
-                        $fail($attribute . ' ' . __('app.required'));
-                    }
-                }
-            ]
+    public function attributes()
+    {
+        return [
+            'description' => __('app.reply'),
         ];
     }
 

@@ -29,47 +29,38 @@ class Header {
      *
      * @var string $raw
      */
-    public $raw = "";
+    public string $raw = "";
 
     /**
      * Attribute holder
      *
      * @var Attribute[]|array $attributes
      */
-    protected $attributes = [];
+    protected array $attributes = [];
 
     /**
      * Config holder
      *
      * @var array $config
      */
-    protected $config = [];
+    protected array $config = [];
 
     /**
      * Fallback Encoding
      *
      * @var string
      */
-    public $fallback_encoding = 'UTF-8';
-
-    /**
-     * Convert parsed values to attributes
-     *
-     * @var bool
-     */
-    protected $attributize = false;
+    public string $fallback_encoding = 'UTF-8';
 
     /**
      * Header constructor.
      * @param string $raw_header
-     * @param boolean $attributize
      *
      * @throws InvalidMessageDateException
      */
-    public function __construct($raw_header, $attributize = true) {
+    public function __construct(string $raw_header) {
         $this->raw = $raw_header;
         $this->config = ClientManager::get('options');
-        $this->attributize = $attributize;
         $this->parse();
     }
 
@@ -81,17 +72,17 @@ class Header {
      * @return Attribute|mixed
      * @throws MethodNotFoundException
      */
-    public function __call($method, $arguments) {
-        if(strtolower(substr($method, 0, 3)) === 'get') {
+    public function __call(string $method, array $arguments) {
+        if (strtolower(substr($method, 0, 3)) === 'get') {
             $name = preg_replace('/(.)(?=[A-Z])/u', '$1_', substr(strtolower($method), 3));
 
-            if(in_array($name, array_keys($this->attributes))) {
+            if (in_array($name, array_keys($this->attributes))) {
                 return $this->attributes[$name];
             }
 
         }
 
-        throw new MethodNotFoundException("Method ".self::class.'::'.$method.'() is not supported');
+        throw new MethodNotFoundException("Method " . self::class . '::' . $method . '() is not supported');
     }
 
     /**
@@ -108,14 +99,26 @@ class Header {
      * Get a specific header attribute
      * @param $name
      *
-     * @return Attribute|mixed
+     * @return Attribute
      */
-    public function get($name) {
-        if(isset($this->attributes[$name])) {
+    public function get($name): Attribute {
+        $name = str_replace(["-", " "], "_", strtolower($name));
+        if (isset($this->attributes[$name])) {
             return $this->attributes[$name];
         }
 
-        return null;
+        return new Attribute($name);
+    }
+
+    /**
+     * Check if a specific attribute exists
+     * @param string $name
+     *
+     * @return bool
+     */
+    public function has(string $name): bool {
+        $name = str_replace(["-", " "], "_", strtolower($name));
+        return isset($this->attributes[$name]);
     }
 
     /**
@@ -124,26 +127,12 @@ class Header {
      * @param array|mixed $value
      * @param boolean $strict
      *
-     * @return Attribute
+     * @return Attribute|array
      */
-    public function set($name, $value, $strict = false) {
-        if(isset($this->attributes[$name]) && $strict === false) {
-            if ($this->attributize) {
-                $this->attributes[$name]->add($value, true);
-            }else{
-                if(isset($this->attributes[$name])) {
-                    if (is_array($this->attributes[$name]) == false) {
-                        $this->attributes[$name] = [$this->attributes[$name], $value];
-                    }else{
-                        $this->attributes[$name][] = $value;
-                    }
-                }else{
-                    $this->attributes[$name] = $value;
-                }
-            }
-        }elseif($this->attributize == false){
-            $this->attributes[$name] = $value;
-        }else{
+    public function set(string $name, mixed $value, bool $strict = false): Attribute|array {
+        if (isset($this->attributes[$name]) && $strict === false) {
+            $this->attributes[$name]->add($value, true);
+        } else {
             $this->attributes[$name] = new Attribute($name, $value);
         }
 
@@ -156,10 +145,10 @@ class Header {
      *
      * @return mixed|null
      */
-    public function find($pattern) {
+    public function find($pattern): mixed {
         if (preg_match_all($pattern, $this->raw, $matches)) {
             if (isset($matches[1])) {
-                if(count($matches[1]) > 0) {
+                if (count($matches[1]) > 0) {
                     return $matches[1][0];
                 }
             }
@@ -172,8 +161,9 @@ class Header {
      *
      * @return string|null
      */
-    public function getBoundary(){
-        $boundary = $this->find("/boundary\=(.*)/i");
+    public function getBoundary(): ?string {
+        $regex = $this->config["boundary"] ?? "/boundary=(.*?(?=;)|(.*))/i";
+        $boundary = $this->find($regex);
 
         if ($boundary === null) {
             return null;
@@ -188,7 +178,7 @@ class Header {
      *
      * @return string
      */
-    private function clearBoundaryString($str) {
+    private function clearBoundaryString(string $str): string {
         return str_replace(['"', '\r', '\n', "\n", "\r", ";", "\s"], "", $str);
     }
 
@@ -197,7 +187,7 @@ class Header {
      *
      * @throws InvalidMessageDateException
      */
-    protected function parse(){
+    protected function parse(): void {
         $header = $this->rfc822_parse_headers($this->raw);
 
         $this->extractAddresses($header);
@@ -206,16 +196,21 @@ class Header {
             $this->set("subject", $this->decode($header->subject));
         }
         if (property_exists($header, 'references')) {
-            $this->set("references", $this->decode($header->references));
+            $this->set("references", array_map(function ($item) {
+                return str_replace(['<', '>'], '', $item);
+            }, explode(" ", $header->references)));
         }
         if (property_exists($header, 'message_id')) {
             $this->set("message_id", str_replace(['<', '>'], '', $header->message_id));
+        }
+        if (property_exists($header, 'in_reply_to')) {
+            $this->set("in_reply_to", str_replace(['<', '>'], '', $header->in_reply_to));
         }
 
         $this->parseDate($header);
         foreach ($header as $key => $value) {
             $key = trim(rtrim(strtolower($key)));
-            if(!isset($this->attributes[$key])){
+            if (!isset($this->attributes[$key])) {
                 $this->set($key, $value);
             }
         }
@@ -231,30 +226,30 @@ class Header {
      *
      * @return object
      */
-    public function rfc822_parse_headers($raw_headers){
+    public function rfc822_parse_headers($raw_headers): object {
         $headers = [];
         $imap_headers = [];
         if (extension_loaded('imap') && $this->config["rfc822"]) {
-            $raw_imap_headers = (array) \imap_rfc822_parse_headers($this->raw);
-            foreach($raw_imap_headers as $key => $values) {
-                $key = str_replace("-", "_", $key);
+            $raw_imap_headers = (array)\imap_rfc822_parse_headers($raw_headers);
+            foreach ($raw_imap_headers as $key => $values) {
+                $key = strtolower(str_replace("-", "_", $key));
                 $imap_headers[$key] = $values;
             }
         }
-        $lines = explode("\r\n", str_replace("\r\n\t", ' ', $raw_headers));
+        $lines = explode("\r\n", preg_replace("/\r\n\s/", ' ', $raw_headers));
         $prev_header = null;
-        foreach($lines as $line) {
-            if (substr($line, 0, 1) === "\n") {
+        foreach ($lines as $line) {
+            if (str_starts_with($line, "\n")) {
                 $line = substr($line, 1);
             }
 
-            if (substr($line, 0, 1) === "\t") {
+            if (str_starts_with($line, "\t")) {
                 $line = substr($line, 1);
                 $line = trim(rtrim($line));
                 if ($prev_header !== null) {
                     $headers[$prev_header][] = $line;
                 }
-            }elseif (substr($line, 0, 1) === " ") {
+            } elseif (str_starts_with($line, " ")) {
                 $line = substr($line, 1);
                 $line = trim(rtrim($line));
                 if ($prev_header !== null) {
@@ -263,19 +258,19 @@ class Header {
                     }
                     if (is_array($headers[$prev_header])) {
                         $headers[$prev_header][] = $line;
-                    }else{
+                    } else {
                         $headers[$prev_header] .= $line;
                     }
                 }
-            }else{
+            } else {
                 if (($pos = strpos($line, ":")) > 0) {
                     $key = trim(rtrim(strtolower(substr($line, 0, $pos))));
-                    $key = str_replace("-", "_", $key);
+                    $key = strtolower(str_replace("-", "_", $key));
 
                     $value = trim(rtrim(substr($line, $pos + 1)));
                     if (isset($headers[$key])) {
-                        $headers[$key][]  = $value;
-                    }else{
+                        $headers[$key][] = $value;
+                    } else {
                         $headers[$key] = [$value];
                     }
                     $prev_header = $key;
@@ -283,10 +278,12 @@ class Header {
             }
         }
 
-        foreach($headers as $key => $values) {
-            if (isset($imap_headers[$key])) continue;
+        foreach ($headers as $key => $values) {
+            if (isset($imap_headers[$key])) {
+                continue;
+            }
             $value = null;
-            switch($key){
+            switch ((string)$key) {
                 case 'from':
                 case 'to':
                 case 'cc':
@@ -294,14 +291,14 @@ class Header {
                 case 'reply_to':
                 case 'sender':
                     $value = $this->decodeAddresses($values);
-                    $headers[$key."address"] = implode(", ", $values);
+                    $headers[$key . "address"] = implode(", ", $values);
                     break;
                 case 'subject':
                     $value = implode(" ", $values);
                     break;
                 default:
                     if (is_array($values)) {
-                        foreach($values as $k => $v) {
+                        foreach ($values as $k => $v) {
                             if ($v == "") {
                                 unset($values[$k]);
                             }
@@ -322,7 +319,7 @@ class Header {
             $headers[$key] = $value;
         }
 
-        return (object) array_merge($headers, $imap_headers);
+        return (object)array_merge($headers, $imap_headers);
     }
 
     /**
@@ -333,28 +330,29 @@ class Header {
      * @return array The decoded elements are returned in an array of objects, where each
      * object has two properties, charset and text.
      */
-    public function mime_header_decode($text){
+    public function mime_header_decode(string $text): array {
         if (extension_loaded('imap')) {
-            return \imap_mime_header_decode($text);
+            $result = \imap_mime_header_decode($text);
+            return is_array($result) ? $result : [];
         }
         $charset = $this->getEncoding($text);
         return [(object)[
             "charset" => $charset,
-            "text" => $this->convertEncoding($text, $charset)
+            "text"    => $this->convertEncoding($text, $charset)
         ]];
     }
 
     /**
-     * Check if a given pair of strings has ben decoded
+     * Check if a given pair of strings has been decoded
      * @param $encoded
      * @param $decoded
      *
      * @return bool
      */
-    private function notDecoded($encoded, $decoded) {
-        return 0 === strpos($decoded, '=?')
+    private function notDecoded($encoded, $decoded): bool {
+        return str_starts_with($decoded, '=?')
             && strlen($decoded) - 2 === strpos($decoded, '?=')
-            && false !== strpos($encoded, $decoded);
+            && str_contains($encoded, $decoded);
     }
 
     /**
@@ -365,8 +363,7 @@ class Header {
      *
      * @return mixed|string
      */
-    public function convertEncoding($str, $from = "ISO-8859-2", $to = "UTF-8") {
-
+    public function convertEncoding($str, string $from = "ISO-8859-2", string $to = "UTF-8"): mixed {
         $from = EncodingAliases::get($from, $this->fallback_encoding);
         $to = EncodingAliases::get($to, $this->fallback_encoding);
 
@@ -374,38 +371,7 @@ class Header {
             return $str;
         }
 
-        // We don't need to do convertEncoding() if charset is ASCII (us-ascii):
-        //     ASCII is a subset of UTF-8, so all ASCII files are already UTF-8 encoded
-        //     https://stackoverflow.com/a/11303410
-        //
-        // us-ascii is the same as ASCII:
-        //     ASCII is the traditional name for the encoding system; the Internet Assigned Numbers Authority (IANA)
-        //     prefers the updated name US-ASCII, which clarifies that this system was developed in the US and
-        //     based on the typographical symbols predominantly in use there.
-        //     https://en.wikipedia.org/wiki/ASCII
-        //
-        // convertEncoding() function basically means convertToUtf8(), so when we convert ASCII string into UTF-8 it gets broken.
-        if (strtolower($from) == 'us-ascii' && $to == 'UTF-8') {
-            return $str;
-        }
-
-        try {
-            if (function_exists('iconv') && $from != 'UTF-7' && $to != 'UTF-7') {
-                return iconv($from, $to, $str);
-            } else {
-                if (!$from) {
-                    return mb_convert_encoding($str, $to);
-                }
-                return mb_convert_encoding($str, $to, $from);
-            }
-        } catch (\Exception $e) {
-            if (strstr($from, '-')) {
-                $from = str_replace('-', '', $from);
-                return $this->convertEncoding($str, $from, $to);
-            } else {
-                return $str;
-            }
-        }
+        return EncodingAliases::convert($str, $from, $to);
     }
 
     /**
@@ -414,17 +380,18 @@ class Header {
      *
      * @return string
      */
-    public function getEncoding($structure) {
+    public function getEncoding(object|string $structure): string {
         if (property_exists($structure, 'parameters')) {
             foreach ($structure->parameters as $parameter) {
                 if (strtolower($parameter->attribute) == "charset") {
                     return EncodingAliases::get($parameter->value, $this->fallback_encoding);
                 }
             }
-        }elseif (property_exists($structure, 'charset')) {
+        } elseif (property_exists($structure, 'charset')) {
             return EncodingAliases::get($structure->charset, $this->fallback_encoding);
-        }elseif (is_string($structure) === true){
-            return mb_detect_encoding($structure);
+        } elseif (is_string($structure) === true) {
+            $result = mb_detect_encoding($structure);
+            return $result === false ? $this->fallback_encoding : $result;
         }
 
         return $this->fallback_encoding;
@@ -436,8 +403,8 @@ class Header {
      *
      * @return bool
      */
-    private function is_uft8($value) {
-        return strpos(strtolower($value), '=?utf-8?') === 0;
+    private function is_uft8($value): bool {
+        return str_starts_with(strtolower($value), '=?utf-8?');
     }
 
     /**
@@ -446,7 +413,7 @@ class Header {
      *
      * @return mixed
      */
-    private function decode($value) {
+    public function decode(mixed $value): mixed {
         if (is_array($value)) {
             return $this->decodeArray($value);
         }
@@ -454,29 +421,24 @@ class Header {
         $decoder = $this->config['decoder']['message'];
 
         if ($value !== null) {
-            $is_utf8_base = $this->is_uft8($value);
-
-            if($decoder === 'utf-8' && extension_loaded('imap')) {
-                $value = \imap_utf8($value);
-                $is_utf8_base = $this->is_uft8($value);
-                if ($is_utf8_base) {
+            if ($decoder === 'utf-8') {
+                $decoded_values = $this->mime_header_decode($value);
+                $tempValue = "";
+                foreach ($decoded_values as $decoded_value) {
+                    $tempValue .= $this->convertEncoding($decoded_value->text, $decoded_value->charset);
+                }
+                if ($tempValue) {
+                    $value = $tempValue;
+                } else if (extension_loaded('imap')) {
+                    $value = \imap_utf8($value);
+                }else if (function_exists('iconv_mime_decode')){
+                    $value = iconv_mime_decode($value, ICONV_MIME_DECODE_CONTINUE_ON_ERROR, "UTF-8");
+                }else{
                     $value = mb_decode_mimeheader($value);
                 }
-                if ($this->notDecoded($original_value, $value)) {
-                    $decoded_value = $this->mime_header_decode($value);
-                    if (count($decoded_value) > 0) {
-                        if(property_exists($decoded_value[0], "text")) {
-                            $value = $decoded_value[0]->text;
-                        }
-                    }
-                }
-            }elseif($decoder === 'iconv' && $is_utf8_base) {
-                $value = iconv_mime_decode($value);
-            }elseif($is_utf8_base){
-                $value = mb_decode_mimeheader($value);
-            }
-
-            if ($this->is_uft8($value)) {
+            }elseif ($decoder === 'iconv') {
+                $value = iconv_mime_decode($value, ICONV_MIME_DECODE_CONTINUE_ON_ERROR, "UTF-8");
+            }else if ($this->is_uft8($value)) {
                 $value = mb_decode_mimeheader($value);
             }
 
@@ -494,8 +456,8 @@ class Header {
      *
      * @return array
      */
-    private function decodeArray($values) {
-        foreach($values as $key => $value) {
+    private function decodeArray(array $values): array {
+        foreach ($values as $key => $value) {
             $values[$key] = $this->decode($value);
         }
         return $values;
@@ -504,28 +466,17 @@ class Header {
     /**
      * Try to extract the priority from a given raw header string
      */
-    private function findPriority() {
-        if(($priority = $this->get("x_priority")) === null) return;
-        switch((int)"$priority"){
-            case IMAP::MESSAGE_PRIORITY_HIGHEST;
-                $priority = IMAP::MESSAGE_PRIORITY_HIGHEST;
-                break;
-            case IMAP::MESSAGE_PRIORITY_HIGH;
-                $priority = IMAP::MESSAGE_PRIORITY_HIGH;
-                break;
-            case IMAP::MESSAGE_PRIORITY_NORMAL;
-                $priority = IMAP::MESSAGE_PRIORITY_NORMAL;
-                break;
-            case IMAP::MESSAGE_PRIORITY_LOW;
-                $priority = IMAP::MESSAGE_PRIORITY_LOW;
-                break;
-            case IMAP::MESSAGE_PRIORITY_LOWEST;
-                $priority = IMAP::MESSAGE_PRIORITY_LOWEST;
-                break;
-            default:
-                $priority = IMAP::MESSAGE_PRIORITY_UNKNOWN;
-                break;
-        }
+    private function findPriority(): void {
+        $priority = $this->get("x_priority");
+
+        $priority = match ((int)"$priority") {
+            IMAP::MESSAGE_PRIORITY_HIGHEST => IMAP::MESSAGE_PRIORITY_HIGHEST,
+            IMAP::MESSAGE_PRIORITY_HIGH => IMAP::MESSAGE_PRIORITY_HIGH,
+            IMAP::MESSAGE_PRIORITY_NORMAL => IMAP::MESSAGE_PRIORITY_NORMAL,
+            IMAP::MESSAGE_PRIORITY_LOW => IMAP::MESSAGE_PRIORITY_LOW,
+            IMAP::MESSAGE_PRIORITY_LOWEST => IMAP::MESSAGE_PRIORITY_LOWEST,
+            default => IMAP::MESSAGE_PRIORITY_UNKNOWN,
+        };
 
         $this->set("priority", $priority);
     }
@@ -536,7 +487,7 @@ class Header {
      *
      * @return array
      */
-    private function decodeAddresses($values) {
+    private function decodeAddresses($values): array {
         $addresses = [];
 
         if (extension_loaded('mailparse') && $this->config["rfc822"]) {
@@ -546,9 +497,9 @@ class Header {
                         $mail_address = explode('@', $parsed_address['address']);
                         if (count($mail_address) == 2) {
                             $addresses[] = (object)[
-                                "personal" => isset($parsed_address['display']) ? $parsed_address['display'] : '',
-                                "mailbox" => $mail_address[0],
-                                "host" => $mail_address[1],
+                                "personal" => $parsed_address['display'] ?? '',
+                                "mailbox"  => $mail_address[0],
+                                "host"     => $mail_address[1],
                             ];
                         }
                     }
@@ -558,7 +509,7 @@ class Header {
             return $addresses;
         }
 
-        foreach($values as $address) {
+        foreach ($values as $address) {
             foreach (preg_split('/, (?=(?:[^"]*"[^"]*")*[^"]*$)/', $address) as $split_address) {
                 $split_address = trim(rtrim($split_address));
 
@@ -575,8 +526,8 @@ class Header {
                     list($mailbox, $host) = array_pad(explode("@", $email), 2, null);
                     $addresses[] = (object)[
                         "personal" => $name,
-                        "mailbox" => $mailbox,
-                        "host" => $host,
+                        "mailbox"  => $mailbox,
+                        "host"     => $host,
                     ];
                 }
             }
@@ -589,8 +540,8 @@ class Header {
      * Extract a given part as address array from a given header
      * @param object $header
      */
-    private function extractAddresses($header) {
-        foreach(['from', 'to', 'cc', 'bcc', 'reply_to', 'sender'] as $key){
+    private function extractAddresses(object $header): void {
+        foreach (['from', 'to', 'cc', 'bcc', 'reply_to', 'sender'] as $key) {
             if (property_exists($header, $key)) {
                 $this->set($key, $this->parseAddresses($header->$key));
             }
@@ -603,7 +554,7 @@ class Header {
      *
      * @return array
      */
-    private function parseAddresses($list) {
+    private function parseAddresses($list): array {
         $addresses = [];
 
         if (is_array($list) === false) {
@@ -611,7 +562,7 @@ class Header {
         }
 
         foreach ($list as $item) {
-            $address = (object) $item;
+            $address = (object)$item;
 
             if (!property_exists($address, 'mailbox')) {
                 $address->mailbox = false;
@@ -624,20 +575,25 @@ class Header {
             } else {
                 $personalParts = $this->mime_header_decode($address->personal);
 
-                if(is_array($personalParts)) {
-                    $address->personal = '';
-                    foreach ($personalParts as $p) {
-                        $address->personal .= $this->convertEncoding($p->text, $this->getEncoding($p));
-                    }
+                $address->personal = '';
+                foreach ($personalParts as $p) {
+                    $address->personal .= $this->convertEncoding($p->text, $this->getEncoding($p));
                 }
 
-                if (strpos($address->personal, "'") === 0) {
+                if (str_starts_with($address->personal, "'")) {
                     $address->personal = str_replace("'", "", $address->personal);
                 }
             }
 
-            $address->mail = ($address->mailbox && $address->host) ? $address->mailbox.'@'.$address->host : false;
-            $address->full = ($address->personal) ? $address->personal.' <'.$address->mail.'>' : $address->mail;
+            if ($address->host == ".SYNTAX-ERROR.") {
+                $address->host = "";
+            }
+            if ($address->mailbox == "UNEXPECTED_DATA_AFTER_ADDRESS") {
+                $address->mailbox = "";
+            }
+
+            $address->mail = ($address->mailbox && $address->host) ? $address->mailbox . '@' . $address->host : false;
+            $address->full = ($address->personal) ? $address->personal . ' <' . $address->mail . '>' : $address->mail;
 
             $addresses[] = new Address($address);
         }
@@ -648,25 +604,51 @@ class Header {
     /**
      * Search and extract potential header extensions
      */
-    private function extractHeaderExtensions(){
+    private function extractHeaderExtensions(): void {
         foreach ($this->attributes as $key => $value) {
             if (is_array($value)) {
                 $value = implode(", ", $value);
-            }else{
+            } else {
                 $value = (string)$value;
             }
             // Only parse strings and don't parse any attributes like the user-agent
-            if (in_array($key, ["user_agent"]) === false) {
-                if (($pos = strpos($value, ";")) !== false){
+            if (!in_array($key, ["user-agent", "subject"])) {
+                if (($pos = strpos($value, ";")) !== false) {
                     $original = substr($value, 0, $pos);
-                    $this->set($key, trim(rtrim($original)), true);
+                    $this->set($key, trim(rtrim($original)));
 
                     // Get all potential extensions
                     $extensions = explode(";", substr($value, $pos + 1));
-                    foreach($extensions as $extension) {
-                        if (($pos = strpos($extension, "=")) !== false){
+                    $previousKey = null;
+                    $previousValue = '';
+
+                    foreach ($extensions as $extension) {
+                        if (($pos = strpos($extension, "=")) !== false) {
                             $key = substr($extension, 0, $pos);
                             $key = trim(rtrim(strtolower($key)));
+
+                            $matches = [];
+
+                            if (preg_match('/^(?P<key_name>\w+)\*/', $key, $matches) !== 0) {
+                                $key = $matches['key_name'];
+                                $previousKey = $key;
+
+                                $value = substr($extension, $pos + 1);
+                                $value = str_replace('"', "", $value);
+                                $previousValue .= trim(rtrim($value));
+
+                                continue;
+                            }
+
+                            if (
+                                $previousKey !== null
+                                && $previousKey !== $key
+                                && isset($this->attributes[$previousKey]) === false
+                            ) {
+                                $this->set($previousKey, $previousValue);
+
+                                $previousValue = '';
+                            }
 
                             if (isset($this->attributes[$key]) === false) {
                                 $value = substr($extension, $pos + 1);
@@ -675,7 +657,12 @@ class Header {
 
                                 $this->set($key, $value);
                             }
+
+                            $previousKey = $key;
                         }
+                    }
+                    if ($previousValue !== '') {
+                        $this->set($previousKey, $previousValue);
                     }
                 }
             }
@@ -685,7 +672,7 @@ class Header {
     /**
      * Exception handling for invalid dates
      *
-     * Currently known invalid formats:
+     * Known bad and "invalid" formats:
      * ^ Datetime                                   ^ Problem                           ^ Cause
      * | Mon, 20 Nov 2017 20:31:31 +0800 (GMT+8:00) | Double timezone specification     | A Windows feature
      * | Thu, 8 Nov 2018 08:54:58 -0200 (-02)       |
@@ -701,24 +688,66 @@ class Header {
      *
      * @throws InvalidMessageDateException
      */
-    private function parseDate($header) {
+    private function parseDate(object $header): void {
 
         if (property_exists($header, 'date')) {
-            $parsed_date = null;
             $date = $header->date;
 
-            if(preg_match('/\+0580/', $date)) {
+            if (preg_match('/\+0580/', $date)) {
                 $date = str_replace('+0580', '+0530', $date);
             }
 
             $date = trim(rtrim($date));
             try {
+                if (str_contains($date, '&nbsp;')) {
+                    $date = str_replace('&nbsp;', ' ', $date);
+                }
+                if (str_contains($date, ' UT ')) {
+                    $date = str_replace(' UT ', ' UTC ', $date);
+                }
                 $parsed_date = Carbon::parse($date);
             } catch (\Exception $e) {
                 switch (true) {
+                    case preg_match('/([0-9]{4}\.[0-9]{1,2}\.[0-9]{1,2}\-[0-9]{1,2}\.[0-9]{1,2}.[0-9]{1,2})+$/i', $date) > 0:
+                        $date = Carbon::createFromFormat("Y.m.d-H.i.s", $date);
+                        break;
+                    case preg_match('/([0-9]{2} [A-Z]{3} [0-9]{4} [0-9]{1,2}:[0-9]{1,2}:[0-9]{1,2} [+-][0-9]{1,4} [0-9]{1,2}:[0-9]{1,2}:[0-9]{1,2} [+-][0-9]{1,4})+$/i', $date) > 0:
+                        $parts = explode(' ', $date);
+                        array_splice($parts, -2);
+                        $date = implode(' ', $parts);
+                        break;
+                    case preg_match('/([A-Z]{2,4}\,\ [0-9]{1,2}\ [A-Z]{2,3}\ [0-9]{4}\ [0-9]{1,2}\:[0-9]{1,2}\:[0-9]{1,2}\ [\-|\+][0-9]{4})+$/i', $date) > 0:
+                        $array = explode(',', $date);
+                        array_shift($array);
+                        $date = Carbon::createFromFormat("d M Y H:i:s O", trim(implode(',', $array)));
+                        break;
                     case preg_match('/([0-9]{1,2}\ [A-Z]{2,3}\ [0-9]{4}\ [0-9]{1,2}\:[0-9]{1,2}\:[0-9]{1,2}\ UT)+$/i', $date) > 0:
                     case preg_match('/([A-Z]{2,3}\,\ [0-9]{1,2}\ [A-Z]{2,3}\ [0-9]{4}\ [0-9]{1,2}\:[0-9]{1,2}\:[0-9]{1,2}\ UT)+$/i', $date) > 0:
                         $date .= 'C';
+                        break;
+                    case preg_match('/([A-Z]{2,3}\,\ [0-9]{1,2}[\,]\ [A-Z]{2,3}\ [0-9]{4}\ [0-9]{1,2}\:[0-9]{1,2}\:[0-9]{1,2}\ [\-|\+][0-9]{4})+$/i', $date) > 0:
+                        $date = str_replace(',', '', $date);
+                        break;
+                    // match case for: Di., 15 Feb. 2022 06:52:44 +0100 (MEZ)/Di., 15 Feb. 2022 06:52:44 +0100 (MEZ)
+                    case preg_match('/([A-Z]{2,3}\.\,\ [0-9]{1,2}\ [A-Z]{2,3}\.\ [0-9]{4}\ [0-9]{1,2}\:[0-9]{1,2}\:[0-9]{1,2}\ [\-|\+][0-9]{4}\ \([A-Z]{3,4}\))\/([A-Z]{2,3}\.\,\ [0-9]{1,2}\ [A-Z]{2,3}\.\ [0-9]{4}\ [0-9]{1,2}\:[0-9]{1,2}\:[0-9]{1,2}\ [\-|\+][0-9]{4}\ \([A-Z]{3,4}\))+$/i', $date) > 0:
+                        $dates = explode('/', $date);
+                        $date = array_shift($dates);
+                        $array = explode(',', $date);
+                        array_shift($array);
+                        $date = trim(implode(',', $array));
+                        $array = explode(' ', $date);
+                        array_pop($array);
+                        $date = trim(implode(' ', $array));
+                        $date = Carbon::createFromFormat("d M. Y H:i:s O", $date);
+                        break;
+                    // match case for: fr., 25 nov. 2022 06:27:14 +0100/fr., 25 nov. 2022 06:27:14 +0100
+                    case preg_match('/([A-Z]{2,3}\.\,\ [0-9]{1,2}\ [A-Z]{2,3}\.\ [0-9]{4}\ [0-9]{1,2}\:[0-9]{1,2}\:[0-9]{1,2}\ [\-|\+][0-9]{4})\/([A-Z]{2,3}\.\,\ [0-9]{1,2}\ [A-Z]{2,3}\.\ [0-9]{4}\ [0-9]{1,2}\:[0-9]{1,2}\:[0-9]{1,2}\ [\-|\+][0-9]{4})+$/i', $date) > 0:
+                        $dates = explode('/', $date);
+                        $date = array_shift($dates);
+                        $array = explode(',', $date);
+                        array_shift($array);
+                        $date = trim(implode(',', $array));
+                        $date = Carbon::createFromFormat("d M. Y H:i:s O", $date);
                         break;
                     case preg_match('/([A-Z]{2,3}\,\ [0-9]{1,2}\ [A-Z]{2,3}\ [0-9]{4}\ [0-9]{1,2}\:[0-9]{1,2}\:[0-9]{1,2}\ \+[0-9]{2,4}\ \(\+[0-9]{1,2}\))+$/i', $date) > 0:
                     case preg_match('/([A-Z]{2,3}[\,|\ \,]\ [0-9]{1,2}\ [A-Z]{2,3}\ [0-9]{4}\ [0-9]{1,2}\:[0-9]{1,2}\:[0-9]{1,2}.*)+$/i', $date) > 0:
@@ -730,10 +759,14 @@ class Header {
                         $date = trim(array_pop($array));
                         break;
                 }
-                try{
+                try {
                     $parsed_date = Carbon::parse($date);
                 } catch (\Exception $_e) {
-                    throw new InvalidMessageDateException("Invalid message date. ID:".$this->get("message_id"), 1100, $e);
+                    if (!isset($this->config["fallback_date"])) {
+                        throw new InvalidMessageDateException("Invalid message date. ID:" . $this->get("message_id") . " Date:" . $header->date . "/" . $date, 1100, $e);
+                    } else {
+                        $parsed_date = Carbon::parse($this->config["fallback_date"]);
+                    }
                 }
             }
 
@@ -746,8 +779,30 @@ class Header {
      *
      * @return array
      */
-    public function getAttributes() {
+    public function getAttributes(): array {
         return $this->attributes;
+    }
+
+    /**
+     * Set all header attributes
+     * @param array $attributes
+     *
+     * @return Header
+     */
+    public function setAttributes(array $attributes): Header {
+        $this->attributes = $attributes;
+        return $this;
+    }
+
+    /**
+     * Set the configuration used for parsing a raw header
+     * @param array $config
+     *
+     * @return Header
+     */
+    public function setConfig(array $config): Header {
+        $this->config = $config;
+        return $this;
     }
 
 }

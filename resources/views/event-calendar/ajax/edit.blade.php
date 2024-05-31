@@ -3,7 +3,7 @@
 
 <div class="row">
     <div class="col-sm-12">
-        <x-form id="save-event-data-form" method="put">
+        <x-form id="save-event-data-form" method="PUT">
             <div class="add-client bg-white rounded">
                 <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">
                     {{ $event->event_name }}
@@ -113,33 +113,34 @@
                     </div>
                 @endif
 
-                    <div class="col-lg-12 mb-2">
-                        <x-forms.checkbox :fieldLabel="__('modules.events.repeat')" fieldName="repeat"
-                            fieldId="repeat-event" fieldValue="yes" fieldRequired="true"
-                            :checked="$event->repeat == 'yes'" />
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <x-forms.label fieldId="host" fieldRequired="false"
+                            :fieldLabel="__('app.host')">
+                        </x-forms.label>
+                        <x-forms.input-group>
+                            <select class="form-control multiple-users" name="host"
+                                id="selectHost" data-live-search="true" data-size="8">
+                                <option value="">--</option>
+                                @foreach ($employees as $item)
+                                    <x-user-option :user="$item" :pill=true :selected="($item->id == $event->host)"/>
+                                @endforeach
+                            </select>
+                        </x-forms.input-group>
                     </div>
+                </div>
 
-                    <div class="col-lg-12 repeat-event-div @if ($event->repeat == 'no') d-none @endif">
-                        <div class="row">
-                            <div class="col-lg-4">
-                                <x-forms.number class="mr-0 mr-lg-2 mr-md-2"
-                                    :fieldLabel="__('modules.events.repeatEvery')" fieldName="repeat_count"
-                                    fieldId="repeat_count" :fieldValue="$event->repeat_every"
-                                    fieldRequired="true" />
-                            </div>
-                            <div class="col-lg-4 mt-3">
-                                <x-forms.select fieldId="repeat_type" fieldLabel="" fieldName="repeat_type"
-                                    search="true">
-                                    <option @if ($event->repeat_type == 'day') selected @endif value="day">@lang('app.day')</option>
-                                    <option @if ($event->repeat_type == 'week') selected @endif value="week">@lang('app.week')</option>
-                                    <option @if ($event->repeat_type == 'month') selected @endif value="month">@lang('app.month')</option>
-                                    <option @if ($event->repeat_type == 'year') selected @endif value="year">@lang('app.year')</option>
-                                </x-forms.select>
-                            </div>
-                            <div class="col-lg-4">
-                                <x-forms.text :fieldLabel="__('modules.events.cycles')" fieldName="repeat_cycles"
-                                    fieldRequired="true" fieldId="repeat_cycles" fieldPlaceholder=""
-                                    :fieldValue="$event->repeat_cycles" />
+                    <div class="col-md-6">
+                        <div class="form-group c-inv-select mb-4">
+                            <x-forms.label fieldId="status" :fieldLabel="__('app.status')">
+                            </x-forms.label>
+                            <div class="select-others height-35 rounded">
+                                <select class="form-control select-picker" data-live-search="true" data-size="8"
+                                    name="status" id="status">
+                                    <option data-content="<i class='fa fa-circle mr-1 f-15 text-yellow'></i> @lang('app.pending')" value="pending" @if ($event->status == 'pending') selected @endif></option>
+                                    <option data-content="<i class='fa fa-circle mr-1 f-15 text-light-green'></i> @lang('app.completed')" value="completed" @if ($event->status == 'completed') selected @endif></option>
+                                    <option data-content="<i class='fa fa-circle mr-1 f-15 text-red'></i> @lang('app.cancelled')" value="cancelled" @if ($event->status == 'cancelled') selected @endif></option>
+                                </select>
                             </div>
                         </div>
                     </div>
@@ -170,7 +171,7 @@
                     </div>
                     <div class="col-lg-6 col-md-6">
                         <x-forms.text :fieldLabel="__('modules.events.eventLink')" fieldName="event_link"
-                            fieldId="event_link" :fieldValue="$event->event_link" fieldPlaceholder="https://www.example.com/" />
+                            fieldId="event_link" :fieldValue="$event->event_link" :fieldPlaceholder="__('placeholders.website')" />
                     </div>
                     <div class="col-md-12 mt-3">
                         <a class="f-15 f-w-500" href="javascript:;" id="add-file"><i
@@ -358,9 +359,6 @@
                 });
             });
 
-        $('#repeat-event').change(function() {
-            $('.repeat-event-div').toggleClass('d-none');
-        })
         $('#send_reminder').change(function() {
             $('.send_reminder_div').toggleClass('d-none');
         })
@@ -375,7 +373,7 @@
             "color": "{{ $event->label_color }}"
         });
 
-        $("#selectAssignee, #selectAssignee2").selectpicker({
+        $("#selectAssignee, #selectAssignee2, #selectHost").selectpicker({
             actionsBox: true,
             selectAllText: "{{ __('modules.permission.selectAll') }}",
             deselectAllText: "{{ __('modules.permission.deselectAll') }}",

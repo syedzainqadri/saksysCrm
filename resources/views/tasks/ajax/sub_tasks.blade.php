@@ -20,8 +20,8 @@
             <div class="row">
                 <div class="col-md-12">
                     <a class="f-15 f-w-500" href="javascript:;" id="add-sub-task"><i
-                            class="icons icon-plus font-weight-bold mr-1"></i>@lang('app.add')
-                        @lang('modules.tasks.subTask')</a>
+                            class="icons icon-plus font-weight-bold mr-1"></i>@lang('app.menu.addSubTask')
+                    </a>
                 </div>
             </div>
 
@@ -95,7 +95,7 @@
                             <x-forms.button-cancel id="cancel-subtask" class="border-0 mr-3">@lang('app.cancel')
                             </x-forms.button-cancel>
                             <x-forms.button-primary id="save-subtask" icon="location-arrow">@lang('app.submit')
-                                </x-button-primary>
+                            </x-forms.button-primary>
                         </div>
                     </div>
                 </div>
@@ -107,14 +107,30 @@
     @if ($viewSubTaskPermission == 'all' || $viewSubTaskPermission == 'added')
         <div class="d-flex flex-wrap justify-content-between p-20" id="sub-task-list">
             @forelse ($task->subtasks as $subtask)
-                <div class="card w-100 rounded-0 border-0 subtask mb-3">
+                <div class="card w-100 rounded-0 border-0 subtask mb-1">
 
                     <div class="card-horizontal">
+                        @php
+                            // false means checkbox is clickable
+                            $user_id = user()->id;
+                            $assigned_to = $subtask->assigned_to;
+                            $added_by = $subtask->added_by;
+
+                            $checkBoxDisablePermission =
+                                ($editSubTaskPermission === 'both' && ($assigned_to === $user_id || $added_by === $user_id)) ||
+                                ($editSubTaskPermission === 'owned' && $assigned_to === $user_id) ||
+                                $editSubTaskPermission === 'all' ||
+                                ($editSubTaskPermission === 'added' && $added_by === $user_id)
+                                ? false : true;
+
+                        @endphp
+
                         <div class="d-flex">
                             <x-forms.checkbox :fieldId="'checkbox'.$subtask->id" class="task-check"
                                               data-sub-task-id="{{ $subtask->id }}"
                                               :checked="($subtask->status == 'complete') ? true : false" fieldLabel=""
-                                              :fieldName="'checkbox'.$subtask->id"/>
+                                              :fieldName="'checkbox'.$subtask->id"
+                                              :fieldPermission="$checkBoxDisablePermission" />
 
                         </div>
                         <div class="card-body pt-0">
@@ -124,7 +140,7 @@
                                 @endif
 
                                 <p class="card-title f-14 mr-3 text-dark flex-grow-1" id="subTask">
-                                    {!! $subtask->status == 'complete' ? '<s>' . ucfirst($subtask->title) . '</s>' : '<a class="view-subtask text-dark-grey" href="javascript:;" data-row-id=' . $subtask->id . ' >' .  ucfirst($subtask->title) . '</a>' !!}
+                                    {!! $subtask->status == 'complete' ? '<s>' . $subtask->title . '</s>' : '<a class="view-subtask text-dark-grey" href="javascript:;" data-row-id=' . $subtask->id . ' >' .  $subtask->title . '</a>' !!}
                                     {!! $subtask->due_date ? '<span class="f-11 text-lightest"><br>'.__('modules.invoices.due') . ': ' . $subtask->due_date->translatedFormat(company()->date_format) . '</span>' : '' !!}
                                 </p>
                                 <div class="dropdown ml-auto subtask-action">
@@ -140,12 +156,12 @@
                                             <a class="dropdown-item view-subtask" href="javascript:;"
                                                data-row-id="{{ $subtask->id }}">@lang('app.view')</a>
                                         @endif
-                                        @if ($editSubTaskPermission == 'all' || ($editSubTaskPermission == 'added' && $subtask->added_by == user()->id))
+                                        @if ($editSubTaskPermission == 'all' || ($editSubTaskPermission == 'added' && $subtask->added_by == user()->id) || ($editSubTaskPermission == 'owned' && $subtask->assigned_to == user()->id) || ($editSubTaskPermission == 'both' && ($subtask->assigned_to == user()->id || $subtask->added_by == user()->id)))
                                             <a class="dropdown-item edit-subtask" href="javascript:;"
                                                data-row-id="{{ $subtask->id }}">@lang('app.edit')</a>
                                         @endif
 
-                                        @if ($deleteSubTaskPermission == 'all' || ($deleteSubTaskPermission == 'added' && $subtask->added_by == user()->id))
+                                        @if ($deleteSubTaskPermission == 'all' || ($deleteSubTaskPermission == 'added' && $subtask->added_by == user()->id) || ($deleteSubTaskPermission == 'owned' && $subtask->assigned_to == user()->id) || ($deleteSubTaskPermission == 'both' && ($subtask->assigned_to == user()->id || $subtask->added_by == user()->id)))
                                             <a class="dropdown-item delete-subtask" data-row-id="{{ $subtask->id }}"
                                                href="javascript:;">@lang('app.delete')</a>
                                         @endif
@@ -210,7 +226,6 @@
 
 </div>
 <!-- TAB CONTENT END -->
-<script src="{{ asset('vendor/jquery/dropzone.min.js') }}"></script>
 
 <script>
     $(document).ready(function () {
@@ -343,8 +358,6 @@
 
         $('body').on('click', '.delete-sub-task-file', function () {
             var id = $(this).data('row-id');
-            var name = $(this).data('row-name');
-            var replyFile = $(this);
             Swal.fire({
                 title: "@lang('messages.sweetAlertTitle')",
                 text: "@lang('messages.recoverRecord')",

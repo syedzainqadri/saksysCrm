@@ -26,11 +26,9 @@ class UpdateRequest extends CoreRequest
      */
     public function rules()
     {
-
         $rules = [
             'client_name' => 'required',
-            'client_email' => 'nullable|email:rfc|unique:leads,client_email,'.$this->route('lead').',id,company_id,' . company()->id,
-            'website' => 'nullable|url'
+            'client_email' => 'nullable|email:rfc,strict|unique:leads,client_email,'.$this->route('lead_contact').',id,company_id,' . company()->id,
         ];
 
         $rules = $this->customFieldRules($rules);
@@ -43,6 +41,9 @@ class UpdateRequest extends CoreRequest
         $attributes = [];
 
         $attributes = $this->customFieldsAttributes($attributes);
+
+        $attributes['client_name'] = __('app.name');
+        $attributes['client_email'] = __('app.email');
 
         return $attributes;
     }

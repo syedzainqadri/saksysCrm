@@ -10,13 +10,11 @@ use App\Models\InvoiceItemImage;
 use App\Models\InvoiceItems;
 use App\Models\RecurringInvoice;
 use App\Models\RecurringInvoiceItemImage;
-use App\Models\UnitType;
 use App\Models\User;
 use App\Notifications\NewInvoiceRecurring;
 use App\Scopes\ActiveScope;
 use App\Traits\UniversalSearchTrait;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
 
 class AutoCreateRecurringInvoices extends Command
 {
@@ -45,31 +43,39 @@ class AutoCreateRecurringInvoices extends Command
 
     public function handle()
     {
-        $companies = Company::select('id')->with('currency')->get();
-
-        foreach ($companies as $company) {
-
-            $recurringInvoices = RecurringInvoice::with(['recurrings'])->where('company_id', $company->id)->where('status', 'active')->get();
-
-            foreach ($recurringInvoices as $recurring) {
 
 
-                if (is_null($recurring->next_invoice_date)) {
-                    continue;
-                }
+        $recurringInvoices = RecurringInvoice::with(['recurrings'])
+            ->where('status', 'active')
+            ->whereNotNull('next_invoice_date')
+            ->get();
 
-                $totalExistingCount = $recurring->recurrings->count();
+        // Check the count of recurringInvoices and return from here
+        if ($recurringInvoices->isEmpty()) {
+            $this->info('No Recurring invoice in database');
 
-                if ($recurring->unlimited_recurring == 1 || ($totalExistingCount < $recurring->billing_cycle)) {
+            return Command::SUCCESS;
+        }
 
-                    if ($recurring->next_invoice_date->timezone($recurring->company->timezone)->isToday()) {
-                        $this->invoiceCreate($recurring);
-                        $this->saveNextInvoiceDate($recurring);
-                    }
+        foreach ($recurringInvoices as $recurring) {
+
+            $company = $recurring->company;
+
+            $this->info('Running for company:' . $company->id);
+
+            $totalExistingCount = $recurring->recurrings->count();
+
+            if ($recurring->unlimited_recurring == 1 || ($totalExistingCount < $recurring->billing_cycle)) {
+
+                if ($recurring->next_invoice_date->timezone($company->timezone)->isToday()) {
+                    $this->invoiceCreate($recurring);
+                    $this->saveNextInvoiceDate($recurring);
                 }
             }
-
         }
+
+
+        return Command::SUCCESS;
     }
 
     private function saveNextInvoiceDate($recurring)
@@ -104,8 +110,6 @@ class AutoCreateRecurringInvoices extends Command
 
         $diff = $recurring->issue_date->diffInDays($recurring->due_date);
         $dueDate = now()->addDays($diff)->format('Y-m-d');
-
-        $unitType = UnitType::where('default', 1)->where('company_id', $recurring->company_id)->first();
 
         $invoice = new Invoice();
         $invoice->invoice_recurring_id = $recurring->id;

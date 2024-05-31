@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Http\Controllers\ProposalController;
+use App\Models\GlobalSetting;
 use App\Models\Proposal;
 
 class NewProposal extends BaseNotification
@@ -49,7 +50,7 @@ class NewProposal extends BaseNotification
             $pdf = $pdfOption['pdf'];
             $filename = $pdfOption['fileName'];
 
-            $url = route('front.proposal', $this->proposal->hash);
+            $url = url()->temporarySignedRoute('front.proposal', now()->addDays(GlobalSetting::SIGNED_ROUTE_EXPIRY), $this->proposal->hash);
             $url = getDomainSpecificUrl($url, $this->company);
 
             $content = __('email.proposal.text') . '<br>';

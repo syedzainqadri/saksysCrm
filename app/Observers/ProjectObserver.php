@@ -9,9 +9,11 @@ use App\Events\NewProjectEvent;
 use App\Models\MentionUser;
 use App\Models\UniversalSearch;
 use Illuminate\Support\Facades\DB;
+use App\Traits\EmployeeActivityTrait;
 
 class ProjectObserver
 {
+    use EmployeeActivityTrait;
 
     public function saving(Project $project)
     {
@@ -45,6 +47,8 @@ class ProjectObserver
         }
 
         if (!isRunningInConsoleOrSeeding()) {
+            self::createEmployeeActivity(user()->id, 'project-created', $project->id, 'proj');
+
             $mentionIds = [];
             $mentionDescriptionMembers = [];
             $unmentionDescriptionMember = [];
@@ -69,9 +73,9 @@ class ProjectObserver
 
                 if (
                     (request()->user_id != null || request()->user_id != '' || request()->has('user_id'))
-                        && $unmentionIds != null
-                        && $unmentionIds != ''
-                        ) {
+                    && $unmentionIds != null
+                    && $unmentionIds != ''
+                ) {
                     event(new NewProjectEvent($project, $unmentionDescriptionMember, 'NewProject'));
                 }
             }
@@ -93,7 +97,7 @@ class ProjectObserver
         $requestMentionIds = explode(',', request()->mention_user_ids);
         $newMention = [];
 
-        if(!request()->has('task_project_id')){
+        if (!request()->has('task_project_id')) {
             $project->mentionUser()->sync(request()->mention_user_ids);
 
         }
@@ -109,7 +113,8 @@ class ProjectObserver
                         $newMention[] = $value;
                     }
 
-                } else {
+                }
+                else {
 
                     $newMention[] = $value;
 
@@ -134,6 +139,8 @@ class ProjectObserver
         }
 
         if (!isRunningInConsoleOrSeeding()) {
+            self::createEmployeeActivity(user()->id, 'project-updated', $project->id, 'proj');
+
 
             $admins = User::allAdmins($project->company->id);
             // Send notification to client
@@ -191,6 +198,10 @@ class ProjectObserver
     public function deleted(Project $project)
     {
         $project->tasks()->delete();
+        if(user()){
+            self::createEmployeeActivity(user()->id, 'project-deleted', );
+
+        }
     }
 
     public function restored(Project $project)

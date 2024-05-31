@@ -2,6 +2,8 @@
 
 namespace App\View\Components\Cards;
 
+use Closure;
+use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
 
 class Ticket extends Component
@@ -24,11 +26,11 @@ class Ticket extends Component
     /**
      * Get the view / contents that represent the component.
      *
-     * @return \Illuminate\Contracts\View\View|\Closure|string
+     * @return View|Closure|string
      */
     public function render()
     {
         return view('components.cards.ticket');
     }
-    
+
 }

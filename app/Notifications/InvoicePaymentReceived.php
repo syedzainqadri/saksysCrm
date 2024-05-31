@@ -17,7 +17,6 @@ class InvoicePaymentReceived extends BaseNotification
      */
     private $payment;
 
-    private $invoiceSetting;
 
     private $emailSetting;
 
@@ -25,8 +24,7 @@ class InvoicePaymentReceived extends BaseNotification
     {
         $this->payment = $payment;
         $this->company = $this->payment->company;
-        $this->invoiceSetting = $this->company->invoiceSetting;
-        $this->emailSetting = EmailNotificationSetting::where('company_id', $this->company->id)->where('slug', 'invoice-createupdate-notification')->first();
+        $this->emailSetting = EmailNotificationSetting::where('company_id', $this->company->id)->where('slug', 'payment-notification')->first();
 
     }
 
@@ -45,7 +43,7 @@ class InvoicePaymentReceived extends BaseNotification
         }
 
         if ($this->emailSetting->send_slack == 'yes' && $this->company->slackSetting->status == 'active') {
-            array_push($via, 'slack');
+            $this->slackUserNameCheck($notifiable) ? array_push($via, 'slack') : null;
         }
 
         return $via;
@@ -66,7 +64,7 @@ class InvoicePaymentReceived extends BaseNotification
 
             $client = $invoice->project->client;
         }
-        elseif(!is_null($invoice->client_id) && !is_null($invoice->clientDetails)) {
+        elseif (!is_null($invoice->client_id) && !is_null($invoice->clientDetails)) {
 
             $client = $invoice->client;
         }
@@ -85,7 +83,7 @@ class InvoicePaymentReceived extends BaseNotification
             $actionBtn = __('email.invoices.action');
         }
 
-        $message .= (isset($client->name)) ? __('app.by').' '.mb_ucwords($client->name).'.' : '.';
+        $message .= (isset($client->name)) ? __('app.by') . ' ' . $client->name . '.' : '.';
 
         $url = getDomainSpecificUrl($url, $this->company);
 
@@ -126,22 +124,10 @@ class InvoicePaymentReceived extends BaseNotification
 
     public function toSlack($notifiable)
     {
-        $slack = $notifiable->company->slackSetting;
         $invoice = Invoice::findOrFail($this->payment->invoice_id);
 
-        if (count($notifiable->employee) > 0 && (!is_null($notifiable->employee[0]->slack_username) && ($notifiable->employee[0]->slack_username != ''))) {
-            return (new SlackMessage())
-                ->from(config('app.name'))
-                ->to('@' . $notifiable->employee[0]->slack_username)
-                ->image($slack->slack_logo_url)
-                ->content(__('email.hello')  . ' ' .  mb_ucwords($notifiable->name) ."\n". __('email.invoices.paymentReceivedForInvoice') . ':' . $invoice->invoice_number );
-        }
-
-        return (new SlackMessage())
-            ->from(config('app.name'))
-            ->image($slack->slack_logo_url)
-            ->content(__('email.hello')  . ' ' .  mb_ucwords($notifiable->name) ."\n". __('email.invoices.paymentReceivedForInvoice') . ':' . $invoice->invoice_number );
-
+        return $this->slackBuild($notifiable)
+            ->content(__('email.hello') . ' ' . $notifiable->name . "\n" . __('email.invoices.paymentReceivedForInvoice') . ':' . $invoice->invoice_number);
 
     }
 

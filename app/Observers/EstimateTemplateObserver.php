@@ -6,13 +6,16 @@ use App\Helper\Files;
 use App\Models\EstimateTemplate;
 use App\Models\EstimateTemplateItem;
 use App\Models\EstimateTemplateItemImage;
+use App\Models\Product;
+use App\Models\ProductFiles;
+use Froiden\RestAPI\Exceptions\RelatedResourceNotFoundException;
 
 class EstimateTemplateObserver
 {
 
     public function creating(EstimateTemplate $estimate)
     {
-        if(company()) {
+        if (company()) {
             $estimate->company_id = company()->id;
         }
     }
@@ -60,25 +63,38 @@ class EstimateTemplateObserver
                         $estimateTemplateItemImage->estimate_template_item_id = $estimateTemplateItem->id;
                         $estimateTemplateItemImage->company_id = $estimateTemplateItem->company_id;
 
-                        if(isset($invoice_item_image[$key])) {
-                            $filename = Files::uploadLocalOrS3($invoice_item_image[$key], EstimateTemplateItemImage::FILE_PATH . '/' . $estimateTemplateItem->id . '/');
-                            $estimateTemplateItemImage->filename = !isset($invoice_item_image_url[$key]) ? $invoice_item_image[$key]->getClientOriginalName() : '';
-                            $estimateTemplateItemImage->hashname = !isset($invoice_item_image_url[$key]) ? $filename : '';
+                        if (isset($invoice_item_image_url[$key])) {
+                            $product = Product::findOrFail(request()->product_id[$key]);
+
+                            $fileOrgName = ProductFiles::where('product_id', request()->product_id[$key])->where('hashname', $product->default_image)->first();
+
+                            $fileName = Files::generateNewFileName($fileOrgName->filename);
+
+                            Files::copy(Product::FILE_PATH . '/' . $fileOrgName->hashname, EstimateTemplateItemImage::FILE_PATH . '/' . $estimateTemplateItem->id . '/' . $fileName);
+
+                            $estimateTemplateItemImage->filename = $fileOrgName->filename;
+                            $estimateTemplateItemImage->hashname = $fileName;
                         }
 
-                        $estimateTemplateItemImage->size = !isset($invoice_item_image_url[$key]) ? $invoice_item_image[$key]->getSize() : '';
-                        $estimateTemplateItemImage->external_link = isset($invoice_item_image_url[$key]) ? $invoice_item_image_url[$key] : '';
+                        if (isset($invoice_item_image[$key])) {
+                            $filename = Files::uploadLocalOrS3($invoice_item_image[$key], EstimateTemplateItemImage::FILE_PATH . '/' . $estimateTemplateItem->id . '/');
+                            $estimateTemplateItemImage->filename = $invoice_item_image[$key]->getClientOriginalName();
+                            $estimateTemplateItemImage->hashname = $filename;
+                            $estimateTemplateItemImage->size = $invoice_item_image[$key]->getSize();
+                        }
+
+                        $estimateTemplateItemImage->external_link = isset($invoice_item_image[$key]) ? null : (isset($invoice_item_image_url[$key]) ? $invoice_item_image_url[$key] : null);
                         $estimateTemplateItemImage->save();
                     }
 
-                };
+                }
             }
 
         }
     }
 
     /**
-     * @throws \Froiden\RestAPI\Exceptions\RelatedResourceNotFoundException
+     * @throws RelatedResourceNotFoundException
      */
     public function updated(EstimateTemplate $estimate)
     {
@@ -120,7 +136,7 @@ class EstimateTemplateObserver
                     if ($estimateTemplateItem === null) {
                         $estimateTemplateItem = new EstimateTemplateItem();
                     }
-                    
+
                     $estimateTemplateItem->estimate_template_id = $estimate->id;
                     $estimateTemplateItem->company_id = $estimate->company_id;
                     $estimateTemplateItem->item_name = $item;
@@ -152,12 +168,14 @@ class EstimateTemplateObserver
                             Files::deleteFile($estimateTemplateItem->estimateTemplateItemImage->hashname, EstimateTemplateItemImage::FILE_PATH . '/' . $estimateTemplateItem->id . '/');
                         }
 
-                        $filename = Files::uploadLocalOrS3($estimate_item_image[$key], EstimateTemplateItemImage::FILE_PATH . '/' . $estimateTemplateItem->id . '/');
-        
-                        $estimateTemplateItemImage->filename = !isset($estimate_item_image_url[$key]) ? $estimate_item_image[$key]->getClientOriginalName() : '';
-                        $estimateTemplateItemImage->hashname = !isset($estimate_item_image_url[$key]) ? $filename : '';
-                        $estimateTemplateItemImage->size = !isset($estimate_item_image_url[$key]) ? $estimate_item_image[$key]->getSize() : '';
-                        $estimateTemplateItemImage->external_link = $estimate_item_image_url[$key] ?? '';
+                        if (isset($estimate_item_image[$key])) {
+                            $filename = Files::uploadLocalOrS3($estimate_item_image[$key], EstimateTemplateItemImage::FILE_PATH . '/' . $estimateTemplateItem->id . '/');
+                            $estimateTemplateItemImage->filename = $estimate_item_image[$key]->getClientOriginalName();
+                            $estimateTemplateItemImage->hashname = $filename;
+                            $estimateTemplateItemImage->size = $estimate_item_image[$key]->getSize();
+                        }
+
+                        $estimateTemplateItemImage->external_link = isset($estimate_item_image[$key]) ? null : ($estimate_item_image_url[$key] ?? null);
                         $estimateTemplateItemImage->save();
 
                     }

@@ -9,29 +9,29 @@
     <link rel="icon" type="image/png" sizes="16x16" href="{{ companyOrGlobalSetting()->favicon_url }}">
 
     <!-- Font Awesome Icons -->
-    <link rel="stylesheet" href="{{ asset('vendor/css/all.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('vendor/css/all.min.css') }}" defer="defer">
 
     <!-- Simple Line Icons -->
-    <link rel="stylesheet" href="{{ asset('vendor/css/simple-line-icons.css') }}">
+    <link rel="stylesheet" href="{{ asset('vendor/css/simple-line-icons.css') }}" defer="defer">
 
     <!-- Datepicker -->
-    <link rel="stylesheet" href="{{ asset('vendor/css/datepicker.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('vendor/css/datepicker.min.css') }}" defer="defer">
 
     <!-- TimePicker -->
-    <link rel="stylesheet" href="{{ asset('vendor/css/bootstrap-timepicker.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('vendor/css/bootstrap-timepicker.min.css') }}" defer="defer">
 
     <!-- Select Plugin -->
-    <link rel="stylesheet" href="{{ asset('vendor/css/select2.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('vendor/css/select2.min.css') }}" defer="defer">
 
     <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="{{ asset('vendor/css/bootstrap-icons.css') }}">
+    <link rel="stylesheet" href="{{ asset('vendor/css/bootstrap-icons.css') }}" defer="defer">
 
     @stack('datatable-styles')
 
     <!-- Template CSS -->
     <link type="text/css" rel="stylesheet" media="all" href="{{ asset('css/main.css') }}">
 
-    <title>@lang($pageTitle)</title>
+    <title>{{ is_array(__($pageTitle)) ? $pageTitle : __($pageTitle) }}</title>
     <meta name="msapplication-TileColor" content="#ffffff">
     <meta name="msapplication-TileImage" content="{{ companyOrGlobalSetting()->favicon_url }}">
     <meta name="theme-color" content="#ffffff">
@@ -52,8 +52,10 @@
                 transition: filter .2s ease-out;
                 margin-right: 4px;
             }
-
-
+            .ql-editor {
+                text-align: left;
+                white-space: unset;
+            }
         </style>
     @endisset
 
@@ -72,8 +74,38 @@
         .fc a[data-navlink] {
             color: #99a5b5;
         }
-        .ql-editor p{
+
+        .ql-editor p {
             line-height: 1.42;
+            margin: revert;
+        }
+
+        .ql-container .ql-tooltip {
+            left: 8.5px !important;
+            top: -17px !important;
+        }
+
+        .table [contenteditable="true"] {
+            height: 55px;
+        }
+
+        .table [contenteditable="true"]:hover::after {
+            content: "{{ __('app.clickEdit') }}" !important;
+        }
+
+        .table [contenteditable="true"]:focus::after {
+            content: "{{ __('app.anywhereSave') }}" !important;
+        }
+
+        .table-bordered .displayName {
+            padding: 17px;
+        }
+
+        p {
+            word-break: break-word;
+        }
+        .inactive{
+            opacity: 0.7;
         }
     </style>
 
@@ -90,13 +122,12 @@
     <script src="{{ asset('vendor/jquery/modernizr.min.js') }}"></script>
 
     {{-- Timepicker --}}
-    <script src="{{ asset('vendor/jquery/bootstrap-timepicker.min.js') }}"></script>
+    <script src="{{ asset('vendor/jquery/bootstrap-timepicker.min.js') }}" defer="defer"></script>
 
     @includeif('sections.push-setting-include')
 
     {{-- Include file for widgets if exist --}}
     @includeif('sections.custom_script')
-
 
     <script>
         const checkMiniSidebar = localStorage.getItem("mini-sidebar");
@@ -131,7 +162,7 @@
 
         @yield('filter-section')
 
-        <x-app-title class="d-block d-lg-none" :pageTitle="__($pageTitle)"></x-app-title>
+        <x-app-title class="d-block d-lg-none" :pageTitle="$pageTitle"></x-app-title>
 
         @yield('content')
 
@@ -223,9 +254,9 @@
 
     $('#datatableRange').on('apply.daterangepicker', (event, picker) => {
         cb(picker.startDate, picker.endDate);
-        $('#datatableRange').val(picker.startDate.format('{{ companyOrGlobalSetting()->moment_date_format }}') +
-            ' @lang("app.to") ' + picker.endDate.format(
-                '{{ companyOrGlobalSetting()->moment_date_format }}'));
+        const startDate = picker.startDate.format('{{ companyOrGlobalSetting()->moment_date_format }}');
+        const endDate = picker.endDate.format('{{ companyOrGlobalSetting()->moment_date_format }}');
+        $('#datatableRange').val(`${startDate} @lang("app.to") ${endDate}`);
     });
 
     $('#datatableRange2').on('apply.daterangepicker', (event, picker) => {
@@ -239,7 +270,7 @@
         $('#datatableRange, #datatableRange2').val(start.format('{{ companyOrGlobalSetting()->moment_date_format }}') +
             ' @lang("app.to") ' + end.format(
                 '{{ companyOrGlobalSetting()->moment_date_format }}'));
-            $('#reset-filters, #reset-filters-2').removeClass('d-none');
+        $('#reset-filters, #reset-filters-2').removeClass('d-none');
 
     }
 
@@ -332,7 +363,7 @@
                         'list': 'bullet'
                     }],
                     ['bold', 'italic', 'underline', 'strike'],
-                    ['image', 'code-block', 'link','video'],
+                    ['image', 'link', 'video'],
                     [{
                         'direction': 'rtl'
                     }],
@@ -354,30 +385,29 @@
 
 
     }
-        function destory_editor(selector){
-            if($(selector)[0])
-            {
-                var content = $(selector).find('.ql-editor').html();
-                $(selector).html(content);
 
-                $(selector).siblings('.ql-toolbar').remove();
-                $(selector + " *[class*='ql-']").removeClass (function (index, class_name) {
-                return (class_name.match (/(^|\s)ql-\S+/g) || []).join(' ');
-                });
+    function destory_editor(selector) {
+        if ($(selector)[0]) {
+            var content = $(selector).find('.ql-editor').html();
+            $(selector).html(content);
 
-                $(selector + "[class*='ql-']").removeClass (function (index, class_name) {
-                return (class_name.match (/(^|\s)ql-\S+/g) || []).join(' ');
-                });
-            }
-            else
-            {
-                console.error('editor not exists');
-            }
+            $(selector).siblings('.ql-toolbar').remove();
+            $(selector + " *[class*='ql-']").removeClass(function (index, class_name) {
+                return (class_name.match(/(^|\s)ql-\S+/g) || []).join(' ');
+            });
+
+            $(selector + "[class*='ql-']").removeClass(function (index, class_name) {
+                return (class_name.match(/(^|\s)ql-\S+/g) || []).join(' ');
+            });
+        } else {
+            console.error('editor not exists');
         }
-    function quillMention(atValues,ID) {
+    }
+
+    function quillMention(atValues, ID) {
         const mentionItemTemplate = '<div class="mention-item"> <img src="{image}" class="align-self-start mr-3 taskEmployeeImg rounded">{name}</div>';
 
-        const customRenderItem = function(item, searchTerm) {
+        const customRenderItem = function (item, searchTerm) {
             const html = mentionItemTemplate.replace('{image}', item.image).replace('{name}', item.value);
             return html;
         }
@@ -388,56 +418,84 @@
             placeholder = '';
         }
 
-        var quillEditor = new Quill(ID, {
+        const quillContainer = document.querySelector(ID);
+
+        quillArray[ID] = new Quill(ID, {
             placeholder: placeholder,
             modules: {
                 magicUrl: {
                     urlRegularExpression: /(https?:\/\/[\S]+)|(www.[\S]+)|(tel:[\S]+)/g,
                     globalRegularExpression: /(https?:\/\/|www\.|tel:)[\S]+/g,
                 },
+                toolbar: [
+                    [{
+                        header: [1, 2, 3, 4, 5, false]
+                    }],
+                    [{
+                        'list': 'ordered'
+                    }, {
+                        'list': 'bullet'
+                    }],
+                    ['bold', 'italic', 'underline', 'strike'],
+                    ['image', 'link', 'video'],
+                    [{
+                        'direction': 'rtl'
+                    }],
+                    ['clean']
+                ],
                 mention: {
                     allowedChars: /^[A-Za-z\sÅÄÖåäö]*$/,
                     mentionDenotationChars: ["@", "#"],
-                    source: function(searchTerm, renderList, mentionChar) {
-                    let values;
-                    if (mentionChar === "@") {
-                        values = atValues;
-                    } else {
-                        values = hashValues;
-                    }
+                    source: function (searchTerm, renderList, mentionChar) {
+                        let values;
+                        if (mentionChar === "@") {
+                            values = atValues;
+                        } else {
+                            values = hashValues;
+                        }
 
-                    if (searchTerm.length === 0) {
-                        renderList(values, searchTerm);
+                        if (searchTerm.length === 0) {
+                            renderList(values, searchTerm);
 
-                    } else {
-                        const matches = [];
-                        for (i = 0; i < values.length; i++)
-                        if (
-                            ~values[i].value
-                            .toLowerCase()
-                            .indexOf(searchTerm.toLowerCase())
-                        )
-                            matches.push(values[i]);
-                        renderList(matches, searchTerm);
-                    }
+                        } else {
+                            const matches = [];
+                            for (i = 0; i < values.length; i++)
+                                if (
+                                    ~values[i].value
+                                        .toLowerCase()
+                                        .indexOf(searchTerm.toLowerCase())
+                                )
+                                    matches.push(values[i]);
+                            renderList(matches, searchTerm);
+                        }
                     },
                     renderItem: customRenderItem,
 
                 },
-
+                clipboard: {
+                    matchVisual: false
+                },
+                "emoji-toolbar": true,
+                "emoji-textarea": true,
+                "emoji-shortname": true,
             },
-            theme: 'snow'
+            theme: 'snow',
+            bounds: quillContainer
         });
+
+        quillArray[ID].getModule('toolbar').addHandler('image', selectLocalImage);
     }
-     /**
+
+    /**
      * click to open user profile
      *
      */
-    window.addEventListener('mention-clicked', function ({ value }) {
-    if (value?.link) {
-        window.open(value.link, value?.target ?? '_blank');
-    }
+    window.addEventListener('mention-clicked', function ({value}) {
+        if (value?.link) {
+            window.open(value.link, value?.target ?? '_blank');
+        }
     });
+
     /**
      * Step1. select local image
      *
@@ -494,6 +552,14 @@
             }
         });
     }
+
+    function checkboxChange(parentClass, id) {
+        var checkedData = '';
+        $('.' + parentClass).find("input[type='checkbox']:checked").each(function() {
+            checkedData = (checkedData !== '') ? checkedData + ', ' + $(this).val() : $(this).val();
+        });
+        $('#' + id).val(checkedData);
+    }
 </script>
 
 <script>
@@ -502,6 +568,9 @@
         let url = "{{ route('timelogs.pause_timer', ':id') }}";
         url = url.replace(':id', id);
         const token = '{{ csrf_token() }}';
+
+        let currentUrl = $(this).data('url');
+
         $.easyAjax({
             url: url,
             blockUI: true,
@@ -510,6 +579,7 @@
             buttonSelector: "#pause-timer-btn",
             data: {
                 timeId: id,
+                currentUrl: currentUrl,
                 _token: token
             },
             success: function (response) {
@@ -526,7 +596,11 @@
                         window.LaravelDataTables["allTasks-table"].draw(false);
                     }
 
-                    $('#timer-clock').html(response.clockHtml);
+                    if (response.reload === 'yes') {
+                        window.location.reload();
+                    } else {
+                        $('#timer-clock').html(response.clockHtml);
+                    }
                 }
             }
         })
@@ -537,6 +611,9 @@
         let url = "{{ route('timelogs.resume_timer', ':id') }}";
         url = url.replace(':id', id);
         const token = '{{ csrf_token() }}';
+
+        let currentUrl = $(this).data('url');
+
         $.easyAjax({
             url: url,
             blockUI: true,
@@ -545,9 +622,11 @@
             buttonSelector: "#resume-timer-btn",
             data: {
                 timeId: id,
+                currentUrl: currentUrl,
                 _token: token
             },
             success: function (response) {
+
                 if (response.status === 'success') {
                     if ($('#myActiveTimer').length > 0) {
                         $(MODAL_XL + ' .modal-content').html(response.html);
@@ -557,91 +636,73 @@
                     if ($('#allTasks-table').length) {
                         window.LaravelDataTables["allTasks-table"].draw(false);
                     }
+
+                    if (response.reload === 'yes') {
+                        window.location.reload();
+                    }
                 }
             }
         })
     });
 
-    $('body').on('click', '.stop-active-timer', function () {
-        const id = $(this).data('time-id');
-        let url = "{{ route('timelogs.stop_timer', ':id') }}";
-        url = url.replace(':id', id);
-        const token = '{{ csrf_token() }}';
-        $.easyAjax({
-            url: url,
-            type: "POST",
-            data: {
-                timeId: id,
-                _token: token
-            },
-            success: function (response) {
-                if ($('#myActiveTimer').length > 0) {
-                    $(MODAL_XL + ' .modal-content').html(response.html);
-                }
-
-                if (response.activeTimerCount > 0) {
-                    $('#show-active-timer .active-timer-count').html(response.activeTimerCount);
-                } else {
-                    $('#show-active-timer .active-timer-count').addClass('d-none');
-                }
-
-                $('#timer-clock').html('');
-                if ($('#allTasks-table').length) {
-                    window.LaravelDataTables["allTasks-table"].draw(false);
-                }
-
-            }
-        })
-
+    $('body').on('click', '.stop-active-timer', function() {
+            var url = "{{ route('timelogs.stopper_alert', ':id') }}?via=timelog";
+            var id = $(this).data('time-id');
+            url = url.replace(':id', id);
+            $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
+            $.ajaxModal(MODAL_LG, url);
     });
-
 </script>
 
 @if (in_array('messages', user_modules()))
-<script>
-    function newMessageNotificationPlay() { var audio = new Audio("{{ asset('message-notification.mp3') }}"); audio.play(); }
+    <script>
+        function newMessageNotificationPlay() {
+            var audio = new Audio("{{ asset('message-notification.mp3') }}");
+            audio.play();
+        }
 
-    function checkNewMessage() {
-        var url = "{{ route('messages.check_new_message') }}";
-        var token = "{{ csrf_token() }}";
+        function checkNewMessage() {
+            var url = "{{ route('messages.check_new_message') }}";
+            var token = "{{ csrf_token() }}";
 
-        $.easyAjax({
-            url: url,
-            type: "POST",
-            data: {
-                '_token': token,
-            },
-            success: function (response) {
-                if (response.new_message_count > 0) {
-                    newMessageNotificationPlay();
-                    Swal.fire({
-                        icon: 'info',
-                        text: 'New message received.',
+            $.easyAjax({
+                url: url,
+                type: "POST",
+                data: {
+                    '_token': token,
+                },
+                success: function (response) {
+                    if (response.new_message_count > 0) {
+                        newMessageNotificationPlay();
+                        Swal.fire({
+                            icon: 'info',
+                            text: 'New message received.',
 
-                        toast: true,
-                        position: "top-end",
-                        timer: 3000,
-                        timerProgressBar: true,
-                        showConfirmButton: false,
+                            toast: true,
+                            position: "top-end",
+                            timer: 3000,
+                            timerProgressBar: true,
+                            showConfirmButton: false,
 
-                        customClass: {
-                            confirmButton: "btn btn-primary",
-                        },
-                        showClass: {
-                            popup: "swal2-noanimation",
-                            backdrop: "swal2-noanimation",
-                        },
-                    });
+                            customClass: {
+                                confirmButton: "btn btn-primary",
+                            },
+                            showClass: {
+                                popup: "swal2-noanimation",
+                                backdrop: "swal2-noanimation",
+                            },
+                        });
+                    }
                 }
-            }
-        });
-    }
+            });
+        }
 
-    if (message_setting.send_sound_notification == 1 && !(pusher_setting.status === 1 && pusher_setting.messages === 1)) {
-        window.setInterval(function () {
-            checkNewMessage()
-        }, 10000); // Check messages every 10 seconds
-    }
+        // Reduce server load
+        // if (message_setting.send_sound_notification == 1 && !(pusher_setting.status === 1 && pusher_setting.messages === 1)) {
+        //     window.setInterval(function () {
+        //         checkNewMessage()
+        //     }, 10000); // Check messages every 10 seconds
+        // }
 
     </script>
 @endif

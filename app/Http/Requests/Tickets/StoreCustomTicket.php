@@ -29,7 +29,7 @@ class StoreCustomTicket extends CoreRequest
         $setting = \global_setting();
         $rules = array();
         $rules['name'] = 'required';
-        $rules['email'] = 'required|email:rfc';
+        $rules['email'] = 'required|email:rfc,strict';
         $rules['ticket_subject'] = 'required';
         $rules['assign_group'] = 'required';
         $rules['message'] = 'required|sometimes';

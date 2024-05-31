@@ -27,13 +27,14 @@ class FinanceReportDataTable extends BaseDataTable
      * @param mixed $query Results from query() method.
      * @return \Yajra\DataTables\DataTableAbstract
      */
+
     public function dataTable($query)
     {
         return datatables()
             ->eloquent($query)
             ->editColumn('project_id', function ($row) {
                 if (!is_null($row->project)) {
-                    return '<a class="text-darkest-grey" href="' . route('projects.show', $row->project_id) . '">' . ucfirst($row->project->project_name) . '</a>';
+                    return '<a class="text-darkest-grey" href="' . route('projects.show', $row->project_id) . '">' . $row->project->project_name . '</a>';
                 }
                 else {
                     return '--';
@@ -41,7 +42,7 @@ class FinanceReportDataTable extends BaseDataTable
             })
             ->editColumn('invoice_number', function ($row) {
                 if ($row->invoice_id != null) {
-                    return '<a class="text-darkest-grey" href="' . route('invoices.show', $row->invoice_id) . '">' . ucfirst($row->invoice->invoice_number) . '</a>';
+                    return '<a class="text-darkest-grey" href="' . route('invoices.show', $row->invoice_id) . '">' . $row->invoice->invoice_number . '</a>';
                 }
                 else {
                     return '--';
@@ -60,6 +61,9 @@ class FinanceReportDataTable extends BaseDataTable
 
                 return currency_format($row->amount, $currencyId);
             })
+            ->addColumn('default_currency_price', function ($row) {
+                return currency_format($row->default_currency_price, company()->currency_id);
+            })
             ->editColumn(
                 'paid_on',
                 function ($row) {
@@ -70,9 +74,7 @@ class FinanceReportDataTable extends BaseDataTable
             )
             ->addIndexColumn()
             ->smart(false)
-            ->setRowId(function ($row) {
-                return 'row-' . $row->id;
-            })
+            ->setRowId(fn($row) => 'row-' . $row->id)
             ->rawColumns(['invoice', 'status', 'project_id', 'invoice_number'])
             ->removeColumn('invoice_id')
             ->removeColumn('currency_symbol')
@@ -93,12 +95,12 @@ class FinanceReportDataTable extends BaseDataTable
             ->select('payments.id', 'payments.project_id', 'payments.currency_id', 'payments.invoice_id', 'payments.amount', 'payments.status', 'payments.paid_on', 'payments.remarks', 'payments.bill', 'payments.added_by');
 
         if ($request->startDate !== null && $request->startDate != 'null' && $request->startDate != '') {
-            $startDate = Carbon::createFromFormat($this->company->date_format, $request->startDate)->toDateString();
+            $startDate = companyToDateString($request->startDate);
             $model = $model->where(DB::raw('DATE(payments.`paid_on`)'), '>=', $startDate);
         }
 
         if ($request->endDate !== null && $request->endDate != 'null' && $request->endDate != '') {
-            $endDate = Carbon::createFromFormat($this->company->date_format, $request->endDate)->toDateString();
+            $endDate = companyToDateString($request->endDate);
             $model = $model->where(DB::raw('DATE(payments.`paid_on`)'), '<=', $endDate);
         }
 
@@ -135,7 +137,7 @@ class FinanceReportDataTable extends BaseDataTable
      */
     public function html()
     {
-        return $this->setBuilder('payments-table')
+        $dataTable = $this->setBuilder('payments-table')
             ->parameters([
                 'initComplete' => 'function () {
                    window.LaravelDataTables["payments-table"].buttons().container()
@@ -144,8 +146,13 @@ class FinanceReportDataTable extends BaseDataTable
                 'fnDrawCallback' => 'function( oSettings ) {
                   //
                 }',
-            ])
-            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+            ]);
+
+        if (canDataTableExport()) {
+            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+        }
+
+        return $dataTable;
     }
 
     /**
@@ -156,10 +163,11 @@ class FinanceReportDataTable extends BaseDataTable
     protected function getColumns()
     {
         return [
-            '#' => ['data' => 'DT_RowIndex', 'searchable' => false, 'visible' => false],
+            '#' => ['data' => 'DT_RowIndex', 'searchable' => false, 'visible' => false, 'title' => '#'],
             __('app.project') => ['data' => 'project_id', 'name' => 'project_id', 'title' => __('app.project')],
             __('app.invoice') . '#' => ['data' => 'invoice_number', 'name' => 'invoice.invoice_number', 'title' => __('app.invoice')],
             __('modules.invoices.amount') => ['data' => 'amount', 'name' => 'amount', 'title' => __('modules.invoices.amount')],
+            __('modules.invoices.amount') . company()->currency->currency_code => ['data' => 'default_currency_price', 'name' => 'default_currency_price',  'orderable' => false, 'title' => __('modules.invoices.amount') . ' ( ' . company()->currency->currency_code . ' )'],
             __('modules.payments.paidOn') => ['data' => 'paid_on', 'name' => 'paid_on', 'title' => __('modules.payments.paidOn')],
             __('app.status') => ['data' => 'status', 'name' => 'status', 'title' => __('app.status')]
         ];

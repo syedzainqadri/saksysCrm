@@ -5,6 +5,7 @@
     $addTaskFilePermission = user()->permission('add_task_files');
     $addTaskPermission = user()->permission('add_tasks');
     $viewMilestonePermission = user()->permission('view_project_milestones');
+    $viewProjectPermission = user()->permission('view_projects');
     $checked = request()->has('duplicate_task') ? ($projectId = $task->project_id) : ($projectId = '');
 @endphp
 
@@ -36,7 +37,7 @@
                                     @foreach ($categories as $category)
                                         <option
                                             @if (!is_null($task) && $task->task_category_id == $category->id) selected
-                                            @endif value="{{ $category->id }}">{{ mb_ucwords($category->category_name) }}
+                                            @endif value="{{ $category->id }}">{{ html_entity_decode($category->category_name) }}
                                         </option>
 
                                     @endforeach
@@ -72,15 +73,18 @@
 {{--                            ></x-forms.select2-ajax>--}}
                         @else
                             <x-forms.select fieldId="project_id" fieldName="project_id" :fieldLabel="__('app.project')"
+                                            :popover="__('modules.tasks.notFinishedProjects')"
                                             search="true">
                                 <option value="">--</option>
+                                @if($viewProjectPermission != 'none' && in_array('employee', user_roles()))
                                 @foreach ($projects as $data)
                                     <option
+                                        data-content="{!! '<strong>'.$data->project_short_code."</strong> ".$data->project_name !!}"
                                         @if ((isset($project) && $project->id == $data->id) || ( !is_null($task) && $data->id == $task->project_id)) selected
                                         @endif value="{{ $data->id }}">
-                                        {{ mb_ucwords($data->project_name) }}
                                     </option>
                                 @endforeach
+                                @endif
                             </x-forms.select>
                         @endif
                     </div>
@@ -90,7 +94,7 @@
                     <div class="col-md-5 col-lg-3">
                         <x-forms.datepicker fieldId="task_start_date" fieldRequired="true"
                                             :fieldLabel="__('modules.projects.startDate')" fieldName="start_date"
-                                            :fieldValue="(($task) ? $task->start_date->format(company()->date_format) : \Carbon\Carbon::now(company()->timezone)->translatedFormat(company()->date_format))"
+                                            :fieldValue="(($task) ? $task->start_date->format(company()->date_format) : now(company()->timezone)->translatedFormat(company()->date_format))"
                                             :fieldPlaceholder="__('placeholders.date')"/>
                     </div>
 
@@ -98,7 +102,7 @@
                          @if($task && is_null($task->due_date)) style="display: none" @endif>
                         <x-forms.datepicker fieldId="due_date" fieldRequired="true" :fieldLabel="__('app.dueDate')"
                                 fieldName="due_date" :fieldPlaceholder="__('placeholders.date')"
-                                :fieldValue="(($task && $task->due_date) ? $task->due_date->format(company()->date_format) : \Carbon\Carbon::now(company()->timezone)->translatedFormat(company()->date_format))"/>
+                                :fieldValue="(($task && $task->due_date) ? $task->due_date->format(company()->date_format) : now(company()->timezone)->translatedFormat(company()->date_format))"/>
                     </div>
                     <div class="col-md-2 col-lg-2 pt-5">
                         <x-forms.checkbox class="mr-0 mr-lg-2 mr-md-2" :checked="$task ? is_null($task->due_date) : ''"
@@ -202,7 +206,7 @@
                                         @if(in_array($viewMilestonePermission,['all','owned','added']) || user()->id == $project->client_id)
                                             @foreach ($milestones as $item)
                                                 <option value="{{ $item->id }}"
-                                                        @if (!is_null($task) && $item->id == $task->milestone_id) selected @endif>{{ $item->milestone_title }}</option>
+                                                        @selected (!is_null($task) && $item->id == $task->milestone_id) >{{ $item->milestone_title }}</option>
                                             @endforeach
                                         @endif
                                     @endif
@@ -237,8 +241,7 @@
                                             @endphp
                                             <option
                                                 @if ($columnId == $item->id || ( !is_null($task) && $task->board_column_id == $item->id)) selected
-                                                @elseif (company()->default_task_status == $item->id) selected
-                                                @endif value="{{ $item->id }}" data-content = "{{$icon}}">
+                                                @elseif (company()->default_task_status == $item->id) selected @endif value="{{ $item->id }}" data-content = "{{$icon}}">
                                             </option>
                                         @endforeach
                                     </x-forms.select>
@@ -248,16 +251,13 @@
                             <div class="col-lg-3 col-md-6">
                                 <x-forms.select fieldId="priority" :fieldLabel="__('modules.tasks.priority')"
                                                 fieldName="priority">
-                                    <option @if (!is_null($task) && $task->priority == 'high') selected
-                                            @endif
+                                    <option @selected (!is_null($task) && $task->priority == 'high')
                                             data-content="<i class='fa fa-circle mr-2' style='color: #dd0000'></i> @lang('modules.tasks.high')"
                                             value="high">@lang('modules.tasks.high')</option>
-                                    <option @if (!is_null($task) && $task->priority == 'medium') selected
-                                            @endif value="medium"
+                                    <option @selected (!is_null($task) && $task->priority == 'medium')  value="medium"
                                             data-content="<i class='fa fa-circle mr-2' style='color: #ffc202'></i> @lang('modules.tasks.medium')"
-                                            @if (is_null($task)) selected @endif>@lang('modules.tasks.medium')</option>
-                                    <option @if (!is_null($task) && $task->priority == 'low') selected
-                                            @endif
+                                            @selected(is_null($task))>@lang('modules.tasks.medium')</option>
+                                    <option @selected(!is_null($task) && $task->priority == 'low')
                                             data-content="<i class='fa fa-circle mr-2' style='color: #0a8a1f'></i> @lang('modules.tasks.low')"
                                             value="low">@lang('modules.tasks.low')</option>
                                 </x-forms.select>
@@ -333,13 +333,13 @@
                                         <x-slot name="append">
                                             <select name="repeat_type" class="select-picker form-control">
                                                 <option value="day"
-                                                        @if (!is_null($task) && $task->repeat_type == 'day') selected @endif>@lang('app.day')</option>
+                                                    @selected (!is_null($task) && $task->repeat_type == 'day')>@lang('app.day')</option>
                                                 <option value="week"
-                                                        @if (!is_null($task) && $task->repeat_type == 'week') selected @endif>@lang('app.week')</option>
+                                                    @selected(!is_null($task) && $task->repeat_type == 'week')>@lang('app.week')</option>
                                                 <option value="month"
-                                                        @if (!is_null($task) && $task->repeat_type == 'month') selected @endif>@lang('app.month')</option>
+                                                    @selected(!is_null($task) && $task->repeat_type == 'month')>@lang('app.month')</option>
                                                 <option value="year"
-                                                        @if (!is_null($task) && $task->repeat_type == 'year') selected @endif>@lang('app.year')</option>
+                                                    @selected(!is_null($task) && $task->repeat_type == 'year')>@lang('app.year')</option>
                                             </select>
                                         </x-slot>
                                     </x-forms.input-group>
@@ -370,11 +370,19 @@
                                                 :fieldLabel="__('modules.tasks.dependentTask')"
                                                 fieldName="dependent_task_id" search="true">
                                     <option value="">--</option>
-                                    @foreach ($allTasks as $item)
+                                    @if ($projectID)
+                                        @foreach ($dependantTasks as $dependantTask)
+                                        <option value="{{ $dependantTask->id }}">{{ $dependantTask->heading }} ( @lang('app.dueDate'):
+                                        @if(!is_null($dependantTask->due_date)) {{ $dependantTask->due_date->translatedFormat(company()->date_format) }} ) @else - @endif
+                                        </option>
+                                        @endforeach
+                                    @else
+                                        @foreach ($allTasks as $item)
                                         <option value="{{ $item->id }}">{{ $item->heading }} ( @lang('app.dueDate'):
                                             @if(!is_null($item->due_date)) {{ $item->due_date->translatedFormat(company()->date_format) }} ) @else - @endif
                                         </option>
-                                    @endforeach
+                                        @endforeach
+                                    @endif
                                 </x-forms.select>
                             </div>
                         </div>
@@ -384,7 +392,7 @@
                         <div class="col-lg-12">
                             <x-forms.file-multiple class="mr-0 mr-lg-2 mr-md-2"
                                                    :fieldLabel="__('app.menu.addFile')" fieldName="file"
-                                                   fieldId="task-file-upload-dropzone"/>
+                                                   fieldId="file-upload-dropzone"/>
                             <input type="hidden" name="image_url" id="image_url">
                         </div>
                         <input type="hidden" name="taskID" id="taskID">
@@ -412,8 +420,6 @@
     </div>
 </div>
 
-
-<script src="{{ asset('vendor/jquery/dropzone.min.js') }}"></script>
 <script>
 
     $(document).ready(function () {
@@ -469,9 +475,11 @@
 
         if (add_task_files == "all" || add_task_files == "added") {
 
+            let checkSize = false;
+
             Dropzone.autoDiscover = false;
             //Dropzone class
-            taskDropzone = new Dropzone("div#task-file-upload-dropzone", {
+            taskDropzone = new Dropzone("div#file-upload-dropzone", {
                 dictDefaultMessage: "{{ __('app.dragDrop') }}",
                 url: "{{ route('task-files.store') }}",
                 headers: {
@@ -490,6 +498,7 @@
                 }
             });
             taskDropzone.on('sending', function (file, xhr, formData) {
+                checkSize = false;
                 var ids = $('#taskID').val();
                 formData.append('task_id', ids);
                 $.easyBlockUI();
@@ -498,7 +507,9 @@
                 $.easyBlockUI();
             });
             taskDropzone.on('queuecomplete', function () {
-                window.location.href = localStorage.getItem("redirect_task");
+                if (checkSize == false) {
+                    window.location.href = localStorage.getItem("redirect_task");
+                }
             });
             taskDropzone.on('removedfile', function () {
                 var grp = $('div#file-upload-dropzone').closest(".form-group");
@@ -521,6 +532,7 @@
                 $(grp).addClass("has-error");
                 $(label).addClass("is-invalid");
 
+                checkSize = true;
             });
         }
 
@@ -739,7 +751,7 @@
             let note = document.getElementById('description').children[0].innerHTML;
             document.getElementById('description-text').value = note;
 
-            const url = "{{ route('tasks.store') }}?taskId={{$task ? $task->id : ''}}";
+            const url = "{{ route('tasks.store') }}?taskId={{$task ? $task->id : ''}}&add_more=true";
             var data = $('#save-task-data-form').serialize() + '&add_more=true';
 
             saveTask(data, url, "#save-more-task-form");
@@ -906,11 +918,4 @@
         init(RIGHT_MODAL);
     });
 
-    function checkboxChange(parentClass, id) {
-        let checkedData = '';
-        $('.' + parentClass).find("input[type= 'checkbox']:checked").each(function () {
-            checkedData = (checkedData !== '') ? checkedData + ', ' + $(this).val() : $(this).val();
-        });
-        $('#' + id).val(checkedData);
-    }
 </script>

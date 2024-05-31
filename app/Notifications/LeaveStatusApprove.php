@@ -41,7 +41,7 @@ class LeaveStatusApprove extends BaseNotification
         }
 
         if ($this->emailSetting->send_slack == 'yes' && $this->company->slackSetting->status == 'active') {
-            array_push($via, 'slack');
+            $this->slackUserNameCheck($notifiable) ? array_push($via, 'slack') : null;
         }
 
         return $via;
@@ -59,11 +59,10 @@ class LeaveStatusApprove extends BaseNotification
         $url = route('leaves.show', $this->leave->id);
         $url = getDomainSpecificUrl($url, $this->company);
 
-        $content = __('email.leave.approve') . '<br>' . __('app.date') . ': ' . $this->leave->leave_date->format($this->company->date_format) . '<br>' . __('app.status') . ': ' . mb_ucwords($this->leave->status) . '<br>';
+        $content = __('email.leave.approve') . '<br>' . __('app.date') . ': ' . $this->leave->leave_date->format($this->company->date_format) . '<br>' . __('app.status') . ': ' . $this->leave->status . '<br>';
 
-        if(!is_null($this->leave->approve_reason))
-        {
-            $content .= __('messages.reasonForLeaveApproval') . ': ' . mb_ucwords($this->leave->approve_reason);
+        if (!is_null($this->leave->approve_reason)) {
+            $content .= __('messages.reasonForLeaveApproval') . ': ' . $this->leave->approve_reason;
         }
 
         return $build
@@ -92,21 +91,9 @@ class LeaveStatusApprove extends BaseNotification
 
     public function toSlack($notifiable)
     {
-        $slack = $notifiable->company->slackSetting;
 
-        if (count($notifiable->employee) > 0 && (!is_null($notifiable->employee[0]->slack_username) && ($notifiable->employee[0]->slack_username != ''))) {
-            return (new SlackMessage())
-                ->from(config('app.name'))
-                ->to('@' . $notifiable->employee[0]->slack_username)
-                ->image($slack->slack_logo_url)
-                ->content(__('email.leave.approve') . "\n" . __('app.date') . ': ' . $this->leave->leave_date->format($this->company->date_format) ."\n" . __('app.status') . ': ' . mb_ucwords($this->leave->status));
-        }
-
-        return (new SlackMessage())
-            ->from(config('app.name'))
-            ->image($slack->slack_logo_url)
-            ->content(__('email.leave.approve') . "\n" . __('app.date') . ': ' . $this->leave->leave_date->format($this->company->date_format) . "\n" . __('app.status') . ': ' . mb_ucwords($this->leave->status));
-
+        return $this->slackBuild($notifiable)
+            ->content(__('email.leave.approve') . "\n" . __('app.date') . ': ' . $this->leave->leave_date->format($this->company->date_format) . "\n" . __('app.status') . ': ' . $this->leave->status);
 
     }
 

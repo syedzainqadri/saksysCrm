@@ -55,7 +55,7 @@ class BankTransactionDataTable extends BaseDataTable
                 return $action;
             })
             ->editColumn('account_name', function ($row) {
-                return '<a class="text-darkest-grey" href="' . route('bankaccounts.view_transaction', $row->id) . '">' . mb_ucwords($row->account_name) . '</a>';
+                return '<a class="text-darkest-grey" href="' . route('bankaccounts.view_transaction', $row->id) . '">' . $row->account_name . '</a>';
             })
             ->editColumn('amount', function ($row) {
                 return currency_format($row->amount, $row->currencyId);
@@ -80,10 +80,10 @@ class BankTransactionDataTable extends BaseDataTable
             ->editColumn('title', function ($row) {
 
                 if ($row->transaction_relation == 'expense') {
-                    $title = __('modules.bankaccount.' . $row->title) . ' ( ' . mb_ucwords($row->transaction_related_to) . ' )';
+                    $title = __('modules.bankaccount.' . $row->title) . ' ( ' . $row->transaction_related_to . ' )';
                 }
                 elseif ($row->transaction_relation == 'payment') {
-                    $title = __('modules.bankaccount.' . $row->title) . ' ( ' . mb_ucwords($row->transaction_relation) . '-' . $row->transaction_related_to . ' )';
+                    $title = __('modules.bankaccount.' . $row->title) . ' ( ' . $row->transaction_relation . '-' . $row->transaction_related_to . ' )';
                 }
                 else {
                     $title = __('modules.bankaccount.' . $row->title);
@@ -96,9 +96,7 @@ class BankTransactionDataTable extends BaseDataTable
             })
             ->addIndexColumn()
             ->smart(false)
-            ->setRowId(function ($row) {
-                return 'row-' . $row->id;
-            })
+            ->setRowId(fn($row) => 'row-' . $row->id)
             ->orderColumn('transaction_date', 'transaction_date $1')
             ->rawColumns(['action', 'check', 'account_name', 'status', 'transaction_type']);
     }
@@ -128,7 +126,7 @@ class BankTransactionDataTable extends BaseDataTable
     public function html()
     {
 
-        return $this->setBuilder('bank-transaction-table')
+        $dataTable = $this->setBuilder('bank-transaction-table')
             ->parameters([
                 'initComplete' => 'function () {
                    window.LaravelDataTables["bank-transaction-table"].buttons().container()
@@ -138,6 +136,8 @@ class BankTransactionDataTable extends BaseDataTable
                   //
                 }',
             ]);
+
+        return $dataTable;
     }
 
     /**

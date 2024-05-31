@@ -78,7 +78,7 @@ class LeadGDPRDataTable extends BaseDataTable
      */
     public function html()
     {
-        return $this->setBuilder('leads-gdpr-table')
+        $dataTable = $this->setBuilder('leads-gdpr-table')
             ->parameters([
                 'initComplete' => 'function () {
                    window.LaravelDataTables["leads-gdpr-table"].buttons().container()
@@ -90,8 +90,13 @@ class LeadGDPRDataTable extends BaseDataTable
                     });
                     $(".statusChange").selectpicker();
                 }',
-            ])
-            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+            ]);
+
+        if (canDataTableExport()) {
+            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+        }
+
+        return $dataTable;
     }
 
     /**

@@ -32,41 +32,38 @@ class SalesReportDataTable extends BaseDataTable
             return $row->paid_on ? Carbon::parse($row->paid_on)->format($this->company->date_format) : '--';
         });
         $datatable->addColumn('invoice_number', function ($row) {
-            return $row->custom_invoice_number ? $row->custom_invoice_number : '--';
+            return $row->custom_invoice_number ?: '--';
         });
         $datatable->addColumn('client_name', function ($row) {
             return $row->client ? $row->client->name : '--';
         });
-        $datatable->addColumn('invoice_value', function($row){
-            return $row->total ? currency_format($row->total, company()->currency->currency_id) : '--';
+        $datatable->addColumn('invoice_value', function ($row) {
+            return $row->total ? currency_format($row->total, $row->currency_id) : '--';
         });
-        $datatable->addColumn('bank_account', function($row){
+        $datatable->addColumn('bank_account', function ($row) {
             return !is_null($row->bankAccount) ? $row->bankAccount->bank_name : '--';
         });
-        $datatable->addColumn('taxable_value', function($row){
+        $datatable->addColumn('taxable_value', function ($row) {
 
-            if($row->calculate_tax == 'after_discount')
-            {
+            if ($row->calculate_tax == 'after_discount') {
                 if ($row->discount_type == 'percent') {
                     $discountAmount = (($row->sub_total / 100) * $row->discount);
                     $discountedAmount = ($row->sub_total - $discountAmount);
                 }
                 else {
-                    $discountAmount = $row->discount;
                     $discountedAmount = ($row->sub_total - $row->discount);
                 }
 
-                return currency_format($discountedAmount, company()->currency->currency_id);
+                return currency_format($discountedAmount, $row->currency_id);
 
             }
 
-            return currency_format($row->sub_total, company()->currency->currency_id);
+            return currency_format($row->sub_total, $row->currency_id);
 
         });
 
-        $datatable->addColumn('discount', function($row){
-            if($row->discount > 0)
-            {
+        $datatable->addColumn('discount', function ($row) {
+            if ($row->discount > 0) {
                 if ($row->discount_type == 'percent') {
                     $discountAmount = (($row->sub_total / 100) * $row->discount);
                 }
@@ -74,21 +71,21 @@ class SalesReportDataTable extends BaseDataTable
                     $discountAmount = $row->discount;
                 }
 
-                return currency_format($discountAmount, company()->currency->currency_id);
+                return currency_format($discountAmount, $row->currency_id);
             }
 
             return 0;
 
         });
 
-        $datatable->addColumn('amount_paid', function($row) {
+        $datatable->addColumn('amount_paid', function ($row) {
             return currency_format($row->amountPaid(), $row->currency_id);
         });
 
-        foreach($taxes as $taxName){
+        foreach ($taxes as $taxName) {
             $taxList = array();
             $discount = 0;
-            $datatable->addColumn($taxName['tax_name'], function ($row) use ($taxName, $taxList, $discount, $taxes){
+            $datatable->addColumn($taxName['tax_name'], function ($row) use ($taxName, $taxList, $discount, $taxes) {
 
                 if ($row->discount > 0) {
                     if ($row->discount_type == 'percent') {
@@ -101,35 +98,33 @@ class SalesReportDataTable extends BaseDataTable
 
                 foreach ($row->items as $item) {
 
-                    if(!is_null($item->taxes)){
+                    if (!is_null($item->taxes)) {
                         foreach (json_decode($item->taxes) as $taxId) {
 
                             $taxValue = $taxes->filter(function ($value, $key) use ($taxId) {
                                 return $value->id == $taxId;
                             })->first();
 
-                            if($taxName['tax_name'] == $taxValue->tax_name)
-                            {
+                            if ($taxName['tax_name'] == $taxValue->tax_name) {
                                 if (!isset($taxList[$taxValue->tax_name . ': ' . $taxValue->rate_percent . '%'])) {
 
                                     if ($row->calculate_tax == 'after_discount' && $discount > 0) {
-                                        $taxList[$taxValue->tax_name . ': ' . $taxValue->rate_percent . '%'] = ($item->amount - ($item->amount / $row->sub_total) * $discount) * ($taxValue->rate_percent / 100);
-
+                                        $taxList[$taxValue->tax_name . ': ' . $taxValue->rate_percent . '%'] = ($item->amount - ($item->amount / $row->sub_total) * $discount) * (floatval($taxValue->rate_percent) / 100);
                                     }
                                     else {
-                                        $taxList[$taxValue->tax_name . ': ' . $taxValue->rate_percent . '%'] = $item->amount * ($taxValue->rate_percent / 100);
+                                        $taxList[$taxValue->tax_name . ': ' . $taxValue->rate_percent . '%'] = $item->amount * (floatval($taxValue->rate_percent) / 100);
                                     }
 
                                 }
                                 else {
 
                                     if ($row->calculate_tax == 'after_discount' && $discount > 0) {
-                                        $taxList[$taxValue->tax_name . ': ' . $taxValue->rate_percent . '%'] = $taxList[$taxValue->tax_name . ': ' . $taxValue->rate_percent . '%'] + (($item->amount - ($item->amount / $row->sub_total) * $discount) * ($taxValue->rate_percent / 100));
+                                        $taxList[$taxValue->tax_name . ': ' . $taxValue->rate_percent . '%'] = $taxList[$taxValue->tax_name . ': ' . $taxValue->rate_percent . '%'] + (($item->amount - ($item->amount / $row->sub_total) * $discount) * (floatval($taxValue->rate_percent) / 100));
 
                                     }
                                     else {
 
-                                        $taxList[$taxValue->tax_name . ': ' . $taxValue->rate_percent . '%'] = $taxList[$taxValue->tax_name . ': ' . $taxValue->rate_percent . '%'] + ($item->amount * ($taxValue->rate_percent / 100));
+                                        $taxList[$taxValue->tax_name . ': ' . $taxValue->rate_percent . '%'] = $taxList[$taxValue->tax_name . ': ' . $taxValue->rate_percent . '%'] + ($item->amount * (floatval($taxValue->rate_percent) / 100));
                                     }
                                 }
                             }
@@ -137,8 +132,7 @@ class SalesReportDataTable extends BaseDataTable
                     }
                 }
 
-                foreach($taxList as $key => $taxListValue)
-                {
+                foreach ($taxList as $key => $taxListValue) {
                     return currency_format($taxListValue, $row->currency_id);
                 }
 
@@ -147,9 +141,7 @@ class SalesReportDataTable extends BaseDataTable
         }
 
         $datatable->addIndexColumn()
-            ->setRowId(function ($row) {
-                return 'row-' . $row->id;
-            });
+            ->setRowId(fn($row) => 'row-' . $row->id);
         $rawColumns = $taxes->pluck('tax_name')->toArray();
         $rawColumns[] = array_push($rawColumns, 'client_name', 'paid_on');
         $datatable->orderColumn('client_name', 'client_id $1');
@@ -161,11 +153,12 @@ class SalesReportDataTable extends BaseDataTable
         $datatable->orderColumn('discount', 'total $1');
         $datatable->orderColumn('invoice_number', 'custom_invoice_number $1');
         $datatable->rawColumns($rawColumns)->make(true);
+
         return $datatable;
     }
 
     /**
-     * @param Payment $model
+     * @param Invoice $model
      * @return \Illuminate\Database\Eloquent\Builder
      */
     public function query(Invoice $model)
@@ -177,7 +170,7 @@ class SalesReportDataTable extends BaseDataTable
             ->whereNotNull('payments.invoice_id');
 
         if ($request->startDate !== null && $request->startDate != 'null' && $request->startDate != '') {
-            $startDate = Carbon::createFromFormat($this->company->date_format, $request->startDate)->toDateString();
+            $startDate = companyToDateString($request->startDate);
 
             if (!is_null($startDate)) {
                 $model = $model->where(DB::raw('DATE(payments.`created_at`)'), '>=', $startDate);
@@ -185,7 +178,7 @@ class SalesReportDataTable extends BaseDataTable
         }
 
         if ($request->endDate !== null && $request->endDate != 'null' && $request->endDate != '') {
-            $endDate = Carbon::createFromFormat($this->company->date_format, $request->endDate)->toDateString();
+            $endDate = companyToDateString($request->endDate);
 
             if (!is_null($endDate)) {
                 $model = $model->where(function ($query) use ($endDate) {
@@ -213,29 +206,23 @@ class SalesReportDataTable extends BaseDataTable
      */
     public function html()
     {
-        return $this->builder()
-            ->setTableId('sales-report-table')
-            ->columns($this->getColumns())
-            ->minifiedAjax()
-            ->orderBy(5)
-            ->destroy(true)
-            ->responsive(true)
-            ->serverSide(true)
-            ->stateSave(true)
-            ->processing(true)
-            ->dom($this->domHtml)
-            ->language(__('app.datatable'))
+        $dataTable = $this->setBuilder('sales-report-table', 5)
             ->parameters([
                 'initComplete' => 'function () {
                     window.LaravelDataTables["sales-report-table"].buttons().container()
-                     .appendTo( "#table-actions")
-                 }',
+                    .appendTo( "#table-actions")
+                }',
                 'fnDrawCallback' => 'function( oSettings ) {
-                   //
-                   $(".select-picker").selectpicker();
-                 }',
-            ])
-            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+                //
+                $(".select-picker").selectpicker();
+                }',
+            ]);
+
+        if (canDataTableExport()) {
+            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+        }
+
+        return $dataTable;
     }
 
     /**
@@ -248,7 +235,7 @@ class SalesReportDataTable extends BaseDataTable
         $columns = Tax::all();
         $newColumns = [];
 
-        $newColumns['#'] = ['data' => 'DT_RowIndex',  'orderable' => false, 'searchable' => false, 'visible' => false];
+        $newColumns['#'] = ['data' => 'DT_RowIndex', 'orderable' => false, 'searchable' => false, 'visible' => false, 'title' => '#'];
         $newColumns[__('app.id')] = ['data' => 'id', 'name' => 'id', 'visible' => false, 'exportable' => false, 'title' => __('app.id')];
         $newColumns[__('modules.payments.paidOn')] = ['data' => 'paid_on', 'name' => 'paid_on', 'title' => __('modules.payments.paidOn')];
         $newColumns[__('app.invoiceNumber')] = ['data' => 'invoice_number', 'name' => 'invoice_number', 'title' => __('app.invoiceNumber')];

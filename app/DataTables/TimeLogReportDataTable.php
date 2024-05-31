@@ -59,14 +59,17 @@ class TimeLogReportDataTable extends BaseDataTable
             ->editColumn('total_hours', function ($row) {
                 if (is_null($row->end_time)) {
 
-                    $totalMinutes = now()->diffInMinutes($row->start_time) - $row->breaks->sum('total_minutes');
+                    $totalMinutes = (($row->activeBreak) ? $row->activeBreak->start_time->diffInMinutes($row->start_time) : now()->diffInMinutes($row->start_time)) - $row->breaks->sum('total_minutes');
 
-                    $timeLog = CarbonInterval::formatHuman($totalMinutes - $row->breaks->sum('total_minutes'));
+                    $timeLog = '<span data-trigger="hover"  data-toggle="popover" data-content="' . $row->memo . '">' . CarbonInterval::formatHuman($totalMinutes) . '</span>';
+                    /** @phpstan-ignore-line */
+
                     $timeLog .= ' <i data-toggle="tooltip" data-original-title="' . __('app.active') . '" class="fa fa-hourglass-start" ></i>';
                 }
                 else {
                     $totalMinutes = $row->total_minutes - $row->breaks->sum('total_minutes');
-                    $timeLog = CarbonInterval::formatHuman($totalMinutes - $row->breaks->sum('total_minutes'));
+                    $timeLog = '<span data-trigger="hover"  data-toggle="popover" data-content="' . $row->memo . '">' . CarbonInterval::formatHuman($totalMinutes) . ' ' . '</span>';
+                    /** @phpstan-ignore-line */
 
                     if ($row->approved) {
                         $timeLog .= ' <i data-toggle="tooltip" data-original-title="' . __('app.approved') . '" class="fa fa-check-circle text-primary"></i>';
@@ -90,6 +93,9 @@ class TimeLogReportDataTable extends BaseDataTable
                 }
 
                 return $project;
+            })
+            ->addColumn('client', function ($row) {
+                return $row->project->client->name ?? '--';
             })
             ->editColumn('task', function ($row) {
 
@@ -117,9 +123,7 @@ class TimeLogReportDataTable extends BaseDataTable
                 return $name;
             })
             ->addIndexColumn()
-            ->setRowId(function ($row) {
-                return 'row-' . $row->id;
-            })
+            ->setRowId(fn($row) => 'row-' . $row->id)
             ->editColumn('short_code', function ($row) {
 
                 if (is_null($row->task_short_code)) {
@@ -161,7 +165,7 @@ class TimeLogReportDataTable extends BaseDataTable
 
 
         if ($request->startDate !== null && $request->startDate != 'null' && $request->startDate != '') {
-            $startDate = Carbon::createFromFormat($this->company->date_format, $request->startDate)->toDateString();
+            $startDate = companyToDateString($request->startDate);
 
             if (!is_null($startDate)) {
                 $model = $model->where(DB::raw('DATE(project_time_logs.`start_time`)'), '>=', $startDate);
@@ -169,7 +173,7 @@ class TimeLogReportDataTable extends BaseDataTable
         }
 
         if ($request->endDate !== null && $request->endDate != 'null' && $request->endDate != '') {
-            $endDate = Carbon::createFromFormat($this->company->date_format, $request->endDate)->toDateString();
+            $endDate = companyToDateString($request->endDate);
 
             if (!is_null($endDate)) {
                 $model = $model->where(function ($query) use ($endDate) {
@@ -233,7 +237,7 @@ class TimeLogReportDataTable extends BaseDataTable
      */
     public function html()
     {
-        return $this->setBuilder('timelogs-table', 5)
+        $dataTable = $this->setBuilder('timelogs-table', 5)
             ->parameters([
                 'initComplete' => 'function () {
                     window.LaravelDataTables["timelogs-table"].buttons().container()
@@ -243,8 +247,13 @@ class TimeLogReportDataTable extends BaseDataTable
                    //
                    $(".select-picker").selectpicker();
                  }',
-            ])
-            ->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+            ]);
+
+        if (canDataTableExport()) {
+            $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
+        }
+
+        return $dataTable;
     }
 
     /**
@@ -267,6 +276,8 @@ class TimeLogReportDataTable extends BaseDataTable
             __('modules.timeLogs.endTime') => ['data' => 'end_time', 'name' => 'end_time', 'title' => __('modules.timeLogs.endTime')],
             __('modules.timeLogs.totalHours') => ['data' => 'total_hours', 'name' => 'total_hours', 'title' => __('modules.timeLogs.totalHours')],
             __('modules.timeLogs.totalMinutes') => ['data' => 'total_minutes', 'visible' => false, 'title' => __('modules.timeLogs.totalMinutes')],
+            __('modules.employees.memo') => ['data' => 'memo', 'visible' => false, 'title' => __('modules.employees.memo')],
+            __('app.client') => ['data' => 'client', 'visible' => false, 'title' => __('app.client')],
             __('app.earnings') => ['data' => 'earnings', 'name' => 'earnings', 'title' => __('app.earnings')]
         ];
     }
